@@ -20,7 +20,8 @@
 
 <details>
 <summary>Sashen Inder Gajai</summary>
-<table style="border: 1px solid; width: 100%; font-family: Arial, sans-serif; border-collapse: collapse;">
+
+<table style="border: none; width: 100%; font-family: Arial, sans-serif; border-collapse: collapse;">
   <tr>
     <td style="vertical-align: top; padding: 10px;">
       <h2><b style="font-size: 18px;">Sashen Inder Gajai</b></h2>
@@ -29,28 +30,32 @@
     </td>
   </tr>
 </table>
+
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/sashen-inder-gajai/)
 
 </details>
 
 <details>
 <summary>Shinn-Ru Hung</summary>
-<table style="border: 1px solid; width: 100%; font-family: Arial, sans-serif; border-collapse: collapse;">
+
+<table style="border: none; width: 100%; font-family: Arial, sans-serif; border-collapse: collapse;">
   <tr>
     <td style="vertical-align: top; padding: 10px;">
       <h2><b style="font-size: 18px;">Shinn-Ru Hung</b></h2>
       <b style="font-size: 16px;">UI Engineer & Integration Engineer</b><br>
-      BSc Computer Science student with expertise in building intuitive, responsive front-end interfaces and robust backend integrations. Proficient in Git workflows, API design, and clear technical documentation.
+      BSc Computer Science student experienced in building intuitive, responsive front-end interfaces and robust backend integrations. Proficient in Git workflows, API design, and clear technical documentation.
     </td>
   </tr>
 </table>
+
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/shinn-ru-hung-au5tin-r/)
 
 </details>
 
 <details>
 <summary>Yuthika Harripersad</summary>
-<table style="border: 1px solid; width: 100%; font-family: Arial, sans-serif; border-collapse: collapse;">
+
+<table style="border: none; width: 100%; font-family: Arial, sans-serif; border-collapse: collapse;">
   <tr>
     <td style="vertical-align: top; padding: 10px;">
       <h2><b style="font-size: 18px;">Yuthika Harripersad</b></h2>
@@ -59,13 +64,15 @@
     </td>
   </tr>
 </table>
+
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/tia-harripersad-316143356/)
 
 </details>
 
 <details>
 <summary>Keanu Ellary</summary>
-<table style="border: 1px solid; width: 100%; font-family: Arial, sans-serif; border-collapse: collapse;">
+
+<table style="border: none; width: 100%; font-family: Arial, sans-serif; border-collapse: collapse;">
   <tr>
     <td style="vertical-align: top; padding: 10px;">
       <h2><b style="font-size: 18px;">Keanu Ellary</b></h2>
@@ -74,13 +81,15 @@
     </td>
   </tr>
 </table>
+
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/keanu-ellary-187281355/)
 
 </details>
 
 <details>
 <summary>Devan de Wet</summary>
-<table style="border: 1px solid; width: 100%; font-family: Arial, sans-serif; border-collapse: collapse;">
+
+<table style="border: none; width: 100%; font-family: Arial, sans-serif; border-collapse: collapse;">
   <tr>
     <td style="vertical-align: top; padding: 10px;">
       <h2><b style="font-size: 18px;">Devan de Wet</b></h2>
@@ -89,6 +98,7 @@
     </td>
   </tr>
 </table>
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/DevanDewet) [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/devan-klaassen-750681360/)
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/devan-klaassen-750681360/)
 
 </details>
