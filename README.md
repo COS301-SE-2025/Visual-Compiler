@@ -53,7 +53,7 @@
 </details>
 
 <details>
-<summary>Yuthika Harripersad</summary>
+<summary>Tia Harripersad</summary>
 
 <table style="border: none; width: 100%; font-family: Arial, sans-serif; border-collapse: collapse;">
   <tr>
