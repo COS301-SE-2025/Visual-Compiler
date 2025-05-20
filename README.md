@@ -18,6 +18,32 @@
 
 <div align="center">
     <h2>Folder Structure</h2>
+    ```
+        ├───.github
+        │   └───workflows
+        ├───assets
+        ├───docker-compose.yml
+        ├───docs
+        ├───logs
+        └───visual-compiler
+            ├───backend
+            │   ├───api
+            │   │   ├───handlers
+            │   │   ├───routers
+            │   │   └───tests
+            │   └───core
+            │       ├───handlers
+            │       ├───routers
+            │       └───tests
+            ├───frontend
+            │   └───ui
+            │       ├───.svelte-kit
+            │       ├───src
+            │       │   ├───lib
+            │       │   └───routes
+            │       └───tests
+            └───tests
+    ```
 </div>
 
 ## Team Members
