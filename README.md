@@ -34,8 +34,7 @@
         │   │   ├───📁routers
         │   │   └───📁tests
         │   └───📁core
-        │       ├───📁handlers
-        │       ├───📁routers
+        │       ├───📁services
         │       └───📁tests
         ├───📁frontend
         │   └───📁ui
@@ -63,6 +62,7 @@
 </table>
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/sashen-inder-gajai/)
+[![GitHub](https://img.shields.io/badge/github-%23181717.svg?style=for-the-badge&logo=github&logoColor=white)]()
 
 </details>
 
