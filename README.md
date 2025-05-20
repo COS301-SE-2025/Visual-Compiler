@@ -20,28 +20,28 @@
     <h2>Folder Structure</h2>
         <p>
         ├───.github <br/>
-        │   └───workflows
-        ├───assets
-        ├───docker-compose.yml
-        ├───docs
-        ├───logs
-        └───visual-compiler
-            ├───backend
-            │   ├───api
-            │   │   ├───handlers
-            │   │   ├───routers
-            │   │   └───tests
-            │   └───core
-            │       ├───handlers
-            │       ├───routers
-            │       └───tests
-            ├───frontend
-            │   └───ui
-            │       ├───.svelte-kit
-            │       ├───src
-            │       │   ├───lib
-            │       │   └───routes
-            │       └───tests
+        │   └───workflows <br/>
+        ├───assets <br/>
+        ├───docker-compose.yml <br/>
+        ├───docs <br/>
+        ├───logs <br/>
+        └───visual-compiler <br/>
+            ├───backend <br/>
+            │   ├───api <br/>
+            │   │   ├───handlers <br/>
+            │   │   ├───routers <br/>
+            │   │   └───tests <br/>
+            │   └───core <br/>
+            │       ├───handlers <br/>
+            │       ├───routers <br/>
+            │       └───tests <br/>
+            ├───frontend <br/>
+            │   └───ui <br/>
+            │       ├───.svelte-kit <br/>
+            │       ├───src <br/>
+            │       │   ├───lib <br/>
+            │       │   └───routes <br/>
+            │       └───tests <br/>
             └───tests
         </p>
 </div>
