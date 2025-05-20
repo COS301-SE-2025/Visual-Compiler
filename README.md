@@ -16,6 +16,10 @@
   [Admin](https://github.com/orgs/COS301-SE-2025/projects/173)
 </div>
 
+<div align="center">
+    <h2>Folder Structure</h2>
+</div>
+
 ## Team Members
 
 <details>
