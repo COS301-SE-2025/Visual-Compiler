@@ -1,10 +1,14 @@
 package main
 
-func main() {
-	// r := routers.SetupRouter()
+import (
+	"log"
+)
 
-	// log.Println("Starting backend server on: http://localhost:8080")
-	// if error := r.Run(":8080"); error != nil {
-	// 	log.Fatalf("Error starting server: %v", error)
-	// }
+func main() {
+	router := routers.setupRouter()
+
+	log.Println("Starting backend server on: http://localhost:8080")
+	if error := router.Run(":8080"); error != nil {
+		log.Fatalf("Error starting server: %v", error)
+	}
 }
