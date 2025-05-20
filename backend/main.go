@@ -1,7 +1,5 @@
 package main
 
-// "log"
-
 func main() {
 	// r := routers.SetupRouter()
 
