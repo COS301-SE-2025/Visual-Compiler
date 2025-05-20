@@ -18,7 +18,6 @@
 
 <div align="center">
     <h2>Folder Structure</h2>
-    ```
         ├───.github
         │   └───workflows
         ├───assets
@@ -43,7 +42,6 @@
             │       │   └───routes
             │       └───tests
             └───tests
-    ```
 </div>
 
 ## Team Members
