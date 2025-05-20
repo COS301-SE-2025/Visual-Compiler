@@ -19,7 +19,7 @@
 <div align="center">
     <h2>Folder Structure</h2>
         <p>
-        ├───.github
+        ├───.github <br/>
         │   └───workflows
         ├───assets
         ├───docker-compose.yml
