@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func userHandler(c *gin.Context) {
+func Register(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": "good",
 	})
