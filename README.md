@@ -71,6 +71,7 @@
                 <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white"></a>
             <a href="https://github.com/sashen-tv">
                 <img src="https://img.shields.io/badge/github-%23181717.svg?style=for-the-badge&logo=github&logoColor=white"></a>
+            <br>
         </td>
     </tr>
     <tr>
@@ -87,6 +88,7 @@
                 <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white"></a>
             <a href="https://github.com/Au5tin-R">
                 <img src="https://img.shields.io/badge/github-%23181717.svg?style=for-the-badge&logo=github&logoColor=white"></a>
+            <br>
         </td>
     </tr>
     <tr>
@@ -103,6 +105,7 @@
                 <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white"></a>
             <a href="https://github.com/Tia-H">
                 <img src="https://img.shields.io/badge/github-%23181717.svg?style=for-the-badge&logo=github&logoColor=white"></a>
+            <br>
         </td>
     </tr>
     <tr>
@@ -119,6 +122,7 @@
                 <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white"></a>
             <a href="https://github.com/Keanu-Ellary">
                 <img src="https://img.shields.io/badge/github-%23181717.svg?style=for-the-badge&logo=github&logoColor=white"></a>
+            <br>
         </td>
     </tr>
     <tr>
@@ -135,6 +139,7 @@
                 <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white"></a>
             <a href="https://github.com/DevanDewet">
                 <img src="https://img.shields.io/badge/github-%23181717.svg?style=for-the-badge&logo=github&logoColor=white"></a>
+            <br>
         </td>
     </tr>
 </table>
