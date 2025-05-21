@@ -1,88 +1,90 @@
 <script lang="ts">
-  let activeTab: 'login' | 'register' = 'login';
-  let showPassword = false;
-  let showConfirmPassword = false;
+  let active_tab: 'login' | 'register' = 'login';
+  let show_password = false;
+  let show_confirm_password = false;
 
-  // Registration fields
-  let regUsername = '';
-  let regEmail = '';
-  let regPassword = '';
-  let regConfirmPassword = '';
+  let reg_username = '';
+  let reg_email = '';
+  let reg_password = '';
+  let reg_confirm_password = '';
 
-  // Login fields
-  let loginEmail = '';
-  let loginPassword = '';
+  let login_username = '';
+  let login_password = '';
 
-  function handleRegister(event: Event) {
+  $: is_login_button_disabled = !login_username.trim() || !login_password.trim();
+  $: is_register_button_disabled = !reg_username.trim() || !reg_email.trim() || 
+      !reg_password.trim() || !reg_confirm_password.trim();
+
+  const disabled_icon_path = '/disabled_state.png';
+  const enabled_icon_path = '/enabled_state.png';
+
+  function handle_register(event: Event) {
     event.preventDefault();
-    if (regPassword !== regConfirmPassword) {
+    if (reg_password !== reg_confirm_password) {
       alert("Passwords don't match!");
       return;
     }
-    console.log('Register', { regUsername, regEmail, regPassword });
+    console.log('Register', { reg_username, reg_email, reg_password });
   }
 
-  function handleLogin(event: Event) {
+  function handle_login(event: Event) {
     event.preventDefault();
-    console.log('Login', { loginEmail, loginPassword });
+    if (is_login_button_disabled) return;
+    console.log('Login', { login_username, login_password });
   }
 
-  function togglePasswordVisibility() {
-    showPassword = !showPassword;
+  function toggle_password_visibility() {
+    show_password = !show_password;
   }
 
-  function toggleConfirmPasswordVisibility() {
-    showConfirmPassword = !showConfirmPassword;
+  function toggle_confirm_password_visibility() {
+    show_confirm_password = !show_confirm_password;
   }
 </script>
 
 <div class="video-background">
   <video autoplay muted loop playsinline>
-    <source src="/videos/auth-bg.mp4" type="video/mp4">
-    <img src="/images/auth-bg-fallback.jpg" alt="Background">
+    <source src="/backgrounds.mp4" type="video/mp4">
   </video>
 
   <div class="container">
     <aside class="side-panel">
       <div class="logo">
-        <svg viewBox="0 0 24 24" width="40" height="40">
-          <path fill="#3b82f6" d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-        </svg>
-        <h2>Your Brand</h2>
+      <img src="/half_stack.png" alt="Brand Logo" width="80" height="80" class="brand-logo"/>
       </div>
 
       <nav class="tab-nav">
-        <button class:active={activeTab === 'login'} on:click={() => (activeTab = 'login')}>
+        <button class:active={active_tab === 'login'} on:click={() => (active_tab = 'login')}>
           Login
         </button>
-        <button class:active={activeTab === 'register'} on:click={() => (activeTab = 'register')}>
+        <button class:active={active_tab === 'register'} on:click={() => (active_tab = 'register')}>
           Register
         </button>
       </nav>
 
       <section class="tab-content">
-        {#if activeTab === 'login'}
-          <form on:submit={handleLogin}>
+        {#if active_tab === 'login'}
+          <form on:submit={handle_login}>
             <div class="input-group">
               <input
-                type="email"
-                id="loginEmail"
-                bind:value={loginEmail}
+                type="text"
+                id="loginUsername"
+                bind:value={login_username}
                 placeholder=" "
                 required
               />
-              <label for="loginEmail">Email</label>
+              <label for="loginUsername">Username</label>
               <svg class="input-icon" viewBox="0 0 24 24">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
               </svg>
             </div>
 
             <div class="input-group">
               <input
-                type={showPassword ? 'text' : 'password'}
+                type={show_password ? 'text' : 'password'}
                 id="loginPassword"
-                bind:value={loginPassword}
+                bind:value={login_password}
                 placeholder=" "
                 required
               />
@@ -91,9 +93,9 @@
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
-              <button type="button" class="show-password" on:click={togglePasswordVisibility}>
+              <button type="button" class="show-password" on:click={toggle_password_visibility}>
                 <svg viewBox="0 0 24 24" width="20" height="20">
-                  {#if showPassword}
+                  {#if show_password}
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                   {:else}
@@ -104,15 +106,26 @@
               </button>
             </div>
 
-            <button type="submit" class="primary-btn">Login</button>
+            <button
+              type="submit"
+              class="icon-submit-btn"
+              disabled={is_login_button_disabled}
+              aria-label="Login"
+            >
+              <img
+                src={is_login_button_disabled ? disabled_icon_path : enabled_icon_path}
+                alt={is_login_button_disabled ? 'Login disabled' : 'Login enabled'}
+                class="login-action-icon"
+              />
+            </button>
           </form>
         {:else}
-          <form on:submit={handleRegister}>
+          <form on:submit={handle_register}>
             <div class="input-group">
               <input
                 type="text"
                 id="regUsername"
-                bind:value={regUsername}
+                bind:value={reg_username}
                 placeholder=" "
                 required
               />
@@ -127,7 +140,7 @@
               <input
                 type="email"
                 id="regEmail"
-                bind:value={regEmail}
+                bind:value={reg_email}
                 placeholder=" "
                 required
               />
@@ -140,9 +153,9 @@
 
             <div class="input-group">
               <input
-                type={showPassword ? 'text' : 'password'}
+                type={show_password ? 'text' : 'password'}
                 id="regPassword"
-                bind:value={regPassword}
+                bind:value={reg_password}
                 placeholder=" "
                 required
               />
@@ -151,9 +164,9 @@
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
-              <button type="button" class="show-password" on:click={togglePasswordVisibility}>
+              <button type="button" class="show-password" on:click={toggle_password_visibility}>
                 <svg viewBox="0 0 24 24" width="20" height="20">
-                  {#if showPassword}
+                  {#if show_password}
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                   {:else}
@@ -167,9 +180,9 @@
 
             <div class="input-group">
               <input
-                type={showConfirmPassword ? 'text' : 'password'}
+                type={show_confirm_password ? 'text' : 'password'}
                 id="regConfirmPassword"
-                bind:value={regConfirmPassword}
+                bind:value={reg_confirm_password}
                 placeholder=" "
                 required
               />
@@ -178,9 +191,9 @@
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
-              <button type="button" class="show-password" on:click={toggleConfirmPasswordVisibility}>
+              <button type="button" class="show-password" on:click={toggle_confirm_password_visibility}>
                 <svg viewBox="0 0 24 24" width="20" height="20">
-                  {#if showConfirmPassword}
+                  {#if show_confirm_password}
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                   {:else}
@@ -191,7 +204,18 @@
               </button>
             </div>
 
-            <button type="submit" class="primary-btn">Create Account</button>
+            <button
+              type="submit"
+              class="icon-submit-btn"
+              disabled={is_register_button_disabled}
+              aria-label="Register"
+            >
+              <img
+                src={is_register_button_disabled ? disabled_icon_path : enabled_icon_path}
+                alt={is_register_button_disabled ? 'Register disabled' : 'Register enabled'}
+                class="login-action-icon"
+              />
+            </button>
           </form>
         {/if}
       </section>
@@ -199,9 +223,7 @@
 
     <main class="main-content">
       <div class="feature-quote">
-        <h1>Welcome to Our Platform</h1>
-        <p>"The best way to predict the future is to create it."</p>
-        <p>- Peter Drucker</p>
+        <h1>Visual Compiler</h1>
       </div>
     </main>
   </div>
@@ -230,7 +252,7 @@
     min-width: 100%;
     min-height: 100%;
     z-index: -1;
-    object-fit: cover;
+    object-fit: contain;
     opacity: 0.9;
   }
 
@@ -241,11 +263,12 @@
   }
 
   .side-panel {
-    width: 450px;
-    background: rgba(255, 255, 255, 0.97);
-    padding: 3rem 2.5rem;
+    width: 340px;
+    background: rgba(255, 255, 255, 0.4);
+    padding: 2rem 1.75rem;
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
     overflow-y: auto;
+    backdrop-filter: blur(8px);
   }
 
   .logo {
@@ -254,10 +277,15 @@
     color: #111827;
   }
 
-  .logo h2 {
-    margin-top: 0.5rem;
-    font-size: 1.5rem;
-    font-weight: 600;
+  .brand-logo {
+    width: 275px;
+    height: 150px;
+    object-fit: contain;
+    transition: transform 0.2s ease;
+  }
+
+  .brand-logo:hover {
+    transform: scale(1.05);
   }
 
   .tab-nav {
@@ -280,33 +308,37 @@
   }
 
   .tab-nav button.active {
-    border-bottom-color: #3b82f6;
-    color: #3b82f6;
+    border-bottom-color: #041562;
+    color: #041562;
     font-weight: 600;
   }
 
-  .tab-nav button:hover {
-    color: #3b82f6;
+  .tab-nav button:hover:not(.active) {
+    color: #041562;
   }
 
   .tab-content form {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1.25rem;
+    align-items: center;
   }
 
   .input-group {
     position: relative;
     margin-bottom: 0.5rem;
+    width: 280px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .input-icon {
     position: absolute;
-    left: 12px;
+    left: 10px;
     top: 50%;
     transform: translateY(-50%);
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     stroke: #9ca3af;
     stroke-width: 2;
     stroke-linecap: round;
@@ -318,14 +350,14 @@
 
   .input-group input {
     width: 100%;
-    padding: 1.5rem 1rem 0.5rem 40px;
-    font-size: 1rem;
+    padding: 1rem 1rem 0.25rem 36px;
+    font-size: 0.875rem;
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    background: #fff;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.9);
     transition: all 0.2s ease;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    height: 56px;
+    height: 42px;
     box-sizing: border-box;
     position: relative;
     z-index: 1;
@@ -337,11 +369,11 @@
 
   .input-group label {
     position: absolute;
-    left: 40px;
+    left: 36px;
     top: 50%;
     transform: translateY(-50%);
     color: #9ca3af;
-    font-size: 1rem;
+    font-size: 0.875rem;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     pointer-events: none;
     z-index: 1;
@@ -349,21 +381,21 @@
   }
 
   .input-group input:focus {
-    border-color: #3b82f6;
+    border-color: #041562;
     outline: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 0 0 3px rgba(4, 21, 98, 0.2);
   }
 
   .input-group input:focus ~ .input-icon {
-    stroke: #3b82f6;
+    stroke: #041562;
   }
 
   .input-group input:focus ~ label,
   .input-group input:not(:placeholder-shown) ~ label {
-    transform: translateY(-20px) scale(0.75); /* Increased from -12px to -20px and scale from 0.85 to 0.75 */
-    left: 42px;
-    color: #3b82f6;
-    background: #fff;
+    color: #041562;
+    transform: translateY(-20px) scale(0.75);
+    left: 38px;
+    background: rgba(255, 255, 255, 0.9);
     padding: 0 4px;
     z-index: 3;
   }
@@ -391,7 +423,7 @@
   }
 
   .show-password:hover {
-    color: #3b82f6;
+    color: #041562;
   }
 
   .show-password svg {
@@ -419,22 +451,74 @@
   }
 
   .primary-btn {
-    padding: 0.875rem;
-    font-size: 1rem;
+    width: 280px;
+    padding: 0.75rem;
+    font-size: 0.875rem;
     font-weight: 500;
-    background: #3b82f6;
+    background: #041562;
     color: #fff;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
     margin-top: 0.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 
-  .primary-btn:hover {
-    background: #2563eb;
+  .primary-btn:hover:not(:disabled) {
+    background: #030f45;
     transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+    box-shadow: 0 4px 6px -1px rgba(4, 21, 98, 0.2);
+  }
+
+  .primary-btn:disabled {
+    background-color: #a0aec0;
+    color: #e2e8f0;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .icon-submit-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    width: auto;
+    height: auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+  }
+
+  .login-action-icon {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    display: block;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+
+  .icon-submit-btn:hover:not(:disabled) .login-action-icon {
+    transform: scale(1.1);
+  }
+
+  .icon-submit-btn:focus:not(:disabled) {
+    outline: 2px solid #041562;
+    outline-offset: 2px;
+  }
+
+  .icon-submit-btn:disabled .login-action-icon {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .icon-submit-btn:disabled {
+    cursor: not-allowed;
   }
 
   .main-content {
@@ -478,20 +562,16 @@
 
     .side-panel {
       width: 100%;
-      padding: 2rem 1.5rem;
+      padding: 1.5rem 1rem;
     }
 
-    .main-content {
-      display: none;
+    .input-group,
+    .primary-btn,
+    .icon-submit-btn {
+      max-width: 280px;
     }
-
-    .input-group input {
-      padding: 1.25rem 1rem 0.5rem 40px;
-    }
-
-    .input-group input:focus ~ label,
-    .input-group input:not(:placeholder-shown) ~ label {
-      transform: translateY(-16px) scale(0.75); /* Adjusted for mobile */
+     .tab-content form {
+      align-items: center;
     }
   }
 </style>
