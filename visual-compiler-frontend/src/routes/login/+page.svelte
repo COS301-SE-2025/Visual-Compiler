@@ -12,7 +12,6 @@
   // Login fields
   let loginEmail = '';
   let loginPassword = '';
-  let rememberMe = false;
 
   function handleRegister(event: Event) {
     event.preventDefault();
@@ -25,7 +24,7 @@
 
   function handleLogin(event: Event) {
     event.preventDefault();
-    console.log('Login', { loginEmail, loginPassword, rememberMe });
+    console.log('Login', { loginEmail, loginPassword });
   }
 
   function togglePasswordVisibility() {
@@ -105,32 +104,7 @@
               </button>
             </div>
 
-            <div class="options">
-              <label>
-                <input type="checkbox" bind:checked={rememberMe} />
-                Remember me
-              </label>
-              <a href="/forgot-password">Forgot password?</a>
-            </div>
-
             <button type="submit" class="primary-btn">Login</button>
-
-            <div class="divider">or continue with</div>
-
-            <div class="social-login">
-              <button type="button" class="social-btn google">
-                <svg viewBox="0 0 24 24" width="18" height="18">
-                  <path d="M21.35 11.1h-9.17v2.73h6.51c-.33 3.81-3.5 5.44-6.5 5.44C8.36 19.27 5 16.25 5 12c0-4.1 3.2-7.27 7.2-7.27 3.09 0 4.9 1.97 4.9 1.97L19 4.72S16.56 2 12.1 2C6.42 2 2.03 6.8 2.03 12c0 5.05 4.13 10 10.22 10 5.35 0 9.25-3.67 9.25-9.09 0-1.15-.15-1.81-.15-1.81z"/>
-                </svg>
-                Google
-              </button>
-              <button type="button" class="social-btn github">
-                <svg viewBox="0 0 24 24" width="18" height="18">
-                  <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
-                </svg>
-                GitHub
-              </button>
-            </div>
           </form>
         {:else}
           <form on:submit={handleRegister}>
@@ -218,10 +192,6 @@
             </div>
 
             <button type="submit" class="primary-btn">Create Account</button>
-
-            <div class="terms">
-              By registering, you agree to our <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>
-            </div>
           </form>
         {/if}
       </section>
@@ -390,7 +360,7 @@
 
   .input-group input:focus ~ label,
   .input-group input:not(:placeholder-shown) ~ label {
-    transform: translateY(-12px) scale(0.85);
+    transform: translateY(-20px) scale(0.75); /* Increased from -12px to -20px and scale from 0.85 to 0.75 */
     left: 42px;
     color: #3b82f6;
     background: #fff;
@@ -448,40 +418,6 @@
     transform: translateY(0);
   }
 
-  .options {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin-top: -0.5rem;
-  }
-
-  .options label {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-  }
-
-  .options input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: #3b82f6;
-    cursor: pointer;
-  }
-
-  .options a {
-    color: #6b7280;
-    text-decoration: none;
-    transition: color 0.2s ease;
-  }
-
-  .options a:hover {
-    color: #3b82f6;
-    text-decoration: underline;
-  }
-
   .primary-btn {
     padding: 0.875rem;
     font-size: 1rem;
@@ -499,82 +435,6 @@
     background: #2563eb;
     transform: translateY(-1px);
     box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
-  }
-
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    color: #9ca3af;
-    font-size: 0.875rem;
-    margin: 1rem 0;
-  }
-
-  .divider::before,
-  .divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: #e5e7eb;
-  }
-
-  .social-login {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .social-btn {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.75rem;
-    font-size: 0.875rem;
-    background: #fff;
-    color: #374151;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .social-btn:hover {
-    background: #f9fafb;
-    border-color: #d1d5db;
-  }
-
-  .social-btn svg {
-    width: 18px;
-    height: 18px;
-  }
-
-  .social-btn.google svg {
-    fill: #4285F4;
-  }
-
-  .social-btn.github svg {
-    fill: #333;
-  }
-
-  .terms {
-    font-size: 0.75rem;
-    color: #9ca3af;
-    text-align: center;
-    margin-top: 1.5rem;
-    line-height: 1.5;
-  }
-
-  .terms a {
-    color: #4b5563;
-    text-decoration: none;
-    transition: color 0.2s ease;
-  }
-
-  .terms a:hover {
-    color: #3b82f6;
-    text-decoration: underline;
   }
 
   .main-content {
@@ -631,7 +491,7 @@
 
     .input-group input:focus ~ label,
     .input-group input:not(:placeholder-shown) ~ label {
-      transform: translateY(-10px) scale(0.85);
+      transform: translateY(-16px) scale(0.75); /* Adjusted for mobile */
     }
   }
 </style>
