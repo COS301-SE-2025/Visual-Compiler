@@ -17,7 +17,7 @@
 </div>
 
 <div align="center">
-    <h2>Folder Structure</h2>
+    <h2>Repository Structure</h2>
 </div>
 
 ```
@@ -34,6 +34,7 @@
         │   │   ├───📁routers
         │   │   └───📁tests
         │   └───📁core
+        │       ├───📁db
         │       ├───📁services
         │       └───📁tests
         ├───📁frontend
