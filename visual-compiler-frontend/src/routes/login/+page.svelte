@@ -18,13 +18,47 @@
   const disabled_icon_path = '/disabled_state.png';
   const enabled_icon_path = '/enabled_state.png';
 
-  function handle_register(event: Event) {
+  async function handle_register(event: Event) {
     event.preventDefault();
+
     if (reg_password !== reg_confirm_password) {
       alert("Passwords don't match!");
       return;
     }
-    console.log('Register', { reg_username, reg_email, reg_password });
+
+    try {
+      const response = await fetch("http://localhost:8080/api/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          email: reg_email,
+          username: reg_username,
+          password: reg_password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(`Registration failed: ${data.error || response.statusText}`);
+        return;
+      }
+
+      alert(data.message || "Registration successful!");
+
+      // Reset the form
+      reg_email = '';
+      reg_username = '';
+      reg_password = '';
+      reg_confirm_password = '';
+
+      active_tab = 'login';
+
+    } catch (error) {
+      alert(`Something went wrong: ${(error as Error).message}`);
+    }
   }
 
   function handle_login(event: Event) {
