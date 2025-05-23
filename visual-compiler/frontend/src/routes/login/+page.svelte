@@ -369,13 +369,13 @@
   }
 
   .tab-nav button.active {
-    border-bottom-color: #041562;
-    color: #041562;
+    border-bottom-color: #041a47;
+    color: #041a47;
     font-weight: 600;
   }
 
   .tab-nav button:hover:not(.active) {
-    color: #041562;
+    color: #041a47;
   }
 
   .tab-content form {
@@ -442,18 +442,18 @@
   }
 
   .input-group input:focus {
-    border-color: #041562;
+    border-color: #041a47;
     outline: none;
     box-shadow: 0 0 0 3px rgba(4, 21, 98, 0.2);
   }
 
   .input-group input:focus ~ .input-icon {
-    stroke: #041562;
+    stroke: #041a47;
   }
 
   .input-group input:focus ~ label,
   .input-group input:not(:placeholder-shown) ~ label {
-    color: #041562;
+    color: #041a47;
     transform: translateY(-20px) scale(0.75);
     left: 38px;
     background: rgba(255, 255, 255, 0.9);
@@ -484,7 +484,7 @@
   }
 
   .show-password:hover {
-    color: #041562;
+    color: #041a47;
   }
 
   .show-password svg {
@@ -516,7 +516,7 @@
     padding: 0.75rem;
     font-size: 0.875rem;
     font-weight: 500;
-    background: #041562;
+    background: #041a47;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -569,7 +569,7 @@
   }
 
   .icon-submit-btn:focus:not(:disabled) {
-    outline: 2px solid #041562;
+    outline: 2px solid #041a47;
     outline-offset: 2px;
   }
 
