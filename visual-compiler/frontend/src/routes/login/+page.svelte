@@ -1,4 +1,7 @@
 <script lang="ts">
+
+  import { addToast } from '$lib/stores/toast';
+
   let active_tab: 'login' | 'register' = 'login';
   let show_password = false;
   let show_confirm_password = false;
@@ -22,7 +25,7 @@
     event.preventDefault();
 
     if (reg_password !== reg_confirm_password) {
-      alert("Passwords don't match!");
+      addToast("Passwords don't match!", "error");
       return;
     }
 
@@ -42,11 +45,11 @@
       const data = await response.json();
 
       if (!response.ok) {
-        alert(`Registration failed: ${data.error || response.statusText}`);
+        addToast(`Registration failed: ${data.error || response.statusText}`, "error");
         return;
       }
 
-      alert(data.message || "Registration successful!");
+      addToast(data.message || "Registration successful!", "success");
 
       // Reset the form
       reg_email = '';
@@ -57,42 +60,42 @@
       active_tab = 'login';
 
     } catch (error) {
-      alert(`Something went wrong: ${(error as Error).message}`);
+      addToast(`Something went wrong: ${(error as Error).message}`, "error");
     }
   }
+ 
 
   async function handle_login(event: Event) {
-    event.preventDefault();
-    if (is_login_button_disabled) return;
+  event.preventDefault();
+  if (is_login_button_disabled) return;
 
-    try {
-        const response = await fetch("http://localhost:8080/api/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                login: login_username,
-                password: login_password
-            })
-        });
+  try {
+    const response = await fetch("http://localhost:8080/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        login: login_username,
+        password: login_password
+      })
+    });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            alert(`Login failed: ${data.error || response.statusText}`);
-            return;
-        }
-
-        // Handle successful login
-        alert("Login successful!");
-        // TODO: Store the token/session data if provided
-        // TODO: Redirect to dashboard or home page
-
-    } catch (error) {
-        alert(`Something went wrong: ${(error as Error).message}`);
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      addToast(`Login failed: ${data.error || response.statusText}`, "error");
+      return;
     }
+
+    addToast("Login successful!", "success");
+
+    // TODO: Store the token/session data if provided
+    // TODO: Redirect to dashboard or home page
+
+  } catch (error) {
+    addToast(`Something went wrong: ${(error as Error).message}`, "error");
   }
+}
 
   function toggle_password_visibility() {
     show_password = !show_password;
@@ -284,7 +287,7 @@
 
     <main class="main-content">
       <div class="feature-quote">
-        <h1>Visual Compiler</h1>
+        <h1 class="app-title">Visual Compiler</h1>
       </div>
     </main>
   </div>
@@ -635,4 +638,11 @@
       align-items: center;
     }
   }
+
+  .app-title {
+  font-size: 4rem;
+  color: #041a47;
+  font-weight: 800;
+  margin-bottom: 2rem;
+}
 </style>
