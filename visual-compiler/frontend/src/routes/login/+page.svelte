@@ -593,31 +593,9 @@
     padding: 2rem;
   }
 
-  .feature-quote {
-    max-width: 600px;
-    text-align: center;
-    color: white;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  }
+  
 
-  .feature-quote h1 {
-    font-size: 2.5rem;
-    margin-bottom: 1.5rem;
-    font-weight: 700;
-    line-height: 1.2;
-  }
-
-  .feature-quote p {
-    font-size: 1.25rem;
-    margin: 0.5rem 0;
-    opacity: 0.9;
-    line-height: 1.6;
-  }
-
-  .feature-quote p:last-child {
-    font-style: italic;
-    opacity: 0.8;
-  }
+  
 
   @media (max-width: 768px) {
     .container {
@@ -640,9 +618,11 @@
   }
 
   .app-title {
-  font-size: 4rem;
-  color: #041a47;
-  font-weight: 800;
-  margin-bottom: 2rem;
+  font-size: 5rem; 
+  font-weight: 900;
+  margin: 0 auto;
+  line-height: 1.1;
+  color:#1d3159 ;
 }
+
 </style>
