@@ -61,10 +61,37 @@
     }
   }
 
-  function handle_login(event: Event) {
+  async function handle_login(event: Event) {
     event.preventDefault();
     if (is_login_button_disabled) return;
-    console.log('Login', { login_username, login_password });
+
+    try {
+        const response = await fetch("http://localhost:8080/api/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                login: login_username,
+                password: login_password
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(`Login failed: ${data.error || response.statusText}`);
+            return;
+        }
+
+        // Handle successful login
+        alert("Login successful!");
+        // TODO: Store the token/session data if provided
+        // TODO: Redirect to dashboard or home page
+
+    } catch (error) {
+        alert(`Something went wrong: ${(error as Error).message}`);
+    }
   }
 
   function toggle_password_visibility() {
