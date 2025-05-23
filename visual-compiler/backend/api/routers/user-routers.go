@@ -11,7 +11,7 @@ func SetupRouter() *gin.Engine {
 	api := r.Group("/api")
 	{
 		api.POST("/register", handlers.Register)
-		api.GET("/login", handlers.Login)
+		api.POST("/login", handlers.Login)
 	}
 
 	return r
