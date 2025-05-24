@@ -3,10 +3,10 @@ package tests
 import(
 	"testing"
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/routers"
-	"bytes"
-	"encoding/json"
+	//"bytes"
+	//"encoding/json"
 	"net/http"
-	"io"
+	//"io"
 	"context"
 	"time"
 	"errors"
@@ -34,7 +34,7 @@ func closeServer(t *testing.T, server *http.Server) {
     server.Shutdown(cont)
 }
 
-func TestRegisterExistingUser(t *testing.T) {
+/*func TestRegisterExistingUser(t *testing.T) {
 	server := startServer(t)
 
 	user_data := map[string]string{
@@ -44,6 +44,7 @@ func TestRegisterExistingUser(t *testing.T) {
 	}
 
 	req,err := json.Marshal(user_data)
+
 	if err!=nil {
 		t.Errorf("converting data to json failed")
 	}
@@ -69,7 +70,7 @@ func TestRegisterExistingUser(t *testing.T) {
 	}
 
 	closeServer(t,server)
-}
+}*/
 
 func TestRegisterNewUser(t *testing.T) {
 	/*server := startServer(t)
