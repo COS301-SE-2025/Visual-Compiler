@@ -1,34 +1,31 @@
 <script lang="ts">
-  import NavBar     from '$lib/components/NavBar.svelte';
-  import Toolbox    from '$lib/components/Toolbox.svelte';
-  import CodeInput  from '$lib/components/CodeInput.svelte';
-  import Canvas     from '$lib/components/Canvas.svelte';
+  import NavBar from '$lib/components/NavBar.svelte';
+  import Toolbox from '$lib/components/Toolbox.svelte';
+  import CodeInput from '$lib/components/CodeInput.svelte';
+  import DrawerCanvas from '$lib/components/DrawerCanvas.svelte';
+  import type { NodeType } from '$lib/components/Toolbox.svelte';
 
-  // import PhaseTutorial  from '$lib/components/PhaseTutorial.svelte';
-  // import PhaseInspector from '$lib/components/PhaseInspector.svelte';
-  // import ArtifactViewer from '$lib/components/ArtifactViewer.svelte';
-
-  // CodeInput
-   let sourceCode = '';
+  let sourceCode = '';
 
   function onCodeSubmitted(event: CustomEvent<string>) {
     sourceCode = event.detail;
   }
 
-
-
-
-
+  function handleBlockClick(event: CustomEvent<{ type: NodeType }>) {
+    window.dispatchEvent(new CustomEvent('globalCreateNode', { 
+      detail: { type: event.detail.type } 
+    }));
+  }
 </script>
 
 <NavBar />
 
-<div class="main">
-  <Toolbox />
-
+<div class="main-layout">
+  <Toolbox on:blockClick={handleBlockClick} />
+  
   <div class="workspace">
     <CodeInput on:codeSubmitted={onCodeSubmitted} />
-    <Canvas />
+    <DrawerCanvas {sourceCode} />
   </div>
 </div>
 
@@ -38,10 +35,11 @@
     padding: 0;
   }
 
-  .main {
+  .main-layout {
     display: flex;
     height: calc(100vh - 3rem);
   }
+
   .workspace {
     flex: 1;
     display: flex;
