@@ -75,13 +75,14 @@
 
   textarea {
     resize: vertical;
-    padding: 1rem;
+    padding: 0.4rem;
     font-family: Menlo, Monaco, 'Courier New', monospace;
-    font-size: 0.95rem;
-    line-height: 0.3;
+    font-size: 0.9rem;
+    line-height: 1.2;
     border: 1px solid #ccc;
     border-radius: 4px;
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+    height: 86px;
   }
 
   .controls {
