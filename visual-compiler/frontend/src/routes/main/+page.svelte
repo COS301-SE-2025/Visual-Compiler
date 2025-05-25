@@ -4,32 +4,42 @@
   import CodeInput  from '$lib/components/CodeInput.svelte';
   import Canvas     from '$lib/components/Canvas.svelte';
 
-  // import PhaseTutorial  from '$lib/components/PhaseTutorial.svelte';
-  // import PhaseInspector from '$lib/components/PhaseInspector.svelte';
-  // import ArtifactViewer from '$lib/components/ArtifactViewer.svelte';
+  import PhaseTutorial  from '$lib/components/PhaseTutorial.svelte';
+  import PhaseInspector from '$lib/components/PhaseInspector.svelte';
+  import ArtifactViewer from '$lib/components/ArtifactViewer.svelte';
 
   // CodeInput
    let sourceCode = '';
+   let codeSubmitted = false;
 
   function onCodeSubmitted(event: CustomEvent<string>) {
     sourceCode = event.detail;
+    codeSubmitted = true;
   }
 
-
-
-
-
+  // Function to go back to the code input view
+  function returnToEditor() {
+    codeSubmitted = false;
+  }
 </script>
 
 <NavBar />
 
 <div class="main">
-  <Toolbox />
-
-  <div class="workspace">
-    <CodeInput on:codeSubmitted={onCodeSubmitted} />
-    <Canvas />
-  </div>
+  {#if !codeSubmitted}
+    <Toolbox />
+    <div class="workspace">
+      <CodeInput on:codeSubmitted={onCodeSubmitted} />
+      <Canvas />
+    </div>
+  {:else}
+    <div class="analysis-view">
+      <PhaseTutorial />
+      <PhaseInspector {sourceCode} />
+      <ArtifactViewer />
+      <button on:click={returnToEditor} class="return-button">Return to Editor</button>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -42,9 +52,33 @@
     display: flex;
     height: calc(100vh - 3rem);
   }
+
   .workspace {
     flex: 1;
     display: flex;
     flex-direction: column;
+  }
+
+  .analysis-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .return-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background: #205781;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 1000;
+  }
+
+  .return-button:hover {
+    background: #27548A;
   }
 </style>
