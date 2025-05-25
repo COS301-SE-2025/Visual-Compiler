@@ -1,9 +1,9 @@
 <script lang="ts">
-  import NavBar from '$lib/components/NavBar.svelte';
-  import Toolbox from '$lib/components/Toolbox.svelte';
-  import CodeInput from '$lib/components/CodeInput.svelte';
+  import NavBar       from '$lib/components/NavBar.svelte';
+  import Toolbox      from '$lib/components/Toolbox.svelte';
+  import CodeInput    from '$lib/components/CodeInput.svelte';
   import DrawerCanvas from '$lib/components/DrawerCanvas.svelte';
-  import type { NodeType } from '$lib/components/Toolbox.svelte';
+  import type { NodeType } from '$lib/types';
 
   let sourceCode = '';
 
@@ -11,18 +11,21 @@
     sourceCode = event.detail;
   }
 
-  function handleBlockClick(event: CustomEvent<{ type: NodeType }>) {
-    window.dispatchEvent(new CustomEvent('globalCreateNode', { 
-      detail: { type: event.detail.type } 
-    }));
+  // Accept a plain string (the event.detail), then cast it
+  function forwardNodeEvent(type: string) {
+    const nodeType = type as NodeType;
+    window.dispatchEvent(
+      new CustomEvent('createCanvasNode', { detail: { type: nodeType } })
+    );
   }
 </script>
 
 <NavBar />
 
 <div class="main-layout">
-  <Toolbox on:blockClick={handleBlockClick} />
-  
+  <!-- now matches (e: string) => void exactly -->
+  <Toolbox on:blockClick={forwardNodeEvent} />
+
   <div class="workspace">
     <CodeInput on:codeSubmitted={onCodeSubmitted} />
     <DrawerCanvas {sourceCode} />

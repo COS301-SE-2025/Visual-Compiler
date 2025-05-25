@@ -1,0 +1,1 @@
+export type NodeType = 'lexing' | 'parsing' | 'analysis';

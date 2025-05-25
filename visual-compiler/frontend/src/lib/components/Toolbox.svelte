@@ -1,12 +1,10 @@
-<script context="module" lang="ts">
-  export type NodeType = 'lexing' | 'parsing' | 'analysis';
-</script>
-
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  
+  import type { NodeType } from '$lib/types';
+
+  // Dispatch simple string events
   const dispatch = createEventDispatcher<{
-    blockClick: { type: NodeType };
+    blockClick: NodeType; // Using string type
   }>();
 
   const nodeTypes: {id: NodeType, label: string}[] = [
@@ -16,7 +14,7 @@
   ];
 
   function createNode(type: NodeType) {
-    dispatch('blockClick', { type });
+    dispatch('blockClick', type); // Send just the string
   }
 </script>
 
@@ -27,8 +25,6 @@
     </button>
   {/each}
 </div>
-
-
 <style>
   .toolbox {
     width: 200px;

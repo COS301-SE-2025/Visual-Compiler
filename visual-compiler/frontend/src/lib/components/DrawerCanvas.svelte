@@ -2,7 +2,7 @@
   import { Node, Svelvet } from 'svelvet';
   import { writable } from 'svelte/store';
   import { onMount } from 'svelte';
-  import type { NodeType } from '$lib/components/Toolbox.svelte';
+  import type { NodeType } from '$lib/types';
 
   export let sourceCode: string;
 
@@ -19,7 +19,10 @@
 
   onMount(() => {
     const handleCreateNode = (event: Event) => {
-      const { type } = (event as CustomEvent<{ type: NodeType }>).detail;
+      const detail = (event as CustomEvent).detail;
+      if (!detail || !detail.type) return;
+      
+      const type: NodeType = detail.type;
       nodeCounter += 1;
       
       nodes.update(current => [
@@ -36,10 +39,10 @@
       ]);
     };
 
-    window.addEventListener('globalCreateNode', handleCreateNode);
+    window.addEventListener('createCanvasNode', handleCreateNode);
     
     return () => {
-      window.removeEventListener('globalCreateNode', handleCreateNode);
+      window.removeEventListener('createCanvasNode', handleCreateNode);
     };
   });
 </script>
