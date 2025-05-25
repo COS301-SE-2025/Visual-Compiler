@@ -2,7 +2,7 @@
   import { toasts } from '$lib/stores/toast';
   import { fly } from 'svelte/transition';
 
-  export let position = 'top-right'; // future-proofing for placement if needed
+  
 </script>
 
 <style>

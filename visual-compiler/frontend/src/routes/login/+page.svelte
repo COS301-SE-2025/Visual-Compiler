@@ -1,7 +1,8 @@
 <script lang="ts">
 
   import { addToast } from '$lib/stores/toast';
-
+  import { goto } from '$app/navigation';
+  
   let active_tab: 'login' | 'register' = 'login';
   let show_password = false;
   let show_confirm_password = false;
@@ -90,7 +91,7 @@
     addToast("Login successful!", "success");
 
     // TODO: Store the token/session data if provided
-    // TODO: Redirect to dashboard or home page
+    await goto('/main');
 
   } catch (error) {
     addToast(`Something went wrong: ${(error as Error).message}`, "error");
@@ -114,7 +115,7 @@
   <div class="container">
     <aside class="side-panel">
       <div class="logo">
-      <img src="/half_stack.png" alt="Brand Logo" width="80" height="80" class="brand-logo"/>
+      <img src="/half_stack_blue.png" alt="Brand Logo" width="80" height="80" class="brand-logo"/>
       </div>
 
       <nav class="tab-nav">
@@ -514,36 +515,7 @@
     transform: translateY(0);
   }
 
-  .primary-btn {
-    width: 280px;
-    padding: 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    background: #041a47;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin-top: 0.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
 
-  .primary-btn:hover:not(:disabled) {
-    background: #030f45;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(4, 21, 98, 0.2);
-  }
-
-  .primary-btn:disabled {
-    background-color: #a0aec0;
-    color: #e2e8f0;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
 
   .icon-submit-btn {
     background: transparent;
@@ -608,7 +580,6 @@
     }
 
     .input-group,
-    .primary-btn,
     .icon-submit-btn {
       max-width: 280px;
     }
@@ -618,7 +589,7 @@
   }
 
   .app-title {
-  font-size: 5rem; 
+  font-size: 3.rem; 
   font-weight: 900;
   margin: 0 auto;
   line-height: 1.1;
