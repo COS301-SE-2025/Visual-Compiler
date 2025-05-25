@@ -7,6 +7,18 @@
   // import PhaseTutorial  from '$lib/components/PhaseTutorial.svelte';
   // import PhaseInspector from '$lib/components/PhaseInspector.svelte';
   // import ArtifactViewer from '$lib/components/ArtifactViewer.svelte';
+
+  // CodeInput
+   let sourceCode = '';
+
+  function onCodeSubmitted(event: CustomEvent<string>) {
+    sourceCode = event.detail;
+  }
+
+
+
+
+
 </script>
 
 <NavBar />
@@ -15,7 +27,7 @@
   <Toolbox />
 
   <div class="workspace">
-    <CodeInput />
+    <CodeInput on:codeSubmitted={onCodeSubmitted} />
     <Canvas />
   </div>
 </div>
