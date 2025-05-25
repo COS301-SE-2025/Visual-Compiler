@@ -34,11 +34,13 @@
 </script>
 
 <div class="code-input-container">
-  <textarea
-    bind:value={codeText}
+  <textarea bind:value={codeText}
     placeholder="Paste or type your source code here…"
-    rows="10"
-  />
+    rows="10">
+
+  </textarea>
+    
+
 
   <div class="controls">
     <label class="upload-btn">
