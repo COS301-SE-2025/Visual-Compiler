@@ -14,6 +14,13 @@
     const file = input.files?.[0];
     if (!file) return;
 
+    // Check file extension
+    if (!file.name.toLowerCase().endsWith('.txt')) {
+      addToast('Only .txt files are allowed. Please upload a valid plain text file.', 'error');
+      input.value = ''; // Reset the input
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       codeText = reader.result as string;
@@ -43,12 +50,13 @@
 
 
   <div class="controls">
-    <label class="upload-btn">
+    <label class="upload-btn" title="📝 Hi there! Please make sure to upload a .txt file. Other file types won't work here!">
       Upload File
       <input
         type="file"
         accept=".txt"
         on:change={handleFileChange}
+        title="📝 Please upload a '.txt' file"
       />
     </label>
 
