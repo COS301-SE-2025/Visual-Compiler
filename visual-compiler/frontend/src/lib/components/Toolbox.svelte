@@ -1,51 +1,31 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { NodeType } from '$lib/types';
+  // receive the parent’s function
+  export let handleCreateNode: (type: NodeType) => void;
 
-  // Dispatch simple string events
-  const dispatch = createEventDispatcher<{
-    blockClick: NodeType; // Using string type
-  }>();
-
-  const nodeTypes: {id: NodeType, label: string}[] = [
-    { id: 'lexing', label: 'Lexing' },
+  const nodeTypes: { id: NodeType; label: string }[] = [
+    { id: 'lexing',  label: 'Lexing'  },
     { id: 'parsing', label: 'Parsing' },
-    { id: 'analysis', label: 'Analysis' }
+    { id: 'analysis',label: 'Analysis'}
   ];
-
-  function createNode(type: NodeType) {
-    dispatch('blockClick', type); // Send just the string
-  }
 </script>
 
 <div class="toolbox">
-  {#each nodeTypes as type}
-    <button on:click={() => createNode(type.id)} class="node-button">
-      {type.label}
+  {#each nodeTypes as n}
+    <button on:click={() => handleCreateNode(n.id)}>
+      {n.label}
     </button>
   {/each}
 </div>
+
 <style>
   .toolbox {
-    width: 200px;
-    background: #f4f5f7;
-    border-right: 1px solid #ddd;
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    width: 200px; background:#f4f5f7; border-right:1px solid #ddd;
+    padding:1rem; display:flex; flex-direction:column; gap:1rem;
   }
-  
-  .node-button {
-    padding: 0.5rem;
-    cursor: pointer;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    text-align: center;
+  button {
+    padding:.5rem; border:1px solid #ddd; background:white; cursor:pointer;
+    border-radius:4px; text-align:center;
   }
-  
-  .node-button:hover {
-    background: #f0f0f0;
-  }
+  button:hover { background:#f0f0f0 }
 </style>
