@@ -1,14 +1,82 @@
-package core
+package services
 
 import (
-	"fmt" 
-	routers "github.com/COS301-SE-2025/Visual-Compiler/backend/api/routers"
-	"github.com/gin-contrib/cors"
+	"encoding/json"
+	"fmt"
+	"regexp"
+	"strings"
 )
 
-func StartServer() {
-	router:= routers.SetupRouter()
-	router.Use(cors.Default())
-	fmt.Printf("server is alive on port 8080")
-	router.Run(":8080")
+var source_code string
+
+type TypeRegex struct {
+	Type  string
+	Regex string
 }
+
+var rules []TypeRegex
+
+type TypeValue struct {
+	Type  string
+	Value string
+}
+
+var tokens []TypeValue
+
+func Initialise(data string) {
+	source_code = data
+}
+
+func ReadTypeRegex(input []byte) {
+
+	rules = []TypeRegex{}
+
+	var raw_pairs []struct {
+		Type  string `json:"type"`
+		Regex string `json:"regex"`
+	}
+
+	err := json.Unmarshal(input, &raw_pairs)
+
+	if err != nil {
+		fmt.Printf("invalid input: %s", err)
+	}
+
+	for _, pair := range raw_pairs {
+
+		_, err := regexp.Compile(pair.Regex)
+
+		if err != nil {
+			fmt.Printf("invalid regex: %s", err)
+		}
+
+		rules = append(rules, TypeRegex{Type: pair.Type, Regex: pair.Regex})
+	}
+}
+
+func createTokens() {
+
+	tokens = []TypeValue{}
+	var words = strings.Fields(source_code)
+
+	for _, word := range words {
+
+		found := false
+
+		for _, rule := range rules {
+
+			re := regexp.MustCompile("^" + rule.Regex + "$")
+
+			if re.MatchString(word) {
+				found = true
+				tokens = append(tokens, TypeValue{Type: rule.Type, Value: word})
+				break
+			}
+		}
+
+		if !found {
+			fmt.Printf("unexpected token type: %q\n", word)
+		}
+	}
+}
+
