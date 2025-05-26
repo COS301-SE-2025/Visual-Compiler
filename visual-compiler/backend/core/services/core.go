@@ -1,14 +1,28 @@
-package core
+package services
 
 import (
-	"fmt" 
-	routers "github.com/COS301-SE-2025/Visual-Compiler/backend/api/routers"
-	"github.com/gin-contrib/cors"
+	"encoding/json"
+	"fmt"
+	"regexp"
+	"strings"
 )
 
-func StartServer() {
-	router:= routers.SetupRouter()
-	router.Use(cors.Default())
-	fmt.Printf("server is alive on port 8080")
-	router.Run(":8080")
+var source_code string
+
+type TypeRegex struct {
+	Type  string
+	Regex string
+}
+
+var rules []TypeRegex
+
+type TypeValue struct {
+	Type  string
+	Value string
+}
+
+var tokens []TypeValue
+
+func Initialise(data string) {
+	source_code = data
 }
