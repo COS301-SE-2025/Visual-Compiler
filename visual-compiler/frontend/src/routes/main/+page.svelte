@@ -34,9 +34,11 @@
     </div>
   {:else}
     <div class="analysis-view">
-      <PhaseTutorial />
-      <PhaseInspector {sourceCode} />
-      <ArtifactViewer />
+      <div class="three-column-layout">
+        <PhaseTutorial />
+        <PhaseInspector sourceCode={sourceCode} />
+        <ArtifactViewer />
+      </div>
       <button on:click={returnToEditor} class="return-button">Return to Editor</button>
     </div>
   {/if}
@@ -59,6 +61,11 @@
     flex-direction: column;
   }
 
+  .three-column-layout {
+    display: flex;
+    flex: 1;
+  }
+
   .analysis-view {
     flex: 1;
     display: flex;
@@ -70,7 +77,7 @@
     bottom: 20px;
     right: 20px;
     padding: 10px 20px;
-    background: #205781;
+    background: #001A6E;
     color: white;
     border: none;
     border-radius: 4px;
@@ -79,6 +86,6 @@
   }
 
   .return-button:hover {
-    background: #27548A;
+    background: #074799;
   }
 </style>

@@ -122,7 +122,7 @@
 
   .confirm-btn {
     padding: 0.5rem 1.5rem;
-    background: #041a47;
+    background: #001A6E;
     color: white;
     border: none;
     border-radius: 4px;
@@ -135,7 +135,7 @@
     cursor: not-allowed;
   }
   .confirm-btn:not(:disabled):hover {
-    background: #36486c;
+    background: #074799;
   }
   .upload-btn:hover {
     background: #838386;
