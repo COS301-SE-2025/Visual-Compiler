@@ -12,6 +12,8 @@ func SetupRouter() *gin.Engine {
 	{
 		api.POST("/register", handlers.Register)
 		api.POST("/login", handlers.Login)
+		api.GET("/users", handlers.GetAllUsers)
+		api.DELETE("/delete", handlers.DeleteUser)
 	}
 
 	return r
