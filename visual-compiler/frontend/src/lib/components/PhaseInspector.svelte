@@ -1,11 +1,80 @@
 <script lang="ts">
   export let sourceCode = 'Source code will be displayed here';
   
-  // Array to store multiple type-regex pairs
-  let inputRows = [{ type: '', regex: '' }];
+  let inputRows = [{ type: '', regex: '', error: '' }];
+  let formError = '';
+  let submissionStatus = { show: false, success: false, message: '' };
 
   function addNewRow() {
-    inputRows = [...inputRows, { type: '', regex: '' }];
+    inputRows = [...inputRows, { type: '', regex: '', error: '' }];
+  }
+
+  function validateRegex(pattern: string): boolean {
+    try {
+      new RegExp(pattern);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function handleSubmit() {
+    formError = '';
+    let hasErrors = false;
+
+    inputRows = inputRows.map(row => {
+      // Reset previous error
+      row.error = '';
+
+      // Check if both fields are empty
+      if (!row.type && !row.regex) {
+        return null; // Will be filtered out
+      }
+
+      // Check if one field is empty
+      if (!row.type || !row.regex) {
+        row.error = 'Please fill in both Type and Regular Expression';
+        hasErrors = true;
+        return row;
+      }
+
+      // Validate regex
+      if (!validateRegex(row.regex)) {
+        row.error = 'Invalid regular expression pattern';
+        hasErrors = true;
+        return row;
+      }
+
+      return row;
+    }).filter(row => row !== null);
+
+    if (hasErrors) {
+      submissionStatus = {
+        show: true,
+        success: false,
+        message: 'Please fix the errors before submitting'
+      };
+    } else if (inputRows.length === 0) {
+      submissionStatus = {
+        show: true,
+        success: false,
+        message: 'At least one row with both fields is required'
+      };
+      inputRows = [{ type: '', regex: '', error: '' }];
+    } else {
+      // Process valid submission
+      submissionStatus = {
+        show: true,
+        success: true,
+        message: 'Successfully submitted!'
+      };
+      console.log('Valid submission:', inputRows);
+    }
+
+    // Hide the status message after 3 seconds
+    setTimeout(() => {
+      submissionStatus = { show: false, success: false, message: '' };
+    }, 3000);
   }
 </script>
 
@@ -32,6 +101,7 @@
               type="text" 
               bind:value={row.type} 
               placeholder="Enter type..."
+              class:error={row.error}
             />
           </div>
           <div class="input-block">
@@ -39,8 +109,12 @@
               type="text" 
               bind:value={row.regex} 
               placeholder="Enter regex pattern..."
+              class:error={row.error}
             />
           </div>
+          {#if row.error}
+            <div class="error-message">{row.error}</div>
+          {/if}
         </div>
       {/each}
     </div>
@@ -52,8 +126,18 @@
     {/if}
   </div>
   
+  {#if formError}
+    <div class="form-error">{formError}</div>
+  {/if}
+
+  {#if submissionStatus.show}
+    <div class="status-message" class:success={submissionStatus.success}>
+      {submissionStatus.message}
+    </div>
+  {/if}
+  
   <div class="button-container">
-    <button class="submit-button">
+    <button class="submit-button" on:click={handleSubmit}>
       Submit
     </button>
   </div>
@@ -119,6 +203,7 @@
   .input-row {
     display: flex;
     gap: 2rem;
+    position: relative;
   }
 
   .input-block {
@@ -140,6 +225,30 @@
     outline: none;
     border-color: #001A6E;
     box-shadow: 0 0 0 2px rgba(32,87,129,0.1);
+  }
+
+  .input-block input.error {
+    border-color: #dc3545;
+  }
+
+  .input-block input.error:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25);
+  }
+
+  .error-message {
+    color: #dc3545;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+    position: absolute;
+    bottom: -1.2rem;
+  }
+
+  .form-error {
+    color: #dc3545;
+    text-align: center;
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
   }
 
   .add-button {
@@ -192,5 +301,28 @@
   .submit-button:active {
     transform: translateY(0);
     box-shadow: 0 2px 4px rgba(0, 26, 110, 0.1);
+  }
+
+  .status-message {
+    text-align: center;
+    padding: 0.5rem 1rem;
+    margin: 0.5rem 0;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background: #dc3545;
+    color: white;
+    opacity: 0;
+    animation: fadeInOut 3s ease-in-out;
+  }
+
+  .status-message.success {
+    background: #28a745;
+  }
+
+  @keyframes fadeInOut {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { opacity: 0; }
   }
 </style>
