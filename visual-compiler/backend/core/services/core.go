@@ -53,3 +53,30 @@ func ReadTypeRegex(input []byte) {
 		rules = append(rules, TypeRegex{Type: pair.Type, Regex: pair.Regex})
 	}
 }
+
+func createTokens() {
+
+	tokens = []TypeValue{}
+	var words = strings.Fields(source_code)
+
+	for _, word := range words {
+
+		found := false
+
+		for _, rule := range rules {
+
+			re := regexp.MustCompile("^" + rule.Regex + "$")
+
+			if re.MatchString(word) {
+				found = true
+				tokens = append(tokens, TypeValue{Type: rule.Type, Value: word})
+				break
+			}
+		}
+
+		if !found {
+			fmt.Printf("unexpected token type: %q\n", word)
+		}
+	}
+}
+
