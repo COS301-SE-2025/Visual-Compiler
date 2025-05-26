@@ -91,7 +91,10 @@
     addToast("Login successful!", "success");
 
     // TODO: Store the token/session data if provided
-    await goto('/main');
+    
+      await new Promise((res) => setTimeout(res, 3000));
+
+      await goto('/main');
 
   } catch (error) {
     addToast(`Something went wrong: ${(error as Error).message}`, "error");
