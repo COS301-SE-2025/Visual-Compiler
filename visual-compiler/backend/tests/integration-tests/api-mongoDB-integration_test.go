@@ -34,7 +34,7 @@ func closeServer(t *testing.T, server *http.Server) {
     server.Shutdown(cont)
 }
 
-/*func TestRegisterExistingUser(t *testing.T) {
+func TestRegisterExistingUser(t *testing.T) {
 	server := startServer(t)
 
 	user_data := map[string]string{
@@ -70,10 +70,10 @@ func closeServer(t *testing.T, server *http.Server) {
 	}
 
 	closeServer(t,server)
-}*/
+}
 
 func TestRegisterNewUser(t *testing.T) {
-	/*server := startServer(t)
+	server := startServer(t)
 
 	user_data := map[string]string{
 		"username": "jasmine1",
@@ -101,14 +101,14 @@ func TestRegisterNewUser(t *testing.T) {
 
 	t.Logf("Register working: %s", respMap["message"])
 
-	closeServer(t,server)*/
+	closeServer(t,server)
 }
 
 func LoginExistingUser(t *testing.T) {
-	
+	//login integration testing to be implemented
 }
 
 func LoginNewUser(t *testing.T) {
-	
+	//login integration testing to be implemented
 }
 
