@@ -96,7 +96,7 @@
   .controls {
     display: flex;
     gap: 0.5rem;
-    
+    margin-bottom: 0.7rem;
   }
 
   .upload-btn {
@@ -129,6 +129,7 @@
     font-size: 0.95rem;
     cursor: pointer;
     transition: background 0.2s ease;
+  
   }
   .confirm-btn:disabled {
     background: #ccc;
