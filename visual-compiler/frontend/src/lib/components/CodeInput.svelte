@@ -14,6 +14,13 @@
     const file = input.files?.[0];
     if (!file) return;
 
+    // Check file extension
+    if (!file.name.toLowerCase().endsWith('.txt')) {
+      addToast('Only .txt files are allowed. Please upload a valid plain text file.', 'error');
+      input.value = ''; // Reset the input
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       codeText = reader.result as string;
@@ -43,12 +50,13 @@
 
 
   <div class="controls">
-    <label class="upload-btn">
+    <label class="upload-btn" title="📝 Hi there! Please make sure to upload a .txt file. Other file types won't work here!">
       Upload File
       <input
         type="file"
         accept=".txt"
         on:change={handleFileChange}
+        title="📝 Please upload a '.txt' file"
       />
     </label>
 
@@ -75,13 +83,14 @@
 
   textarea {
     resize: vertical;
-    padding: 1rem;
+    padding: 0.4rem;
     font-family: Menlo, Monaco, 'Courier New', monospace;
-    font-size: 0.95rem;
-    line-height: 0.3;
+    font-size: 0.9rem;
+    line-height: 1.2;
     border: 1px solid #ccc;
     border-radius: 4px;
     box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+    height: 86px;
   }
 
   .controls {
@@ -113,7 +122,7 @@
 
   .confirm-btn {
     padding: 0.5rem 1.5rem;
-    background: #041a47;
+    background: #001A6E;
     color: white;
     border: none;
     border-radius: 4px;
@@ -126,7 +135,7 @@
     cursor: not-allowed;
   }
   .confirm-btn:not(:disabled):hover {
-    background: #36486c;
+    background: #074799;
   }
   .upload-btn:hover {
     background: #838386;
