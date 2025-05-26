@@ -1,4 +1,8 @@
 <script lang="ts">
+
+  import { addToast } from '$lib/stores/toast';
+  import { goto } from '$app/navigation';
+  
   let active_tab: 'login' | 'register' = 'login';
   let show_password = false;
   let show_confirm_password = false;
@@ -22,7 +26,7 @@
     event.preventDefault();
 
     if (reg_password !== reg_confirm_password) {
-      alert("Passwords don't match!");
+      addToast("Passwords don't match!", "error");
       return;
     }
 
@@ -42,11 +46,11 @@
       const data = await response.json();
 
       if (!response.ok) {
-        alert(`Registration failed: ${data.error || response.statusText}`);
+        addToast(`Registration failed: ${data.error || response.statusText}`, "error");
         return;
       }
 
-      alert(data.message || "Registration successful!");
+      addToast(data.message || "Registration successful!", "success");
 
       // Reset the form
       reg_email = '';
@@ -57,42 +61,45 @@
       active_tab = 'login';
 
     } catch (error) {
-      alert(`Something went wrong: ${(error as Error).message}`);
+      addToast(`Something went wrong: ${(error as Error).message}`, "error");
     }
   }
+ 
 
   async function handle_login(event: Event) {
-    event.preventDefault();
-    if (is_login_button_disabled) return;
+  event.preventDefault();
+  if (is_login_button_disabled) return;
 
-    try {
-        const response = await fetch("http://localhost:8080/api/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                login: login_username,
-                password: login_password
-            })
-        });
+  try {
+    const response = await fetch("http://localhost:8080/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        login: login_username,
+        password: login_password
+      })
+    });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            alert(`Login failed: ${data.error || response.statusText}`);
-            return;
-        }
-
-        // Handle successful login
-        alert("Login successful!");
-        // TODO: Store the token/session data if provided
-        // TODO: Redirect to dashboard or home page
-
-    } catch (error) {
-        alert(`Something went wrong: ${(error as Error).message}`);
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({}));
+      addToast(`Login failed: ${data.error || response.statusText}`, "error");
+      return;
     }
+
+    addToast("Login successful!", "success");
+
+    // TODO: Store the token/session data if provided
+    
+      await new Promise((res) => setTimeout(res, 3000));
+
+      await goto('/main');
+
+  } catch (error) {
+    addToast(`Something went wrong: ${(error as Error).message}`, "error");
   }
+}
 
   function toggle_password_visibility() {
     show_password = !show_password;
@@ -111,7 +118,7 @@
   <div class="container">
     <aside class="side-panel">
       <div class="logo">
-      <img src="/half_stack.png" alt="Brand Logo" width="80" height="80" class="brand-logo"/>
+      <img src="/half_stack_blue.png" alt="Brand Logo" width="80" height="80" class="brand-logo"/>
       </div>
 
       <nav class="tab-nav">
@@ -284,7 +291,7 @@
 
     <main class="main-content">
       <div class="feature-quote">
-        <h1>Visual Compiler</h1>
+        <h1 class="app-title">Visual Compiler</h1>
       </div>
     </main>
   </div>
@@ -511,36 +518,7 @@
     transform: translateY(0);
   }
 
-  .primary-btn {
-    width: 280px;
-    padding: 0.75rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    background: #041a47;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin-top: 0.5rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
 
-  .primary-btn:hover:not(:disabled) {
-    background: #030f45;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(4, 21, 98, 0.2);
-  }
-
-  .primary-btn:disabled {
-    background-color: #a0aec0;
-    color: #e2e8f0;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
 
   .icon-submit-btn {
     background: transparent;
@@ -590,31 +568,9 @@
     padding: 2rem;
   }
 
-  .feature-quote {
-    max-width: 600px;
-    text-align: center;
-    color: white;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  }
+  
 
-  .feature-quote h1 {
-    font-size: 2.5rem;
-    margin-bottom: 1.5rem;
-    font-weight: 700;
-    line-height: 1.2;
-  }
-
-  .feature-quote p {
-    font-size: 1.25rem;
-    margin: 0.5rem 0;
-    opacity: 0.9;
-    line-height: 1.6;
-  }
-
-  .feature-quote p:last-child {
-    font-style: italic;
-    opacity: 0.8;
-  }
+  
 
   @media (max-width: 768px) {
     .container {
@@ -627,7 +583,6 @@
     }
 
     .input-group,
-    .primary-btn,
     .icon-submit-btn {
       max-width: 280px;
     }
@@ -635,4 +590,13 @@
       align-items: center;
     }
   }
+
+  .app-title {
+  font-size: 3.rem; 
+  font-weight: 900;
+  margin: 0 auto;
+  line-height: 1.1;
+  color:#1d3159 ;
+}
+
 </style>
