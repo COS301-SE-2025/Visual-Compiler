@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var source_code string
+var source string
 
 type TypeRegex struct {
 	Type  string
@@ -23,23 +23,25 @@ type TypeValue struct {
 
 var tokens []TypeValue
 
-func Initialise(data string) {
-	source_code = data
+func SourceCode(data string) {
+
+	source = data
+
 }
 
-func ReadTypeRegex(input []byte) {
+func ReadRegexRules(input []byte) error {
 
 	rules = []TypeRegex{}
 
 	var raw_pairs []struct {
-		Type  string `json:"type"`
-		Regex string `json:"regex"`
+		Type  string
+		Regex string
 	}
 
 	err := json.Unmarshal(input, &raw_pairs)
 
 	if err != nil {
-		fmt.Printf("invalid input: %s", err)
+		return fmt.Errorf("invalid JSON input: %w", err)
 	}
 
 	for _, pair := range raw_pairs {
@@ -47,17 +49,19 @@ func ReadTypeRegex(input []byte) {
 		_, err := regexp.Compile(pair.Regex)
 
 		if err != nil {
-			fmt.Printf("invalid regex: %s", err)
+			return fmt.Errorf("invalid regex: %w", err)
 		}
 
-		rules = append(rules, TypeRegex{Type: pair.Type, Regex: pair.Regex})
+		rules = append(rules, TypeRegex{Type: strings.ToUpper(pair.Type), Regex: pair.Regex})
 	}
+
+	return nil
 }
 
-func createTokens() {
+func CreateTokens() []TypeValue {
 
 	tokens = []TypeValue{}
-	var words = strings.Fields(source_code)
+	var words = strings.Fields(source)
 
 	for _, word := range words {
 
@@ -78,5 +82,6 @@ func createTokens() {
 			fmt.Printf("unexpected token type: %q\n", word)
 		}
 	}
-}
 
+	return tokens
+}
