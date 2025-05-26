@@ -1,3 +1,4 @@
+//Package path implements routines for the lexing phase of compiler construction
 package services
 
 import (
@@ -7,7 +8,7 @@ import (
 	"strings"
 )
 
-var source string
+var Source string
 
 type TypeRegex struct {
 	Type  string
@@ -25,7 +26,7 @@ var tokens []TypeValue
 
 func SourceCode(data string) {
 
-	source = data
+	Source = data
 
 }
 
@@ -61,7 +62,7 @@ func ReadRegexRules(input []byte) error {
 func CreateTokens() []TypeValue {
 
 	tokens = []TypeValue{}
-	var words = strings.Fields(source)
+	var words = strings.Fields(Source)
 
 	for _, word := range words {
 
