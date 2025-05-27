@@ -2,19 +2,19 @@
   import { createEventDispatcher } from 'svelte';
   import { addToast } from '$lib/stores/toast';
 
-  // bound source code text
+  
   let codeText = '';
 
-  // event to let parent know the code was confirmed
+
   const dispatch = createEventDispatcher<{ codeSubmitted: string }>();
 
-  // read .txt file into the textarea
+  
   function handleFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
 
-    // Check file extension
+  
     if (!file.name.toLowerCase().endsWith('.txt')) {
       addToast('Only .txt files are allowed. Please upload a valid plain text file.', 'error');
       input.value = ''; // Reset the input
@@ -32,7 +32,7 @@
     reader.readAsText(file);
   }
 
-  // notify parent that code is ready
+
   function submitCode() {
     if (!codeText.trim()) return;
     dispatch('codeSubmitted', codeText);

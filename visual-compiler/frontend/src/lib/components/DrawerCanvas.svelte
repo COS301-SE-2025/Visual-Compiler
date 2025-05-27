@@ -26,6 +26,10 @@
     }
     lastClick = now;
   }
+ 
+   
+
+
 </script>
 
 <div class="drawer-canvas">
@@ -41,9 +45,10 @@
           position={node.position}
           drop="center"
           useDefaults
-          bgColor={$theme === 'dark' ? '#1a3a7a' : '#041a47'}
+          bgColor={$theme === 'dark' ? '#041a47' : '#041a47'}
           textColor="#fff"
           on:nodeClicked={() => onNodeClick(node.type)}
+
         />
       {/each}
     </Svelvet>
