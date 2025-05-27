@@ -60,13 +60,13 @@
 <div class="phase-tutorial">
   <div class="tutorial-content">
     <h2>What is Lexing?</h2>
-    <h3>Steps to Follow:</h3>
+    
     <p class="description">
       A lexer breaks down source code into tokens. Each token has a type and value.
       Tokens are identified using regular expressions that match specific patterns.
     </p>
     <div class="separator"></div>
-
+<h3>Steps to Follow:</h3>
     <div class="tutorial-container">
       <!-- Content area -->
       <div class="tutorial-content-area">
@@ -428,4 +428,6 @@
     background: #4b5563;
     color: #041a47;
   }
+
+ 
 </style>
