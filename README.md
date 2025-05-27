@@ -13,18 +13,41 @@
 
 <br>
 
+<h2 align="center">Documentation and Resources</h2>
+
 <div align="center">
-    <h2>Project Boards</h2>
-        <a href="https://github.com/orgs/COS301-SE-2025/projects/162">Frontend</a> &nbsp;|&nbsp;
-        <a href="https://github.com/orgs/COS301-SE-2025/projects/171">Backend</a> &nbsp;|&nbsp;
-        <a href="https://github.com/orgs/COS301-SE-2025/projects/173">Administration</a>
+    <table style="border-width: 1px; width: 50%;">
+    <tr>
+        <td style="border: 0;">Project Boards</td>
+        <td style="border: 0;"><a href="https://github.com/orgs/COS301-SE-2025/projects/162">Frontend</a> &nbsp;|&nbsp;
+            <a href="https://github.com/orgs/COS301-SE-2025/projects/171">Backend</a> &nbsp;|&nbsp;
+            <a href="https://github.com/orgs/COS301-SE-2025/projects/173">Administration</a></td>
+    </tr>
+    <tr>
+        <td style="border: 0;">Software Requirements Specification</td>
+        <td style="border: 0;"><a href="https://docs.google.com/document/d/1G9_tmRu2ey8_tjJHxUbkpXQod9UxfRC2dE9HBTdta10/edit?usp=sharing">Specification Document</a></td>
+    </tr>
+    <tr>
+        <td style="border: 0;">Architectural Specification</td>
+        <td style="border: 0;"><a href="https://docs.google.com/document/d/1Bmq9UWzTkuA_br6hin0YsK9cVgnVuuH0H0tTJB66qKY/edit?usp=sharing">Specification Document</a></td>
+    </tr>
+    </table>
 </div>
 
 <br>
 
-<div align="center">
-    <h2>Repository Structure</h2>
+<h2 align="center">Technology Stack</h2>
+
+<div style="display: flex; gap: 20px; justify-content: center;">
+    <img src="https://img.shields.io/badge/Svelte-FF3E00?style=for-the-badge&logo=svelte&logoColor=white">
+    <img src="https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white">
+    <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white">
+    <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">
 </div>
+
+<br>
+
+<h2 align="center">Repository Structure</h2>
 
 ```
     ├───📁.github
@@ -56,6 +79,7 @@
 <br>
 
 <h2 align="center">Half Stack Members</h2>
+
 <table style="border-width: 1px; width: 100%;">
     <tr>
         <td style="vertical-align: middle; width: auto; border: 0; padding: 10px;">
