@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import type { Token } from '$lib/types';
   import type { NodeType } from '$lib/types';
   
   export let sourceCode = '';  
@@ -8,7 +9,11 @@
   let formError = '';
   let submissionStatus = { show: false, success: false, message: '' };
   let showGenerateButton = false;
-  const dispatch = createEventDispatcher<{ generateTokens: { patterns: any[] } }>();
+  const dispatch = createEventDispatcher<{ 
+    generateTokens: { 
+      tokens: Token[] 
+    } 
+  }>();
 
   function addNewRow() {
     inputRows = [...inputRows, { type: '', regex: '', error: '' }];
@@ -77,8 +82,53 @@
     };
 
     try {
-      console.log('Sending request to:', 'http://localhost:8080/api/lexing/lexer');
-      console.log('Request payload:', requestData);
+      // First, store the source code and regex pairs
+      const storeResponse = await fetch('http://localhost:8080/api/lexing/code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!storeResponse.ok) {
+        const errorText = await storeResponse.text();
+        throw new Error(`Server error (${storeResponse.status}): ${errorText}`);
+      }
+
+      // Show success message
+      submissionStatus = {
+        show: true,
+        success: true,
+        message: 'Code stored successfully!'
+      };
+
+      // Show generate button
+      showGenerateButton = true;
+
+    } catch (error) {
+      console.error('Store error:', error);
+      submissionStatus = {
+        show: true,
+        success: false,
+        message: error.message === 'Failed to fetch' 
+          ? 'Cannot connect to server. Please ensure the backend is running.'
+          : `Error: ${error.message}`
+      };
+    }
+  }
+
+  async function generateTokens() {
+    try {
+      const requestData = {
+        source_code: sourceCode,
+        pairs: inputRows.map(row => ({
+          Type: row.type.toUpperCase(),
+          Regex: row.regex
+        }))
+      };
+
+      console.log('Sending request with data:', requestData); // Debug log
 
       const response = await fetch('http://localhost:8080/api/lexing/lexer', {
         method: 'POST',
@@ -90,75 +140,37 @@
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Server response:', {
-          status: response.status,
-          statusText: response.statusText,
-          body: errorText
-        });
         throw new Error(`Server error (${response.status}): ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('Server response:', data);
+      console.log('Raw response:', data); // Debug entire response
       
-      // Show success message
+      if (!Array.isArray(data.tokens)) {
+        throw new Error('Expected tokens array in response');
+      }
+
+      // Dispatch token data to parent component
+      dispatch('generateTokens', {
+        tokens: data.tokens,
+        unexpected_tokens: data.tokens_unidentified// Make sure this matches the backend response
+      });
+
+      showGenerateButton = false;
       submissionStatus = {
         show: true,
         success: true,
-        message: 'Successfully submitted!'
+        message: data.message || 'Tokens generated successfully!'
       };
 
-      // Show generate button
-      showGenerateButton = true;
-
-      // Dispatch token data
-      dispatch('generateTokens', {
-        patterns: data.tokens
-      });
-
-      // Reset status message after animation
-      setTimeout(() => {
-        submissionStatus = { 
-          show: false, 
-          success: false, 
-          message: '' 
-        };
-      }, 3000);
-
     } catch (error) {
-      console.error('Fetch error:', error);
+      console.error('Generate tokens error:', error);
       submissionStatus = {
         show: true,
         success: false,
-        message: error.message === 'Failed to fetch' 
-          ? 'Cannot connect to server. Please ensure the backend is running.'
-          : `Error: ${error.message}`
+        message: `Error generating tokens: ${error.message}`
       };
     }
-  }
-
-  function generateTokens() {
-    dispatch('generateTokens', {
-      patterns: inputRows.map(row => ({
-        type: row.type,
-        pattern: row.regex
-      }))
-    });
-    showGenerateButton = false;
-    submissionStatus = {
-      show: true,
-      success: true,
-      message: 'Tokens generated successfully!'
-    };
-    
-    // Reset the status message after animation
-    setTimeout(() => {
-      submissionStatus = { 
-        show: false, 
-        success: false, 
-        message: '' 
-      };
-    }, 3000);
   }
 
   // Track previous input values
