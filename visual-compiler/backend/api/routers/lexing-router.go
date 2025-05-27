@@ -8,7 +8,7 @@ import (
 func SetupLexingRouter() *gin.Engine {
 	r := gin.New()
 
-	r.GET("/lexer", handlers.Lexing)
+	r.POST("/lexer", handlers.Lexing)
 
 	return r
 }

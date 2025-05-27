@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -12,17 +13,24 @@ import (
 )
 
 type LexingRequest struct {
-	Code     string `json:"source_code" bson:"required"`
-	RawPairs []byte `json:"pairs" bson:"required"`
+	Code  string               `json:"source_code" bson:"required"`
+	Pairs []services.TypeRegex `json:"pairs" bson:"required"`
 }
 
 func Lexing(c *gin.Context) {
 	var req LexingRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
 		return
 	}
+
+	jsonAsBytes, err := json.Marshal(req.Pairs)
+	if err != nil {
+		panic(err)
+	}
+
+	pairs := jsonAsBytes
 
 	mongoCli := db.ConnectClient()
 	collection := mongoCli.Database("visual-compiler").Collection("lexing")
@@ -31,11 +39,11 @@ func Lexing(c *gin.Context) {
 	defer cancel()
 
 	services.SourceCode(req.Code)
-	services.ReadRegexRules(req.RawPairs)
+	services.ReadRegexRules(pairs)
 
 	tokens := services.CreateTokens()
 
-	_, err := collection.InsertOne(ctx, bson.M{
+	_, err = collection.InsertOne(ctx, bson.M{
 		"code":   req.Code,
 		"tokens": tokens,
 	})
