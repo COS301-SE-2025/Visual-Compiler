@@ -124,6 +124,7 @@
             </div>
           </div>
         {/if}
+        <div class="separator"></div>
       </div>
       
       <!-- Navigation - Positioned higher -->
