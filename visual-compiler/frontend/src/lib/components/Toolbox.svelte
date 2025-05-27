@@ -11,6 +11,7 @@
 
 <aside class="toolbox">
   <h2 class="toolbox-heading">Blocks</h2>
+   <h2 class="toolbox-instruction">Click a block to add it to the canvas.</h2>
   {#each nodeTypes as n}
     <button
       class="phase-btn"
@@ -33,6 +34,8 @@
     display: flex;
     flex-direction: column;
     gap: 1rem; 
+    align-items: center;
+
   }
 
   .toolbox-heading {
@@ -45,23 +48,38 @@
     letter-spacing: 0.05em;
   }
 
-  .phase-btn {
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    font-weight: 500;
-    color: #222;
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 0.375rem;
-    cursor: pointer;
-    position: relative;
-     overflow: visible;
+  .toolbox-instruction {
+  font-size: 1rem;
+  font-weight: 400;
+  text-align: center;
+  color: #555;
+  margin: -1rem 0 1rem 0;
+  padding: 0 0.5rem;
   }
+  .phase-btn {
+  height: 90px;
+  width: 200px;
+  background-color: #041a47;
+  color: white;
+  border-radius: 8px;
+  padding: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
   .phase-btn:hover {
-    background: #f0f4ff;
+    background-color: #05276f;
     transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   }
 
   .phase-btn:active {
