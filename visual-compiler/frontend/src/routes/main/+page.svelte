@@ -6,9 +6,9 @@
   import PhaseTutorial   from '$lib/components/PhaseTutorial.svelte';
   import PhaseInspector  from '$lib/components/PhaseInspector.svelte';
   import ArtifactViewer  from '$lib/components/ArtifactViewer.svelte';
-  import type { NodeType, CanvasEdge } from '$lib/types';
+  import type { NodeType } from '$lib/types';
   import { writable }    from 'svelte/store';
-  import { toasts }      from '$lib/stores/toast';
+  import { addToast } from '$lib/stores/toast';
 
   // --- CANVAS STATE ---
   interface CanvasNode {
@@ -18,7 +18,7 @@
     position: { x: number; y: number };
   }
   
-  const edges = writable<CanvasEdge[]>([]);
+  
   const nodes = writable<CanvasNode[]>([]);
   let nodeCounter = 0;
   let selectedPhase: NodeType | null = null;
@@ -62,11 +62,9 @@
       selectedPhase = type;
       // Only proceed if source code exists
       if (!sourceCode.trim()) {
-        toasts.add({
-          type: 'error',
-          message: 'Please enter source code before proceeding'
-        });
+        addToast('Please enter source code before proceeding', "error");
         selectedPhase = null;
+        
         return;
       }
     }
@@ -127,7 +125,7 @@
   <!-- Always show canvas and toolbox -->
   <Toolbox {handleCreateNode} {tooltips} />
   <div class="workspace">
-    <DrawerCanvas {nodes} {edges} on:phaseSelect={handlePhaseSelect} />
+    <DrawerCanvas {nodes} on:phaseSelect={handlePhaseSelect} />
   </div>
 
   <!-- Analysis overlay -->
@@ -181,7 +179,7 @@
   }
   .analysis-overlay {
     position: fixed;
-    top: 3.5rem; /* Account for navbar */
+    top: 3.5rem; 
     left: 0;
     right: 0;
     bottom: 0;
@@ -199,7 +197,7 @@
     display: flex;
     flex: 1;
     gap: 1rem;
-    height: calc(100vh - 6rem); /* Account for navbar and padding */
+    height: calc(100vh - 6rem);
   }
   .three-column-layout > :global(*) {
     flex: 1;

@@ -1,1 +1,1 @@
-export type NodeType = 'lexing' | 'parsing' | 'analysis';
+export type NodeType = 'source' | 'lexer' ;
