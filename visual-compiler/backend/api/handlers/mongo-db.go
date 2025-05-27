@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
+// Creates the initial connection to the MongoDB Database
 func ConnectToMongo(c *gin.Context) {
 	client := db.ConnectClient()
 

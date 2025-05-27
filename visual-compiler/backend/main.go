@@ -1,3 +1,4 @@
+// Package Main for the main entry into the API.
 package main
 
 import (
@@ -10,6 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Entry point of the API.
+//
+// Initializes the necessary services, sets up the routes and the GIN framework
+// and starts the http server. Responsibile for bootstrapping the backend infrastructure
+// required
+//
+// If any setup fails, the application will log the error and exit the application
 func main() {
 	db.ConnectClient()
 
@@ -27,9 +35,17 @@ func main() {
 	}))
 
 	// Attach your routes
-	api := routers.SetupRouter()
-	router.Any("/api/*any", func(c *gin.Context) {
-		api.HandleContext(c)
+	apiUserRoutes := routers.SetupUserRouter()
+	apiLexingRoutes := routers.SetupLexingRouter()
+
+	router.Any("/api/users/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		apiUserRoutes.HandleContext(c)
+	})
+
+	router.Any("/api/lexing/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		apiLexingRoutes.HandleContext(c)
 	})
 
 	log.Println("Starting backend server on: http://localhost:8080/api")

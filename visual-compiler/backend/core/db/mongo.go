@@ -1,3 +1,4 @@
+// Package path implements routines for the MongoDB Connection Singleton
 package db
 
 import (
@@ -18,6 +19,8 @@ var (
 	clientOnce sync.Once
 )
 
+// This function creates the MongoDB connection as a Singleton.
+// Decouples the connection logic from the CRUD operations
 func ConnectClient() *mongo.Client {
 	clientOnce.Do(func() {
 		if errENV := godotenv.Load(); errENV != nil {

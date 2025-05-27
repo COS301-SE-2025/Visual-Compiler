@@ -6,8 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"log"
-
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/db"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -15,73 +13,28 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Specifies the JSON body request for Registering
 type Request struct {
-	Email    string `json:"email" binding:"required,email"`
+	// User's Email address
+	Email string `json:"email" binding:"required,email"`
+	// User's password
 	Password string `json:"password" binding:"required,min=8"`
+	// User's username
 	Username string `json:"username" binding:"required,min=6"`
 }
 
-// func Register(c *gin.Context) {
-// 	var req Request
-
-// 	if err := c.ShouldBindJSON(&req); err != nil {
-// 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid: " + err.Error()})
-// 		return
-// 	}
-
-// 	mongoClient := db.ConnectClient()
-// 	usersCollection := mongoClient.Database("visual-compiler").Collection("users")
-
-// 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-// 	defer cancel()
-
-// 	normalisedUsername := strings.ToLower(req.Username)
-
-// 	filterChecks := bson.M{
-// 		"$or": []bson.M{
-// 			{"email": req.Email},
-// 			{"username": normalisedUsername},
-// 		},
-// 	}
-
-// 	var userExists bson.M
-// 	err := usersCollection.FindOne(ctx, filterChecks).Decode(&userExists)
-// 	if err == nil {
-// 		if userExists["email"] == req.Email {
-// 			c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
-// 		} else {
-// 			c.JSON(http.StatusConflict, gin.H{"error": "Username is already taken"})
-// 		}
-// 		return
-// 	} else if err != mongo.ErrNoDocuments {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
-// 		return
-// 	}
-
-// 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in hashing password"})
-// 		return
-// 	}
-
-// 	_, err = usersCollection.InsertOne(ctx, bson.M{
-// 		"email":    req.Email,
-// 		"password": string(hashedPassword),
-// 		"username": normalisedUsername,
-// 	})
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in registering user"})
-// 		return
-// 	}
-
-// 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully registered user"})
-// }
-
+// Registers a user on the Database
+// Gets the user's details from a JSON request.
+// Formats the response as a JSON Body
+//
+// Returns:
+//   - A JSON response body.
+//   - A 200 OK response if successful
+//   - A 500 Internal Server Error if any errors are caught for registering/inserting or parsing
 func Register(c *gin.Context) {
 	var req Request
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		log.Println("[Register] Invalid input:", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid: " + err.Error()})
 		return
 	}
@@ -104,7 +57,6 @@ func Register(c *gin.Context) {
 	var userExists bson.M
 	err := usersCollection.FindOne(ctx, filterChecks).Decode(&userExists)
 	if err == nil {
-		log.Println("[Register] Duplicate user/email")
 		if userExists["email"] == req.Email {
 			c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
 		} else {
@@ -112,14 +64,12 @@ func Register(c *gin.Context) {
 		}
 		return
 	} else if err != mongo.ErrNoDocuments {
-		log.Println("[Register] DB error during FindOne:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Println("[Register] Password hash failed:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in hashing password"})
 		return
 	}
@@ -130,11 +80,9 @@ func Register(c *gin.Context) {
 		"username": normalisedUsername,
 	})
 	if err != nil {
-		log.Println("[Register] Failed to insert user:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in registering user"})
 		return
 	}
 
-	log.Println("[Register] User registered successfully")
 	c.JSON(http.StatusCreated, gin.H{"message": "Successfully registered user"})
 }
