@@ -1,32 +1,57 @@
 <script lang="ts">
-  import NavBar          from '$lib/components/NavBar.svelte';
-  import Toolbox         from '$lib/components/Toolbox.svelte';
-  import CodeInput       from '$lib/components/CodeInput.svelte';
-  import DrawerCanvas    from '$lib/components/DrawerCanvas.svelte';
-  import PhaseTutorial   from '$lib/components/PhaseTutorial.svelte';
-  import PhaseInspector  from '$lib/components/PhaseInspector.svelte';
-  import ArtifactViewer  from '$lib/components/ArtifactViewer.svelte';
+  import NavBar from '$lib/components/NavBar.svelte';
+  import Toolbox from '$lib/components/Toolbox.svelte';
+  import CodeInput from '$lib/components/CodeInput.svelte';
+  import DrawerCanvas from '$lib/components/DrawerCanvas.svelte';
+  import PhaseTutorial from '$lib/components/PhaseTutorial.svelte';
+  import PhaseInspector from '$lib/components/PhaseInspector.svelte';
+  import ArtifactViewer from '$lib/components/ArtifactViewer.svelte';
   import type { NodeType } from '$lib/types';
-  import { writable }    from 'svelte/store';
+  import { writable } from 'svelte/store';
+  import { addToast } from '$lib/stores/toast';
+  import { theme } from '../../lib/stores/theme';
+  import { onMount } from 'svelte';
 
-  // --- CANVAS NODES STATE ---
+  // Initialize theme
+  onMount(() => {
+    document.documentElement.setAttribute('svelvet-theme', $theme);
+    document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
+  });
+
+  // --- CANVAS STATE ---
   interface CanvasNode {
-    id:       string;
-    type:     NodeType;
-    label:    string;
+    id: string;
+    type: NodeType;
+    label: string;
     position: { x: number; y: number };
   }
+  
   const nodes = writable<CanvasNode[]>([]);
   let nodeCounter = 0;
+  let selectedPhase: NodeType | null = null;
+  let showCodeInput = false;
+  let sourceCode = '';
 
+  // --- TOOLTIPS AND LABELS ---
+  const tooltips: Record<NodeType, string> = {
+    source: 'Start here. Add source code to begin compilation.',
+    lexer: 'Converts source code into tokens for processing.'
+  };
+
+  const nodeLabels: Record<NodeType, string> = {
+    source: 'Source Code',
+    lexer: 'Lexer'
+  };
+
+  // --- NODE CREATION ---
   function handleCreateNode(type: NodeType) {
-    nodeCounter += 1;
+    nodeCounter++;
     nodes.update(curr => [
       ...curr,
       {
-        id:    `${type}-${nodeCounter}`,
+        id: `${type}-${nodeCounter}`,
         type,
-        label: type[0].toUpperCase() + type.slice(1),
+        label: nodeLabels[type] || type[0].toUpperCase() + type.slice(1),
         position: {
           x: Math.random() * 300 + 100,
           y: Math.random() * 300 + 100
@@ -35,41 +60,105 @@
     ]);
   }
 
-  // --- PHASE SELECTION (double-click) ---
-  let selectedPhase: NodeType | null = null;
+  // --- PHASE SELECTION ---
   function handlePhaseSelect(e: CustomEvent<NodeType>) {
-    selectedPhase = e.detail;
+    const type = e.detail;
+    if (type === 'source') {
+      showCodeInput = true;
+    } else {
+      selectedPhase = type;
+      if (!sourceCode.trim()) {
+        addToast('Please enter source code before proceeding', "error");
+        selectedPhase = null;
+        return;
+      }
+    }
   }
 
-  // Back-to-canvas
   function returnToCanvas() {
     selectedPhase = null;
+    showCodeInput = false;
+  }
+
+  // --- CODE HANDLING ---
+  function handleCodeSubmit(event: CustomEvent<string>) {
+    sourceCode = event.detail;
+    showCodeInput = false;
+  }
+
+  // --- TOKEN GENERATION ---
+  let tokens = [];
+
+  function handleTokenGeneration(event: CustomEvent<{ patterns: Array<{ type: string; pattern: string }> }>) {
+    const patterns = event.detail.patterns;
+    tokens = generateTokens(sourceCode, patterns);
+  }
+
+  function generateTokens(source: string, patterns: any[]) {
+    const tokens = [];
+    let remainingText = source;
+
+    while (remainingText.length > 0) {
+      let matched = false;
+      
+      for (const { type, pattern } of patterns) {
+        const regex = new RegExp(`^${pattern}`);
+        const match = remainingText.match(regex);
+        
+        if (match) {
+          tokens.push({ type, value: match[0] });
+          remainingText = remainingText.slice(match[0].length);
+          matched = true;
+          break;
+        }
+      }
+
+      if (!matched) {
+        remainingText = remainingText.slice(1);
+      }
+    }
+
+    return tokens;
   }
 </script>
 
 <NavBar />
 
 <div class="main">
-  {#if !selectedPhase}
-    <!-- edit view -->
-    <Toolbox {handleCreateNode} />
+  <Toolbox {handleCreateNode} {tooltips} />
+  <div class="workspace">
+    <DrawerCanvas {nodes} on:phaseSelect={handlePhaseSelect} />
+  </div>
 
-    <div class="workspace">
-      <CodeInput />
-      <!-- listen here for your dblclick → phaseSelect event -->
-      <DrawerCanvas {nodes} on:phaseSelect={handlePhaseSelect} />
-    </div>
-  {:else}
-    <!-- analysis view -->
-    <div class="analysis-view">
-      <div class="three-column-layout">
-        <PhaseTutorial  phase={selectedPhase} />
-        <PhaseInspector phase={selectedPhase} />
-        <ArtifactViewer phase={selectedPhase} />
+  {#if selectedPhase}
+    <div class="analysis-overlay">
+      <div class="analysis-view">
+        <div class="three-column-layout">
+          <PhaseTutorial phase={selectedPhase} />
+          <PhaseInspector 
+            phase={selectedPhase}
+            {sourceCode}
+            on:generateTokens={handleTokenGeneration}
+          />
+          <ArtifactViewer 
+            phase={selectedPhase}
+            {tokens}
+          />
+        </div>
+        <button on:click={returnToCanvas} class="return-button">
+          ← Return to Canvas
+        </button>
       </div>
-      <button on:click={returnToCanvas} class="return-button">
-        ← Return to Canvas
-      </button>
+    </div>
+  {/if}
+
+  {#if showCodeInput}
+    <div class="code-input-overlay">
+      <div class="code-input-modal">
+        <h2 class="modal-title">Enter Source Code</h2>
+        <CodeInput on:codeSubmitted={handleCodeSubmit} />
+        <button class="close-btn" on:click={() => (showCodeInput = false)}>✕</button>
+      </div>
     </div>
   {/if}
 </div>
@@ -88,24 +177,99 @@
     display: flex;
     flex-direction: column;
   }
+  .analysis-overlay {
+    position: fixed;
+    top: 3.5rem; 
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    z-index: 100;
+  }
   .analysis-view {
-    flex: 1;
+    height: 100%;
+    padding: 1rem;
+    background: #f5f5f5;
     display: flex;
     flex-direction: column;
   }
   .three-column-layout {
     display: flex;
     flex: 1;
+    gap: 1rem;
+    height: calc(100vh - 6rem);
+  }
+  .three-column-layout > :global(*) {
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow-y: auto;
   }
   .return-button {
     position: fixed;
-    bottom: 20px; right: 20px;
+    bottom: 20px;
+    right: 20px;
     padding: 0.5rem 1rem;
-    background: #001A6E; color: white;
-    border: none; border-radius: 4px;
-    cursor: pointer; z-index: 1000;
+    background: #001A6E;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 1000;
   }
   .return-button:hover {
     background: #074799;
+  }
+  .code-input-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+  }
+  .code-input-modal {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+  }
+  .modal-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+    color: #333;
+  }
+  .close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
+  /* Dark mode styles for analysis overlay */
+  :global(html.dark-mode) .analysis-overlay {
+    background: rgba(10, 26, 58, 0.95);
+  }
+  :global(html.dark-mode) .analysis-view {
+    background: #0a1a3a;
+  }
+  :global(html.dark-mode) .three-column-layout > :global(*) {
+    background: #1a2a4a;
+    color: #f0f0f0;
+  }
+  :global(html.dark-mode) .code-input-modal {
+    background: #1a2a4a;
+    color: #f0f0f0;
+  }
+  :global(html.dark-mode) .modal-title {
+    color: #f0f0f0;
   }
 </style>

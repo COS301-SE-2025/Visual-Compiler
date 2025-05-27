@@ -1,34 +1,32 @@
 <script lang="ts">
-  // Mock data just to illustrate the table
-  let tokens = [
-    { type: 'KEYWORD',      value: 'let'        },
-    { type: 'IDENTIFIER',   value: 'x'          },
-    { type: 'OPERATOR',     value: '='          },
-    { type: 'NUMBER',       value: '42'         },
-    { type: 'OPERATOR',     value: '+'          },
-    { type: 'NUMBER',       value: '8'          },
-    { type: 'SEMICOLON',    value: ';'          }
-  ];
+  export let phase: string;
+  export let tokens: Array<{ type: string, value: string }> = [];
 </script>
 
 <div class="artifact-viewer">
-  <h3>Tokenisation</h3>
-  <table class="token-table">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Value</th>
-      </tr>
-    </thead>
-    <tbody>
-      {#each tokens as token}
+  {#if phase === 'lexer' && tokens.length > 0}
+    <h3>Tokens</h3>
+    <table class="token-table">
+      <thead>
         <tr>
-          <td>{token.type}</td>
-          <td>{token.value}</td>
+          <th>Type</th>
+          <th>Value</th>
         </tr>
-      {/each}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {#each tokens as token}
+          <tr>
+            <td>{token.type}</td>
+            <td>{token.value}</td>
+          </tr>
+        {/each}
+      </tbody>
+    </table>
+  {:else}
+    <div class="placeholder">
+      <p>Token table will appear here after generation</p>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -75,5 +73,14 @@
 
   .token-table tr:nth-child(even) {
     background: #f9f9f9;
+  }
+
+  .placeholder {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    font-style: italic;
   }
 </style>
