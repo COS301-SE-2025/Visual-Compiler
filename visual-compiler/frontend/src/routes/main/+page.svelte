@@ -179,7 +179,7 @@
   }
   .analysis-overlay {
     position: fixed;
-    top: 3.5rem; /* Account for navbar */
+    top: 3.5rem; 
     left: 0;
     right: 0;
     bottom: 0;
@@ -197,7 +197,7 @@
     display: flex;
     flex: 1;
     gap: 1rem;
-    height: calc(100vh - 6rem); /* Account for navbar and padding */
+    height: calc(100vh - 6rem);
   }
   .three-column-layout > :global(*) {
     flex: 1;

@@ -97,6 +97,7 @@
     display: flex;
     gap: 0.5rem;
     margin-bottom: 0.7rem;
+    justify-content: center;
   }
 
   .upload-btn {

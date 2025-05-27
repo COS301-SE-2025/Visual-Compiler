@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Svelvet, Node } from 'svelvet';
+  import { Svelvet, Node , ThemeToggle  } from 'svelvet';
   import { createEventDispatcher } from 'svelte';
   import type { Writable } from 'svelte/store';
   import type { NodeType } from '$lib/types';
@@ -27,7 +27,7 @@
   }
 </script>
 
-<div class="drawer-canvas">
+<div class="drawer-canvas" >
   <div class="canvas-container">
     <Svelvet bind:this={canvasEl}>
       {#each $nodes as node (node.id)}
@@ -41,41 +41,61 @@
           textColor="#fff"
           on:nodeClicked={() => onNodeClick(node.type)}
         />
+        <ThemeToggle slot="toggle" main="light" alt="custom-theme" />
       {/each}
+      
     </Svelvet>
   </div>
 </div>
 
 <style>
+  :root[svelvet-theme='custom-theme'] {
+    --background-color: #1b1d2a;
+    --dot-color: #2c2f40;
+
+    --node-color: #041a47;
+    --node-text-color: #ffffff;
+    --node-border-color: #374151;
+    --node-selection-color: #3b82f6;
+
+    --edge-color: #ffffff;
+    --anchor-color: #60a5fa;
+    --anchor-border-color: #ffffff;
+  }
+
   .drawer-canvas {
     flex: 1;
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
+
   .canvas-container {
     flex: 1;
     position: relative;
     overflow: auto;
   }
+
   .canvas-container :global(.svelvet) {
     width: 100% !important;
     height: 100% !important;
   }
+
   :global(.svelvet-edge path) {
-    stroke: #fff !important;
+    stroke: var(--edge-color) !important;
     stroke-width: 3px !important;
   }
+
   :global(g[id^="N-"] rect) {
     transition: filter 0.2s ease;
   }
+
   :global(g.selected[id^="N-"] rect) {
-    filter: drop-shadow(0 0 12px #fff);
+    filter: drop-shadow(0 0 12px white);
   }
 
   :global(g[id^="N-source"] .handle-left),
-:global(g[id^="source"] .handle-left) {
-  display: none !important;
-}
-
+  :global(g[id^="source"] .handle-left) {
+    display: none !important;
+  }
 </style>

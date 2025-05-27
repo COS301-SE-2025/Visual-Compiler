@@ -1,0 +1,23 @@
+:root[svelvet-theme='dark'] {
+  --background-color: #1b1d2a;
+  --dot-color: #2c2f40;
+  --node-color: #041a47;
+  --node-text-color: #ffffff;
+  --node-border-color: #374151;
+  --node-selection-color: #3b82f6;
+  --edge-color: #ffffff;
+  --anchor-color: #60a5fa;
+  --anchor-border-color: #ffffff;
+}
+
+:root[svelvet-theme='light'] {
+  --background-color: white;
+  --dot-color: #ccc;
+  --node-color: #fff;
+  --node-text-color: #000;
+  --node-border-color: #ddd;
+  --node-selection-color: #333;
+  --edge-color: #000;
+  --anchor-color: #333;
+  --anchor-border-color: #000;
+}
