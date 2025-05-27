@@ -285,8 +285,10 @@
   }
   .phase-inspector {
     flex: 1.2;
-    padding: 2rem;
-
+    padding-left: 2rem;
+    padding-right: 2rem;
+    padding-top: 0.2rem;
+    padding-bottom: 2rem;
     background: #fff;
   }
 
@@ -327,9 +329,7 @@
     flex: 1;
   }
 
-  .lexor-heading-h1{
-    color: #001A6E;
-  }
+ 
   .header-section h3 {
     margin: 0;
     color: #001A6E;
