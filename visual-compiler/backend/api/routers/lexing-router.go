@@ -6,9 +6,9 @@ import (
 )
 
 func SetupLexingRouter() *gin.Engine {
-	r := gin.Default()
+	r := gin.New()
 
-	r.PATCH("/lexer", handlers.Lexing)
+	r.GET("/lexer", handlers.Lexing)
 
 	return r
 }
