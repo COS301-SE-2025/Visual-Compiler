@@ -11,20 +11,16 @@
     position: { x: number; y: number };
   }
 
-  // the store of nodes passed in from +page.svelte
   export let nodes: Writable<CanvasNode[]>;
 
   const dispatch = createEventDispatcher<{ phaseSelect: NodeType }>();
   let canvasEl: any;
-
-  // simple double-click detector
   let lastClick = 0;
   const DOUBLE_CLICK_MS = 300;
 
   function onNodeClick(type: NodeType) {
     const now = performance.now();
     if (now - lastClick < DOUBLE_CLICK_MS) {
-      // double-click!
       dispatch('phaseSelect', type);
     }
     lastClick = now;
@@ -42,7 +38,7 @@
           drop="center"
           useDefaults
           bgColor="#041a47"
-          textColor="#fff"                 
+          textColor="#fff"
           on:nodeClicked={() => onNodeClick(node.type)}
         />
       {/each}
@@ -62,21 +58,24 @@
     position: relative;
     overflow: auto;
   }
-  /* force Svelvet to fill its container */
   .canvas-container :global(.svelvet) {
-    width: 100%  !important;
+    width: 100% !important;
     height: 100% !important;
   }
-  /* thicker white edges */
   :global(.svelvet-edge path) {
     stroke: #fff !important;
     stroke-width: 3px !important;
   }
-  /* hover & selected glow */
   :global(g[id^="N-"] rect) {
     transition: filter 0.2s ease;
   }
   :global(g.selected[id^="N-"] rect) {
     filter: drop-shadow(0 0 12px #fff);
   }
+
+  :global(g[id^="N-source"] .handle-left),
+:global(g[id^="source"] .handle-left) {
+  display: none !important;
+}
+
 </style>
