@@ -5,16 +5,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter() *gin.Engine {
-	r := gin.Default()
+func SetupUserRouter() *gin.Engine {
+	r := gin.New()
 
-	api := r.Group("/api")
-	{
-		api.POST("/register", handlers.Register)
-		api.POST("/login", handlers.Login)
-		api.GET("/users", handlers.GetAllUsers)
-		api.DELETE("/delete", handlers.DeleteUser)
-	}
+	r.POST("/register", handlers.Register)
+	r.POST("/login", handlers.Login)
+	r.GET("/getUsers", handlers.GetAllUsers)
+	r.DELETE("/delete", handlers.DeleteUser)
 
 	return r
 }

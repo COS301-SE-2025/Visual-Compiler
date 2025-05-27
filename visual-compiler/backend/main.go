@@ -27,9 +27,17 @@ func main() {
 	}))
 
 	// Attach your routes
-	api := routers.SetupRouter()
-	router.Any("/api/*any", func(c *gin.Context) {
-		api.HandleContext(c)
+	apiUserRoutes := routers.SetupUserRouter()
+	apiLexingRoutes := routers.SetupLexingRouter()
+
+	router.Any("/api/users/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		apiUserRoutes.HandleContext(c)
+	})
+
+	router.Any("/api/lexing/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		apiLexingRoutes.HandleContext(c)
 	})
 
 	log.Println("Starting backend server on: http://localhost:8080/api")
