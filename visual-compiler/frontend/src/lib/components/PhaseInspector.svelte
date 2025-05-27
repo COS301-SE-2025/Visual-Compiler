@@ -23,24 +23,21 @@
     }
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     formError = '';
     let hasErrors = false;
     let nonEmptyRows = [];
 
     // Handle validation and filtering in one pass
     for (const row of inputRows) {
-      // Skip completely empty rows
       if (!row.type && !row.regex) continue;
 
       row.error = '';
 
-      // Check for partial fills
       if (!row.type || !row.regex) {
         row.error = 'Please fill in both Type and Regular Expression';
         hasErrors = true;
       } else if (!validateRegex(row.regex)) {
-        // Validate regex
         row.error = 'Invalid regular expression pattern';
         hasErrors = true;
       }
@@ -58,34 +55,69 @@
       return;
     }
 
-    // Check if we removed any empty rows and still have valid rows
-    if (nonEmptyRows.length < inputRows.length && nonEmptyRows.length > 0) {
-      inputRows = nonEmptyRows;
+    // Update inputRows with filtered rows
+    inputRows = nonEmptyRows;
+
+    if (hasErrors) {
       submissionStatus = {
         show: true,
-        success: 'info',
-        message: 'Empty rows have been removed. Please submit your regular expressions again.'
+        success: false,
+        message: 'Please fix the errors before submitting'
       };
-      showGenerateButton = false;
       return;
     }
 
-    // Update inputRows with filtered and validated rows
-    inputRows = nonEmptyRows;
-
-    // Set submission status
-    submissionStatus = {
-      show: true,
-      success: !hasErrors,
-      message: hasErrors 
-        ? 'Please fix the errors before submitting'
-        : 'Successfully submitted!'
+    // Prepare data for API call
+    const requestData = {
+      source_code: sourceCode,
+      pairs: inputRows.map(row => ({
+        Type: row.type.toUpperCase(),
+        Regex: row.regex
+      }))
     };
 
-    // Show/hide generate button based on validation
-    showGenerateButton = !hasErrors;
+    try {
+      console.log('Sending request to:', 'http://localhost:8080/api/lexing/lexer');
+      console.log('Request payload:', requestData);
 
-    if (!hasErrors) {
+      const response = await fetch('http://localhost:8080/api/lexing/lexer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'  // Ensure CORS headers are set
+        },
+        body: JSON.stringify(requestData)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server response:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
+        throw new Error(`Server error (${response.status}): ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Server response:', data);
+      
+      // Show success message
+      submissionStatus = {
+        show: true,
+        success: true,
+        message: 'Successfully submitted!'
+      };
+
+      // Show generate button
+      showGenerateButton = true;
+
+      // Dispatch token data
+      dispatch('generateTokens', {
+        patterns: data.tokens
+      });
+
+      // Reset status message after animation
       setTimeout(() => {
         submissionStatus = { 
           show: false, 
@@ -93,10 +125,17 @@
           message: '' 
         };
       }, 3000);
-    }
 
-    // Ensure UI updates
-    showGenerateButton = !hasErrors && inputRows.length > 0;
+    } catch (error) {
+      console.error('Fetch error:', error);
+      submissionStatus = {
+        show: true,
+        success: false,
+        message: error.message === 'Failed to fetch' 
+          ? 'Cannot connect to server. Please ensure the backend is running.'
+          : `Error: ${error.message}`
+      };
+    }
   }
 
   function generateTokens() {
