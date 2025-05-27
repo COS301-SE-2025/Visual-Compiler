@@ -11,6 +11,7 @@ import (
 func SetupLexingRouter() *gin.Engine {
 	r := gin.New()
 
+	r.POST("/code", handlers.StoreSourceCode)
 	r.POST("/lexer", handlers.Lexing)
 
 	return r

@@ -13,6 +13,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var UsersID bson.ObjectID
+
 // Specifies the JSON body request for logging in
 type LoginReq struct {
 	// Either the user's email or username
@@ -53,9 +55,10 @@ func Login(c *gin.Context) {
 	}
 
 	var dbUser struct {
-		Username string `bson:"username"`
-		Email    string `bson:"email"`
-		Password string `bson:"password"`
+		Username string        `bson:"username"`
+		Email    string        `bson:"email"`
+		Password string        `bson:"password"`
+		ID       bson.ObjectID `bson:"_id"`
 	}
 
 	err := usersCollection.FindOne(ctx, filterLogin).Decode(&dbUser)
@@ -76,4 +79,5 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login Successful. Welcome " + dbUser.Username,
 	})
+	UsersID = dbUser.ID
 }

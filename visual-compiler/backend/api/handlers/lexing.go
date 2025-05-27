@@ -13,23 +13,23 @@ import (
 )
 
 // Specifies the JSON body request.
-type LexingRequest struct {
+type SourceCodeRequest struct {
 	// Represents the source code the user enters
 	Code string `json:"source_code" bson:"required"`
 	// Represents the pairs of Type and Regex
 	Pairs []services.TypeRegex `json:"pairs" bson:"required"`
 }
 
-// Lexes a user's source code.
+// Locally store a user's source code and regex expressions.
 // Gets the source code from a JSON request.
 // Formats the response as a JSON Body
 //
 // Returns:
 //   - A JSON response body.
 //   - A 200 OK response if successful
-//   - A 500 Internal Server Error if any errors are caught for lexing or parsing
-func Lexing(c *gin.Context) {
-	var req LexingRequest
+//   - A 500 Internal Server Error if any errors are caught for parsing errors
+func StoreSourceCode(c *gin.Context) {
+	var req SourceCodeRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
@@ -43,21 +43,36 @@ func Lexing(c *gin.Context) {
 
 	pairs := jsonAsBytes
 
-	mongoCli := db.ConnectClient()
-	collection := mongoCli.Database("visual-compiler").Collection("lexing")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
 	services.SourceCode(req.Code)
 	services.ReadRegexRules(pairs)
+
+	c.JSON(http.StatusOK, gin.H{"message": "Code is ready for lexing"})
+}
+
+// Lexes the user's source code that is locally stored.
+// Stores the tokens, unexpected tokens, user's source code and the user's id in the database.
+// Gets the source code from the function GetSourceCode.
+// Gets the users id from a global variable `UsersID`.
+// Formats the response as a JSON Body
+//
+// Returns:
+//   - A JSON response body.
+//   - A 200 OK response if successful
+//   - A 500 Internal Server Error if any errors are caught for parsing and lexing errors
+func Lexing(c *gin.Context) {
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
 
 	tokens := services.CreateTokens()
 	unexpected_tokens := services.GetUnexpectedTokens()
 
-	_, err = collection.InsertOne(ctx, bson.M{
-		"code":   req.Code,
-		"tokens": tokens,
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := collection.InsertOne(ctx, bson.M{
+		"code":     services.GetSourceCode(),
+		"tokens":   tokens,
+		"users_id": UsersID,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
@@ -65,8 +80,9 @@ func Lexing(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Successfully tokenised your code",
-		"tokens":  tokens,
+		"users_id":          UsersID,
+		"message":           "Successfully tokenised your code",
+		"tokens":            tokens,
 		"unexpected_tokens": unexpected_tokens,
 	})
 }
