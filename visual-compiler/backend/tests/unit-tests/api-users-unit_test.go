@@ -1,4 +1,4 @@
-package tests
+package unit_tests
 
 import (
 	"bytes"
@@ -14,6 +14,7 @@ import (
 )
 
 func TestSetupRouter(t *testing.T) {
+	gin.SetMode(gin.TestMode)
 	router := routers.SetupUserRouter()
 	if router == nil {
 		t.Errorf("SetupRouter function does not initialise router")
@@ -21,9 +22,10 @@ func TestSetupRouter(t *testing.T) {
 }
 
 func TestRouterRoutes(t *testing.T) {
+	gin.SetMode(gin.TestMode)
 	router := routers.SetupUserRouter()
 	endpoints := router.Routes()
-	if len(endpoints) != 2 {
+	if len(endpoints) != 4 {
 		t.Errorf("Expected routes to be registered")
 	}
 }
@@ -52,7 +54,7 @@ func TestRegisterInvalidEmail(t *testing.T) {
 		t.Errorf("Could not data to json")
 	}
 
-	res, err := http.NewRequest("POST", "/api/register", bytes.NewBuffer(req))
+	res, err := http.NewRequest("POST", "/api/users/register", bytes.NewBuffer(req))
 	if err != nil {
 		t.Errorf("Request could not be created")
 	}
@@ -81,7 +83,7 @@ func TestRegisterInvalidPassword(t *testing.T) {
 		t.Errorf("Could not data to json")
 	}
 
-	res, err := http.NewRequest("POST", "/api/register", bytes.NewBuffer(req))
+	res, err := http.NewRequest("POST", "/api/users/register", bytes.NewBuffer(req))
 	if err != nil {
 		t.Errorf("Request could not be created")
 	}
@@ -110,7 +112,7 @@ func TestRegisterInvalidUsername(t *testing.T) {
 		t.Errorf("Could not data to json")
 	}
 
-	res, err := http.NewRequest("POST", "/api/register", bytes.NewBuffer(req))
+	res, err := http.NewRequest("POST", "/api/users/register", bytes.NewBuffer(req))
 	if err != nil {
 		t.Errorf("Request could not be created")
 	}
@@ -138,7 +140,7 @@ func TestLoginNoName(t *testing.T) {
 		t.Errorf("Could not data to json")
 	}
 
-	res, err := http.NewRequest("GET", "/api/login", bytes.NewBuffer(req))
+	res, err := http.NewRequest("GET", "/api/users/login", bytes.NewBuffer(req))
 	if err != nil {
 		t.Errorf("Request could not be created")
 	}
@@ -165,7 +167,7 @@ func TestLoginNoPassword(t *testing.T) {
 		t.Errorf("Could not data to json")
 	}
 
-	res, err := http.NewRequest("GET", "/api/login", bytes.NewBuffer(req))
+	res, err := http.NewRequest("GET", "/api/users/login", bytes.NewBuffer(req))
 	if err != nil {
 		t.Errorf("Request could not be created")
 	}
@@ -173,6 +175,23 @@ func TestLoginNoPassword(t *testing.T) {
 	contxt.Request = res
 
 	handlers.Login(contxt)
+
+	if rec.Code == http.StatusBadRequest {
+		var mess map[string]string
+		t.Logf(mess["error"])
+	}
+}
+
+func TestDeleteUser_Invalid(t *testing.T) {
+	contxt, rec := createTestContext(t)
+	res, err := http.NewRequest("DELETE", "/api/users/delete", bytes.NewBuffer([]byte{}))
+	if err != nil {
+		t.Errorf("Request could not be created")
+	}
+	res.Header.Set("Content-Type", "application/json")
+	contxt.Request = res
+
+	handlers.DeleteUser(contxt)
 
 	if rec.Code == http.StatusBadRequest {
 		var mess map[string]string
