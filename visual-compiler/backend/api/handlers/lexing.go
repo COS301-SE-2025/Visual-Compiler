@@ -53,6 +53,7 @@ func Lexing(c *gin.Context) {
 	services.ReadRegexRules(pairs)
 
 	tokens := services.CreateTokens()
+	unexpected_tokens := services.GetUnexpectedTokens()
 
 	_, err = collection.InsertOne(ctx, bson.M{
 		"code":   req.Code,
@@ -66,5 +67,6 @@ func Lexing(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Successfully tokenised your code",
 		"tokens":  tokens,
+		"unexpected_tokens": unexpected_tokens,
 	})
 }

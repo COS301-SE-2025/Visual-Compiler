@@ -1,4 +1,4 @@
-package tests 
+package unit_tests 
 
 import (
 	"testing"
@@ -9,7 +9,8 @@ import (
 func TestInitialise (t *testing.T) {
 	lexing_input := "int x = 2 ;"
 	services.SourceCode(lexing_input)
-	if (services.Source!= lexing_input) {
+	source := services.GetSourceCode()
+	if (source!= lexing_input) {
 		t.Errorf("Source code initialisation faied")
 	}
 }
@@ -125,7 +126,8 @@ func TestFullCreateTokens_Success (t *testing.T) {
 func TestCreateTokens_NoWhitespace (t *testing.T) {
 	lexing_input := "int x=2;"
 	services.SourceCode(lexing_input)
-	if (services.Source!= lexing_input) {
+	source := services.GetSourceCode()
+	if (source!= lexing_input) {
 		 t.Errorf("Source code initialisation faied")
 	}
 	c_input := []byte(`[{"Type": "KEYWORD","Regex":"\\b(if|else)\\b"},{"Type": "IDENTIFIER","Regex":"[a-zA-Z_]\\w*"},{"Type":"NUMBER","Regex":"\\d+(\\.\\d+)?"}]`)
@@ -136,6 +138,22 @@ func TestCreateTokens_NoWhitespace (t *testing.T) {
 	output := services.CreateTokens()
 	if (output==nil) {
 		t.Errorf("No output")
+	}
+}
+
+func TestUnexpectedTokens (t *testing.T) {
+	unexpected_tokens := services.GetUnexpectedTokens() 
+	expectedRes := []string{
+		"x=2;",
+	}
+	if (len(unexpected_tokens) != len(expectedRes)) {
+		t.Errorf("Not enough unexpected tokens found")
+	}
+
+	for i,token:= range unexpected_tokens {
+		if (token!=expectedRes[i]) {
+			t.Errorf("Tokenisation incorrect: %v",token)
+		}
 	}
 }
 

@@ -1,4 +1,5 @@
-//Package path implements routines for the lexing phase of compiler construction
+//Package path implements routines for the phases of compiler construction
+//This packages handles the lexing process for compiler construction
 package services
 
 import (
@@ -8,28 +9,55 @@ import (
 	"strings"
 )
 
-var Source string
+//String variable that stores the source code
+var source string
 
+//Struct that indicates how the RegexRules
 type TypeRegex struct {
 	Type  string
 	Regex string
 }
 
+//Rules array variable of type TypeRegex
+//Stores each regex rule 
 var rules []TypeRegex
 
+//Struct that stores the Type and Value of a token
 type TypeValue struct {
 	Type  string
 	Value string
 }
 
+//Tokens array to store each Type and the Value for each token
 var tokens []TypeValue
 
+//Unexpected tokens array to store each Type and the Value for each token that was not identified
+var unexpected_tokens []string
+
+//Name: SourceCode
+//Paramters: <string> which will be source code
+//Return: none
+//Setter function which sets the source variable to the value of parameter
 func SourceCode(data string) {
 
-	Source = data
+	source = data
 
 }
 
+//Name: GetSourceCode
+//Parameters: none
+//Return: <string>
+//Getter function to get the value of the source variable
+func GetSourceCode() string {
+
+	return source
+
+}
+
+//Name: ReadRegexRules
+//Parameters: []byte
+//Return: error
+//This function will receive an array of regex rules, validate them and store them in the rules struct
 func ReadRegexRules(input []byte) error {
 
 	rules = []TypeRegex{}
@@ -59,10 +87,17 @@ func ReadRegexRules(input []byte) error {
 	return nil
 }
 
+//Name: CreateTokens
+//Parameters: none
+//Return: <[]TypeValue> An array of tokens
+//This function will loop through the source code to find all tokens that match the regex rules stored,
+//each match will be stored in the tokens array
+//Unexpected tokens will also be 
 func CreateTokens() []TypeValue {
 
+	unexpected_tokens = []string{}
 	tokens = []TypeValue{}
-	var words = strings.Fields(Source)
+	var words = strings.Fields(source)
 
 	for _, word := range words {
 
@@ -81,8 +116,18 @@ func CreateTokens() []TypeValue {
 
 		if !found {
 			fmt.Printf("unexpected token type: %q\n", word)
+			unexpected_tokens = append(unexpected_tokens,word)
 		}
 	}
 
 	return tokens
+}
+
+//Name: GetUnexpectedTokens
+//Parameters: none
+//Return: <[]string> An array of string values
+//Getter function
+//This function will return the array of unexpected tokens found
+func GetUnexpectedTokens() []string {
+	return unexpected_tokens
 }
