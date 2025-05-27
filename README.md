@@ -38,11 +38,18 @@
 
 <h2 align="center">Technology Stack</h2>
 
-<div style="display: flex; gap: 20px; justify-content: center;">
-    <img src="https://img.shields.io/badge/Svelte-FF3E00?style=for-the-badge&logo=svelte&logoColor=white">
-    <img src="https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white">
-    <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white">
+<div align="center">
+    <img src="https://img.shields.io/badge/Svelte-FF3E00?style=for-the-badge&logo=svelte&logoColor=white"> &nbsp;&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white"> &nbsp;&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white"> &nbsp;&nbsp;&nbsp;
     <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white">
+</div>
+
+<br>
+
+<div align="center">
+    <img src="https://img.shields.io/github/issues/COS301-SE-2025/Visual-Compiler">
+    <img src="https://img.shields.io/github/issues-pr/COS301-SE-2025/Visual-Compiler"/>
 </div>
 
 <br>
