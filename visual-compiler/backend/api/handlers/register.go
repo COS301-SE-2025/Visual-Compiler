@@ -13,12 +13,24 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Specifies the JSON body request for Registering
 type Request struct {
-	Email    string `json:"email" binding:"required,email"`
+	// User's Email address
+	Email string `json:"email" binding:"required,email"`
+	// User's password
 	Password string `json:"password" binding:"required,min=8"`
+	// User's username
 	Username string `json:"username" binding:"required,min=6"`
 }
 
+// Registers a user on the Database
+// Gets the user's details from a JSON request.
+// Formats the response as a JSON Body
+//
+// Returns:
+//   - A JSON response body.
+//   - A 200 OK response if successful
+//   - A 500 Internal Server Error if any errors are caught for registering/inserting or parsing
 func Register(c *gin.Context) {
 	var req Request
 

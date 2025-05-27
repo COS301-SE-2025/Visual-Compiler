@@ -1,3 +1,4 @@
+// Package Routers defines the endpoints that the frontend calls.
 package routers
 
 import (
@@ -5,6 +6,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Sets up the router for the user specific endpoints
+// Sets up the following:
+//   - POST requests: register and login
+//   - GET request: get all users
+//   - DELETE request: delete user
 func SetupUserRouter() *gin.Engine {
 	r := gin.New()
 

@@ -12,11 +12,22 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
+// Specifies the JSON body request.
 type LexingRequest struct {
-	Code  string               `json:"source_code" bson:"required"`
+	// Represents the source code the user enters
+	Code string `json:"source_code" bson:"required"`
+	// Represents the pairs of Type and Regex
 	Pairs []services.TypeRegex `json:"pairs" bson:"required"`
 }
 
+// Lexes a user's source code.
+// Gets the source code from a JSON request.
+// Formats the response as a JSON Body
+//
+// Returns:
+//   - A JSON response body.
+//   - A 200 OK response if successful
+//   - A 500 Internal Server Error if any errors are caught for lexing or parsing
 func Lexing(c *gin.Context) {
 	var req LexingRequest
 

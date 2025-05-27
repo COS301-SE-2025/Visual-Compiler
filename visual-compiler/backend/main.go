@@ -1,3 +1,4 @@
+// Package Main for the main entry into the API.
 package main
 
 import (
@@ -10,6 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Entry point of the API.
+//
+// Initializes the necessary services, sets up the routes and the GIN framework
+// and starts the http server. Responsibile for bootstrapping the backend infrastructure
+// required
+//
+// If any setup fails, the application will log the error and exit the application
 func main() {
 	db.ConnectClient()
 

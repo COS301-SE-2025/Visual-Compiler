@@ -5,6 +5,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Sets up the router for the lexing specific endpoints
+// Sets up the following:
+//   - POST request: lexer functionality
 func SetupLexingRouter() *gin.Engine {
 	r := gin.New()
 
