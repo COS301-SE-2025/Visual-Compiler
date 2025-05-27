@@ -90,35 +90,25 @@ func CreateTokens() {
 	tokens = []TypeValue{}
 	tokens_unidentified = []string{}
 
-	re := regexp.MustCompile(`\s+`)
-	input := re.ReplaceAllString(source, "")
+	var words = strings.Fields(source)
 
-	length := len(input)
-	i := 0
-
-	for i < length {
+	for _, word := range words {
 
 		found := false
 
 		for _, rule := range rules {
 
-			re := regexp.MustCompile("^" + rule.Regex)
-			position := re.FindStringIndex(input[i:])
+			re := regexp.MustCompile("^" + rule.Regex + "$")
 
-			if position != nil && position[0] == 0 {
-
-				match := input[i : i+position[1]]
-				tokens = append(tokens, TypeValue{Type: rule.Type, Value: match})
-				i = i + position[1]
+			if re.MatchString(word) {
 				found = true
+				tokens = append(tokens, TypeValue{Type: rule.Type, Value: word})
 				break
 			}
 		}
 
 		if !found {
-
-			tokens_unidentified = append(tokens_unidentified, string(input[i]))
-			i++
+			tokens_unidentified = append(tokens_unidentified, word)
 		}
 	}
 }
