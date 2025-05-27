@@ -14,7 +14,7 @@ import (
 )
 
 // create mock requests
-func createTestContext(t *testing.T) (*gin.Context, *httptest.ResponseRecorder) {
+func createPhaseTestContext(t *testing.T) (*gin.Context, *httptest.ResponseRecorder) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()
 	contxt, eng := gin.CreateTestContext(rec)
@@ -43,7 +43,7 @@ func TestLexingRouterRoutes(t *testing.T) {
 
 func TestLexing_Error(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	contxt, rec := createTestContext(t)
+	contxt, rec := createPhaseTestContext(t)
 
 	res, err := http.NewRequest("POST", "/api/lexing/lexer", bytes.NewBuffer([]byte{}))
 	if err != nil {
