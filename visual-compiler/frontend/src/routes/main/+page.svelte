@@ -6,7 +6,7 @@
   import PhaseTutorial from '$lib/components/PhaseTutorial.svelte';
   import PhaseInspector from '$lib/components/PhaseInspector.svelte';
   import ArtifactViewer from '$lib/components/ArtifactViewer.svelte';
-  import type { NodeType } from '$lib/types';
+  import type { NodeType, Token } from '$lib/types';
   import { writable } from 'svelte/store';
   import { addToast } from '$lib/stores/toast';
   import { theme } from '../../lib/stores/theme';
@@ -31,6 +31,7 @@
   let selectedPhase: NodeType | null = null;
   let showCodeInput = false;
   let sourceCode = '';
+  let showTokens = false;
 
   // --- TOOLTIPS AND LABELS ---
   const tooltips: Record<NodeType, string> = {
@@ -82,43 +83,20 @@
 
   // --- CODE HANDLING ---
   function handleCodeSubmit(event: CustomEvent<string>) {
+    showTokens = false;
     sourceCode = event.detail;
     showCodeInput = false;
   }
 
   // --- TOKEN GENERATION ---
-  let tokens = [];
+  let tokens: Token[] = [];
+  let unexpectedTokens: string[] = [];
 
-  function handleTokenGeneration(event: CustomEvent<{ patterns: Array<{ type: string; pattern: string }> }>) {
-    const patterns = event.detail.patterns;
-    tokens = generateTokens(sourceCode, patterns);
-  }
-
-  function generateTokens(source: string, patterns: any[]) {
-    const tokens = [];
-    let remainingText = source;
-
-    while (remainingText.length > 0) {
-      let matched = false;
-      
-      for (const { type, pattern } of patterns) {
-        const regex = new RegExp(`^${pattern}`);
-        const match = remainingText.match(regex);
-        
-        if (match) {
-          tokens.push({ type, value: match[0] });
-          remainingText = remainingText.slice(match[0].length);
-          matched = true;
-          break;
-        }
-      }
-
-      if (!matched) {
-        remainingText = remainingText.slice(1);
-      }
-    }
-
-    return tokens;
+  function handleTokenGeneration(event: CustomEvent<{ tokens: Token[], unexpected_tokens: string[] }>) {
+    showTokens = true;
+    console.log('Received event:', event.detail); // Debug log
+    tokens = event.detail.tokens;
+    unexpectedTokens = event.detail.unexpected_tokens;
   }
 </script>
 
@@ -143,6 +121,8 @@
           <ArtifactViewer 
             phase={selectedPhase}
             {tokens}
+            {unexpectedTokens}
+            {showTokens}
           />
         </div>
         <button on:click={returnToCanvas} class="return-button">
