@@ -2,6 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { Token } from '$lib/types';
   import type { NodeType } from '$lib/types';
+	import { addToast } from '$lib/stores/toast';
   
   export let sourceCode = '';  
   
@@ -108,13 +109,7 @@
 
     } catch (error) {
       console.error('Store error:', error);
-      submissionStatus = {
-        show: true,
-        success: false,
-        message: error.message === 'Failed to fetch' 
-          ? 'Cannot connect to server. Please ensure the backend is running.'
-          : `Error: ${error.message}`
-      };
+      addToast("Cannot connect to server. Please ensure the backend is running.", "error");
     }
   }
 
@@ -165,11 +160,7 @@
 
     } catch (error) {
       console.error('Generate tokens error:', error);
-      submissionStatus = {
-        show: true,
-        success: false,
-        message: `Error generating tokens: ${error.message}`
-      };
+      addToast("Error generating tokens","error");
     }
   }
 
@@ -280,7 +271,7 @@
     <div 
       class="status-message" 
       class:success={submissionStatus.success === true}
-      class:info={submissionStatus.success === 'info'}
+      class:info={submissionStatus.message === 'info'}
     >
       {submissionStatus.message}
     </div>
@@ -294,8 +285,10 @@
   }
   .phase-inspector {
     flex: 1.2;
-    padding: 2rem;
-
+    padding-left: 2rem;
+    padding-right: 2rem;
+    padding-top: 0.2rem;
+    padding-bottom: 2rem;
     background: #fff;
   }
 
@@ -336,9 +329,7 @@
     flex: 1;
   }
 
-  .lexor-heading-h1{
-    color: #001A6E;
-  }
+ 
   .header-section h3 {
     margin: 0;
     color: #001A6E;
@@ -459,17 +450,20 @@
   }
 
   .generate-button {
-    padding: 0.6rem 1.5rem;
-    background: #28a745;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease; 
-    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
-  }
+  padding: 0.6rem 1.5rem; 
+  background: #666;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
+  margin-top: 1rem; 
+  height: 100%; 
+  line-height: 1.1; 
+}
 
   .submit-button:hover {
     background: #27548A;
@@ -484,7 +478,7 @@
   }
 
   .generate-button:hover {
-    background: #218838;
+    background: #3d3d3d;
   }
 
   .status-message {
