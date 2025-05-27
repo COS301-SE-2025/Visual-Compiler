@@ -59,8 +59,8 @@
 
 <div class="phase-tutorial">
   <div class="tutorial-content">
-    <h2>Lexing Stage</h2>
-    
+    <h2>What is Lexing?</h2>
+    <h3>Steps to Follow:</h3>
     <p class="description">
       A lexer breaks down source code into tokens. Each token has a type and value.
       Tokens are identified using regular expressions that match specific patterns.
@@ -68,78 +68,83 @@
     <div class="separator"></div>
 
     <div class="tutorial-container">
-      <!-- Step content -->
-      {#if currentStep === 1}
-        <div class="tutorial-step">
-          <h3>1. Source Code Input</h3>
-          <p>Start by entering your source code in the input box:</p>
-          <div class="code-sample">
-            <code>{@html sampleCode}</code>
-          </div>
-        </div>
-      {:else if currentStep === 2}
-        <div class="tutorial-step">
-          <h3>2. Regular Expression Basics</h3>
-          <p>Regular expressions use special characters to match patterns:</p>
-          <div class="pattern-example">
-            {#each regexBasics as {type, pattern, example}}
-              <div class="type-pair">
-                <span class="type">{type}</span>
-                <code class="pattern-code">{pattern}</code>
-                <span class="example">{example}</span>
-              </div>
-            {/each}
-          </div>
-        </div>
-      {:else if currentStep === 3}
-        <div class="tutorial-step">
-          <h3>3. Common Token Patterns</h3>
-          <p>Here are some common patterns used in lexical analysis:</p>
-          <div class="type-example">
-            {#each regexExamples as {type, pattern, example}}
-              <div class="type-pair">
-                <span class="type">{type}</span>
-                <code class="pattern-code">{pattern}</code>
-                <span class="example">Examples: {example}</span>
-              </div>
-            {/each}
-          </div>
-        </div>
-      {:else if currentStep === 4}
-        <div class="tutorial-step">
-          <h3>4. Tokenisation Result</h3>
-          <div class="token-table">
-            <div class="table-header">
-              <span class="header-type">Type</span>
-              <span class="header-tokens">Tokens</span>
+      <!-- Content area -->
+      <div class="tutorial-content-area">
+        <!-- Step content -->
+        {#if currentStep === 1}
+          <div class="tutorial-step">
+            <h3>1. Source Code Input</h3>
+            <p>Start by entering your source code in the input box:</p>
+            <div class="code-sample">
+              <code>{@html sampleCode}</code>
             </div>
-            {#each tokensByType as {type, tokens}}
-              <div class="table-row">
-                <span class="token-type">{type}</span>
-                <span class="token-values">{tokens.join(', ')}</span>
-              </div>
-            {/each}
           </div>
-        </div>
-      {/if}
+        {:else if currentStep === 2}
+          <div class="tutorial-step">
+            <h3>2. Regular Expression Basics</h3>
+            <p>Regular expressions use special characters to match patterns:</p>
+            <div class="pattern-example">
+              {#each regexBasics as {type, pattern, example}}
+                <div class="type-pair">
+                  <span class="type">{type}</span>
+                  <code class="pattern-code">{pattern}</code>
+                  <span class="example">{example}</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {:else if currentStep === 3}
+          <div class="tutorial-step">
+            <h3>3. Common Token Patterns</h3>
+            <p>Here are some common patterns used in lexical analysis:</p>
+            <div class="type-example">
+              {#each regexExamples as {type, pattern, example}}
+                <div class="type-pair">
+                  <span class="type">{type}</span>
+                  <code class="pattern-code">{pattern}</code>
+                  <span class="example">Examples: {example}</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {:else if currentStep === 4}
+          <div class="tutorial-step">
+            <h3>4. Tokenisation Result</h3>
+            <div class="token-table">
+              <div class="table-header">
+                <span class="header-type">Type</span>
+                <span class="header-tokens">Tokens</span>
+              </div>
+              {#each tokensByType as {type, tokens}}
+                <div class="table-row">
+                  <span class="token-type">{type}</span>
+                  <span class="token-values">{tokens.join(', ')}</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      </div>
       
-      <!-- Navigation - Now inside tutorial-container -->
-      <div class="navigation">
-        <button 
-          class="nav-button" 
-          disabled={currentStep === 1} 
-          on:click={prevStep}
-        >
-          ← Previous
-        </button>
-        <span class="step-counter">{currentStep} / {totalSteps}</span>
-        <button 
-          class="nav-button" 
-          disabled={currentStep === totalSteps} 
-          on:click={nextStep}
-        >
-          Next →
-        </button>
+      <!-- Navigation - Positioned higher -->
+      <div class="navigation-container">
+        <div class="navigation">
+          <button 
+            class="nav-button" 
+            disabled={currentStep === 1} 
+            on:click={prevStep}
+          >
+            ← Previous
+          </button>
+          <span class="step-counter">{currentStep} / {totalSteps}</span>
+          <button 
+            class="nav-button" 
+            disabled={currentStep === totalSteps} 
+            on:click={nextStep}
+          >
+            Next →
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -147,9 +152,17 @@
 
 <style>
   .phase-tutorial {
-    padding: 1rem; /* Reduced from 1.5rem */
+    padding: 1rem;
     height: 100%;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .tutorial-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
 
   h2 {
@@ -176,6 +189,23 @@
     width: 100%;
   }
 
+  .tutorial-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1rem;
+  }
+
+  .tutorial-content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 2rem;
+  }
+
+  .tutorial-step {
+    margin-bottom: 2rem;
+  }
+
   .code-sample {
     background: #f1f3f5;
     padding: 0.75rem;
@@ -183,24 +213,13 @@
     margin: 0.5rem 0;
     font-family: monospace;
   }
-  .tutorial-container {
-    display: flex;
-    flex-direction: column;
-    min-height: 400px;
-    justify-content: space-between;
-  }
-
-  .tutorial-step {
-    flex-grow: 1;
-    margin-bottom: 2rem;
-  }
 
   .pattern-example, .type-example {
     background: #f8f9fa;
     padding: 1rem;
     border-radius: 8px;
     margin: 1rem 0;
-    max-width: 650px; /* Reduced from 800px */
+    max-width: 650px;
   }
 
   .pattern-code {
@@ -210,7 +229,7 @@
     padding: 0.2rem 0.4rem;
     border-radius: 4px;
     color: #001A6E;
-    width: fit-content; /* Ensure code block only takes needed width */
+    width: fit-content;
   }
 
   .example {
@@ -218,14 +237,20 @@
     font-size: 0.9rem;
   }
 
+  .navigation-container {
+    margin-top: auto;
+    margin-bottom: 1rem;
+    padding: 1rem 0;
+    display: flex;
+    justify-content: center;
+  }
 
   .navigation {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1px solid #eee;
+    width: 100%;
+    max-width: 500px;
   }
 
   .nav-button {
@@ -235,6 +260,8 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    min-width: 100px;
+    font-size: 0.9rem;
   }
 
   .nav-button:disabled {
@@ -292,7 +319,7 @@
   }
 
   .header-tokens, .token-values {
-    padding-left: 3rem; /* Add padding to move tokens to the right */
+    padding-left: 3rem;
   }
 
   .token-values {
@@ -301,40 +328,12 @@
     font-size: 0.85rem;
   }
 
-  /* Update shared text styles */
-  .description,
-  .pattern-code,
-  .example,
-  .token-values,
-  .token-type,
-  .step-counter {
-    font-size: 0.9rem;
-  }
-
-  /* Update table styles for step 4 */
-  .token-table {
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    margin: 1rem 0;
-    max-width: 500px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  .table-header, .table-row {
-    display: grid;
-    grid-template-columns: 90px 1fr;
-    padding: 0.5rem 0.75rem;
-  }
-
-  /* Update type-pair grid for step 3 */
   .type-pair {
     margin: 0.75rem 0;
     display: grid;
-    grid-template-columns: 90px 130px 1fr; /* Reduced widths */
+    grid-template-columns: 90px 130px 1fr;
     align-items: center;
-    gap: 0.75rem; /* Reduced gap */
+    gap: 0.75rem;
   }
 
   .type {
@@ -342,5 +341,91 @@
     font-weight: 500;
     font-family: 'Fira Code', monospace;
     font-size: 0.9rem;
+  }
+
+  /* Dark Mode Styles */
+  :global(html.dark-mode) .phase-tutorial {
+    background: #1a2a4a;
+  }
+
+  :global(html.dark-mode) h2 {
+    color: #ebeef1;
+  }
+
+  :global(html.dark-mode) h3 {
+    color: #f0f0f0;
+  }
+
+  :global(html.dark-mode) .description {
+    color: #d1d5db;
+  }
+
+  :global(html.dark-mode) .separator {
+    border-bottom-color: #374151;
+  }
+
+  :global(html.dark-mode) .code-sample {
+    background: #2d3748;
+    color: #f0f0f0;
+  }
+
+  :global(html.dark-mode) .pattern-example,
+  :global(html.dark-mode) .type-example {
+    background: #2d3748;
+  }
+
+  :global(html.dark-mode) .pattern-code {
+    background: #4a5568;
+    color: #f0f0f0;
+  }
+
+  :global(html.dark-mode) .example {
+    color: #d1d5db;
+  }
+
+  :global(html.dark-mode) .navigation-container {
+    background: #1a2a4a;
+    border-top-color: #374151;
+  }
+
+  :global(html.dark-mode) .token-table {
+    background: #2d3748;
+    border-color: #4a5568;
+  }
+
+  :global(html.dark-mode) .table-row {
+    background: #2d3748;
+    border-bottom-color: #4a5568;
+  }
+
+  :global(html.dark-mode) .table-row:hover {
+    background: #3c4a62;
+  }
+
+  :global(html.dark-mode) .token-type {
+    color: #60a5fa;
+  }
+
+  :global(html.dark-mode) .token-values {
+    color: #d1d5db;
+  }
+
+  :global(html.dark-mode) .type {
+    color: #60a5fa;
+  }
+
+  :global(html.dark-mode) .nav-button {
+    background: #cccccc;
+    color: #041a47;
+  }
+
+  :global(html.dark-mode) .nav-button:disabled {
+    background: #4b5563;
+    color: #041a47;
+  }
+
+  :global(html.dark-mode) .nav-button:disabled {
+    background: #4b5563;
+    color: #041a47;
   }
 </style>

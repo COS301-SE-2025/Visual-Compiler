@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { NodeType } from '$lib/types';
   
-  export let sourceCode = '';  // Add this prop
+  export let sourceCode = '';  
   
   let inputRows = [{ type: '', regex: '', error: '' }];
   let formError = '';
@@ -193,7 +193,10 @@
 
 <div class="phase-inspector">
   <div class="source-code-section">
-    <h3>Source Code</h3>
+    <div class="lexor-heading">
+       <h1 class="lexor-heading-h1">LEXING</h1>
+    </div>
+    <h3 class="source-code-header">Source Code</h3>
     <pre class="source-display">{sourceCode || 'No source code available'}</pre>
   </div>
   
@@ -273,11 +276,14 @@
 </div>
 
 <style>
+
+  .source-code-header{
+    color: #444;
+  }
   .phase-inspector {
     flex: 1.2;
     padding: 2rem;
-    border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
+
     background: #fff;
   }
 
@@ -303,6 +309,9 @@
     position: relative;
   }
 
+  .lexor-heading{
+    justify-items:center;
+  }
   .block-headers {
     display: flex;
     gap: 2rem;
@@ -315,12 +324,16 @@
     flex: 1;
   }
 
+  .lexor-heading-h1{
+    color: #001A6E;
+  }
   .header-section h3 {
     margin: 0;
     color: #001A6E;
     font-size: 1rem;
     font-weight: 600;
   }
+
 
   .input-rows {
     display: flex;
@@ -418,16 +431,17 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: transform 0.2s ease; /* Add transform to transition */
+    transition: transform 0.2s ease; 
     box-shadow: 0 2px 4px rgba(0, 26, 110, 0.1);
-    position: relative; /* Add this */
+    position: relative; 
+    margin-top: 1rem;
   }
 
   .submit-button.shifted {
     transform: translateX(-1rem);
   }
 
-  /* When not shifted, ensure no transform */
+
   .submit-button:not(.shifted) {
     transform: translateX(0);
   }
@@ -441,12 +455,20 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s ease;  /* Only transition the background color */
+    transition: background-color 0.2s ease; 
     box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
   }
 
   .submit-button:hover {
     background: #27548A;
+    
+  } 
+
+   :global(html.dark-mode) .submit-button {
+    background: #cccccc;
+    color:#041a47;
+    transition: transform 0.2s ease; 
+    margin-top: 1rem;
   }
 
   .generate-button:hover {
@@ -470,7 +492,7 @@
   }
 
   .status-message.info {
-    background: #0096c7; /* Nice blue color that's not too harsh */
+    background: #0096c7; 
   }
 
   @keyframes fadeInOut {
@@ -479,4 +501,18 @@
     90% { opacity: 1; }
     100% { opacity: 0; }
   }
+  :global(html.dark-mode) .source-code-header {
+    color: #ebeef1;
+  }
+ 
+  
+  :global(html.dark-mode) .lexor-heading-h1 {
+    color: #ebeef1;
+  }
+
+  :global(html.dark-mode)  .source-display{
+    color : black;
+  }
+
+ 
 </style>

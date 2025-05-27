@@ -134,8 +134,8 @@
 
   /* Dark Mode Styles */
   :global(html.dark-mode) .toolbox {
-    background: #0a1a3a;
-    border-right: 1px solid #1a2a4a;
+    background: #404258;
+    border-right: 1px solid #404258;
     box-shadow: 2px 0 5px rgba(0,0,0,0.2);
   }
 
@@ -148,7 +148,7 @@
   }
 
   :global(html.dark-mode) .phase-btn {
-    background-color: #1a3a7a;
+    background-color: #041a47;
     color: #f0f0f0;
   }
 

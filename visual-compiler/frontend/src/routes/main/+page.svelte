@@ -217,6 +217,7 @@
     border-radius: 4px;
     cursor: pointer;
     z-index: 1000;
+    margin-right: 1rem;
   }
   .return-button:hover {
     background: #074799;
@@ -239,10 +240,12 @@
     width: 100%;
     position: relative;
   }
-  .modal-title {
+   .modal-title {
     margin: 0 0 1rem 0;
     font-size: 1.5rem;
     color: #333;
+    text-align: center; 
+    width: 100%; 
   }
   .close-btn {
     position: absolute;
@@ -254,7 +257,7 @@
     cursor: pointer;
   }
 
-  /* Dark mode styles for analysis overlay */
+  /* Dark mode styles */
   :global(html.dark-mode) .analysis-overlay {
     background: rgba(10, 26, 58, 0.95);
   }
@@ -272,4 +275,26 @@
   :global(html.dark-mode) .modal-title {
     color: #f0f0f0;
   }
+  :global(html.dark-mode) .close-btn {
+    color: #f0f0f0;
+  }
+  :global(html.dark-mode) .return-button {
+    background: #1a3a7a;
+  }
+  :global(html.dark-mode) .return-button:hover {
+    background: #2a4a8a;
+  }
+
+ :global(html.dark-mode) .return-button {
+    background-color: #cccccc;
+    margin-right: 1rem;
+    color:#041a47;
+  }
+
+  :global(html.dark-mode) .return-button:hover {
+    background-color: #5f636b;
+    margin-right: 1rem;
+  }
+
+
 </style>
