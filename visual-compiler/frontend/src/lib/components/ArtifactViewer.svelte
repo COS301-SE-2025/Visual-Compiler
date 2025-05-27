@@ -24,7 +24,7 @@
     </table>
   {:else}
     <div class="placeholder">
-      <p>Token table will appear here after generation</p>
+      <p class="pre-output-message">Token table will appear here after generation</p>
     </div>
   {/if}
 </div>
@@ -83,4 +83,14 @@
     color: #666;
     font-style: italic;
   }
+
+ 
+
+   :global(html.dark-mode) .pre-output-message  {
+    color: #ffffff;
+
+  }
+
+  
+  
 </style>

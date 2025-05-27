@@ -4,6 +4,10 @@
 
   const lightLogoUrl = '/half_stack_phoenix_only.png';
   const darkLogoUrl = '/half_stack_phoenix_grey.png';
+
+  const lightmode = '/lightmode.png';
+  const darkmode = '/darkmode.png';
+
   $: currentLogoUrl = $theme === 'dark' ? darkLogoUrl : lightLogoUrl;
 
   function logout() {
@@ -16,8 +20,12 @@
   <h1 class="title">Visual Compiler</h1>
 
   <button class="theme-toggle" on:click={toggleTheme} aria-label="Toggle theme">
-    {$theme === 'light' ? '☀️' : '🌙'}
-  </button>
+  <img 
+    src={$theme === 'light' ? lightmode : darkmode} 
+    alt={$theme === 'light' ? 'Light mode' : 'Dark mode'}
+    class="theme-icon"
+  />
+</button>
 
   <button class="logout-btn" on:click={logout} aria-label="Logout">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
@@ -67,6 +75,24 @@
     color: #041a47;
   }
 
+   .theme-toggle {
+    position: absolute;
+    right: 4rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .theme-icon {
+    width: 40px;  
+    height: 40px; 
+    transition: opacity 0.3s ease;
+  }
   .logout-btn:hover {
     color: #030f45;
   }

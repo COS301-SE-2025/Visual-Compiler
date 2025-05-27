@@ -59,7 +59,10 @@
 
 <div class="phase-tutorial">
   <div class="tutorial-content">
-    <h2>Lexing Stage</h2>
+    <div class="instruction-heading">
+       <h2>Instructions</h2>
+    </div>
+   
     
     <p class="description">
       A lexer breaks down source code into tokens. Each token has a type and value.
@@ -68,7 +71,6 @@
     <div class="separator"></div>
 
     <div class="tutorial-container">
-      <!-- Step content -->
       {#if currentStep === 1}
         <div class="tutorial-step">
           <h3>1. Source Code Input</h3>
@@ -123,7 +125,6 @@
         </div>
       {/if}
       
-      <!-- Navigation - Now inside tutorial-container -->
       <div class="navigation">
         <button 
           class="nav-button" 
@@ -147,7 +148,7 @@
 
 <style>
   .phase-tutorial {
-    padding: 1rem; /* Reduced from 1.5rem */
+    padding: 1rem;
     height: 100%;
     overflow-y: auto;
   }
@@ -163,6 +164,9 @@
     margin: 1.5rem 0 0.5rem 0;
   }
 
+  .instruction-heading{
+    justify-items: center;
+  }
   .description {
     line-height: 1.6;
     color: #333;
@@ -183,6 +187,7 @@
     margin: 0.5rem 0;
     font-family: monospace;
   }
+
   .tutorial-container {
     display: flex;
     flex-direction: column;
@@ -200,7 +205,7 @@
     padding: 1rem;
     border-radius: 8px;
     margin: 1rem 0;
-    max-width: 650px; /* Reduced from 800px */
+    max-width: 650px;
   }
 
   .pattern-code {
@@ -210,14 +215,13 @@
     padding: 0.2rem 0.4rem;
     border-radius: 4px;
     color: #001A6E;
-    width: fit-content; /* Ensure code block only takes needed width */
+    width: fit-content;
   }
 
   .example {
     color: #666;
     font-size: 0.9rem;
   }
-
 
   .navigation {
     display: flex;
@@ -292,7 +296,7 @@
   }
 
   .header-tokens, .token-values {
-    padding-left: 3rem; /* Add padding to move tokens to the right */
+    padding-left: 3rem;
   }
 
   .token-values {
@@ -301,40 +305,12 @@
     font-size: 0.85rem;
   }
 
-  /* Update shared text styles */
-  .description,
-  .pattern-code,
-  .example,
-  .token-values,
-  .token-type,
-  .step-counter {
-    font-size: 0.9rem;
-  }
-
-  /* Update table styles for step 4 */
-  .token-table {
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    margin: 1rem 0;
-    max-width: 500px;
-    border: 1px solid #e5e7eb;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  }
-
-  .table-header, .table-row {
-    display: grid;
-    grid-template-columns: 90px 1fr;
-    padding: 0.5rem 0.75rem;
-  }
-
-  /* Update type-pair grid for step 3 */
   .type-pair {
     margin: 0.75rem 0;
     display: grid;
-    grid-template-columns: 90px 130px 1fr; /* Reduced widths */
+    grid-template-columns: 90px 130px 1fr;
     align-items: center;
-    gap: 0.75rem; /* Reduced gap */
+    gap: 0.75rem;
   }
 
   .type {
@@ -343,4 +319,92 @@
     font-family: 'Fira Code', monospace;
     font-size: 0.9rem;
   }
+
+  /* Dark Mode Styles */
+  :global(html.dark-mode) .phase-tutorial {
+    background: #1a2a4a;
+  }
+
+  :global(html.dark-mode) h2 {
+    color: #ebeef1;
+    
+  }
+
+  :global(html.dark-mode) h3 {
+    color: #f0f0f0;
+  }
+
+  :global(html.dark-mode) .description {
+    color: #d1d5db;
+  }
+
+  :global(html.dark-mode) .separator {
+    border-bottom-color: #374151;
+  }
+
+  :global(html.dark-mode) .code-sample {
+    background: #2d3748;
+    color: #f0f0f0;
+  }
+
+  :global(html.dark-mode) .pattern-example,
+  :global(html.dark-mode) .type-example {
+    background: #2d3748;
+  }
+
+  :global(html.dark-mode) .pattern-code {
+    background: #4a5568;
+    color: #f0f0f0;
+  }
+
+  :global(html.dark-mode) .example {
+    color: #d1d5db;
+  }
+
+  :global(html.dark-mode) .navigation {
+    border-top-color: #374151;
+  }
+
+  :global(html.dark-mode) .step-counter {
+    color: #d1d5db;
+  }
+
+  :global(html.dark-mode) .token-table {
+    background: #2d3748;
+    border-color: #4a5568;
+  }
+
+  :global(html.dark-mode) .table-row {
+    background: #2d3748;
+    border-bottom-color: #4a5568;
+  }
+
+  :global(html.dark-mode) .table-row:hover {
+    background: #3c4a62;
+  }
+
+  :global(html.dark-mode) .token-type {
+    color: #60a5fa;
+  }
+
+  :global(html.dark-mode) .token-values {
+    color: #d1d5db;
+  }
+
+  :global(html.dark-mode) .type {
+    color: #60a5fa;
+  }
+
+  :global(html.dark-mode) .nav-button {
+    color: #041a47;
+    background-color: #cccccc;
+  }
+
+  :global(html.dark-mode) .nav-button:disabled  {
+    color: #041a47;
+    background-color: #001A6E;
+  }
+
+  
+  
 </style>

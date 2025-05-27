@@ -194,6 +194,9 @@
 
 <div class="phase-inspector">
   <div class="source-code-section">
+    <div class="lexor-heading">
+       <h1>LEXING</h1>
+    </div>
     <h3>Source Code</h3>
     <pre class="source-display">{sourceCode || 'No source code available'}</pre>
   </div>
@@ -277,8 +280,7 @@
   .phase-inspector {
     flex: 1.2;
     padding: 2rem;
-    border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
+
     background: #fff;
   }
 
@@ -304,6 +306,9 @@
     position: relative;
   }
 
+  .lexor-heading{
+    justify-items:center;
+  }
   .block-headers {
     display: flex;
     gap: 2rem;
@@ -322,6 +327,7 @@
     font-size: 1rem;
     font-weight: 600;
   }
+
 
   .input-rows {
     display: flex;
@@ -422,6 +428,7 @@
     transition: transform 0.2s ease; /* Add transform to transition */
     box-shadow: 0 2px 4px rgba(0, 26, 110, 0.1);
     position: relative; /* Add this */
+    margin-top: 1rem;
   }
 
   .submit-button.shifted {
@@ -448,6 +455,14 @@
 
   .submit-button:hover {
     background: #27548A;
+    
+  } 
+
+   :global(html.dark-mode) .submit-button {
+    background: #cccccc;
+    color:#041a47;
+    transition: transform 0.2s ease; /* Add transform to transition */
+    margin-top: 1rem;
   }
 
   .generate-button:hover {
@@ -480,4 +495,7 @@
     90% { opacity: 1; }
     100% { opacity: 0; }
   }
+
+  
+  
 </style>
