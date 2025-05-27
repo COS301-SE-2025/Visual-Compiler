@@ -84,7 +84,6 @@
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'  // Ensure CORS headers are set
         },
         body: JSON.stringify(requestData)
       });
