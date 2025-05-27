@@ -1,3 +1,4 @@
+// Package Handlers abstracts the functionality from the endpoints.
 package handlers
 
 import (
@@ -10,10 +11,19 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
+// Specifies what is required from the user as a JSON body DELETE request
 type DeleteRequest struct {
 	ID string `json:"id" binding:"required"`
 }
 
+// Deletes a user from the database.
+// Deletes the user from the "users" collection.
+// Formats the response as JSON
+//
+// Returns:
+//   - A JSON response body.
+//   - A 200 OK response if successful
+//   - A 500 Internal Server Error if any errors are caught for deleting or parsing
 func DeleteUser(c *gin.Context) {
 	var req DeleteRequest
 

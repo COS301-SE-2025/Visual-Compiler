@@ -10,12 +10,24 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
+// Specifies the JSON body response after successful fetching
 type UserPublic struct {
-	ID       bson.ObjectID `json:"id"`
-	Username string        `json:"username"`
-	Email    string        `json:"email"`
+	// User's auto-generated ID
+	ID bson.ObjectID `json:"id"`
+	// User's Username
+	Username string `json:"username"`
+	// User's Email
+	Email string `json:"email"`
 }
 
+// Returns all users currently in the Database as an array.
+// It fetches the users from the "users" collection.
+// Formats the response as JSON
+//
+// Returns:
+//   - An array of UserPublic structs containing each user's details.
+//   - A 200 OK response if successful
+//   - A 500 Internal Server Error if any errors are caught for fetching or parsing
 func GetAllUsers(c *gin.Context) {
 	client := db.ConnectClient()
 	collection := client.Database("visual-compiler").Collection("users")

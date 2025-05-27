@@ -13,11 +13,22 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Specifies the JSON body request for logging in
 type LoginReq struct {
-	Login    string `json:"login" binding:"required"`
+	// Either the user's email or username
+	Login string `json:"login" binding:"required"`
+	// User's password
 	Password string `json:"password" binding:"required"`
 }
 
+// Logs a user in.
+// Gets the inputs(Email/Username & Password) from a JSON request from the user.
+// Formats the response as a JSON Body
+//
+// Returns:
+//   - A JSON response body.
+//   - A 200 OK response if successful
+//   - A 500 Internal Server Error if any errors are caught for fetching or parsing
 func Login(c *gin.Context) {
 	var req LoginReq
 
