@@ -1,23 +1,30 @@
 <script lang="ts">
-  import NavBar          from '$lib/components/NavBar.svelte';
-  import Toolbox         from '$lib/components/Toolbox.svelte';
-  import CodeInput       from '$lib/components/CodeInput.svelte';
-  import DrawerCanvas    from '$lib/components/DrawerCanvas.svelte';
-  import PhaseTutorial   from '$lib/components/PhaseTutorial.svelte';
-  import PhaseInspector  from '$lib/components/PhaseInspector.svelte';
-  import ArtifactViewer  from '$lib/components/ArtifactViewer.svelte';
+  import NavBar from '$lib/components/NavBar.svelte';
+  import Toolbox from '$lib/components/Toolbox.svelte';
+  import CodeInput from '$lib/components/CodeInput.svelte';
+  import DrawerCanvas from '$lib/components/DrawerCanvas.svelte';
+  import PhaseTutorial from '$lib/components/PhaseTutorial.svelte';
+  import PhaseInspector from '$lib/components/PhaseInspector.svelte';
+  import ArtifactViewer from '$lib/components/ArtifactViewer.svelte';
   import type { NodeType } from '$lib/types';
-  import { writable }    from 'svelte/store';
+  import { writable } from 'svelte/store';
   import { addToast } from '$lib/stores/toast';
+  import { theme } from '../../lib/stores/theme';
+  import { onMount } from 'svelte';
+
+  // Initialize theme
+  onMount(() => {
+    document.documentElement.setAttribute('svelvet-theme', $theme);
+    document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
+  });
 
   // --- CANVAS STATE ---
   interface CanvasNode {
-    id:       string;
-    type:     NodeType;
-    label:    string;
+    id: string;
+    type: NodeType;
+    label: string;
     position: { x: number; y: number };
   }
-  
   
   const nodes = writable<CanvasNode[]>([]);
   let nodeCounter = 0;
@@ -60,11 +67,9 @@
       showCodeInput = true;
     } else {
       selectedPhase = type;
-      // Only proceed if source code exists
       if (!sourceCode.trim()) {
         addToast('Please enter source code before proceeding', "error");
         selectedPhase = null;
-        
         return;
       }
     }
@@ -90,7 +95,6 @@
   }
 
   function generateTokens(source: string, patterns: any[]) {
-    // This is a simple implementation - you might want to make it more robust
     const tokens = [];
     let remainingText = source;
 
@@ -110,7 +114,6 @@
       }
 
       if (!matched) {
-        // Skip invalid character
         remainingText = remainingText.slice(1);
       }
     }
@@ -122,13 +125,11 @@
 <NavBar />
 
 <div class="main">
-  <!-- Always show canvas and toolbox -->
   <Toolbox {handleCreateNode} {tooltips} />
   <div class="workspace">
     <DrawerCanvas {nodes} on:phaseSelect={handlePhaseSelect} />
   </div>
 
-  <!-- Analysis overlay -->
   {#if selectedPhase}
     <div class="analysis-overlay">
       <div class="analysis-view">
@@ -151,7 +152,6 @@
     </div>
   {/if}
 
-  <!-- Code input modal -->
   {#if showCodeInput}
     <div class="code-input-overlay">
       <div class="code-input-modal">
@@ -221,8 +221,6 @@
   .return-button:hover {
     background: #074799;
   }
-
-  /* New modal styles */
   .code-input-overlay {
     position: fixed;
     inset: 0;
@@ -232,7 +230,6 @@
     justify-content: center;
     z-index: 2000;
   }
-
   .code-input-modal {
     background: white;
     padding: 2rem;
@@ -242,13 +239,11 @@
     width: 100%;
     position: relative;
   }
-
   .modal-title {
     margin: 0 0 1rem 0;
     font-size: 1.5rem;
     color: #333;
   }
-
   .close-btn {
     position: absolute;
     top: 1rem;
@@ -257,5 +252,24 @@
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
+  }
+
+  /* Dark mode styles for analysis overlay */
+  :global(html.dark-mode) .analysis-overlay {
+    background: rgba(10, 26, 58, 0.95);
+  }
+  :global(html.dark-mode) .analysis-view {
+    background: #0a1a3a;
+  }
+  :global(html.dark-mode) .three-column-layout > :global(*) {
+    background: #1a2a4a;
+    color: #f0f0f0;
+  }
+  :global(html.dark-mode) .code-input-modal {
+    background: #1a2a4a;
+    color: #f0f0f0;
+  }
+  :global(html.dark-mode) .modal-title {
+    color: #f0f0f0;
   }
 </style>

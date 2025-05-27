@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { Svelvet, Node , ThemeToggle  } from 'svelvet';
+  import { Svelvet, Node } from 'svelvet';
   import { createEventDispatcher } from 'svelte';
   import type { Writable } from 'svelte/store';
   import type { NodeType } from '$lib/types';
+  import { theme } from '../stores/theme';
 
   interface CanvasNode {
     id: string;
@@ -27,9 +28,12 @@
   }
 </script>
 
-<div class="drawer-canvas" >
+<div class="drawer-canvas">
   <div class="canvas-container">
-    <Svelvet bind:this={canvasEl}>
+    <Svelvet 
+      bind:this={canvasEl} 
+      theme={$theme === 'dark' ? 'custom-theme' : 'light'}
+    >
       {#each $nodes as node (node.id)}
         <Node
           id={node.id}
@@ -37,13 +41,11 @@
           position={node.position}
           drop="center"
           useDefaults
-          bgColor="#041a47"
+          bgColor={$theme === 'dark' ? '#1a3a7a' : '#041a47'}
           textColor="#fff"
           on:nodeClicked={() => onNodeClick(node.type)}
         />
-        <ThemeToggle slot="toggle" main="light" alt="custom-theme" />
       {/each}
-      
     </Svelvet>
   </div>
 </div>
@@ -52,12 +54,10 @@
   :root[svelvet-theme='custom-theme'] {
     --background-color: #1b1d2a;
     --dot-color: #2c2f40;
-
     --node-color: #041a47;
     --node-text-color: #ffffff;
     --node-border-color: #374151;
     --node-selection-color: #3b82f6;
-
     --edge-color: #ffffff;
     --anchor-color: #60a5fa;
     --anchor-border-color: #ffffff;

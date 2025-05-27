@@ -1,32 +1,22 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
+  import { theme, toggleTheme } from '../stores/theme';
 
-  const logoUrl = '/half_stack_phoenix_only.png';
-  let theme: 'light' | 'dark' = 'light';
+  const lightLogoUrl = '/half_stack_phoenix_only.png';
+  const darkLogoUrl = '/half_stack_phoenix_grey.png';
+  $: currentLogoUrl = $theme === 'dark' ? darkLogoUrl : lightLogoUrl;
 
   function logout() {
     goto('/login');
   }
-
-  function toggleTheme() {
-    theme = theme === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('svelvet-theme', theme);
-  }
-
-  onMount(() => {
-    // Always default to light on load
-    theme = 'light';
-    document.documentElement.setAttribute('svelvet-theme', 'light');
-  });
 </script>
 
 <header class="navbar">
-  <img src={logoUrl} alt="Visual Compiler logo" class="logo" />
+  <img src={currentLogoUrl} alt="Visual Compiler logo" class="logo" />
   <h1 class="title">Visual Compiler</h1>
 
-  <button class="theme-toggle" on:click={toggleTheme}>
-    {theme === 'light' ? '☀️ ' : '🌙'}
+  <button class="theme-toggle" on:click={toggleTheme} aria-label="Toggle theme">
+    {$theme === 'light' ? '☀️' : '🌙'}
   </button>
 
   <button class="logout-btn" on:click={logout} aria-label="Logout">
@@ -48,6 +38,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   .logo {
@@ -87,11 +78,34 @@
 
   .theme-toggle {
     position: absolute;
-    right: 3.25rem;
+    right: 4rem;
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 1.25rem;
     color: #041a47;
+    padding: 0.25rem;
+    line-height: 1;
+  }
+
+  /* Dark Mode Styles */
+  :global(html.dark-mode) .navbar {
+    background: #041a47;
+  }
+
+  :global(html.dark-mode) .title {
+    color: #D3D3D3;
+  }
+
+  :global(html.dark-mode) .logout-btn {
+    color: #D3D3D3;
+  }
+
+  :global(html.dark-mode) .logout-btn:hover {
+    color: #b0b0b0;
+  }
+
+  :global(html.dark-mode) .theme-toggle {
+    color: #D3D3D3;
   }
 </style>
