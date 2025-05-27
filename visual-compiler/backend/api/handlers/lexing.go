@@ -50,7 +50,7 @@ func StoreSourceCode(c *gin.Context) {
 }
 
 // Lexes the user's source code that is locally stored.
-// Stores the tokens, unexpected tokens, user's source code and the user's id in the database.
+// Stores the tokens, unidentified input, user's source code and the user's id in the database.
 // Gets the source code from the function GetSourceCode.
 // Gets the users id from a global variable `UsersID`.
 // Formats the response as a JSON Body
@@ -63,8 +63,10 @@ func Lexing(c *gin.Context) {
 	mongoCli := db.ConnectClient()
 	collection := mongoCli.Database("visual-compiler").Collection("lexing")
 
-	tokens := services.CreateTokens()
-	unexpected_tokens := services.GetUnexpectedTokens()
+	services.CreateTokens()
+
+	tokens := services.GetTokens()
+	tokens_unidentified := services.GetInvalidInput()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -80,9 +82,9 @@ func Lexing(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"users_id":          UsersID,
-		"message":           "Successfully tokenised your code",
-		"tokens":            tokens,
-		"unexpected_tokens": unexpected_tokens,
+		"users_id":            UsersID,
+		"message":             "Successfully tokenised your code",
+		"tokens":              tokens,
+		"tokens_unidentified": tokens_unidentified,
 	})
 }
