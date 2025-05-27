@@ -16,10 +16,10 @@ type DeleteRequest struct {
 	ID string `json:"id" binding:"required"`
 }
 
-// DeleteUser returns JSON objects notifying if the user deletion was successful or not
-// The returned JSON uses JSON formatting
-// All errors are handled with a JSON object starting with the word 'error'
-// Successful requests are a JSON object with the word 'message'
+// DeleteUser returns JSON objects notifying if the user deletion was successful or not.
+// The returned JSON uses JSON formatting.
+// All errors are handled with a JSON object starting with the word 'error'.
+// Successful requests are a JSON object with the word 'message'.
 func DeleteUser(c *gin.Context) {
 	var req DeleteRequest
 

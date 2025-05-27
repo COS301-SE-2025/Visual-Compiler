@@ -1,11 +1,51 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
+	"time"
 
+	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/db"
+	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/services"
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
+type LexingRequest struct {
+	Code     string `json:"source_code" bson:"required"`
+	RawPairs []byte `json:"pairs" bson:"required"`
+}
+
 func Lexing(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"message": "Lexing works"})
+	var req LexingRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid: " + err.Error()})
+		return
+	}
+
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	services.SourceCode(req.Code)
+	services.ReadRegexRules(req.RawPairs)
+
+	tokens := services.CreateTokens()
+
+	_, err := collection.InsertOne(ctx, bson.M{
+		"code":   req.Code,
+		"tokens": tokens,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Successfully tokenised your code",
+		"tokens":  tokens,
+	})
 }

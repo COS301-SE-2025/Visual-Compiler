@@ -7,8 +7,9 @@ require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/joho/godotenv v1.5.1
 	go.mongodb.org/mongo-driver/v2 v2.2.1
-	golang.org/x/crypto v0.38.0
 )
+
+require golang.org/x/crypto v0.38.0
 
 require (
 	github.com/bytedance/sonic v1.13.2 // indirect
