@@ -1,9 +1,14 @@
 <script lang="ts">
-  export let sourceCode = 'Source code will be displayed here';
+  import { createEventDispatcher } from 'svelte';
+  import type { NodeType } from '$lib/types';
+  
+  export let sourceCode = '';  // Add this prop
   
   let inputRows = [{ type: '', regex: '', error: '' }];
   let formError = '';
   let submissionStatus = { show: false, success: false, message: '' };
+  let showGenerateButton = false;
+  const dispatch = createEventDispatcher<{ generateTokens: { patterns: any[] } }>();
 
   function addNewRow() {
     inputRows = [...inputRows, { type: '', regex: '', error: '' }];
@@ -21,67 +26,137 @@
   function handleSubmit() {
     formError = '';
     let hasErrors = false;
+    let nonEmptyRows = [];
 
-    inputRows = inputRows.map(row => {
-      // Reset previous error
+    // Handle validation and filtering in one pass
+    for (const row of inputRows) {
+      // Skip completely empty rows
+      if (!row.type && !row.regex) continue;
+
       row.error = '';
 
-      // Check if both fields are empty
-      if (!row.type && !row.regex) {
-        return null; // Will be filtered out
-      }
-
-      // Check if one field is empty
+      // Check for partial fills
       if (!row.type || !row.regex) {
         row.error = 'Please fill in both Type and Regular Expression';
         hasErrors = true;
-        return row;
-      }
-
-      // Validate regex
-      if (!validateRegex(row.regex)) {
+      } else if (!validateRegex(row.regex)) {
+        // Validate regex
         row.error = 'Invalid regular expression pattern';
         hasErrors = true;
-        return row;
       }
 
-      return row;
-    }).filter(row => row !== null);
-
-    if (hasErrors) {
-      submissionStatus = {
-        show: true,
-        success: false,
-        message: 'Please fix the errors before submitting'
-      };
-    } else if (inputRows.length === 0) {
-      submissionStatus = {
-        show: true,
-        success: false,
-        message: 'At least one row with both fields is required'
-      };
-      inputRows = [{ type: '', regex: '', error: '' }];
-    } else {
-      // Process valid submission
-      submissionStatus = {
-        show: true,
-        success: true,
-        message: 'Successfully submitted!'
-      };
-      console.log('Valid submission:', inputRows);
+      nonEmptyRows.push(row);
     }
 
-    // Hide the status message after 3 seconds
+    // First check if we have a single empty row
+    if (inputRows.length === 1 && !inputRows[0].type && !inputRows[0].regex) {
+      submissionStatus = {
+        show: true,
+        success: false,
+        message: 'Please fill in both Type and Regular Expression'
+      };
+      return;
+    }
+
+    // Check if we removed any empty rows and still have valid rows
+    if (nonEmptyRows.length < inputRows.length && nonEmptyRows.length > 0) {
+      inputRows = nonEmptyRows;
+      submissionStatus = {
+        show: true,
+        success: 'info',
+        message: 'Empty rows have been removed. Please submit your regular expressions again.'
+      };
+      showGenerateButton = false;
+      return;
+    }
+
+    // Update inputRows with filtered and validated rows
+    inputRows = nonEmptyRows;
+
+    // Set submission status
+    submissionStatus = {
+      show: true,
+      success: !hasErrors,
+      message: hasErrors 
+        ? 'Please fix the errors before submitting'
+        : 'Successfully submitted!'
+    };
+
+    // Show/hide generate button based on validation
+    showGenerateButton = !hasErrors;
+
+    if (!hasErrors) {
+      setTimeout(() => {
+        submissionStatus = { 
+          show: false, 
+          success: false, 
+          message: '' 
+        };
+      }, 3000);
+    }
+
+    // Ensure UI updates
+    showGenerateButton = !hasErrors && inputRows.length > 0;
+  }
+
+  function generateTokens() {
+    dispatch('generateTokens', {
+      patterns: inputRows.map(row => ({
+        type: row.type,
+        pattern: row.regex
+      }))
+    });
+    showGenerateButton = false;
+    submissionStatus = {
+      show: true,
+      success: true,
+      message: 'Tokens generated successfully!'
+    };
+    
+    // Reset the status message after animation
     setTimeout(() => {
-      submissionStatus = { show: false, success: false, message: '' };
+      submissionStatus = { 
+        show: false, 
+        success: false, 
+        message: '' 
+      };
     }, 3000);
+  }
+
+  // Track previous input values
+  let previousInputs: typeof inputRows = [];
+
+  // Reset generate button when inputs change
+  function handleInputChange() {
+    showGenerateButton = false;
+    // Reset submission status
+    submissionStatus = { 
+      show: false, 
+      success: false, 
+      message: '' 
+    };
+  }
+
+  // Watch for changes in inputRows array
+  $: {
+    // Check if array length changed or values changed
+    const inputsChanged = inputRows.length !== previousInputs.length ||
+      inputRows.some((row, index) => {
+        const prevRow = previousInputs[index];
+        return !prevRow || row.type !== prevRow.type || row.regex !== prevRow.regex;
+      });
+
+    if (inputsChanged) {
+      handleInputChange();
+      previousInputs = [...inputRows];
+    }
   }
 </script>
 
 <div class="phase-inspector">
   <div class="source-code-section">
     <h3>Source Code</h3>
-    <pre class="source-display">{sourceCode}</pre>
+    <pre class="source-display">{sourceCode || 'No source code available'}</pre>
   </div>
   
   <div class="shared-block">
@@ -100,6 +175,7 @@
             <input 
               type="text" 
               bind:value={row.type} 
+              on:input={handleInputChange}
               placeholder="Enter type..."
               class:error={row.error}
             />
@@ -108,6 +184,7 @@
             <input 
               type="text" 
               bind:value={row.regex} 
+              on:input={handleInputChange}
               placeholder="Enter regex pattern..."
               class:error={row.error}
             />
@@ -130,17 +207,31 @@
     <div class="form-error">{formError}</div>
   {/if}
 
+  <div class="button-container">
+    <button 
+      class="submit-button" 
+      class:shifted={showGenerateButton} 
+      on:click={handleSubmit}
+    >
+      Submit
+    </button>
+    
+    {#if showGenerateButton}
+      <button class="generate-button" on:click={generateTokens}>
+        Generate Tokens
+      </button>
+    {/if}
+  </div>
+
   {#if submissionStatus.show}
-    <div class="status-message" class:success={submissionStatus.success}>
+    <div 
+      class="status-message" 
+      class:success={submissionStatus.success === true}
+      class:info={submissionStatus.success === 'info'}
+    >
       {submissionStatus.message}
     </div>
   {/if}
-  
-  <div class="button-container">
-    <button class="submit-button" on:click={handleSubmit}>
-      Submit
-    </button>
-  </div>
 </div>
 
 <style>
@@ -276,11 +367,12 @@
   .button-container {
     display: flex;
     justify-content: center;
-    margin-top: 1rem;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
   }
 
   .submit-button {
-    padding: 0.6rem 1.75rem;
+    padding: 0.6rem 1.5rem;
     background: #001A6E;
     color: white;
     border: none;
@@ -288,25 +380,45 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease; /* Add transform to transition */
     box-shadow: 0 2px 4px rgba(0, 26, 110, 0.1);
+    position: relative; /* Add this */
+  }
+
+  .submit-button.shifted {
+    transform: translateX(-1rem);
+  }
+
+  /* When not shifted, ensure no transform */
+  .submit-button:not(.shifted) {
+    transform: translateX(0);
+  }
+
+  .generate-button {
+    padding: 0.6rem 1.5rem;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;  /* Only transition the background color */
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
   }
 
   .submit-button:hover {
     background: #27548A;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 26, 110, 0.2);
   }
 
-  .submit-button:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 4px rgba(0, 26, 110, 0.1);
+  .generate-button:hover {
+    background: #218838;
   }
 
   .status-message {
     text-align: center;
     padding: 0.5rem 1rem;
-    margin: 0.5rem 0;
+    margin-top: 0.75rem;
     border-radius: 4px;
     font-size: 0.9rem;
     background: #dc3545;
@@ -317,6 +429,10 @@
 
   .status-message.success {
     background: #28a745;
+  }
+
+  .status-message.info {
+    background: #0096c7; /* Nice blue color that's not too harsh */
   }
 
   @keyframes fadeInOut {

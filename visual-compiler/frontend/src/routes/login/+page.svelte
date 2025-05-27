@@ -92,7 +92,7 @@
 
     // TODO: Store the token/session data if provided
     
-      await new Promise((res) => setTimeout(res, 3000));
+      await new Promise((res) => setTimeout(res, 2000));
 
       await goto('/main');
 
@@ -546,10 +546,6 @@
     transform: scale(1.1);
   }
 
-  .icon-submit-btn:focus:not(:disabled) {
-    outline: 2px solid #041a47;
-    outline-offset: 2px;
-  }
 
   .icon-submit-btn:disabled .login-action-icon {
     opacity: 0.5;

@@ -1,22 +1,23 @@
 <script lang="ts">
   import type { NodeType } from '$lib/types';
   export let handleCreateNode: (type: NodeType) => void;
+  export let tooltips: Record<NodeType, string>;
 
   const nodeTypes: { id: NodeType; label: string }[] = [
-    { id: 'lexing',  label: 'Lexing'  },
-    { id: 'parsing', label: 'Parsing' },
-    { id: 'analysis',label: 'Analysis'}
+    { id: 'source', label: 'Source Code' },
+    { id: 'lexer',  label: 'Lexer' }
   ];
 </script>
 
 <aside class="toolbox">
-  <h2 class="toolbox-heading">Phases</h2>
+  <h2 class="toolbox-heading">Blocks</h2>
   {#each nodeTypes as n}
     <button
       class="phase-btn"
       on:click={() => handleCreateNode(n.id)}
     >
       {n.label}
+      <span class="custom-tooltip">{tooltips[n.id]}</span>
     </button>
   {/each}
 </aside>
@@ -53,10 +54,8 @@
     border: 1px solid #ddd;
     border-radius: 0.375rem;
     cursor: pointer;
-    transition: 
-      background 0.2s ease, 
-      transform 0.1s ease, 
-      box-shadow 0.2s ease;
+    position: relative;
+     overflow: visible;
   }
 
   .phase-btn:hover {
@@ -70,4 +69,38 @@
     background: #e8edf8;
     box-shadow: 0 2px 3px rgba(0,0,0,0.08);
   }
+
+ .custom-tooltip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: 110%; 
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e1e1e;
+  color: #fff;
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  border-radius: 15px;
+  white-space: nowrap;
+  z-index: 10;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+}
+
+.custom-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%; 
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #1e1e1e transparent transparent transparent;
+}
+.phase-btn:hover .custom-tooltip {
+  visibility: visible;
+  opacity: 1;
+}
 </style>
