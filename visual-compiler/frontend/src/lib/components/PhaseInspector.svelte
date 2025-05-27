@@ -510,4 +510,10 @@
   :global(html.dark-mode) .lexor-heading-h1 {
     color: #ebeef1;
   }
+
+  :global(html.dark-mode)  .source-display{
+    color : black;
+  }
+
+ 
 </style>
