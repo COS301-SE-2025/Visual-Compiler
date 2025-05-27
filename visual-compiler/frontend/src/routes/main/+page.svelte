@@ -240,10 +240,12 @@
     width: 100%;
     position: relative;
   }
-  .modal-title {
+   .modal-title {
     margin: 0 0 1rem 0;
     font-size: 1.5rem;
     color: #333;
+    text-align: center; 
+    width: 100%; 
   }
   .close-btn {
     position: absolute;
@@ -284,8 +286,9 @@
   }
 
  :global(html.dark-mode) .return-button {
-    background-color: #2d3748;
+    background-color: #cccccc;
     margin-right: 1rem;
+    color:#041a47;
   }
 
   :global(html.dark-mode) .return-button:hover {

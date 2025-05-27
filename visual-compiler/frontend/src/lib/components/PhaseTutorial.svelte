@@ -59,11 +59,8 @@
 
 <div class="phase-tutorial">
   <div class="tutorial-content">
-    <div class="instruction-heading">
-       <h2>Instructions</h2>
-    </div>
-   
-    
+    <h2>What is Lexing?</h2>
+    <h3>Steps to Follow:</h3>
     <p class="description">
       A lexer breaks down source code into tokens. Each token has a type and value.
       Tokens are identified using regular expressions that match specific patterns.
@@ -71,76 +68,83 @@
     <div class="separator"></div>
 
     <div class="tutorial-container">
-      {#if currentStep === 1}
-        <div class="tutorial-step">
-          <h3>1. Source Code Input</h3>
-          <p>Start by entering your source code in the input box:</p>
-          <div class="code-sample">
-            <code>{@html sampleCode}</code>
-          </div>
-        </div>
-      {:else if currentStep === 2}
-        <div class="tutorial-step">
-          <h3>2. Regular Expression Basics</h3>
-          <p>Regular expressions use special characters to match patterns:</p>
-          <div class="pattern-example">
-            {#each regexBasics as {type, pattern, example}}
-              <div class="type-pair">
-                <span class="type">{type}</span>
-                <code class="pattern-code">{pattern}</code>
-                <span class="example">{example}</span>
-              </div>
-            {/each}
-          </div>
-        </div>
-      {:else if currentStep === 3}
-        <div class="tutorial-step">
-          <h3>3. Common Token Patterns</h3>
-          <p>Here are some common patterns used in lexical analysis:</p>
-          <div class="type-example">
-            {#each regexExamples as {type, pattern, example}}
-              <div class="type-pair">
-                <span class="type">{type}</span>
-                <code class="pattern-code">{pattern}</code>
-                <span class="example">Examples: {example}</span>
-              </div>
-            {/each}
-          </div>
-        </div>
-      {:else if currentStep === 4}
-        <div class="tutorial-step">
-          <h3>4. Tokenisation Result</h3>
-          <div class="token-table">
-            <div class="table-header">
-              <span class="header-type">Type</span>
-              <span class="header-tokens">Tokens</span>
+      <!-- Content area -->
+      <div class="tutorial-content-area">
+        <!-- Step content -->
+        {#if currentStep === 1}
+          <div class="tutorial-step">
+            <h3>1. Source Code Input</h3>
+            <p>Start by entering your source code in the input box:</p>
+            <div class="code-sample">
+              <code>{@html sampleCode}</code>
             </div>
-            {#each tokensByType as {type, tokens}}
-              <div class="table-row">
-                <span class="token-type">{type}</span>
-                <span class="token-values">{tokens.join(', ')}</span>
-              </div>
-            {/each}
           </div>
-        </div>
-      {/if}
+        {:else if currentStep === 2}
+          <div class="tutorial-step">
+            <h3>2. Regular Expression Basics</h3>
+            <p>Regular expressions use special characters to match patterns:</p>
+            <div class="pattern-example">
+              {#each regexBasics as {type, pattern, example}}
+                <div class="type-pair">
+                  <span class="type">{type}</span>
+                  <code class="pattern-code">{pattern}</code>
+                  <span class="example">{example}</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {:else if currentStep === 3}
+          <div class="tutorial-step">
+            <h3>3. Common Token Patterns</h3>
+            <p>Here are some common patterns used in lexical analysis:</p>
+            <div class="type-example">
+              {#each regexExamples as {type, pattern, example}}
+                <div class="type-pair">
+                  <span class="type">{type}</span>
+                  <code class="pattern-code">{pattern}</code>
+                  <span class="example">Examples: {example}</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {:else if currentStep === 4}
+          <div class="tutorial-step">
+            <h3>4. Tokenisation Result</h3>
+            <div class="token-table">
+              <div class="table-header">
+                <span class="header-type">Type</span>
+                <span class="header-tokens">Tokens</span>
+              </div>
+              {#each tokensByType as {type, tokens}}
+                <div class="table-row">
+                  <span class="token-type">{type}</span>
+                  <span class="token-values">{tokens.join(', ')}</span>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      </div>
       
-      <div class="navigation">
-        <button 
-          class="nav-button" 
-          disabled={currentStep === 1} 
-          on:click={prevStep}
-        >
-          ← Previous
-        </button>
-        <span class="step-counter">{currentStep} / {totalSteps}</span>
-        <button 
-          class="nav-button" 
-          disabled={currentStep === totalSteps} 
-          on:click={nextStep}
-        >
-          Next →
-        </button>
+      <!-- Navigation - Positioned higher -->
+      <div class="navigation-container">
+        <div class="navigation">
+          <button 
+            class="nav-button" 
+            disabled={currentStep === 1} 
+            on:click={prevStep}
+          >
+            ← Previous
+          </button>
+          <span class="step-counter">{currentStep} / {totalSteps}</span>
+          <button 
+            class="nav-button" 
+            disabled={currentStep === totalSteps} 
+            on:click={nextStep}
+          >
+            Next →
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -150,7 +154,15 @@
   .phase-tutorial {
     padding: 1rem;
     height: 100%;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .tutorial-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
 
   h2 {
@@ -164,9 +176,6 @@
     margin: 1.5rem 0 0.5rem 0;
   }
 
-  .instruction-heading{
-    justify-items: center;
-  }
   .description {
     line-height: 1.6;
     color: #333;
@@ -180,24 +189,29 @@
     width: 100%;
   }
 
+  .tutorial-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 1rem;
+  }
+
+  .tutorial-content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 2rem;
+  }
+
+  .tutorial-step {
+    margin-bottom: 2rem;
+  }
+
   .code-sample {
     background: #f1f3f5;
     padding: 0.75rem;
     border-radius: 4px;
     margin: 0.5rem 0;
     font-family: monospace;
-  }
-
-  .tutorial-container {
-    display: flex;
-    flex-direction: column;
-    min-height: 400px;
-    justify-content: space-between;
-  }
-
-  .tutorial-step {
-    flex-grow: 1;
-    margin-bottom: 2rem;
   }
 
   .pattern-example, .type-example {
@@ -223,13 +237,20 @@
     font-size: 0.9rem;
   }
 
+  .navigation-container {
+    margin-top: auto;
+    margin-bottom: 1rem;
+    padding: 1rem 0;
+    display: flex;
+    justify-content: center;
+  }
+
   .navigation {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: auto;
-    padding-top: 1rem;
-    border-top: 1px solid #eee;
+    width: 100%;
+    max-width: 500px;
   }
 
   .nav-button {
@@ -239,6 +260,8 @@
     border: none;
     border-radius: 4px;
     cursor: pointer;
+    min-width: 100px;
+    font-size: 0.9rem;
   }
 
   .nav-button:disabled {
@@ -327,7 +350,6 @@
 
   :global(html.dark-mode) h2 {
     color: #ebeef1;
-    
   }
 
   :global(html.dark-mode) h3 {
@@ -361,12 +383,9 @@
     color: #d1d5db;
   }
 
-  :global(html.dark-mode) .navigation {
+  :global(html.dark-mode) .navigation-container {
+    background: #1a2a4a;
     border-top-color: #374151;
-  }
-
-  :global(html.dark-mode) .step-counter {
-    color: #d1d5db;
   }
 
   :global(html.dark-mode) .token-table {
@@ -396,15 +415,17 @@
   }
 
   :global(html.dark-mode) .nav-button {
+    background: #cccccc;
     color: #041a47;
-    background-color: #cccccc;
   }
 
-  :global(html.dark-mode) .nav-button:disabled  {
+  :global(html.dark-mode) .nav-button:disabled {
+    background: #4b5563;
     color: #041a47;
-    background-color: #001A6E;
   }
 
-  
-  
+  :global(html.dark-mode) .nav-button:disabled {
+    background: #4b5563;
+    color: #041a47;
+  }
 </style>
