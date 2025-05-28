@@ -1,8 +1,8 @@
-import { beforeEach,beforeAll,describe, test, expect,vi } from 'vitest';
+import {describe,expect,vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import { fireEvent, render, screen,within,waitFor } from '@testing-library/svelte';
-import page_comp from './../src/routes/login/+page.svelte';
-import toasts from './../src/lib/components/ToastContainer.svelte';
+import { fireEvent, render, screen,waitFor } from '@testing-library/svelte';
+import page_comp from '../../src/routes/login/+page.svelte';
+import toasts from '../../src/lib/components/ToastContainer.svelte';
 
 const mockSuccessResponse = {
     ok:true,
@@ -10,8 +10,6 @@ const mockSuccessResponse = {
 };
 const mockFailedResponse = {
     ok: false,
-    status: 401,
-    statusText: 'Unauthorized',
     json: async () => ({error: "Failed"})
 };
 
@@ -62,7 +60,7 @@ describe("login page", () => {
         await fireEvent.submit(login_form!);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            'http://localhost:8080/api/login', {
+            'http://localhost:8080/api/users/login', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -91,7 +89,7 @@ describe("login page", () => {
         await fireEvent.submit(login_form!);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            'http://localhost:8080/api/login', {
+            'http://localhost:8080/api/users/login', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -179,7 +177,7 @@ describe("register page", () => {
         await fireEvent.submit(login_form!);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            'http://localhost:8080/api/register', {
+            'http://localhost:8080/api/users/register', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -217,7 +215,7 @@ describe("register page", () => {
         await fireEvent.submit(login_form!);
 
         expect(global.fetch).toHaveBeenCalledWith(
-            'http://localhost:8080/api/register', {
+            'http://localhost:8080/api/users/register', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
