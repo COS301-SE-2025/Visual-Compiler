@@ -13,23 +13,27 @@
 
 <br>
 
+<h2 align="center">Project Boards</h2>
+
+<div align="center">
+    <a href="https://github.com/orgs/COS301-SE-2025/projects/162">Frontend</a> &nbsp;|&nbsp;
+    <a href="https://github.com/orgs/COS301-SE-2025/projects/171">Backend</a> &nbsp;|&nbsp;
+    <a href="https://github.com/orgs/COS301-SE-2025/projects/173">Administration</a></div>
+<br>
+
 <h2 align="center">Documentation and Resources</h2>
 
 <div align="center">
     <table style="border-width: 1px; width: 50%;">
     <tr>
-        <td style="border: 0;">Project Boards</td>
-        <td style="border: 0;"><a href="https://github.com/orgs/COS301-SE-2025/projects/162">Frontend</a> &nbsp;|&nbsp;
-            <a href="https://github.com/orgs/COS301-SE-2025/projects/171">Backend</a> &nbsp;|&nbsp;
-            <a href="https://github.com/orgs/COS301-SE-2025/projects/173">Administration</a></td>
+        <td rowspan="3" style="border: 0;">Demo 1</td>
+        <td style="border: 0;"><a href="https://www.canva.com/design/DAGomTEXSj8/9jhGyLXxfua14zX0YsJ99g/edit?utm_content=DAGomTEXSj8&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton">Presentation</a></td>
     </tr>
     <tr>
-        <td style="border: 0;">Software Requirements Specification</td>
-        <td style="border: 0;"><a href="https://docs.google.com/document/d/1G9_tmRu2ey8_tjJHxUbkpXQod9UxfRC2dE9HBTdta10/edit?usp=sharing">Specification Document</a></td>
+        <td style="border: 0;"><a href="https://docs.google.com/document/d/1G9_tmRu2ey8_tjJHxUbkpXQod9UxfRC2dE9HBTdta10/edit?usp=sharing">Software Requirements Specification</a></td>
     </tr>
     <tr>
-        <td style="border: 0;">Architectural Specification</td>
-        <td style="border: 0;"><a href="https://docs.google.com/document/d/1Bmq9UWzTkuA_br6hin0YsK9cVgnVuuH0H0tTJB66qKY/edit?usp=sharing">Specification Document</a></td>
+        <td style="border: 0;"><a href="https://docs.google.com/document/d/1Bmq9UWzTkuA_br6hin0YsK9cVgnVuuH0H0tTJB66qKY/edit?usp=sharing">Architectural Specification</a></td>
     </tr>
     </table>
 </div>
