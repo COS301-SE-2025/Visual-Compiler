@@ -23,10 +23,11 @@
   ];
 
   const regexExamples = [
+    { type: 'Keyword', pattern: '(int|string|)', example: 'int, string' },
     { type: 'Integer', pattern: '\\d+', example: '42, 123, 0' },
-    { type: 'Identifier', pattern: '[a-zA-Z_]\\w*', example: 'count, total_sum' },
+    { type: 'Identifier', pattern: '[a-zA-Z_]+', example: 'count, total_sum' },
     { type: 'Operator', pattern: '[+\\-*/]', example: '+, -, *, /' },
-    { type: 'Whitespace', pattern: '\\s+', example: 'spaces, tabs, newlines' }
+    { type: 'Assignment', pattern: '=', example: '=' }
   ];
 
   const tokensByType = [
