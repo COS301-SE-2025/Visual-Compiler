@@ -49,8 +49,9 @@
 <br>
 
 <div align="center">
-    <img src="https://img.shields.io/github/issues/COS301-SE-2025/Visual-Compiler">
-    <img src="https://img.shields.io/github/issues-pr/COS301-SE-2025/Visual-Compiler"/>
+    <img src="https://img.shields.io/github/issues/COS301-SE-2025/Visual-Compiler?label=Issues">
+    <img src="https://img.shields.io/github/issues-pr/COS301-SE-2025/Visual-Compiler?label=Pull%20Requests">
+    <img src="https://github.com/COS301-SE-2025/Visual-Compiler/actions/workflows/main.yml/badge.svg">
 </div>
 
 <br>
@@ -68,12 +69,13 @@
         ├───📁backend
         │   ├───📁api
         │   │   ├───📁handlers
-        │   │   ├───📁routers
-        │   │   └───📁tests
-        │   └───📁core
-        │       ├───📁db
-        │       ├───📁services
-        │       └───📁tests
+        │   │   └───📁routers
+        │   ├───📁core
+        │   │   ├───📁db
+        │   │   └───📁services
+        │   └───📁tests
+        │       ├───📁integration-tests
+        │       └───📁unit-tests
         ├───📁frontend
         │   └───📁ui
         │       ├───📁.svelte-kit
