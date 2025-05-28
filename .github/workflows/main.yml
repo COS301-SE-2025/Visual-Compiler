@@ -1,0 +1,63 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:24.0.2
+        options: --privileged
+
+    steps:
+      - name: Checkout main code
+        uses: actions/checkout@v4
+
+      - name: Node.js setup for Svelte
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies for frontend
+        working-directory: ./visual-compiler/frontend
+        run: npm install
+
+      - name: Tests for frontend
+        working-directory: ./visual-compiler/frontend
+        run: npm test
+
+      - name: Go setup for Backend
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Go Modules Cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{runner.os}}-go-${{hashFiles('**/go.sum')}}
+          restore-keys: |
+            ${{runner.os}}-go-
+
+      - name: Tests for Backend
+        working-directory: ./visual-compiler/backend
+        run: go test ./...
+
+      - name: Docker Compose Installation
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+          docker-compose --version
+
+      - name: Docker compose setup
+        run: docker-compose build
+
+      - name: Services for integration testing
+        run: docker-compose up -d
