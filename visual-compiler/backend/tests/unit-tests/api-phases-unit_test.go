@@ -36,10 +36,30 @@ func TestLexingRouterRoutes(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := routers.SetupLexingRouter()
 	endpoints := router.Routes()
-	if len(endpoints) != 1 {
+	if len(endpoints) != 2 {
 		t.Errorf("Amount of routes does not match")
 	}
 }
+
+func TestStoreSourceCode_Error(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	contxt, rec := createPhaseTestContext(t)
+
+	res, err := http.NewRequest("POST", "/api/lexing/lexer", bytes.NewBuffer([]byte{}))
+	if err != nil {
+		t.Errorf("Request could not be created")
+	}
+	res.Header.Set("Content-Type", "application/json")
+	contxt.Request = res
+
+	handlers.StoreSourceCode(contxt)
+
+	if rec.Code != http.StatusBadRequest {
+		var mess map[string]string
+		t.Errorf(mess["error"])
+	}
+}
+
 
 func TestLexing_Error(t *testing.T) {
 	gin.SetMode(gin.TestMode)
@@ -52,7 +72,7 @@ func TestLexing_Error(t *testing.T) {
 	res.Header.Set("Content-Type", "application/json")
 	contxt.Request = res
 
-	handlers.Lexing(contxt)
+	handlers.StoreSourceCode(contxt)
 
 	if rec.Code != http.StatusBadRequest {
 		var mess map[string]string
