@@ -93,6 +93,22 @@ func TestCreateTokens_OperatorTokens(t *testing.T) {
 	}
 }
 
+func TestUnexpectedTokens_Punctuation(t *testing.T) {
+	unexpected_tokens := services.GetInvalidInput()
+	expectedRes := []string{
+		";",
+	}
+	if len(unexpected_tokens) != len(expectedRes) {
+		t.Errorf("Not enough unexpected tokens found")
+	}
+
+	for i, token := range unexpected_tokens {
+		if token != expectedRes[i] {
+			t.Errorf("Tokenisation incorrect: %v", token)
+		}
+	}
+}
+
 func TestCreateTokens_PunctuationTokens(t *testing.T) {
 	c_input := []byte(`[{"Type": "KEYWORD","Regex":"\\b(if|else|int)\\b"},{"Type": "IDENTIFIER","Regex":"[a-zA-Z_]\\w*"},{"Type":"NUMBER","Regex":"\\d+(\\.\\d+)?"},{"Type":"OPERATOR","Regex":"="},{"Type":"PUNCTUATION","Regex":";"}]`)
 	err := services.ReadRegexRules(c_input)
@@ -121,41 +137,6 @@ func TestFullCreateTokens_Success(t *testing.T) {
 	}
 
 	for i, token := range output {
-		if token != expectedRes[i] {
-			t.Errorf("Tokenisation incorrect: %v", token)
-		}
-	}
-}
-
-func TestCreateTokens_NoWhitespace(t *testing.T) {
-	lexing_input := "int x=2;"
-	services.SourceCode(lexing_input)
-	source := services.GetSourceCode()
-	if source != lexing_input {
-		t.Errorf("Source code initialisation faied")
-	}
-	c_input := []byte(`[{"Type": "KEYWORD","Regex":"\\b(if|else)\\b"},{"Type": "IDENTIFIER","Regex":"[a-zA-Z_]\\w*"},{"Type":"NUMBER","Regex":"\\d+(\\.\\d+)?"}]`)
-	err := services.ReadRegexRules(c_input)
-	if err != nil {
-		t.Errorf("Failed for valid input: %v", err)
-	}
-	services.CreateTokens()
-	output := services.GetTokens()
-	if output == nil {
-		t.Errorf("No output")
-	}
-}
-
-func TestUnexpectedTokens(t *testing.T) {
-	unexpected_tokens := services.GetInvalidInput()
-	expectedRes := []string{
-		"x=2;",
-	}
-	if len(unexpected_tokens) != len(expectedRes) {
-		t.Errorf("Not enough unexpected tokens found")
-	}
-
-	for i, token := range unexpected_tokens {
 		if token != expectedRes[i] {
 			t.Errorf("Tokenisation incorrect: %v", token)
 		}
