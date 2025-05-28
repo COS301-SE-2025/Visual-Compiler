@@ -5,6 +5,6 @@ _Must be run in the backend directory_
     go test -v ./...  
   
 *To run specific tests:*  
-    go test -v ./tests/unit-tests/lexing-unit_test.go  
+    go test -v ./tests/unit-tests/core-lexing-unit_test.go  
     go test -v ./tests/unit-tests/api-users-unit_test.go
     go test -v ./tests/unit-tests/api-phases-unit_test.go
