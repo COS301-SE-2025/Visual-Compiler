@@ -1,18 +1,20 @@
 <script>
-  // Import the Hero component
-  import Hero from '$lib/components/Hero.svelte';
+	import Features from '$lib/components/landing/Features.svelte';
+
+
+  import Hero from '$lib/components/landing/Hero.svelte';
 </script>
 
 <main>
   <Hero />
-  <!-- We will add more sections here later -->
+  <Features />
 </main>
 
 <style>
   :global(body) {
-    /* Removes default margin so the hero section fits perfectly */
+
     margin: 0;
-    font-family: 'Inter', sans-serif; /* A clean, modern font */
+    font-family: 'Inter', sans-serif; 
     box-sizing: border-box;
   }
 
