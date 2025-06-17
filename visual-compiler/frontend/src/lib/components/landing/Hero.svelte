@@ -1,18 +1,19 @@
 <script>
-
+  // No script needed for this static component yet
 </script>
 
 <section class="hero_section">
-  <div class="hero_content">
-    <div class="logo_container">
-      <img
-        src="/half_stack_phoenix_grey.png"
-        alt="Visual Compiler Logo"
-        class="logo"
-      />
-      <span class="project_title">Visual Compiler</span>
-    </div>
+  <!-- Logo and Title Container is now positioned independently -->
+  <div class="logo_container">
+    <img
+      src="/half_stack_phoenix_grey.png"
+      alt="Visual Compiler Logo"
+      class="logo"
+    />
+    <span class="project_title">Visual Compiler</span>
+  </div>
 
+  <div class="hero_content">
     <h1 class="main_headline">
       Demystifying Compilers, One Block at a Time.
     </h1>
@@ -34,32 +35,37 @@
     text-align: center;
     height: 100vh;
     padding: 0 2rem;
+    position: relative; 
   }
 
+
+  .logo_container {
+    position: absolute;
+    top: 2rem; 
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .logo {
+    height: 50px; 
+    width: auto;
+    
+  }
+
+  .project_title {
+    font-size: 1.75rem; /* Slightly adjusted size */
+    font-weight: 600;
+  }
+  
   .hero_content {
     max-width: 800px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 1.5rem;
-  }
-
-
-  .logo_container {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .logo {
-    height: 60px; 
-    width: auto;
-  }
-
-  .project_title {
-    font-size: 2rem;
-    font-weight: 600;
   }
 
   .main_headline {
