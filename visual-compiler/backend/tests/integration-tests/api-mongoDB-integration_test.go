@@ -13,7 +13,6 @@ import (
 	"context"
 	"errors"
 	"time"
-	"fmt"
 )
 
 var user_id string
@@ -199,7 +198,6 @@ func TestLoginInvalidUser(t *testing.T) {
 }
 
 func TestDeleteExistingUser(t *testing.T) {
-	fmt.Println(user_id)
 	server := startServer(t)
 	defer closeServer(t, server)
 
@@ -276,4 +274,28 @@ func TestDeleteInvalidUser(t *testing.T) {
 
 		t.Errorf("Deletion invalid: %s", respMap["message"])
 	}
+}
+
+func TestGetAllUsers(t *testing.T){
+	server := startServer(t)
+	defer closeServer(t, server)
+
+	res, err := http.Get(
+		"http://localhost:8080/api/users/getUsers",
+	)
+	if err!=nil {
+		t.Errorf("Get all users failed: %v", err)
+	}
+
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		bodyBytes, _ := io.ReadAll(res.Body)
+		t.Errorf("Get all users failed: %s", string(bodyBytes))
+	}
+
+	bodyBytes, err := io.ReadAll(res.Body)
+	var respMap map[string]string
+	err = json.Unmarshal(bodyBytes, &respMap)
+
+	t.Logf("Get all users working: %s", respMap["message"])
 }
