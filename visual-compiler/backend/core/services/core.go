@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode"
 )
 
 // String variable that stores the source code
@@ -90,7 +91,20 @@ func CreateTokens() {
 	tokens = []TypeValue{}
 	tokens_unidentified = []string{}
 
-	var words = strings.Fields(source)
+	var builder strings.Builder
+
+	for _, r := range source {
+
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' {
+			builder.WriteRune(r)
+		} else {
+			builder.WriteRune(' ')
+			builder.WriteRune(r)
+			builder.WriteRune(' ')
+		}
+	}
+
+	var words = strings.Fields(builder.String())
 
 	for _, word := range words {
 
