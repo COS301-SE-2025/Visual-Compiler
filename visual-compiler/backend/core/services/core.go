@@ -1,4 +1,3 @@
-// Routines for compiler construction phases
 package services
 
 import (
@@ -6,10 +5,35 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"unicode"
 )
+
+// =========== //
+// SOURCE CODE //
+// =========== //
 
 // String variable that stores the source code
 var source string
+
+// Name: SourceCode
+// Parameters: <string> which will be source code
+// Return: none
+// Setter function which sets the source variable to the value of parameter
+func SourceCode(data string) {
+	source = data
+}
+
+// Name: GetSourceCode
+// Parameters: none
+// Return: <string>
+// Getter function to get the value of the source variable
+func GetSourceCode() string {
+	return source
+}
+
+// ============ //
+// TOKENISATION //
+// ============ //
 
 // Struct for the type and regex pairs
 type TypeRegex struct {
@@ -31,22 +55,6 @@ var tokens []TypeValue
 
 // Array that stores unidentified input
 var tokens_unidentified []string
-
-// Name: SourceCode
-// Parameters: <string> which will be source code
-// Return: none
-// Setter function which sets the source variable to the value of parameter
-func SourceCode(data string) {
-	source = data
-}
-
-// Name: GetSourceCode
-// Parameters: none
-// Return: <string>
-// Getter function to get the value of the source variable
-func GetSourceCode() string {
-	return source
-}
 
 // Name: ReadRegexRules
 // Parameters: []byte
@@ -90,7 +98,37 @@ func CreateTokens() {
 	tokens = []TypeValue{}
 	tokens_unidentified = []string{}
 
-	var words = strings.Fields(source)
+	var builder strings.Builder
+
+	for i := 0; i < len(source); i++ {
+
+		r := rune(source[i])
+
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsSpace(r) || r == '_' {
+
+			builder.WriteRune(r)
+
+		} else {
+
+			builder.WriteRune(' ')
+			builder.WriteRune(r)
+
+			if i+1 < len(source) {
+
+				i++
+				r = rune(source[i])
+
+				if !(unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsSpace(r) || r == '_') {
+
+					builder.WriteRune(r)
+				}
+			}
+
+			builder.WriteRune(' ')
+		}
+	}
+
+	var words = strings.Fields(builder.String())
 
 	for _, word := range words {
 
