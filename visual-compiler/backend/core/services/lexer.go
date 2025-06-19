@@ -16,15 +16,15 @@ import (
 var source string
 
 // Name: SourceCode
-// Parameters: <string> which will be source code
-// Return: none
+// Parameters: <string>
+// Return: None
 // Setter function which sets the source variable to the value of parameter
 func SourceCode(data string) {
 	source = data
 }
 
 // Name: GetSourceCode
-// Parameters: none
+// Parameters: None
 // Return: <string>
 // Getter function to get the value of the source variable
 func GetSourceCode() string {
@@ -37,8 +37,8 @@ func GetSourceCode() string {
 
 // Struct for the type and regex pairs
 type TypeRegex struct {
-	Type  string
-	Regex string
+	Type  string `json:"type"`
+	Regex string `json:"regex"`
 }
 
 // Array that stores the user's regex rules
@@ -46,8 +46,8 @@ var rules []TypeRegex
 
 // Struct for the tokens
 type TypeValue struct {
-	Type  string
-	Value string
+	Type  string `json:"type"`
+	Value string `json:"value"`
 }
 
 // Array that stores the user's generated tokens
@@ -57,41 +57,36 @@ var tokens []TypeValue
 var tokens_unidentified []string
 
 // Name: ReadRegexRules
-// Parameters: []byte
-// Return: error
+// Parameters: <[]byte>
+// Return: <error>
 // Receive an array of regex rules, validate them and store them in the rules struct
 func ReadRegexRules(input []byte) error {
 
 	rules = []TypeRegex{}
 
-	var raw_pairs []struct {
-		Type  string
-		Regex string
-	}
-
-	err := json.Unmarshal(input, &raw_pairs)
+	err := json.Unmarshal(input, &rules)
 
 	if err != nil {
-		return fmt.Errorf("tokens_unidentified JSON input: %w", err)
+		return fmt.Errorf("invalid JSON for rules: %v", err)
 	}
 
-	for _, pair := range raw_pairs {
+	for _, rule := range rules {
 
-		_, err := regexp.Compile(pair.Regex)
+		_, err := regexp.Compile(rule.Regex)
 
 		if err != nil {
-			return fmt.Errorf("tokens_unidentified regex: %w", err)
+			return fmt.Errorf("invalid regex input: %v", err)
 		}
 
-		rules = append(rules, TypeRegex{Type: strings.ToUpper(pair.Type), Regex: pair.Regex})
+		rule.Type = strings.ToUpper(rule.Type)
 	}
 
 	return nil
 }
 
 // Name: CreateTokens
-// Parameters: none
-// Return: none
+// Parameters: None
+// Return: None
 // Loop through the source code to find all tokens that match the regex rules stored
 func CreateTokens() {
 
@@ -152,7 +147,7 @@ func CreateTokens() {
 }
 
 // Name: GetTokens
-// Parameters: none
+// Parameters: None
 // Return: <[]TypeValue>
 // Getter function that returns the array of tokens
 func GetTokens() []TypeValue {
@@ -160,53 +155,65 @@ func GetTokens() []TypeValue {
 }
 
 // Name: GetInvalidInput
-// Parameters: none
+// Parameters: None
 // Return: <[]string>
 // Getter function that returns the array of unidentified input
 func GetInvalidInput() []string {
 	return tokens_unidentified
 }
 
+// ================== //
+// REGEX AND AUTOMATA //
+// ================== //
 
-// Struct that stores the NFA data
+// Struct that stores the automata data
 var dfa Automata
-// Array that stores the NFA transitions
-var transitions []Transition
 
 type Transition struct {
 	From  string `json:"from"`
-	To string `json:"to"`
-	By string `json:"by"`
+	To    string `json:"to"`
+	Label string `json:"label"`
 }
 type Automata struct {
-	States []string `json:"states"`
+	States      []string     `json:"states"`
 	Transitions []Transition `json:"transitions"`
-	Start string `json:"start_state"`
-	Accepting []string `json:"accepting_states"`
+	Start       string       `json:"start_state"`
+	Accepting   []string     `json:"accepting_states"`
 }
 
 // Name: ReadDFA
-// Parameters: []byte
-// Return: error
-// Receive an array of NFA data, validate them and store them in the NFA struct
+// Parameters: <[]byte>
+// Return: <error>
+// Receive an array of DFA data, validate them and store them in the struct
 func ReadDFA(input []byte) error {
 
-	transitions = []Transition{}
 	dfa = Automata{}
 
-	err:= json.Unmarshal(input, &dfa)
-	if err!=nil {
-		return fmt.Errorf("Invalid JSON object for NFA: %v", err)
+	err := json.Unmarshal(input, &dfa)
+
+	if err != nil {
+		return fmt.Errorf("invalid JSON for automata: %v", err)
 	}
 
 	return nil
 }
 
-// Name: ConvertDfaToRegExpr
+// Name: ConvertDFAToRegex
 // Parameters: None
 // Return: None
 // Convert the DFA received from the ReadDFA function to a regular expression
-func ConvertDfaToRegExpr() {
+func ConvertDFAToRegex() {
 
+}
 
+// Name: ConvertRegexToDFA
+// Parameters: <string>
+// Return: <Automata>
+// Convert the DFA received from the ReadDFA function to a regular expression
+func ConvertRegexToDFA(regex string) {
+
+	var states = []string{}
+	var transitions = []Transition{}
+	var start string
+	var accepting = []string{}
 }
