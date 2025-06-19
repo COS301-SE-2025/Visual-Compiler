@@ -15,9 +15,9 @@ import (
 	"time"
 )
 
-var user_id string
+var test_user_id string
 
-func startServer(t *testing.T) *http.Server {
+func startServerCore(t *testing.T) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
@@ -57,7 +57,7 @@ func startServer(t *testing.T) *http.Server {
 	return server
 }
 
-func closeServer(t *testing.T, server *http.Server) {
+func closeServerCore(t *testing.T, server *http.Server) {
 	cont, cancel_cont := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel_cont()
 	server.Shutdown(cont)
@@ -93,17 +93,17 @@ func get_id(t *testing.T) {
 	err = json.Unmarshal(bodyBytes, &respMap)
 
 	t.Logf("Login working: %s", respMap["message"])
-	user_id = respMap["id"]
+	test_user_id = respMap["id"]
 
 }
 
 func TestLexerCode(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(t, server)
+	server := startServerCore(t)
+	defer closeServerCore(t, server)
 
 	get_id(t)
 	re_data :=map[string]interface{}{
-		"id": user_id,
+		"id": test_user_id,
 		"source_code": "int x = 2 ;",
 		"pairs": []map[string]string{
 			{
@@ -158,12 +158,12 @@ func TestLexerCode(t *testing.T) {
 }
 
 func TestLexer(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(t, server)
+	server := startServerCore(t)
+	defer closeServerCore(t, server)
 
 	get_id(t)
 	reg_expr_data :=map[string]interface{}{
-		"id": user_id,
+		"id": test_user_id,
 		"source_code": "int x = 2 ;",
 		"pairs": []map[string]string{
 			{
@@ -212,7 +212,7 @@ func TestLexer(t *testing.T) {
 
 	
 	data := map[string]string{
-		"id":user_id,
+		"id":test_user_id,
 	}
 	lexer_req, err := json.Marshal(data)
 

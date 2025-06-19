@@ -216,4 +216,13 @@ func ConvertRegexToDFA(regex string) {
 	var transitions = []Transition{}
 	var start string
 	var accepting = []string{}
+
+	//Temp code to make runnable
+	fmt.Printf(states[0])
+	fmt.Printf(start)
+	fmt.Printf(accepting[0])
+
+	if transitions==nil {
+		fmt.Errorf("No transitions")
+	}
 }
