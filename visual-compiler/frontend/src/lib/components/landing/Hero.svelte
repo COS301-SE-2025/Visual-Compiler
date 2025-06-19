@@ -1,9 +1,13 @@
 <script>
-  // No script needed for this static component yet
+  import { goto } from '$app/navigation';
+
+  async function Launch() {
+    await goto('/login');
+  }
+  
 </script>
 
 <section class="hero_section">
-  <!-- Logo and Title Container is now positioned independently -->
   <div class="logo_container">
     <img
       src="/half_stack_phoenix_grey.png"
@@ -21,7 +25,7 @@
       An educational platform to construct, visualize, and understand the core
       phases of compilation using an intuitive, block-based interface.
     </p>
-    <button class="cta_button"> Launch Application </button>
+    <button class="cta_button" onclick={Launch}> Launch Application </button>
   </div>
 </section>
 
