@@ -1,11 +1,11 @@
 <script lang="ts">
-  import NavBar from '$lib/components/NavBar.svelte';
-  import Toolbox from '$lib/components/Toolbox.svelte';
-  import CodeInput from '$lib/components/CodeInput.svelte';
-  import DrawerCanvas from '$lib/components/DrawerCanvas.svelte';
-  import PhaseTutorial from '$lib/components/PhaseTutorial.svelte';
-  import PhaseInspector from '$lib/components/PhaseInspector.svelte';
-  import ArtifactViewer from '$lib/components/ArtifactViewer.svelte';
+  import NavBar from '$lib/components/main/NavBar.svelte';
+  import Toolbox from '$lib/components/main/Toolbox.svelte';
+  import CodeInput from '$lib/components/main/CodeInput.svelte';
+  import DrawerCanvas from '$lib/components/main/DrawerCanvas.svelte';
+  import PhaseTutorial from '$lib/components/lexor/PhaseTutorial.svelte';
+  import PhaseInspector from '$lib/components/lexor/PhaseInspector.svelte';
+  import ArtifactViewer from '$lib/components/lexor/ArtifactViewer.svelte';
   import type { NodeType, Token } from '$lib/types';
   import { writable } from 'svelte/store';
   import { addToast } from '$lib/stores/toast';
@@ -36,12 +36,14 @@
   // --- TOOLTIPS AND LABELS ---
   const tooltips: Record<NodeType, string> = {
     source: 'Start here. Add source code to begin compilation.',
-    lexer: 'Converts source code into tokens for processing.'
+    lexer: 'Converts source code into tokens for processing.',
+    parser: 'Analyzes the token stream to build a syntax tree.' // New Line
   };
 
   const nodeLabels: Record<NodeType, string> = {
     source: 'Source Code',
-    lexer: 'Lexer'
+    lexer: 'Lexer',
+    parser: 'Parser' // New Line
   };
 
   // --- NODE CREATION ---
@@ -220,7 +222,7 @@
     width: 100%;
     position: relative;
   }
-   .modal-title {
+    .modal-title {
     margin: 0 0 1rem 0;
     font-size: 1.5rem;
     color: #333;
@@ -265,7 +267,7 @@
     background: #2a4a8a;
   }
 
- :global(html.dark-mode) .return-button {
+  :global(html.dark-mode) .return-button {
     background-color: #cccccc;
     margin-right: 1rem;
     color:#041a47;
@@ -275,6 +277,4 @@
     background-color: #5f636b;
     margin-right: 1rem;
   }
-
-
 </style>
