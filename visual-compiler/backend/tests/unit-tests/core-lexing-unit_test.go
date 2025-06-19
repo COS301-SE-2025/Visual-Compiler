@@ -142,3 +142,27 @@ func TestFullCreateTokens_Success(t *testing.T) {
 		}
 	}
 }
+
+func TestReadDFA_Success(t *testing.T) {
+	user_input := []byte(`{
+							"states": ["START","S2","S3"],
+							"transitions":[
+								{"from": "START", "to": "S2", "by": "0123456789"},
+								{"from": "S2", "to": "S2", "by": "0123456789"},
+								{"from": "START", "to": "S3", "by": "abcdefghijklmnopqrstuvwxyz"},
+								{"from": "S3", "to": "S3", "by": "abcdefghijklmnopqrstuvwxyz0123456789"}
+							],
+							"start_state": "START",
+							"accepting_states":["S3"]
+							}`,
+						)
+	err := services.ReadDFA(user_input)
+	if err != nil {
+		t.Errorf("Failed for valid input: %v",err)
+	}
+}
+
+func TestConvertDFA_Success(t *testing.T) {
+	services.ConvertDfaToRegExpr()
+	
+}

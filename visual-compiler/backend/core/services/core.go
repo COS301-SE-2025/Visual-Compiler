@@ -166,3 +166,47 @@ func GetTokens() []TypeValue {
 func GetInvalidInput() []string {
 	return tokens_unidentified
 }
+
+
+// Struct that stores the NFA data
+var dfa Automata
+// Array that stores the NFA transitions
+var transitions []Transition
+
+type Transition struct {
+	From  string `json:"from"`
+	To string `json:"to"`
+	By string `json:"by"`
+}
+type Automata struct {
+	States []string `json:"states"`
+	Transitions []Transition `json:"transitions"`
+	Start string `json:"start_state"`
+	Accepting []string `json:"accepting_states"`
+}
+
+// Name: ReadDFA
+// Parameters: []byte
+// Return: error
+// Receive an array of NFA data, validate them and store them in the NFA struct
+func ReadDFA(input []byte) error {
+
+	transitions = []Transition{}
+	dfa = Automata{}
+
+	err:= json.Unmarshal(input, &dfa)
+	if err!=nil {
+		return fmt.Errorf("Invalid JSON object for NFA: %v", err)
+	}
+
+	return nil
+}
+
+// Name: ConvertDfaToRegExpr
+// Parameters: None
+// Return: None
+// Convert the DFA received from the ReadDFA function to a regular expression
+func ConvertDfaToRegExpr() {
+
+
+}
