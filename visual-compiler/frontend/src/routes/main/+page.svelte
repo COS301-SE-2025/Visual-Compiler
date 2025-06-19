@@ -3,14 +3,19 @@
   import Toolbox from '$lib/components/main/Toolbox.svelte';
   import CodeInput from '$lib/components/main/CodeInput.svelte';
   import DrawerCanvas from '$lib/components/main/DrawerCanvas.svelte';
-  import PhaseTutorial from '$lib/components/lexor/PhaseTutorial.svelte';
-  import PhaseInspector from '$lib/components/lexor/PhaseInspector.svelte';
-  import ArtifactViewer from '$lib/components/lexor/ArtifactViewer.svelte';
   import type { NodeType, Token } from '$lib/types';
   import { writable } from 'svelte/store';
   import { addToast } from '$lib/stores/toast';
   import { theme } from '../../lib/stores/theme';
   import { onMount } from 'svelte';
+
+  // --- Import ALL phase components with specific names ---
+  import LexerPhaseTutorial from '$lib/components/lexor/PhaseTutorial.svelte';
+  import LexerPhaseInspector from '$lib/components/lexor/PhaseInspector.svelte';
+  import LexerArtifactViewer from '$lib/components/lexor/ArtifactViewer.svelte';
+  import ParserPhaseTutorial from '$lib/components/parser/PhaseTutorial.svelte';
+  import ParserPhaseInspector from '$lib/components/parser/ParsingInput.svelte';
+  import ParserArtifactViewer from '$lib/components/parser/ArtifactViewer.svelte';
 
   // Initialize theme
   onMount(() => {
@@ -37,13 +42,13 @@
   const tooltips: Record<NodeType, string> = {
     source: 'Start here. Add source code to begin compilation.',
     lexer: 'Converts source code into tokens for processing.',
-    parser: 'Analyzes the token stream to build a syntax tree.' // New Line
+    parser: 'Analyzes the token stream to build a syntax tree.'
   };
 
   const nodeLabels: Record<NodeType, string> = {
     source: 'Source Code',
     lexer: 'Lexer',
-    parser: 'Parser' // New Line
+    parser: 'Parser'
   };
 
   // --- NODE CREATION ---
@@ -110,22 +115,33 @@
     <DrawerCanvas {nodes} on:phaseSelect={handlePhaseSelect} />
   </div>
 
+  <!-- This block now handles rendering for DIFFERENT phases -->
   {#if selectedPhase}
     <div class="analysis-overlay">
       <div class="analysis-view">
         <div class="three-column-layout">
-          <PhaseTutorial phase={selectedPhase} />
-          <PhaseInspector 
-            phase={selectedPhase}
-            {sourceCode}
-            on:generateTokens={handleTokenGeneration}
-          />
-          <ArtifactViewer 
-            phase={selectedPhase}
-            {tokens}
-            {unexpectedTokens}
-            {showTokens}
-          />
+
+          <!-- Conditional Rendering for Lexer Phase -->
+          {#if selectedPhase === 'lexer'}
+            <LexerPhaseTutorial />
+            <LexerPhaseInspector 
+              {sourceCode}
+              on:generateTokens={handleTokenGeneration}
+            />
+            <LexerArtifactViewer 
+              {tokens}
+              {unexpectedTokens}
+              {showTokens}
+            />
+          {/if}
+
+          <!-- Conditional Rendering for Parser Phase -->
+          {#if selectedPhase === 'parser'}
+            <ParserPhaseTutorial />
+            <ParserPhaseInspector {sourceCode} />
+            <ParserArtifactViewer />
+          {/if}
+
         </div>
         <button on:click={returnToCanvas} class="return-button">
           ← Return to Canvas
