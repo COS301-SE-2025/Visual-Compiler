@@ -115,13 +115,12 @@
     <DrawerCanvas {nodes} on:phaseSelect={handlePhaseSelect} />
   </div>
 
-  <!-- This block now handles rendering for DIFFERENT phases -->
+  <!-- This block handles rendering for DIFFERENT phases -->
   {#if selectedPhase}
     <div class="analysis-overlay">
       <div class="analysis-view">
         <div class="three-column-layout">
 
-          <!-- Conditional Rendering for Lexer Phase -->
           {#if selectedPhase === 'lexer'}
             <LexerPhaseTutorial />
             <LexerPhaseInspector 
@@ -129,13 +128,13 @@
               on:generateTokens={handleTokenGeneration}
             />
             <LexerArtifactViewer 
+              phase={selectedPhase} 
               {tokens}
               {unexpectedTokens}
               {showTokens}
             />
           {/if}
 
-          <!-- Conditional Rendering for Parser Phase -->
           {#if selectedPhase === 'parser'}
             <ParserPhaseTutorial />
             <ParserPhaseInspector {sourceCode} />
@@ -255,7 +254,7 @@
     cursor: pointer;
   }
 
-  /* Dark mode styles */
+ 
   :global(html.dark-mode) .analysis-overlay {
     background: rgba(10, 26, 58, 0.95);
   }

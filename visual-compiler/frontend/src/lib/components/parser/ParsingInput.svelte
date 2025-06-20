@@ -3,7 +3,7 @@
 
   export let sourceCode = '';
 
-  // --- DATA STRUCTURE for CFG 
+  // --- DATA STRUCTURE for CFG ---
   // A single translation for a rule (e.g., "expr + term")
   interface Translation {
     id: number;
@@ -37,6 +37,7 @@
       {
         id: rule_id_counter,
         nonTerminal: '',
+        // This line ensures each new rule starts with only ONE translation
         translations: [{ id: translation_id_counter, value: '' }]
       }
     ];
@@ -60,7 +61,7 @@
 
   function handleSubmitGrammar() {
     console.log('Submitting Grammar:', grammar);
-    //  add  API call here
+    //add  API call here
   }
 </script>
 
@@ -70,7 +71,7 @@
   </div>
 
   <div class="source-code-section">
-    <h3 class="source-code-header">Source Code </h3>
+    <h3 class="source-code-header">Source Code</h3>
     <pre class="source-display">{sourceCode || 'No source code available'}</pre>
   </div>
   
@@ -166,35 +167,35 @@
     gap: 0.75rem;
   }
   .non-terminal-input {
-    flex: 0 0 120px;
-    padding: 0.75rem;
+    flex: 0 0 60px; 
+    padding: 0.6rem;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-family: monospace;
     text-align: center;
   }
   .arrow {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     color: #555;
     font-weight: bold;
   }
   .translations-container {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
     gap: 0.5rem;
     flex: 1;
+    overflow-x: auto; 
+    padding-bottom: 0.5rem;
   }
   .translation-input {
-    padding: 0.75rem;
+    padding: 0.6rem;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-family: monospace;
-    flex-grow: 1;
-    min-width: 150px;
+    width: 80px; 
   }
   .separator {
-    font-size: 1.5rem;
+    font-size: 1.2rem;
     color: #999;
   }
   .add-translation-btn {
@@ -210,6 +211,7 @@
     align-items: center;
     justify-content: center;
     transition: background-color 0.2s;
+    flex-shrink: 0;
   }
   .add-translation-btn:hover {
     background-color: #ccc;
@@ -240,7 +242,7 @@
     cursor: pointer;
   }
 
-  /* Dark Mode Styles */
+
   :global(html.dark-mode) .parser-heading-h1 { color: #ebeef1; }
   :global(html.dark-mode) .source-code-header { color: #ebeef1; }
   :global(html.dark-mode) .source-display { color: black; }
