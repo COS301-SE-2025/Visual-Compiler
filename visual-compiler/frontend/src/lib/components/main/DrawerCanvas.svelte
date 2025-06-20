@@ -3,7 +3,7 @@
   import { createEventDispatcher } from 'svelte';
   import type { Writable } from 'svelte/store';
   import type { NodeType } from '$lib/types';
-  import { theme } from '../stores/theme';
+  import { theme } from '../../stores/theme';
 
   interface CanvasNode {
     id: string;

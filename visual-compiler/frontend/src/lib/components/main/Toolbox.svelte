@@ -1,13 +1,15 @@
 <script lang="ts">
   import type { NodeType } from '$lib/types';
-  import { theme } from '../stores/theme';
+  import { theme } from '../../stores/theme';
   
   export let handleCreateNode: (type: NodeType) => void;
   export let tooltips: Record<NodeType, string>;
 
+  // ADD THE NEW PARSER OBJECT HERE
   const nodeTypes: { id: NodeType; label: string }[] = [
     { id: 'source', label: 'Source Code' },
-    { id: 'lexer',  label: 'Lexer' }
+    { id: 'lexer',  label: 'Lexer' },
+    { id: 'parser', label: 'Parser' } 
   ];
 
   function createNode(type: NodeType) {

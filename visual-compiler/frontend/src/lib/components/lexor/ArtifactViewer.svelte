@@ -6,7 +6,6 @@
   export let unexpectedTokens: string[] = [];
   export let showTokens = false;
 
-  $: if (phase) showTokens = false;
 
   $: console.log('ArtifactViewer phase:', phase);
   $: console.log('ArtifactViewer tokens:', tokens);

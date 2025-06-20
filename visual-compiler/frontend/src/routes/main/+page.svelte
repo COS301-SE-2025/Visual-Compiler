@@ -1,16 +1,21 @@
 <script lang="ts">
-  import NavBar from '$lib/components/NavBar.svelte';
-  import Toolbox from '$lib/components/Toolbox.svelte';
-  import CodeInput from '$lib/components/CodeInput.svelte';
-  import DrawerCanvas from '$lib/components/DrawerCanvas.svelte';
-  import PhaseTutorial from '$lib/components/PhaseTutorial.svelte';
-  import PhaseInspector from '$lib/components/PhaseInspector.svelte';
-  import ArtifactViewer from '$lib/components/ArtifactViewer.svelte';
+  import NavBar from '$lib/components/main/NavBar.svelte';
+  import Toolbox from '$lib/components/main/Toolbox.svelte';
+  import CodeInput from '$lib/components/main/CodeInput.svelte';
+  import DrawerCanvas from '$lib/components/main/DrawerCanvas.svelte';
   import type { NodeType, Token } from '$lib/types';
   import { writable } from 'svelte/store';
   import { addToast } from '$lib/stores/toast';
   import { theme } from '../../lib/stores/theme';
   import { onMount } from 'svelte';
+
+  // --- Import ALL phase components with specific names ---
+  import LexerPhaseTutorial from '$lib/components/lexor/PhaseTutorial.svelte';
+  import LexerPhaseInspector from '$lib/components/lexor/PhaseInspector.svelte';
+  import LexerArtifactViewer from '$lib/components/lexor/ArtifactViewer.svelte';
+  import ParserPhaseTutorial from '$lib/components/parser/PhaseTutorial.svelte';
+  import ParserPhaseInspector from '$lib/components/parser/ParsingInput.svelte';
+  import ParserArtifactViewer from '$lib/components/parser/ArtifactViewer.svelte';
 
   // Initialize theme
   onMount(() => {
@@ -36,12 +41,14 @@
   // --- TOOLTIPS AND LABELS ---
   const tooltips: Record<NodeType, string> = {
     source: 'Start here. Add source code to begin compilation.',
-    lexer: 'Converts source code into tokens for processing.'
+    lexer: 'Converts source code into tokens for processing.',
+    parser: 'Analyzes the token stream to build a syntax tree.'
   };
 
   const nodeLabels: Record<NodeType, string> = {
     source: 'Source Code',
-    lexer: 'Lexer'
+    lexer: 'Lexer',
+    parser: 'Parser'
   };
 
   // --- NODE CREATION ---
@@ -108,22 +115,32 @@
     <DrawerCanvas {nodes} on:phaseSelect={handlePhaseSelect} />
   </div>
 
+  <!-- This block handles rendering for DIFFERENT phases -->
   {#if selectedPhase}
     <div class="analysis-overlay">
       <div class="analysis-view">
         <div class="three-column-layout">
-          <PhaseTutorial phase={selectedPhase} />
-          <PhaseInspector 
-            phase={selectedPhase}
-            {sourceCode}
-            on:generateTokens={handleTokenGeneration}
-          />
-          <ArtifactViewer 
-            phase={selectedPhase}
-            {tokens}
-            {unexpectedTokens}
-            {showTokens}
-          />
+
+          {#if selectedPhase === 'lexer'}
+            <LexerPhaseTutorial />
+            <LexerPhaseInspector 
+              {sourceCode}
+              on:generateTokens={handleTokenGeneration}
+            />
+            <LexerArtifactViewer 
+              phase={selectedPhase} 
+              {tokens}
+              {unexpectedTokens}
+              {showTokens}
+            />
+          {/if}
+
+          {#if selectedPhase === 'parser'}
+            <ParserPhaseTutorial />
+            <ParserPhaseInspector {sourceCode} />
+            <ParserArtifactViewer />
+          {/if}
+
         </div>
         <button on:click={returnToCanvas} class="return-button">
           ← Return to Canvas
@@ -220,7 +237,7 @@
     width: 100%;
     position: relative;
   }
-   .modal-title {
+    .modal-title {
     margin: 0 0 1rem 0;
     font-size: 1.5rem;
     color: #333;
@@ -237,7 +254,7 @@
     cursor: pointer;
   }
 
-  /* Dark mode styles */
+ 
   :global(html.dark-mode) .analysis-overlay {
     background: rgba(10, 26, 58, 0.95);
   }
@@ -265,7 +282,7 @@
     background: #2a4a8a;
   }
 
- :global(html.dark-mode) .return-button {
+  :global(html.dark-mode) .return-button {
     background-color: #cccccc;
     margin-right: 1rem;
     color:#041a47;
@@ -275,6 +292,4 @@
     background-color: #5f636b;
     margin-right: 1rem;
   }
-
-
 </style>

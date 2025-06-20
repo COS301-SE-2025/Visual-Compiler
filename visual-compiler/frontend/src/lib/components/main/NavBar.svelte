@@ -1,6 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { theme, toggleTheme } from '../stores/theme';
+  import { theme, toggleTheme } from '../../stores/theme'
 
   const lightLogoUrl = '/half_stack_phoenix_only.png';
   const darkLogoUrl = '/half_stack_phoenix_grey.png';
