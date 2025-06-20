@@ -174,11 +174,15 @@ type Transition struct {
 	To    string `json:"to"`
 	Label string `json:"label"`
 }
+type AcceptingState struct {
+	State string `json:"state"`
+	Type string  `json:"token_type"`
+}
 type Automata struct {
 	States      []string     `json:"states"`
 	Transitions []Transition `json:"transitions"`
 	Start       string       `json:"start_state"`
-	Accepting   []string     `json:"accepting_states"`
+	Accepting   []AcceptingState `json:"accepting_states"`
 }
 
 // Name: ReadDFA
@@ -197,6 +201,98 @@ func ReadDFA(input []byte) error {
 
 	return nil
 }
+
+type candidate struct {
+	value string
+	token string
+}
+type candidate_sol struct {
+	state string
+	source_index int
+	sol string
+}
+// Name: CreateTokensFromDFA
+// Parameters: None
+// Return: None
+// Convert the source code, using DFA received from the ReadDFA function, to a set of tokens
+func CreateTokensFromDFA() {
+	tokens = []TypeValue{}
+	tokens_unidentified = []string{}
+	source_pos := 0
+
+	for source_pos < len(source) {
+
+		for source_pos < len(source) && unicode.IsSpace(rune(source[source_pos])) {
+			source_pos++
+		}
+		if source_pos >= len(source) {
+			break
+		}
+
+		solution_found :=false
+		best_solution := candidate{
+									value: "",
+									token: "",
+								}
+
+		initial_sol := candidate_sol{state:dfa.Start, source_index:source_pos,sol:""}
+		queue := []candidate_sol{initial_sol}
+
+		for len(queue) >0 {
+
+			current_state:= queue[0] //start searching first element in queue
+			queue = queue[1:] //remove first element from queue
+
+			for _,accepting := range dfa.Accepting {
+				if accepting.State == current_state.state {
+					solution_found = true
+					candidate_solution := candidate{
+													value:current_state.sol,
+													token: accepting.Type,
+												}
+					if len(candidate_solution.value) > len(best_solution.value) {
+						best_solution = candidate_solution
+					}
+				}
+			}
+
+			if current_state.source_index < len(source) {
+				current_char := string(source[current_state.source_index])
+				for _,current_transition := range dfa.Transitions { //add children of current_state to queue
+
+					if current_transition.From == current_state.state {
+						if strings.Contains(current_transition.Label,current_char) {
+
+							next_state := candidate_sol{
+														state: current_transition.To,
+														source_index: current_state.source_index+1,
+														sol: current_state.sol + current_char,
+							}
+							queue = append(queue, next_state)
+						}
+					}
+				}
+			}
+		}
+
+		if solution_found == true {
+			tokens = append(tokens,TypeValue{
+											Type:best_solution.token,
+											Value:best_solution.value,
+											})
+			source_pos += len(best_solution.value)
+		}else {
+			unexpected_pos := source_pos +1
+			for unexpected_pos < len(source) && !unicode.IsSpace(rune(source[unexpected_pos])) {
+				unexpected_pos++
+			}
+			unidentified_token := source[source_pos:unexpected_pos]
+			tokens_unidentified = append(tokens_unidentified, unidentified_token)
+			source_pos = unexpected_pos
+		}
+	}
+}
+
 
 // Name: ConvertDFAToRegex
 // Parameters: None

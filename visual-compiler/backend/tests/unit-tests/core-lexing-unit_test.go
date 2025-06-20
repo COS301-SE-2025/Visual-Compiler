@@ -145,16 +145,23 @@ func TestFullCreateTokens_Success(t *testing.T) {
 
 func TestReadDFA_Success(t *testing.T) {
 	user_input := []byte(`{
-							"states": ["START","S2","S3"],
+							"states": ["START","S1","S2","S3","S4","S5"],
 							"transitions":[
+								{"from": "START", "to": "S1", "label": "i"},
+								{"from": "S1", "to": "S5", "label": "n"},
+								{"from": "S5", "to": "S4", "label": "t"},
 								{"from": "START", "to": "S2", "label": "0123456789"},
 								{"from": "S2", "to": "S2", "label": "0123456789"},
 								{"from": "START", "to": "S3", "label": "abcdefghijklmnopqrstuvwxyz"},
 								{"from": "S3", "to": "S3", "label": "abcdefghijklmnopqrstuvwxyz0123456789"}
 							],
 							"start_state": "START",
-							"accepting_states":["S3"]
-							}`,
+							"accepting_states":[
+								{"state":"S3","token_type":"IDENTIFIER"},
+								{"state":"S4","token_type":"KEYWORD"},
+								{"state":"S2","token_type":"NUMBER"}
+							]
+						}`,
 	)
 	err := services.ReadDFA(user_input)
 	if err != nil {
@@ -162,7 +169,58 @@ func TestReadDFA_Success(t *testing.T) {
 	}
 }
 
-func TestConvertDFA_Success(t *testing.T) {
-	services.ConvertDFAToRegex()
+func TestConvertTokensFromDFA_Success(t *testing.T) {
+	lexing_input := "int y = 2;"
+	services.SourceCode(lexing_input)
 
+	services.CreateTokensFromDFA()
+	tokens := services.GetTokens()
+	expected_res := []services.TypeValue{
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "y"},
+		{Type: "NUMBER", Value: "2"},
+	}
+	if len(tokens) != len(expected_res) {
+		t.Errorf("Not enough tokens created")
+	}
+	for i:=0;i<len(tokens);i++ {
+		if (tokens[i] != expected_res[i]) {
+			t.Errorf("Tokenisation incorrect")
+		}
+	}
+	unidentified_tokens := services.GetInvalidInput()
+	expected_res2 := []string{"=",";"}
+	for i:=0;i<len(unidentified_tokens);i++ {
+		if (unidentified_tokens[i] != expected_res2[i]) {
+			t.Errorf("Tokenisation incorrect")
+		}
+	}
+}
+
+func TestConvertTokensFromDFA_TestSimilarIDandKey(t *testing.T) {
+	lexing_input := "int integ = 2;"
+	services.SourceCode(lexing_input)
+
+	services.CreateTokensFromDFA()
+	tokens := services.GetTokens()
+	expected_res := []services.TypeValue{
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "integ"},
+		{Type: "NUMBER", Value: "2"},
+	}
+	if len(tokens) != len(expected_res) {
+		t.Errorf("Not enough tokens created")
+	}
+	for i:=0;i<len(tokens);i++ {
+		if (tokens[i] != expected_res[i]) {
+			t.Errorf("Tokenisation incorrect")
+		}
+	}
+	unidentified_tokens := services.GetInvalidInput()
+	expected_res2 := []string{"=",";"}
+	for i:=0;i<len(unidentified_tokens);i++ {
+		if (unidentified_tokens[i] != expected_res2[i]) {
+			t.Errorf("Tokenisation incorrect")
+		}
+	}
 }
