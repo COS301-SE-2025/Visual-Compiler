@@ -17,10 +17,21 @@
   import ParserPhaseInspector from '$lib/components/parser/ParsingInput.svelte';
   import ParserArtifactViewer from '$lib/components/parser/ArtifactViewer.svelte';
 
+  // --- FIX: Create a variable to hold a reference to the workspace element ---
+  let workspaceEl: HTMLElement;
+
+  // --- NEW: State for the one-time help tip ---
+  let showDragTip = false;
+
   // Initialize theme
   onMount(() => {
     document.documentElement.setAttribute('svelvet-theme', $theme);
     document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
+
+    // --- NEW: Check if the user has seen the tip before ---
+    if (!localStorage.getItem('hasSeenDragTip')) {
+      showDragTip = true;
+    }
   });
 
   // --- CANVAS STATE ---
@@ -54,18 +65,40 @@
   // --- NODE CREATION ---
   function handleCreateNode(type: NodeType) {
     nodeCounter++;
-    nodes.update(curr => [
-      ...curr,
-      {
+    nodes.update(curr => {
+      // Define the layout parameters for a clean grid
+      const start_x = 100; // Initial X position
+      const start_y = 100; // Initial Y position
+      const x_offset = 300; // Horizontal space between nodes
+      const y_offset = 150; // Vertical space between rows
+      const nodes_per_row = 3; // How many nodes before starting a new row
+
+      // Calculate position based on the number of existing nodes
+      const new_node_index = curr.length;
+      const new_position = {
+        x: start_x + (new_node_index % nodes_per_row) * x_offset,
+        y: start_y + Math.floor(new_node_index / nodes_per_row) * y_offset
+      };
+
+      const new_node = {
         id: `${type}-${nodeCounter}`,
         type,
         label: nodeLabels[type] || type[0].toUpperCase() + type.slice(1),
-        position: {
-          x: Math.random() * 300 + 100,
-          y: Math.random() * 300 + 100
-        }
-      }
-    ]);
+        position: new_position
+      };
+
+      return [...curr, new_node];
+    });
+
+    // --- FIX: Programmatically focus the workspace after creating a node ---
+    // This prevents the "jumping" bug by ensuring the canvas is the active element.
+    workspaceEl?.focus();
+  }
+  
+  // --- NEW: Function to dismiss the help tip permanently ---
+  function dismissDragTip() {
+    localStorage.setItem('hasSeenDragTip', 'true');
+    showDragTip = false;
   }
 
   // --- PHASE SELECTION ---
@@ -111,8 +144,17 @@
 
 <div class="main">
   <Toolbox {handleCreateNode} {tooltips} />
-  <div class="workspace">
+  <!-- FIX: Bind the div to the variable and add tabindex="-1" to make it focusable -->
+  <div class="workspace" bind:this={workspaceEl} tabindex="-1">
     <DrawerCanvas {nodes} on:phaseSelect={handlePhaseSelect} />
+
+    <!-- NEW: One-time dismissible help tip -->
+    {#if showDragTip}
+      <div class="help-tip">
+        <span><b>Pro-Tip:</b> For the smoothest experience, click to select a node before dragging it.</span>
+        <button on:click={dismissDragTip} class="dismiss-tip-btn">Got it!</button>
+      </div>
+    {/if}
   </div>
 
   <!-- This block handles rendering for DIFFERENT phases -->
@@ -173,6 +215,9 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    position: relative; /* Needed for positioning the help tip */
+    /* FIX: Remove the default browser outline when the element is focused */
+    outline: none;
   }
   .analysis-overlay {
     position: fixed;
@@ -254,7 +299,33 @@
     cursor: pointer;
   }
 
- 
+  /* NEW: Styles for the help tip */
+  .help-tip {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(4, 26, 71, 0.9);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 50;
+  }
+
+  .dismiss-tip-btn {
+    background-color: #fafafa;
+    color: #041a47;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  
   :global(html.dark-mode) .analysis-overlay {
     background: rgba(10, 26, 58, 0.95);
   }
