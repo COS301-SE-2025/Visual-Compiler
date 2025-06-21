@@ -253,6 +253,11 @@
     nfaStartState = '';
     nfaAcceptedStates = '';
     nfaTransitions = '';
+    dfaStates = '';
+    dfaAlphabets = '';
+    dfaStartState = '';
+    dfaAcceptedStates = '';
+    dfaTransitions = '';
   }
 </script>
 
