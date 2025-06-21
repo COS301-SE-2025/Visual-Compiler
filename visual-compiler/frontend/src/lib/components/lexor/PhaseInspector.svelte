@@ -192,6 +192,68 @@
       previousInputs = [...inputRows];
     }
   }
+
+  let selectedAutomaton: 'NFA' | 'DFA' | 'REGEX' | null = null;
+  let showDefault = false;
+
+  // NFA/DFA input state
+  let nfaStates = '';
+  let nfaAlphabets = '';
+  let nfaStartState = '';
+  let nfaAcceptedStates = '';
+  let nfaTransitions = '';
+
+  let dfaStates = '';
+  let dfaAlphabets = '';
+  let dfaStartState = '';
+  let dfaAcceptedStates = '';
+  let dfaTransitions = '';
+
+  function resetInputs() {
+    nfaStates = '';
+    nfaAlphabets = '';
+    nfaStartState = '';
+    nfaAcceptedStates = '';
+    nfaTransitions = '';
+    dfaStates = '';
+    dfaAlphabets = '';
+    dfaStartState = '';
+    dfaAcceptedStates = '';
+    dfaTransitions = '';
+    showDefault = false;
+  }
+
+  function selectAutomaton(type: 'NFA' | 'DFA' | 'REGEX') {
+    selectedAutomaton = type;
+    resetInputs();
+  }
+
+  function insertDefault() {
+    showDefault = true;
+    if (selectedAutomaton === 'NFA') {
+      nfaStates = 'q0,q1,q2';
+      nfaAlphabets = 'a,b';
+      nfaStartState = 'q0';
+      nfaAcceptedStates = 'q2';
+      nfaTransitions = 'q0,a->q1\nq1,b->q2'; // <-- Make sure this is set
+    } else if (selectedAutomaton === 'DFA') {
+      dfaStates = 'A,B';
+      dfaAlphabets = '0,1';
+      dfaStartState = 'A';
+      dfaAcceptedStates = 'B';
+      dfaTransitions = 'A,0->A\nA,1->B\nB,0->A\nB,1->B';
+    }
+    // No default for REGEX yet
+  }
+
+  function removeDefault() {
+    showDefault = false;
+    nfaStates = '';
+    nfaAlphabets = '';
+    nfaStartState = '';
+    nfaAcceptedStates = '';
+    nfaTransitions = '';
+  }
 </script>
 
 <div class="phase-inspector">
@@ -203,7 +265,54 @@
     <pre class="source-display">{sourceCode || 'No source code available'}</pre>
   </div>
   
-  <div class="shared-block">
+  <!-- Automaton selection buttons -->
+<div class="automaton-btn-row">
+  <button
+    class="automaton-btn {selectedAutomaton === 'NFA' ? 'selected' : ''}"
+    on:click={() => selectAutomaton('NFA')}
+    type="button"
+  >NFA</button>
+  <button
+    class="automaton-btn {selectedAutomaton === 'DFA' ? 'selected' : ''}"
+    on:click={() => selectAutomaton('DFA')}
+    type="button"
+  >DFA</button>
+  <button
+    class="automaton-btn {selectedAutomaton === 'REGEX' ? 'selected' : ''}"
+    on:click={() => selectAutomaton('REGEX')}
+    type="button"
+  >Regular Expression</button>
+  {#if selectedAutomaton && !showDefault}
+    <button
+      class="default-toggle-btn"
+      on:click={insertDefault}
+      type="button"
+      aria-label="Insert default input"
+      title="Insert default input"
+    >
+      <span class="icon">🪄</span>
+    </button>
+  {/if}
+  {#if selectedAutomaton && showDefault}
+    <button
+      class="default-toggle-btn selected"
+      on:click={removeDefault}
+      type="button"
+      aria-label="Remove default input"
+      title="Remove default input"
+    >
+      <span class="icon">🧹</span>
+    </button>
+  {/if}
+</div>
+
+  <!-- Conditional content rendering -->
+  {#if selectedAutomaton === 'REGEX'}
+    <!-- Place your existing lexing/regex UI here -->
+    <div>
+      <!-- BEGIN LEXING UI -->
+      <!-- ...everything from your shared-block and below, up to the closing </style>... -->
+      <div class="shared-block">
     <div class="block-headers">
       <div class="header-section">
         <h3>Type</h3>
@@ -274,6 +383,59 @@
       class:info={submissionStatus.message === 'info'}
     >
       {submissionStatus.message}
+    </div>
+  {/if}
+      <!-- END LEXING UI -->
+    </div>
+  {:else if selectedAutomaton === 'NFA'}
+    <div class="automaton-section">
+      <label>
+        States:
+        <input class="automaton-input" bind:value={nfaStates} placeholder="e.g. q0,q1,q2" />
+      </label>
+      <label>
+        Alphabets:
+        <input class="automaton-input" bind:value={nfaAlphabets} placeholder="e.g. a,b" />
+      </label>
+      <label>
+        Start State:
+        <input class="automaton-input" bind:value={nfaStartState} placeholder="e.g. q0" />
+      </label>
+      <label>
+        Accepted States:
+        <input class="automaton-input" bind:value={nfaAcceptedStates} placeholder="e.g. q2" />
+      </label>
+      <label class="automaton-transitions-label">
+        Transitions:
+        <textarea
+          class="automaton-input automaton-transitions"
+          bind:value={nfaTransitions}
+          placeholder="e.g. q0,a->q1&#10;q1,b->q2"
+        ></textarea>
+      </label>
+    </div>
+  {:else if selectedAutomaton === 'DFA'}
+    <div class="automaton-section">
+      <label>
+        States:
+        <input class="automaton-input" bind:value={dfaStates} placeholder="e.g. A,B" />
+      </label>
+      <label>
+        Alphabets:
+        <input class="automaton-input" bind:value={dfaAlphabets} placeholder="e.g. 0,1" />
+      </label>
+      <label>
+        Start State:
+        <input class="automaton-input" bind:value={dfaStartState} placeholder="e.g. A" />
+      </label>
+      <label>
+        Accepted States:
+        <input class="automaton-input" bind:value={dfaAcceptedStates} placeholder="e.g. B" />
+      </label>
+      <label class="automaton-transitions-label">
+        Transitions:
+        <textarea class="automaton-input automaton-transitions" bind:value={dfaTransitions} placeholder="e.g. A,0->A&#10;A,1->B"></textarea>
+      </label>
     </div>
   {/if}
 </div>
@@ -520,5 +682,103 @@
     color : black;
   }
 
- 
+  .automaton-btn-row {
+    display: flex;
+    gap: 0.7rem;
+    margin: 2rem 0 1.5rem 0;
+    align-items: center;
+  }
+  .automaton-btn {
+    padding: 0.4rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 1.2rem;
+    background: white;
+    color: #001A6E;
+    font-weight: 500;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s, color 0.2s;
+    outline: none;
+  }
+  .automaton-btn.selected {
+    border-color: #001A6E;
+    background: #e6edfa;
+    color: #001A6E;
+  }
+  .automaton-btn:not(.selected):hover {
+    border-color: #7da2e3;
+    background: #f5f8fd;
+  }
+  .default-toggle-btn {
+  margin-left: 1.2rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 1.2rem;
+  border: 2px solid #e5e7eb;      /* match unselected automaton-btn */
+  background: white;              /* match unselected automaton-btn */
+  color: #001A6E;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  height: 2.2rem;
+  width: 2.2rem;
+  justify-content: center;
+  position: relative;
+}
+  .default-toggle-btn.selected {
+    background: #d0e2ff;
+    border-color: #003399;
+  }
+  .default-toggle-btn:hover,
+  .default-toggle-btn:focus {
+    background: #f5f8fd;
+    border-color: #7da2e3;
+  }
+  .icon {
+    font-size: 1.3rem;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .automaton-section {
+    margin-top: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem 1.5rem;
+    max-width: 600px;
+  }
+  .automaton-section label {
+    font-weight: 500;
+    color: #001A6E;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-size: 1rem;
+  }
+  .automaton-input {
+    padding: 0.7rem 1rem;
+    border: 1.5px solid #b6c6e3;
+    border-radius: 0.7rem;
+    font-size: 1rem;
+    background: #f8fafc;
+    color: #001A6E;
+    transition: border-color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .automaton-input:focus {
+    border-color: #001A6E;
+    outline: none;
+    background: #e6edfa;
+  }
+  .automaton-transitions-label {
+    grid-column: span 2;
+  }
+  .automaton-transitions {
+    min-height: 6rem;
+    min-width: 100%;
+    font-family: 'Fira Mono', monospace;
+    resize: vertical;
+  }
 </style>
