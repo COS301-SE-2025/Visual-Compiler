@@ -18,17 +18,14 @@
   }
 
   // --- STATE MANAGEMENT ---
-  // The main array holding the entire grammar
   let grammar: Rule[] = [];
   let rule_id_counter = 0;
   let translation_id_counter = 0;
 
-  // Initialize with one empty rule when the component mounts
   onMount(() => {
     addNewRule();
   });
 
-  // --- FUNCTIONS to manage the grammar structure ---
   function addNewRule() {
     rule_id_counter++;
     translation_id_counter++;
@@ -37,7 +34,6 @@
       {
         id: rule_id_counter,
         nonTerminal: '',
-        // This line ensures each new rule starts with only ONE translation
         translations: [{ id: translation_id_counter, value: '' }]
       }
     ];
@@ -61,7 +57,7 @@
 
   function handleSubmitGrammar() {
     console.log('Submitting Grammar:', grammar);
-    //add  API call here
+    // API call would go here
   }
 </script>
 
@@ -76,32 +72,40 @@
   </div>
   
   <div class="grammar-editor">
-    <h3>Start</h3>
+    <h3>Context-Free Grammar</h3>
     <div class="rules-container">
-      {#each grammar as rule (rule.id)}
+      {#each grammar as rule, i (rule.id)}
         <div class="rule-row">
-          <input 
-            type="text" 
-            class="non-terminal-input" 
-            placeholder="expr"
-            bind:value={rule.nonTerminal}
-          />
-          <span class="arrow">→</span>
-          <div class="translations-container">
-            {#each rule.translations as translation, i (translation.id)}
-              <input 
-                type="text" 
-                class="translation-input" 
-                placeholder="expr + term"
-                bind:value={translation.value}
-              />
-              {#if i < rule.translations.length - 1}
-                <span class="separator">|</span>
-              {/if}
-            {/each}
-            <button class="add-translation-btn" on:click={() => addTranslation(rule.id)}>
-              +
-            </button>
+          <div class="rule-label">
+            {#if i === 0}
+              <span class="start-label">Start →</span>
+            {/if}
+          </div>
+
+          <div class="rule-inputs">
+            <input 
+              type="text" 
+              class="non-terminal-input" 
+              placeholder="expr"
+              bind:value={rule.nonTerminal}
+            />
+            <span class="arrow">→</span>
+            <div class="translations-container">
+              {#each rule.translations as translation, j (translation.id)}
+                <input 
+                  type="text" 
+                  class="translation-input" 
+                  placeholder="expr + term"
+                  bind:value={translation.value}
+                />
+                {#if j < rule.translations.length - 1}
+                  <span class="separator">|</span>
+                {/if}
+              {/each}
+              <button class="add-translation-btn" on:click={() => addTranslation(rule.id)}>
+                +
+              </button>
+            </div>
           </div>
         </div>
       {/each}
@@ -159,12 +163,29 @@
   .rules-container {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: 1rem; 
   }
   .rule-row {
     display: flex;
     align-items: center;
+  }
+  .rule-label {
+    width: 80px; 
+    flex-shrink: 0;
+    text-align: right;
+    padding-right: 0.75rem;
+  }
+  .start-label {
+    font-weight: bold;
+    color: #001A6E;
+    font-family: monospace;
+    font-size: 1.1rem;
+  }
+  .rule-inputs {
+    display: flex;
+    align-items: center;
     gap: 0.75rem;
+    width: 100%;
   }
   .non-terminal-input {
     flex: 0 0 60px; 
@@ -173,6 +194,7 @@
     border-radius: 4px;
     font-family: monospace;
     text-align: center;
+    width : 90%;
   }
   .arrow {
     font-size: 1.2rem;
@@ -192,7 +214,7 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     font-family: monospace;
-    width: 80px; 
+    width: 5rem; 
   }
   .separator {
     font-size: 1.2rem;
@@ -242,12 +264,13 @@
     cursor: pointer;
   }
 
-
+  /* Dark Mode Styles */
   :global(html.dark-mode) .parser-heading-h1 { color: #ebeef1; }
   :global(html.dark-mode) .source-code-header { color: #ebeef1; }
   :global(html.dark-mode) .source-display { color: black; }
   :global(html.dark-mode) .grammar-editor { background: #1f2937; }
   :global(html.dark-mode) .grammar-editor h3 { color: #ebeef1; }
+  :global(html.dark-mode) .start-label { color: #60a5fa; }
   :global(html.dark-mode) .non-terminal-input, 
   :global(html.dark-mode) .translation-input {
     background-color: #2d3748;
