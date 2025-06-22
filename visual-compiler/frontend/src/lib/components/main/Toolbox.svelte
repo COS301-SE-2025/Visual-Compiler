@@ -5,7 +5,6 @@
   export let handleCreateNode: (type: NodeType) => void;
   export let tooltips: Record<NodeType, string>;
 
-  // ADD THE NEW PARSER OBJECT HERE
   const nodeTypes: { id: NodeType; label: string }[] = [
     { id: 'source', label: 'Source Code' },
     { id: 'lexer',  label: 'Lexer' },
@@ -32,11 +31,10 @@
 </aside>
 
 <style>
+  /* UPDATED: Styles for a cohesive look */
   .toolbox {
     flex: 0 0 clamp(240px, 20%, 300px);
-    background: #fafafa;
-    border-right: 1px solid #e0e0e0;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+    background: #ffffff;
     padding: 1.5rem 1rem;
     box-sizing: border-box;
     display: flex;
@@ -44,6 +42,12 @@
     gap: 1rem;
     align-items: center;
     transition: all 0.3s ease;
+
+    /* NEW: Removed margin, as it's handled by the parent */
+    margin: 0; 
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
   }
 
   .toolbox-heading {
@@ -136,9 +140,9 @@
 
   /* Dark Mode Styles */
   :global(html.dark-mode) .toolbox {
-    background: #404258;
-    border-right: 1px solid #404258;
-    box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+    background: #1b1d2a;
+    border-color: #374151;
+    box-shadow: none;
   }
 
   :global(html.dark-mode) .toolbox-heading {
@@ -152,6 +156,7 @@
   :global(html.dark-mode) .phase-btn {
     background-color: #041a47;
     color: #f0f0f0;
+    border: 1px solid #374151;
   }
 
   :global(html.dark-mode) .phase-btn:hover {
