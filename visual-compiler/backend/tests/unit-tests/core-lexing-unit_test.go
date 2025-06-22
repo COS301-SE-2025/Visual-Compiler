@@ -224,3 +224,35 @@ func TestConvertTokensFromDFA_TestSimilarIDandKey(t *testing.T) {
 		}
 	}
 }
+
+func TestConvertDFAToRegex_Success(t *testing.T) {
+	user_input := []byte(`{
+							"states": ["START","S1","S2","S3","S4","S5"],
+							"transitions":[
+								{"from": "START", "to": "S1", "label": "i"},
+								{"from": "S1", "to": "S5", "label": "n"},
+								{"from": "S5", "to": "S4", "label": "t"},
+								{"from": "START", "to": "S2", "label": "0123456789"},
+								{"from": "S2", "to": "S2", "label": "0123456789"},
+								{"from": "START", "to": "S3", "label": "abcdefghijklmnopqrstuvwxyz"},
+								{"from": "S3", "to": "S3", "label": "abcdefghijklmnopqrstuvwxyz0123456789"}
+							],
+							"start_state": "START",
+							"accepting_states":[
+								{"state":"S3","token_type":"IDENTIFIER"},
+								{"state":"S4","token_type":"KEYWORD"},
+								{"state":"S2","token_type":"NUMBER"}
+							]
+						}`,
+	)
+	err := services.ReadDFA(user_input)
+	if err != nil {
+		t.Errorf("Test failed: %v", err)
+	}
+
+	err = services.ConvertDFAToRegex()
+	if err!=nil {
+		t.Errorf("Test failed: %v", err)
+	}
+
+}

@@ -294,12 +294,128 @@ func CreateTokensFromDFA() {
 }
 
 
+type regex_candidate struct {
+	state string
+	path string
+	visited_states map[string]bool
+}
+
 // Name: ConvertDFAToRegex
 // Parameters: None
 // Return: None
 // Convert the DFA received from the ReadDFA function to a regular expression
-func ConvertDFAToRegex() {
+func ConvertDFAToRegex() error{
 
+	if len(dfa.States) == 0{
+		return fmt.Errorf("No states identified.")
+	}
+	if len(dfa.Transitions) == 0{
+		return fmt.Errorf("No transitions identified.")
+	}
+	if len(dfa.Accepting) == 0{
+		return fmt.Errorf("No accepting states identified.")
+	}
+	if dfa.Start == ""{
+		return fmt.Errorf("No start state identified")
+	}
+
+	accepting_states := make(map[string]string)
+	for _, accepting := range dfa.Accepting {
+		accepting_states[accepting.State] = accepting.Type
+	}
+
+	rules = []TypeRegex{}
+	paths := make(map[string][]string)
+	max_depth := len(dfa.States) *2
+
+	initial_candidate := regex_candidate{
+		state: dfa.Start,
+		path: "",
+		visited_states: make(map[string]bool),
+	}
+	states_queue := []regex_candidate{initial_candidate}
+
+	token_type,is_accepting := accepting_states[dfa.Start]
+	if is_accepting {
+		paths[token_type] = append(paths[token_type], "")
+	}
+
+	for len(states_queue) >0 {
+		current_candidate := states_queue[0]
+		states_queue = states_queue[1:]
+
+		if len(current_candidate.path) > max_depth {
+			continue
+		}
+
+		token_type,is_accepting := accepting_states[current_candidate.state]
+		if is_accepting && current_candidate.path!="" {
+			paths[token_type] = append(paths[token_type], current_candidate.path)
+		}
+
+		for _,transition := range dfa.Transitions {
+			if transition.From == current_candidate.state {
+
+				if current_candidate.visited_states[transition.To] == false {
+
+					update_visited := make(map[string]bool)
+					for k,v :=range current_candidate.visited_states {
+						update_visited[k] = v
+					}
+
+					update_visited[current_candidate.state] = true
+
+					new_candidate := regex_candidate {
+						state: transition.To,
+						path: current_candidate.path + regexStructure(transition.Label),
+						visited_states: update_visited,
+					}
+
+					states_queue = append(states_queue,new_candidate)
+				}
+			}
+		}
+	}
+
+	for token_type,token_path := range paths {
+		unique_paths_map := make(map[string]bool) 
+		unique_paths := []string{}
+
+		for _,path := range token_path {
+			if unique_paths_map[path]==false {
+				unique_paths_map[path] = true
+				unique_paths = append(unique_paths,path)
+			}
+		}
+
+		regex_builder := ""
+		if len(unique_paths) ==1 {
+			regex_builder = unique_paths[0]
+		}else {
+			regex_builder = "("+ strings.Join(unique_paths,"|")+")"
+		}
+
+		new_regex := TypeRegex{
+			Type: token_type,
+			Regex: regex_builder,
+		}
+		rules = append(rules,new_regex)
+		fmt.Printf("%s: %s\n", token_type, regex_builder)
+	}
+
+	return nil
+}
+
+func regexStructure(label string) string {
+
+	special_characters := []string{"\\","(",")","{","}","[","]",".","^","$","*","+","?","|"}
+
+	structured_label := label
+	for _,char := range special_characters {
+		structured_label = strings.ReplaceAll(structured_label,char,"\\"+char)
+	}
+
+	return structured_label
 }
 
 // Name: ConvertRegexToDFA
