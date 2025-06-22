@@ -1,16 +1,16 @@
 <script lang="ts">
-  // Placeholder for parser tutorial content
+
 </script>
 
 <div class="phase-tutorial">
   <div class="tutorial-content">
     <h2>What is Parsing?</h2>
     <p class="description">
- 
+
     </p>
     <div class="separator"></div>
     <div class="empty-state">
-
+      Tutorial content for Parsing 
     </div>
   </div>
 </div>
@@ -18,7 +18,7 @@
 <style>
 
   .phase-tutorial {
-    padding: 1rem;
+    padding: 1.5rem;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -30,6 +30,7 @@
   }
   h2 {
     color: #001A6E;
+    margin-top: 0;
     margin-bottom: 1rem;
     font-size: 1.5rem;
   }

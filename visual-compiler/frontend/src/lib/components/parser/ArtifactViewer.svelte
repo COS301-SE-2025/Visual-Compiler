@@ -5,14 +5,14 @@
 <div class="artifact-viewer">
   <h3>Artifacts: Syntax Tree</h3>
   <div class="empty-state">
-
+    The generated Abstract Syntax Tree (AST) will be visualized here.
   </div>
 </div>
 
 <style>
 
   .artifact-viewer {
-    padding: 2rem 1.5rem 1.5rem;
+    padding: 1.5rem;
   }
   h3 {
     color: #001A6E;
@@ -28,7 +28,7 @@
     padding: 2rem;
   }
 
-
+  /* Dark Mode Styles */
   :global(html.dark-mode) h3 { color: #ebeef1; border-bottom-color: #4b5563; }
   :global(html.dark-mode) .empty-state { color: #9ca3af; }
 </style>

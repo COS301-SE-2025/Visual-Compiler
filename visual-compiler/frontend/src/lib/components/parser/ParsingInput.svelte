@@ -124,7 +124,7 @@
 
 <style>
   .phase-inspector {
-    padding: 0.2rem 2rem 2rem;
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
@@ -132,6 +132,7 @@
   .parser-heading-h1 {
     color: #001A6E;
     text-align: center;
+    margin-top: 0;
   }
   .source-code-section {
     margin-bottom: 1rem;
@@ -186,6 +187,8 @@
     align-items: center;
     gap: 0.75rem;
     width: 100%;
+    /* This prevents the container from overflowing its parent */
+    overflow: hidden; 
   }
   .non-terminal-input {
     flex: 0 0 60px; 

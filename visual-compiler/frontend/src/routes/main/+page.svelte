@@ -17,17 +17,17 @@
   import ParserPhaseInspector from '$lib/components/parser/ParsingInput.svelte';
   import ParserArtifactViewer from '$lib/components/parser/ArtifactViewer.svelte';
 
-  // --- FIX: Create a variable to hold a reference to the workspace element ---
+ 
   let workspaceEl: HTMLElement;
 
-  // --- NEW: State for the one-time help tip ---
+
   let showDragTip = false;
 
   // Initialize theme
   onMount(() => {
     document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
 
-    // --- NEW: Check if the user has seen the tip before ---
+
     if (!localStorage.getItem('hasSeenDragTip')) {
       showDragTip = true;
     }
@@ -89,12 +89,11 @@
       return [...curr, new_node];
     });
 
-    // --- FIX: Programmatically focus the workspace after creating a node ---
-    // This prevents the "jumping" bug by ensuring the canvas is the active element.
+
     workspaceEl?.focus();
   }
   
-  // --- NEW: Function to dismiss the help tip permanently ---
+
   function dismissDragTip() {
     localStorage.setItem('hasSeenDragTip', 'true');
     showDragTip = false;
@@ -133,7 +132,7 @@
 
   function handleTokenGeneration(event: CustomEvent<{ tokens: Token[], unexpected_tokens: string[] }>) {
     showTokens = true;
-    console.log('Received event:', event.detail); // Debug log
+    console.log('Received event:', event.detail); 
     tokens = event.detail.tokens;
     unexpectedTokens = event.detail.unexpected_tokens;
   }
@@ -147,7 +146,7 @@
   <div class="workspace" bind:this={workspaceEl} tabindex="-1">
     <DrawerCanvas {nodes} on:phaseSelect={handlePhaseSelect} />
 
-    <!-- NEW: One-time dismissible help tip -->
+    <!-- One-time dismissible help tip -->
     {#if showDragTip}
       <div class="help-tip">
         <span><b>Pro-Tip:</b> For the smoothest experience, click to select a node before dragging it.</span>
@@ -206,7 +205,7 @@
     margin: 0; padding: 0; height: 100%; overflow: hidden;
   }
 
-  /* --- THE FIX: This rule ensures padding is included inside the element's height --- */
+
   :global(*) {
     box-sizing: border-box;
   }
@@ -215,16 +214,16 @@
     display: flex;
     height: calc(100vh - 3.5rem);
     overflow: hidden;
-    background-color: #f0f2f5; /* Light mode workspace background */
-    padding: 1rem; /* Consistent padding around the entire workspace */
-    gap: 1rem; /* Consistent space between toolbox and workspace */
+    background-color: #f0f2f5; 
+    padding: 1rem; 
+    gap: 1rem; 
     transition: background-color 0.3s ease;
   }
   .workspace {
     flex: 1;
     display: flex;
     flex-direction: column;
-    position: relative; /* Needed for positioning the help tip */
+    position: relative; 
     outline: none;
   }
   .analysis-overlay {
@@ -333,7 +332,7 @@
     font-weight: 500;
   }
   
-  /* Dark Mode Styles */
+
   :global(html.dark-mode) .main {
     background-color: #161823;
   }

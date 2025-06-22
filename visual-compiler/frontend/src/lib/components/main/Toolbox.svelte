@@ -31,7 +31,7 @@
 </aside>
 
 <style>
-  /* UPDATED: Styles for a cohesive look */
+
   .toolbox {
     flex: 0 0 clamp(240px, 20%, 300px);
     background: #ffffff;
@@ -43,7 +43,6 @@
     align-items: center;
     transition: all 0.3s ease;
 
-    /* NEW: Removed margin, as it's handled by the parent */
     margin: 0; 
     border-radius: 12px;
     border: 1px solid #e0e0e0;
