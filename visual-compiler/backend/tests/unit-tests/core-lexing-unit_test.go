@@ -110,7 +110,7 @@ func TestUnexpectedTokens_Punctuation(t *testing.T) {
 }
 
 func TestCreateTokens_PunctuationTokens(t *testing.T) {
-	c_input := []byte(`[{"Type": "KEYWORD","Regex":"\\b(if|else|int)\\b"},{"Type": "IDENTIFIER","Regex":"[a-zA-Z_]\\w*"},{"Type":"NUMBER","Regex":"\\d+(\\.\\d+)?"},{"Type":"OPERATOR","Regex":"="},{"Type":"PUNCTUATION","Regex":";"}]`)
+	c_input := []byte(`[{"Type": "KEYWORD","Regex":"\\b(if|else|int)\\b"},{"Type": "IDENTIFIER","Regex":"[a-zA-Z_]\\w*"},{"Type":"NUMBER","Regex":"\\d+(\\.\\d+)?"},{"Type":"OPERATOR","Regex":"="},{"Type":"PUNCTUATION","Regex":";|,"}]`)
 	err := services.ReadRegexRules(c_input)
 	if err != nil {
 		t.Errorf("Failed for valid input: %v", err)
@@ -223,4 +223,38 @@ func TestConvertTokensFromDFA_TestSimilarIDandKey(t *testing.T) {
 			t.Errorf("Tokenisation incorrect")
 		}
 	}
+}
+
+func TestConvertDFAToRegex_Success(t *testing.T) {
+	user_input := []byte(`{
+							"states": ["START","S1","S2","S3","S4","S5"],
+							"transitions":[
+								{"from": "START", "to": "S1", "label": "i"},
+								{"from": "S1", "to": "S5", "label": "n"},
+								{"from": "S5", "to": "S4", "label": "t"},
+								{"from": "S1", "to": "S6", "label": "f"},
+								{"from": "START", "to": "S2", "label": "0123456789"},
+								{"from": "S2", "to": "S2", "label": "0123456789"},
+								{"from": "START", "to": "S3", "label": "abcdefghijklmnopqrstuvwxyz"},
+								{"from": "S3", "to": "S3", "label": "abcdefghijklmnopqrstuvwxyz0123456789"}
+							],
+							"start_state": "START",
+							"accepting_states":[
+								{"state":"S3","token_type":"IDENTIFIER"},
+								{"state":"S4","token_type":"KEYWORD"},
+								{"state":"S2","token_type":"NUMBER"},
+								{"state":"S6","token_type":"KEYWORD"}
+							]
+						}`,
+	)
+	err := services.ReadDFA(user_input)
+	if err != nil {
+		t.Errorf("Test failed: %v", err)
+	}
+
+	err = services.ConvertDFAToRegex()
+	if err!=nil {
+		t.Errorf("Test failed: %v", err)
+	}
+
 }
