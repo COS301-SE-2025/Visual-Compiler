@@ -26,17 +26,14 @@
     }
     lastClick = now;
   }
- 
-   
-
-
 </script>
 
+<!-- The outer div is now just a simple flex container -->
 <div class="drawer-canvas">
-  <div class="canvas-container">
+  <div class="canvas-container" class:dark-mode={$theme === 'dark'}>
     <Svelvet 
       bind:this={canvasEl} 
-      theme={$theme === 'dark' ? 'custom-theme' : 'light'}
+      theme={'custom-theme'}
     >
       {#each $nodes as node (node.id)}
         <Node
@@ -48,7 +45,6 @@
           bgColor={$theme === 'dark' ? '#041a47' : '#041a47'}
           textColor="#fff"
           on:nodeClicked={() => onNodeClick(node.type)}
-
         />
       {/each}
     </Svelvet>
@@ -57,16 +53,14 @@
 
 <style>
   :root[svelvet-theme='custom-theme'] {
-    --background-color: #1b1d2a;
-    --dot-color: #2c2f40;
+    --background-color: transparent;
+    --dot-color: transparent;
     --node-color: #041a47;
     --node-text-color: #ffffff;
     --node-border-color: #374151;
     --node-selection-color: #3b82f6;
-    --edge-color: #ffffff;
-    --anchor-color: #60a5fa;
-    --anchor-border-color: #ffffff;
   }
+
 
   .drawer-canvas {
     flex: 1;
@@ -78,9 +72,28 @@
   .canvas-container {
     flex: 1;
     position: relative;
-    overflow: auto;
+    overflow: hidden;
+    border-radius: 12px;
+    border: 1px solid #e0e0e0;
+    --grid-size: 20px;
+    --grid-line-color: #e5e7eb;
+    background-color: #f9fafb;
+    background-image: 
+      linear-gradient(to right, var(--grid-line-color) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line-color) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
+    --edge-color: #374151;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
   }
 
+  /* --- Styles for Dark Mode --- */
+  .canvas-container.dark-mode {
+    border-color: #374151;
+    --grid-line-color: #2c2f40;
+    background-color: #1b1d2a;
+    --edge-color: #ffffff;
+  }
+  
   .canvas-container :global(.svelvet) {
     width: 100% !important;
     height: 100% !important;
@@ -89,6 +102,7 @@
   :global(.svelvet-edge path) {
     stroke: var(--edge-color) !important;
     stroke-width: 3px !important;
+    transition: stroke 0.3s ease;
   }
 
   :global(g[id^="N-"] rect) {

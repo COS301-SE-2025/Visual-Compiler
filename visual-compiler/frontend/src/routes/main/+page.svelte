@@ -25,7 +25,6 @@
 
   // Initialize theme
   onMount(() => {
-    document.documentElement.setAttribute('svelvet-theme', $theme);
     document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
 
     // --- NEW: Check if the user has seen the tip before ---
@@ -206,17 +205,26 @@
   :global(html, body) {
     margin: 0; padding: 0; height: 100%; overflow: hidden;
   }
+
+  /* --- THE FIX: This rule ensures padding is included inside the element's height --- */
+  :global(*) {
+    box-sizing: border-box;
+  }
+
   .main {
     display: flex;
     height: calc(100vh - 3.5rem);
     overflow: hidden;
+    background-color: #f0f2f5; /* Light mode workspace background */
+    padding: 1rem; /* Consistent padding around the entire workspace */
+    gap: 1rem; /* Consistent space between toolbox and workspace */
+    transition: background-color 0.3s ease;
   }
   .workspace {
     flex: 1;
     display: flex;
     flex-direction: column;
     position: relative; /* Needed for positioning the help tip */
-    /* FIX: Remove the default browser outline when the element is focused */
     outline: none;
   }
   .analysis-overlay {
@@ -282,7 +290,7 @@
     width: 100%;
     position: relative;
   }
-    .modal-title {
+  .modal-title {
     margin: 0 0 1rem 0;
     font-size: 1.5rem;
     color: #333;
@@ -299,7 +307,6 @@
     cursor: pointer;
   }
 
-  /* NEW: Styles for the help tip */
   .help-tip {
     position: absolute;
     bottom: 20px;
@@ -326,6 +333,10 @@
     font-weight: 500;
   }
   
+  /* Dark Mode Styles */
+  :global(html.dark-mode) .main {
+    background-color: #161823;
+  }
   :global(html.dark-mode) .analysis-overlay {
     background: rgba(10, 26, 58, 0.95);
   }
