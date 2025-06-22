@@ -16,7 +16,7 @@ import (
 var source string
 
 // Name: SourceCode
-// Parameters: <string>
+// Parameters: string
 // Return: None
 // Setter function which sets the source variable to the value of parameter
 func SourceCode(data string) {
@@ -25,7 +25,7 @@ func SourceCode(data string) {
 
 // Name: GetSourceCode
 // Parameters: None
-// Return: <string>
+// Return: string
 // Getter function to get the value of the source variable
 func GetSourceCode() string {
 	return source
@@ -57,8 +57,8 @@ var tokens []TypeValue
 var tokens_unidentified []string
 
 // Name: ReadRegexRules
-// Parameters: <[]byte>
-// Return: <error>
+// Parameters: []byte
+// Return: error
 // Receive an array of regex rules, validate them and store them in the rules struct
 func ReadRegexRules(input []byte) error {
 
@@ -148,7 +148,7 @@ func CreateTokens() {
 
 // Name: GetTokens
 // Parameters: None
-// Return: <[]TypeValue>
+// Return: []TypeValue
 // Getter function that returns the array of tokens
 func GetTokens() []TypeValue {
 	return tokens
@@ -156,7 +156,7 @@ func GetTokens() []TypeValue {
 
 // Name: GetInvalidInput
 // Parameters: None
-// Return: <[]string>
+// Return: []string
 // Getter function that returns the array of unidentified input
 func GetInvalidInput() []string {
 	return tokens_unidentified
@@ -166,18 +166,6 @@ func GetInvalidInput() []string {
 // REGEX AND AUTOMATA //
 // ================== //
 
-// Struct that stores the automata data
-var dfa Automata
-
-type Transition struct {
-	From  string `json:"from"`
-	To    string `json:"to"`
-	Label string `json:"label"`
-}
-type AcceptingState struct {
-	State string `json:"state"`
-	Type  string `json:"token_type"`
-}
 type Automata struct {
 	States      []string         `json:"states"`
 	Transitions []Transition     `json:"transitions"`
@@ -185,9 +173,40 @@ type Automata struct {
 	Accepting   []AcceptingState `json:"accepting_states"`
 }
 
+type Transition struct {
+	From  string `json:"from"`
+	To    string `json:"to"`
+	Label string `json:"label"`
+}
+
+type AcceptingState struct {
+	State string `json:"state"`
+	Type  string `json:"token_type"`
+}
+
+// Structs that store the automata data
+var dfa Automata
+var nfa Automata
+
+// Name: GetNFA
+// Parameters: None
+// Return: Automata
+// Getter function to get the stored NFA
+func GetNFA() Automata {
+	return nfa
+}
+
+// Name: GetDFA
+// Parameters: None
+// Return: Automata
+// Getter function to get the stored DFA
+func GetDFA() Automata {
+	return dfa
+}
+
 // Name: ReadDFA
-// Parameters: <[]byte>
-// Return: <error>
+// Parameters: []byte
+// Return: error
 // Receive an array of DFA data, validate them and store them in the struct
 func ReadDFA(input []byte) error {
 
@@ -206,6 +225,7 @@ type candidate struct {
 	value string
 	token string
 }
+
 type candidate_sol struct {
 	state        string
 	source_index int
@@ -466,25 +486,4 @@ func regexStructure(label string) string {
 	}
 
 	return structured_label
-}
-
-// Name: ConvertRegexToDFA
-// Parameters: <string>
-// Return: <Automata>
-// Convert the DFA received from the ReadDFA function to a regular expression
-func ConvertRegexToDFA(regex string) {
-
-	var states = []string{}
-	var transitions = []Transition{}
-	var start string
-	var accepting = []string{}
-
-	//Temp code to make runnable
-	fmt.Printf(states[0])
-	fmt.Printf(start)
-	fmt.Printf(accepting[0])
-
-	if transitions == nil {
-		fmt.Errorf("no transitions")
-	}
 }
