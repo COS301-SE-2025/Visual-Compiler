@@ -293,17 +293,11 @@ func CreateTokensFromDFA() {
 	}
 }
 
-
-type regex_candidate struct {
-	state string
-	path string
-	visited_states map[string]bool
-}
-
 // Name: ConvertDFAToRegex
 // Parameters: None
 // Return: None
 // Convert the DFA received from the ReadDFA function to a regular expression
+// Generates a regex for every accepting state and converts the paths to regex rules
 func ConvertDFAToRegex() error{
 
 	if len(dfa.States) == 0{
@@ -319,93 +313,151 @@ func ConvertDFAToRegex() error{
 		return fmt.Errorf("No start state identified")
 	}
 
-	accepting_states := make(map[string]string)
+	paths := make(map[string]string)
+
 	for _, accepting := range dfa.Accepting {
-		accepting_states[accepting.State] = accepting.Type
+		regex := buildRegexForPath(dfa.Start, accepting.State)
+		if paths[accepting.Type] != "" {
+			paths[accepting.Type] = paths[accepting.Type] + "|"  + regex
+		}else {
+			paths[accepting.Type] = regex 
+		}
 	}
 
 	rules = []TypeRegex{}
-	paths := make(map[string][]string)
-	max_depth := len(dfa.States) *2
-
-	initial_candidate := regex_candidate{
-		state: dfa.Start,
-		path: "",
-		visited_states: make(map[string]bool),
-	}
-	states_queue := []regex_candidate{initial_candidate}
-
-	token_type,is_accepting := accepting_states[dfa.Start]
-	if is_accepting {
-		paths[token_type] = append(paths[token_type], "")
-	}
-
-	for len(states_queue) >0 {
-		current_candidate := states_queue[0]
-		states_queue = states_queue[1:]
-
-		if len(current_candidate.path) > max_depth {
-			continue
+	for token_type, regex := range paths {
+		convertRawRegexToRegexRules(&regex)
+		switch token_type {
+			case "KEYWORD" :
+				convertKeywordToRegex(&regex)
+				break
+			case "IDENTIFIER":
+				convertIdentifierToRegex(&regex)
+				break
+			case "NUMBER":
+				convertNumberToRegex(&regex)
+				break
 		}
-
-		token_type,is_accepting := accepting_states[current_candidate.state]
-		if is_accepting && current_candidate.path!="" {
-			paths[token_type] = append(paths[token_type], current_candidate.path)
-		}
-
-		for _,transition := range dfa.Transitions {
-			if transition.From == current_candidate.state {
-
-				if current_candidate.visited_states[transition.To] == false {
-
-					update_visited := make(map[string]bool)
-					for k,v :=range current_candidate.visited_states {
-						update_visited[k] = v
-					}
-
-					update_visited[current_candidate.state] = true
-
-					new_candidate := regex_candidate {
-						state: transition.To,
-						path: current_candidate.path + regexStructure(transition.Label),
-						visited_states: update_visited,
-					}
-
-					states_queue = append(states_queue,new_candidate)
-				}
-			}
-		}
-	}
-
-	for token_type,token_path := range paths {
-		unique_paths_map := make(map[string]bool) 
-		unique_paths := []string{}
-
-		for _,path := range token_path {
-			if unique_paths_map[path]==false {
-				unique_paths_map[path] = true
-				unique_paths = append(unique_paths,path)
-			}
-		}
-
-		regex_builder := ""
-		if len(unique_paths) ==1 {
-			regex_builder = unique_paths[0]
-		}else {
-			regex_builder = "("+ strings.Join(unique_paths,"|")+")"
-		}
-
-		new_regex := TypeRegex{
+		new_rule := TypeRegex{
 			Type: token_type,
-			Regex: regex_builder,
+			Regex: regex,
 		}
-		rules = append(rules,new_regex)
-		fmt.Printf("%s: %s\n", token_type, regex_builder)
+		rules = append(rules, new_rule)
 	}
 
 	return nil
 }
 
+// Name: convertKeywordToRegex
+// Parameters: *string
+// Return: None
+// Helper function to convert Keyword to proper regex
+func convertKeywordToRegex(regex *string) {
+
+	if strings.Contains(*regex,"|") {
+		*regex = `\\b(` + *regex +`)\\b`
+	}else {
+		*regex = `\\b` + *regex +`\\b`
+	}
+
+}
+
+// Name: convertIdentifierToRegex
+// Parameters: *string
+// Return: None
+// Helper function to convert Identifiers to proper regex
+func convertIdentifierToRegex(regex *string) {
+
+	if matched, _ := regexp.MatchString(`^\[a-z\]\(\[a-z0-9\]\)\*$`, *regex); matched {
+		*regex = `[a-zA-Z_]\\w*`
+	}
+
+	*regex = strings.ReplaceAll(*regex,"[a-z0-9]", `\\w`)
+	*regex = strings.ReplaceAll(*regex,"[a-z]", "[a-zA-Z_]")
+
+}
+
+// Name: convertNumberToRegex
+// Parameters: *string
+// Return: None
+// Helper function to convert Numbers to proper regex
+func convertNumberToRegex(regex *string) {
+	*regex = `\\d+(\\.\\d+)?`
+}
+
+// Name: convertRawRegexToRegexRules
+// Parameters: *string
+// Return: None
+// Helper function to replace grammar with regex rules
+func convertRawRegexToRegexRules(regex *string) {
+	*regex = strings.ReplaceAll(*regex, "abcdefghijklmnopqrstuvwxyz0123456789","[a-z0-9]")
+	*regex = strings.ReplaceAll(*regex, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789","[A-Z0-9]")
+	*regex = strings.ReplaceAll(*regex, "abcdefghijklmnopqrstuvwxyz","[a-z]")
+	*regex = strings.ReplaceAll(*regex, "ABCDEFGHIJKLMNOPQRSTUVWXYZ","[A-Z]")
+	*regex = strings.ReplaceAll(*regex, "0123456789",`\d`)
+}
+
+// Name: buildRegexForPath
+// Parameters: string,string
+// Return: string
+// Helper function to convert DFA to regex, which builds the regex string
+// Uses BFS to traverse the states till it reaches accepting saves, for which it saves the current path
+func buildRegexForPath(start, accept string) string {
+	type state_regex struct {
+		state string
+		regex string
+	}
+
+	initial_candidate := state_regex{state:start,regex:""}
+	queue := []state_regex{initial_candidate}
+	visited_states := map[string]bool{start: true}
+
+	path:= ""
+	found := false
+
+	for len(queue) > 0 && found==false {
+		current_candidate := queue[0]
+		queue = queue[1:]
+
+		for _, transition := range dfa.Transitions {
+			if transition.From == current_candidate.state {
+				next_state := transition.To
+				if !visited_states[next_state] {
+					new_regex := current_candidate.regex + regexStructure(transition.Label)
+					if next_state == accept {
+						path = new_regex
+						found = true
+						break
+					}
+					new_candidate := state_regex {
+						state: next_state,
+						regex: new_regex,
+					}
+					queue = append(queue, new_candidate)
+					visited_states[next_state] = true
+				}
+			}
+		}
+	}
+
+	if path == "" {
+		return ""
+	}
+
+	for _, transition := range dfa.Transitions {
+		if transition.From == accept && transition.To == accept {
+			multiple_occurrences := "(" + regexStructure(transition.Label) + ")*"
+			return path + multiple_occurrences
+		}
+	}
+
+	return path
+}
+
+// Name: regexStructure
+// Parameters: string
+// Return: string
+// Helper function escape special regex characters
 func regexStructure(label string) string {
 
 	special_characters := []string{"\\","(",")","{","}","[","]",".","^","$","*","+","?","|"}
