@@ -552,44 +552,7 @@ func ConvertNFAToDFA() {
 		transition_map[t.From][t.Label] = append(transition_map[t.From][t.Label], t.To)
 	}
 
-	epsilon_closure := func(states []string) []string {
-
-		closure := make(map[string]bool)
-
-		stack := make([]string, len(states))
-		copy(stack, states)
-
-		for _, s := range states {
-			closure[s] = true
-		}
-
-		for len(stack) > 0 {
-
-			current := stack[len(stack)-1]
-			stack = stack[:len(stack)-1]
-
-			if epsilon_transition, exists := transition_map[current]["ε"]; exists {
-
-				for _, next := range epsilon_transition {
-
-					if !closure[next] {
-						stack = append(stack, next)
-						closure[next] = true
-					}
-				}
-			}
-		}
-
-		result := make([]string, 0, len(closure))
-		for state := range closure {
-			result = append(result, state)
-		}
-		sort.Strings(result)
-
-		return result
-	}
-
-	start_closure := epsilon_closure([]string{nfa.Start})
+	start_closure := closureEpsilon([]string{nfa.Start}, transition_map)
 	start_state_key := strings.Join(start_closure, ",")
 
 	dfa_states := make(map[string][]string)
@@ -647,7 +610,7 @@ func ConvertNFAToDFA() {
 
 			if len(next_states) > 0 {
 
-				next_closure := epsilon_closure(next_states)
+				next_closure := closureEpsilon(next_states, transition_map)
 				next_state_key := strings.Join(next_closure, ",")
 
 				if _, exists := dfa_states[next_state_key]; !exists {
@@ -945,4 +908,45 @@ func (c *Converter) parseRange(range_str string) *Fragment {
 	}
 
 	return &Fragment{start: start, end: end}
+}
+
+// Name: closureEpsilon
+// Parameters: []string, map[string]map[string][]string
+// Return: []string
+// Removes epsilon transitions from NFA for DFA
+func closureEpsilon(states []string, transition_map map[string]map[string][]string) []string {
+
+	closure := make(map[string]bool)
+
+	stack := make([]string, len(states))
+	copy(stack, states)
+
+	for _, s := range states {
+		closure[s] = true
+	}
+
+	for len(stack) > 0 {
+
+		current := stack[len(stack)-1]
+		stack = stack[:len(stack)-1]
+
+		if epsilonTransition, exists := transition_map[current]["ε"]; exists {
+
+			for _, next := range epsilonTransition {
+
+				if !closure[next] {
+					stack = append(stack, next)
+					closure[next] = true
+				}
+			}
+		}
+	}
+
+	result := make([]string, 0, len(closure))
+	for state := range closure {
+		result = append(result, state)
+	}
+	sort.Strings(result)
+
+	return result
 }
