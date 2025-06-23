@@ -15,26 +15,26 @@
   export let nodes: Writable<CanvasNode[]>;
 
   const dispatch = createEventDispatcher<{ phaseSelect: NodeType }>();
-  let canvasEl: any;
-  let lastClick = 0;
-  const DOUBLE_CLICK_MS = 300;
+  let canvas_el: any;
+  let last_click = 0;
+  const DOUBLE_CLICK_MILLISECONDS = 300;
 
+  // onNodeClick
+  // Return type: void
+  // Parameter type(s): NodeType
+  // Dispatches a 'phaseSelect' event if a node is double-clicked within a time limit.
   function onNodeClick(type: NodeType) {
     const now = performance.now();
-    if (now - lastClick < DOUBLE_CLICK_MS) {
+    if (now - last_click < DOUBLE_CLICK_MILLISECONDS) {
       dispatch('phaseSelect', type);
     }
-    lastClick = now;
+    last_click = now;
   }
 </script>
 
-<!-- The outer div is now just a simple flex container -->
 <div class="drawer-canvas">
   <div class="canvas-container" class:dark-mode={$theme === 'dark'}>
-    <Svelvet 
-      bind:this={canvasEl} 
-      theme={'custom-theme'}
-    >
+    <Svelvet bind:this={canvas_el} theme={'custom-theme'}>
       {#each $nodes as node (node.id)}
         <Node
           id={node.id}
@@ -61,7 +61,6 @@
     --node-selection-color: #3b82f6;
   }
 
-
   .drawer-canvas {
     flex: 1;
     display: flex;
@@ -78,8 +77,7 @@
     --grid-size: 20px;
     --grid-line-color: #e5e7eb;
     background-color: #f9fafb;
-    background-image: 
-      linear-gradient(to right, var(--grid-line-color) 1px, transparent 1px),
+    background-image: linear-gradient(to right, var(--grid-line-color) 1px, transparent 1px),
       linear-gradient(to bottom, var(--grid-line-color) 1px, transparent 1px);
     background-size: var(--grid-size) var(--grid-size);
     --edge-color: #374151;
@@ -93,7 +91,7 @@
     background-color: #1b1d2a;
     --edge-color: #ffffff;
   }
-  
+
   .canvas-container :global(.svelvet) {
     width: 100% !important;
     height: 100% !important;
@@ -105,16 +103,16 @@
     transition: stroke 0.3s ease;
   }
 
-  :global(g[id^="N-"] rect) {
+  :global(g[id^='N-'] rect) {
     transition: filter 0.2s ease;
   }
 
-  :global(g.selected[id^="N-"] rect) {
+  :global(g.selected[id^='N-'] rect) {
     filter: drop-shadow(0 0 12px white);
   }
 
-  :global(g[id^="N-source"] .handle-left),
-  :global(g[id^="source"] .handle-left) {
+  :global(g[id^='N-source'] .handle-left),
+  :global(g[id^='source'] .handle-left) {
     display: none !important;
   }
 </style>

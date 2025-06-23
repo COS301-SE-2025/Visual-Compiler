@@ -1,38 +1,49 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
-  import { theme, toggleTheme } from '../../stores/theme'
+  import { theme, ToggleTheme } from '../../stores/theme';
 
-  const lightLogoUrl = '/half_stack_phoenix_only.png';
-  const darkLogoUrl = '/half_stack_phoenix_grey.png';
+  const light_logo_url = '/half_stack_phoenix_only.png';
+  const dark_logo_url = '/half_stack_phoenix_grey.png';
 
-  const lightmode = '/lightmode.png';
-  const darkmode = '/darkmode.png';
+  const light_mode_icon_url = '/lightmode.png';
+  const dark_mode_icon_url = '/darkmode.png';
 
-  $: currentLogoUrl = $theme === 'dark' ? darkLogoUrl : lightLogoUrl;
+  $: current_logo_url = $theme === 'dark' ? dark_logo_url : light_logo_url;
 
+  // logout
+  // Return type: void
+  // Parameter type(s): none
+  // Navigates the user to the login page.
   function logout() {
     goto('/login');
   }
 </script>
 
 <header class="navbar">
-  <img src={currentLogoUrl} alt="Visual Compiler logo" class="logo" />
+  <img src={current_logo_url} alt="Visual Compiler logo" class="logo" />
   <h1 class="title">Visual Compiler</h1>
 
-  <button class="theme-toggle" on:click={toggleTheme} aria-label="Toggle theme">
-  <img 
-    src={$theme === 'light' ? lightmode : darkmode} 
-    alt={$theme === 'light' ? 'Light mode' : 'Dark mode'}
-    class="theme-icon"
-  />
-</button>
+  <button class="theme-toggle" on:click={ToggleTheme} aria-label="Toggle theme">
+    <img
+      src={$theme === 'light' ? light_mode_icon_url : dark_mode_icon_url}
+      alt={$theme === 'light' ? 'Light mode' : 'Dark mode'}
+      class="theme-icon"
+    />
+  </button>
 
   <button class="logout-btn" on:click={logout} aria-label="Logout">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-      <polyline points="16 17 21 12 16 7"/>
-      <line x1="21" y1="12" x2="9" y2="12"/>
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
     </svg>
   </button>
 </header>
@@ -42,7 +53,7 @@
     position: relative;
     height: 3.5rem;
     background: #fff;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -75,7 +86,7 @@
     color: #041a47;
   }
 
-   .theme-toggle {
+  .theme-toggle {
     position: absolute;
     right: 4rem;
     background: none;
@@ -89,8 +100,8 @@
   }
 
   .theme-icon {
-    width: 40px;  
-    height: 40px; 
+    width: 40px;
+    height: 40px;
     transition: opacity 0.3s ease;
   }
   .logout-btn:hover {
@@ -114,17 +125,17 @@
     line-height: 1;
   }
 
-  /* Dark Mode Styles */
+ 
   :global(html.dark-mode) .navbar {
     background: #041a47;
   }
 
   :global(html.dark-mode) .title {
-    color: #D3D3D3;
+    color: #d3d3d3;
   }
 
   :global(html.dark-mode) .logout-btn {
-    color: #D3D3D3;
+    color: #d3d3d3;
   }
 
   :global(html.dark-mode) .logout-btn:hover {
@@ -132,6 +143,6 @@
   }
 
   :global(html.dark-mode) .theme-toggle {
-    color: #D3D3D3;
+    color: #d3d3d3;
   }
 </style>

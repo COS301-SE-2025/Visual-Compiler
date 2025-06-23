@@ -1,10 +1,13 @@
 <script>
   import { goto } from '$app/navigation';
 
-  async function Launch() {
+  // launch
+  // Return type: Promise<void>
+  // Parameter type(s): none
+  // Navigates the user to the login page.
+  async function launch() {
     await goto('/login');
   }
-  
 </script>
 
 <section class="hero_section">
@@ -18,14 +21,12 @@
   </div>
 
   <div class="hero_content">
-    <h1 class="main_headline">
-      Demystifying Compilers, One Block at a Time.
-    </h1>
+    <h1 class="main_headline">Demystifying Compilers, One Block at a Time.</h1>
     <p class="sub_headline">
-      An educational platform to construct, visualize, and understand the core
-      phases of compilation using an intuitive, block-based interface.
+      An educational platform to construct, visualize, and understand the core phases of compilation
+      using an intuitive, block-based interface.
     </p>
-    <button class="cta_button" onclick={Launch}> Launch Application </button>
+    <button class="cta_button" on:click={launch}> Launch Application </button>
   </div>
 </section>
 
@@ -39,13 +40,12 @@
     text-align: center;
     height: 100vh;
     padding: 0 2rem;
-    position: relative; 
+    position: relative;
   }
-
 
   .logo_container {
     position: absolute;
-    top: 2rem; 
+    top: 2rem;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -54,16 +54,15 @@
   }
 
   .logo {
-    height: 50px; 
+    height: 50px;
     width: auto;
-    
   }
 
   .project_title {
     font-size: 1.75rem; /* Slightly adjusted size */
     font-weight: 600;
   }
-  
+
   .hero_content {
     max-width: 800px;
     display: flex;

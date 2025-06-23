@@ -1,34 +1,33 @@
 <script lang="ts">
-  import NavBar from '$lib/components/main/NavBar.svelte';
-  import Toolbox from '$lib/components/main/Toolbox.svelte';
-  import CodeInput from '$lib/components/main/CodeInput.svelte';
-  import DrawerCanvas from '$lib/components/main/DrawerCanvas.svelte';
+  import NavBar from '$lib/components/main/nav-bar.svelte';
+  import Toolbox from '$lib/components/main/toolbox.svelte';
+  import CodeInput from '$lib/components/main/code-input.svelte';
+  import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
   import type { NodeType, Token } from '$lib/types';
   import { writable } from 'svelte/store';
   import { addToast } from '$lib/stores/toast';
   import { theme } from '../../lib/stores/theme';
   import { onMount } from 'svelte';
-  
-  import LexerPhaseTutorial from '$lib/components/lexor/PhaseTutorial.svelte';
-  import LexerPhaseInspector from '$lib/components/lexor/PhaseInspector.svelte';
-  import LexerArtifactViewer from '$lib/components/lexor/ArtifactViewer.svelte';
+
+  import LexerPhaseTutorial from '$lib/components/lexor/lexer-phase-tutorial';
+  import LexerPhaseInspector from '$lib/components/lexor/phase-inspector.svelte';
+  import LexerArtifactViewer from '$lib/components/lexor/artifact-viewer.svelte';
   import ParserPhaseTutorial from '$lib/components/parser/PhaseTutorial.svelte';
   import ParserPhaseInspector from '$lib/components/parser/ParsingInput.svelte';
   import ParserArtifactViewer from '$lib/components/parser/ArtifactViewer.svelte';
 
+  let workspace_el: HTMLElement;
 
-  let workspaceEl: HTMLElement;
-
-  // --- NEW: State for the one-time help tip ---
-  let showDragTip = false;
+  // State for the one-time help tip ---
+  let show_drag_tip = false;
 
   // Initialize theme
   onMount(() => {
     document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
 
-    // --- NEW: Check if the user has seen the tip before ---
+    // Check if the user has seen the tip before ---
     if (!localStorage.getItem('hasSeenDragTip')) {
-      showDragTip = true;
+      show_drag_tip = true;
     }
   });
 
@@ -39,13 +38,13 @@
     label: string;
     position: { x: number; y: number };
   }
-  
+
   const nodes = writable<CanvasNode[]>([]);
-  let nodeCounter = 0;
-  let selectedPhase: NodeType | null = null;
-  let showCodeInput = false;
-  let sourceCode = '';
-  let showTokens = false;
+  let node_counter = 0;
+  let selected_phase: NodeType | null = null;
+  let show_code_input = false;
+  let source_code = '';
+  let show_tokens = false;
 
   // --- TOOLTIPS AND LABELS ---
   const tooltips: Record<NodeType, string> = {
@@ -54,16 +53,19 @@
     parser: 'Analyzes the token stream to build a syntax tree.'
   };
 
-  const nodeLabels: Record<NodeType, string> = {
+  const node_labels: Record<NodeType, string> = {
     source: 'Source Code',
     lexer: 'Lexer',
     parser: 'Parser'
   };
 
-  // --- NODE CREATION ---
+  // handleCreateNode
+  // Return type: void
+  // Parameter type(s): NodeType
+  // Creates a new node on the canvas with a calculated position.
   function handleCreateNode(type: NodeType) {
-    nodeCounter++;
-    nodes.update(curr => {
+    node_counter++;
+    nodes.update((curr) => {
       // Define the layout parameters for a clean grid
       const start_x = 100; // Initial X position
       const start_y = 100; // Initial Y position
@@ -79,62 +81,76 @@
       };
 
       const new_node = {
-        id: `${type}-${nodeCounter}`,
+        id: `${type}-${node_counter}`,
         type,
-        label: nodeLabels[type] || type[0].toUpperCase() + type.slice(1),
+        label: node_labels[type] || type[0].toUpperCase() + type.slice(1),
         position: new_position
       };
 
       return [...curr, new_node];
     });
 
-    // --- FIX: Programmatically focus the workspace after creating a node ---
     // This prevents the "jumping" bug by ensuring the canvas is the active element.
-    workspaceEl?.focus();
-  }
-  
-  // --- NEW: Function to dismiss the help tip permanently ---
-  function dismissDragTip() {
-    localStorage.setItem('hasSeenDragTip', 'true');
-    showDragTip = false;
+    workspace_el?.focus();
   }
 
-  // --- PHASE SELECTION ---
+  // dismissDragTip
+  // Return type: void
+  // Parameter type(s): none
+  // Dismisses the one-time help tip and stores the state in localStorage.
+  function dismissDragTip() {
+    localStorage.setItem('hasSeenDragTip', 'true');
+    show_drag_tip = false;
+  }
+
+  // handlePhaseSelect
+  // Return type: void
+  // Parameter type(s): CustomEvent<NodeType>
+  // Handles the selection of a compiler phase from a node on the canvas.
   function handlePhaseSelect(e: CustomEvent<NodeType>) {
     const type = e.detail;
     if (type === 'source') {
-      showCodeInput = true;
+      show_code_input = true;
     } else {
-      selectedPhase = type;
-      if (!sourceCode.trim()) {
-        addToast('Please enter source code before proceeding', "error");
-        selectedPhase = null;
+      selected_phase = type;
+      if (!source_code.trim()) {
+        addToast('Please enter source code before proceeding', 'error');
+        selected_phase = null;
         return;
       }
     }
   }
 
+  // returnToCanvas
+  // Return type: void
+  // Parameter type(s): none
+  // Closes any open analysis or input view and returns to the main canvas.
   function returnToCanvas() {
-    selectedPhase = null;
-    showCodeInput = false;
+    selected_phase = null;
+    show_code_input = false;
   }
 
-  // --- CODE HANDLING ---
+  // handleCodeSubmit
+  // Return type: void
+  // Parameter type(s): CustomEvent<string>
+  // Receives submitted source code from the input modal.
   function handleCodeSubmit(event: CustomEvent<string>) {
-    showTokens = false;
-    sourceCode = event.detail;
-    showCodeInput = false;
+    show_tokens = false;
+    source_code = event.detail;
+    show_code_input = false;
   }
 
-  // --- TOKEN GENERATION ---
-  let tokens: Token[] = [];
-  let unexpectedTokens: string[] = [];
-
-  function handleTokenGeneration(event: CustomEvent<{ tokens: Token[], unexpected_tokens: string[] }>) {
-    showTokens = true;
+  // handleTokenGeneration
+  // Return type: void
+  // Parameter type(s): CustomEvent<{ tokens: Token[], unexpected_tokens: string[] }>
+  // Receives generated tokens from the lexer inspector component.
+  function handleTokenGeneration(
+    event: CustomEvent<{ tokens: Token[]; unexpected_tokens: string[] }>
+  ) {
+    show_tokens = true;
     console.log('Received event:', event.detail); // Debug log
     tokens = event.detail.tokens;
-    unexpectedTokens = event.detail.unexpected_tokens;
+    unexpected_tokens = event.detail.unexpected_tokens;
   }
 </script>
 
@@ -142,12 +158,10 @@
 
 <div class="main">
   <Toolbox {handleCreateNode} {tooltips} />
-  <!-- FIX: Bind the div to the variable and add tabindex="-1" to make it focusable -->
-  <div class="workspace" bind:this={workspaceEl} tabindex="-1">
+  <div class="workspace" bind:this={workspace_el} tabindex="-1">
     <DrawerCanvas {nodes} on:phaseSelect={handlePhaseSelect} />
 
-    <!-- UPDATED: Help tip with an 'X' close icon -->
-    {#if showDragTip}
+    {#if show_drag_tip}
       <div class="help-tip">
         <span><b>Pro-Tip:</b> For the smoothest experience, click to select a node before dragging it.</span>
         <button on:click={dismissDragTip} class="dismiss-tip-btn" aria-label="Dismiss tip">
@@ -157,46 +171,38 @@
     {/if}
   </div>
 
-  <!-- This block handles rendering for DIFFERENT phases -->
-  {#if selectedPhase}
+  {#if selected_phase}
     <div class="analysis-overlay">
       <div class="analysis-view">
         <div class="three-column-layout">
-
-          {#if selectedPhase === 'lexer'}
+          {#if selected_phase === 'lexer'}
             <LexerPhaseTutorial />
-            <LexerPhaseInspector 
-              {sourceCode}
-              on:generateTokens={handleTokenGeneration}
-            />
-            <LexerArtifactViewer 
-              phase={selectedPhase} 
+            <LexerPhaseInspector {source_code} on:generateTokens={handleTokenGeneration} />
+            <LexerArtifactViewer
+              phase={selected_phase}
               {tokens}
-              {unexpectedTokens}
-              {showTokens}
+              unexpectedTokens={unexpected_tokens}
+              {show_tokens}
             />
           {/if}
 
-          {#if selectedPhase === 'parser'}
+          {#if selected_phase === 'parser'}
             <ParserPhaseTutorial />
-            <ParserPhaseInspector {sourceCode} />
+            <ParserPhaseInspector {source_code} />
             <ParserArtifactViewer />
           {/if}
-
         </div>
-        <button on:click={returnToCanvas} class="return-button">
-          ← Return to Canvas
-        </button>
+        <button on:click={returnToCanvas} class="return-button"> ← Return to Canvas </button>
       </div>
     </div>
   {/if}
 
-  {#if showCodeInput}
+  {#if show_code_input}
     <div class="code-input-overlay">
       <div class="code-input-modal">
         <h2 class="modal-title">Enter Source Code</h2>
         <CodeInput on:codeSubmitted={handleCodeSubmit} />
-        <button class="close-btn" on:click={() => (showCodeInput = false)}>✕</button>
+        <button class="close-btn" on:click={() => (show_code_input = false)}>✕</button>
       </div>
     </div>
   {/if}
@@ -204,7 +210,10 @@
 
 <style>
   :global(html, body) {
-    margin: 0; padding: 0; height: 100%; overflow: hidden;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
   }
   :global(*) {
     box-sizing: border-box;
@@ -227,7 +236,7 @@
   }
   .analysis-overlay {
     position: fixed;
-    top: 3.5rem; 
+    top: 3.5rem;
     left: 0;
     right: 0;
     bottom: 0;
@@ -259,7 +268,7 @@
     bottom: 20px;
     right: 20px;
     padding: 0.5rem 1rem;
-    background: #001A6E;
+    background: #001a6e;
     color: white;
     border: none;
     border-radius: 4px;
@@ -292,8 +301,8 @@
     margin: 0 0 1rem 0;
     font-size: 1.5rem;
     color: #333;
-    text-align: center; 
-    width: 100%; 
+    text-align: center;
+    width: 100%;
   }
   .close-btn {
     position: absolute;
@@ -305,7 +314,7 @@
     cursor: pointer;
   }
 
-  /* UPDATED: Help tip styles */
+
   .help-tip {
     position: absolute;
     bottom: 20px;
@@ -315,7 +324,7 @@
     color: white;
     padding: 10px 15px 10px 20px;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -339,8 +348,8 @@
   .dismiss-tip-btn:hover {
     opacity: 1;
   }
-  
-  /* Dark Mode Styles */
+
+
   :global(html.dark-mode) .main {
     background-color: #161823;
   }
@@ -366,19 +375,11 @@
   }
   :global(html.dark-mode) .return-button {
     background: #1a3a7a;
+    margin-right: 1rem;
+    color: #cccccc;
   }
   :global(html.dark-mode) .return-button:hover {
     background: #2a4a8a;
-  }
-
-  :global(html.dark-mode) .return-button {
-    background-color: #cccccc;
-    margin-right: 1rem;
-    color:#041a47;
-  }
-
-  :global(html.dark-mode) .return-button:hover {
-    background-color: #5f636b;
     margin-right: 1rem;
   }
 </style>

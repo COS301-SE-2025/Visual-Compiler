@@ -1,7 +1,6 @@
 <script>
-  const Canvas = '/SvelvetcanvasFull.PNG';
-  const Configuration = '/NodeConfiguration.PNG';
-
+  const CANVAS_IMAGE_URL = '/SvelvetcanvasFull.PNG';
+  const CONFIGURATION_IMAGE_URL = '/NodeConfiguration.PNG';
 </script>
 
 <section class="walkthrough_section">
@@ -10,7 +9,7 @@
     <div class="step">
       <div class="step_image_container">
         <img
-          src={Canvas}
+          src={CANVAS_IMAGE_URL}
           alt="Visual Compiler Canvas"
           class="step_image"
         />
@@ -18,18 +17,17 @@
       <div class="step_text_container">
         <h3 class="step_title">Design Your Pipeline</h3>
         <p class="step_description">
-          Start with a blank canvas. Select compiler phase blocks like Lexing,
-          Parsing, and Code Generation from the toolbox and drag them into your
-          workspace to begin mapping out your compiler's structure.
+          Start with a blank canvas. Select compiler phase blocks like Lexing, Parsing, and Code
+          Generation from the toolbox and drag them into your workspace to begin mapping out your
+          compiler's structure.
         </p>
       </div>
     </div>
 
     <div class="step reverse">
       <div class="step_image_container">
-
         <img
-          src={Configuration}
+          src={CONFIGURATION_IMAGE_URL}
           alt="Node Configuration"
           class="step_image"
         />
@@ -37,16 +35,15 @@
       <div class="step_text_container">
         <h3 class="step_title">Configure and Connect</h3>
         <p class="step_description">
-          Click on each block to open its configuration panel. Define the rules
-          for each phase using formal tools like Regular Expressions or
-          Context-Free Grammars. Then, connect the blocks to create a data flow.
+          Click on each block to open its configuration panel. Define the rules for each phase using
+          formal tools like Regular Expressions or Context-Free Grammars. Then, connect the blocks
+          to create a data flow.
         </p>
       </div>
     </div>
 
     <div class="step">
       <div class="step_image_container">
-        <!--  replace this with a screenshot showing the visual artifacts (syntax tree) -->
         <img
           src=""
           alt="Syntax Tree Visualization"
@@ -56,9 +53,9 @@
       <div class="step_text_container">
         <h3 class="step_title">Run and Visualize</h3>
         <p class="step_description">
-          Execute your pipeline and watch as the application generates and
-          visualizes the artifacts from each step. Instantly see the tokens,
-          syntax trees, and final output to deepen your understanding.
+          Execute your pipeline and watch as the application generates and visualizes the artifacts
+          from each step. Instantly see the tokens, syntax trees, and final output to deepen your
+          understanding.
         </p>
       </div>
     </div>
@@ -67,7 +64,7 @@
 
 <style>
   .walkthrough_section {
-    background-color: #ffffff; 
+    background-color: #ffffff;
     color: #041a47;
     padding: 6rem 2rem;
   }
@@ -94,11 +91,10 @@
     align-items: center;
   }
 
-  
   .step.reverse .step_image_container {
     order: 2;
   }
-  
+
   .step.reverse .step_text_container {
     order: 1;
   }
@@ -109,7 +105,7 @@
     border-radius: 12px;
     box-shadow: 0 10px 20px rgba(4, 26, 71, 0.1);
   }
-  
+
   .step_title {
     font-size: 2rem;
     font-weight: 600;
@@ -121,22 +117,22 @@
     line-height: 1.7;
     opacity: 0.8;
   }
-  
 
   @media (max-width: 768px) {
-    .step, .step.reverse {
+    .step,
+    .step.reverse {
       grid-template-columns: 1fr;
       gap: 2rem;
     }
-    
+
     .step.reverse .step_image_container {
-       order: 1; 
+      order: 1;
     }
 
     .step.reverse .step_text_container {
-       order: 2;
+      order: 2;
     }
-    
+
     .step_text_container {
       text-align: center;
     }

@@ -2,11 +2,11 @@
   import { onMount } from 'svelte';
   import { fade } from 'svelte/transition';
   
-  import Loader from '$lib/components/landing/Loader.svelte';
-  import Hero from '$lib/components/landing/Hero.svelte';
-  import Features from '$lib/components/landing/Features.svelte';
-  import Walkthrough from '$lib/components/landing/Walkthrough.svelte';
-  import InfoSection from '$lib/components/landing/InfoSection.svelte'; 
+  import Loader from '$lib/components/landing/loader-animation.svelte';
+  import Hero from '$lib/components/landing/hero.svelte';
+  import Features from '$lib/components/landing/features.svelte';
+  import Walkthrough from '$lib/components/landing/walkthrough.svelte';
+  import InfoSection from '$lib/components/landing/info-section.svelte'; 
 
   let is_loading = true;
 
