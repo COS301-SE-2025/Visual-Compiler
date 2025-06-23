@@ -33,7 +33,7 @@ type TypeValue struct {
 func ReadRegexRules(input []byte) ([]TypeRegex, error) {
 
 	if len(input) == 0 {
-		return nil, fmt.Errorf("no source code specified")
+		return nil, fmt.Errorf("no rules specified")
 	}
 
 	rules := []TypeRegex{}
