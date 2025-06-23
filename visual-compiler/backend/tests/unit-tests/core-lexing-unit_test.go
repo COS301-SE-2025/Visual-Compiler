@@ -452,7 +452,7 @@ func TestCreateTokens_PunctuationTokensUnidentified(t *testing.T) {
 	}
 }
 
-func TestFullCreateTokens_Success(t *testing.T) {
+func TestCreateTokens_Complex(t *testing.T) {
 	source_code := "int x = 3;"
 	rules := []services.TypeRegex{
 		{Type: "KEYWORD", Regex: "\\b(if|int|else)\\b"},
@@ -492,13 +492,14 @@ func TestConvertTokensFromDFA_Success(t *testing.T) {
 	expected_res := []services.TypeValue{
 		{Type: "KEYWORD", Value: "int"},
 		{Type: "IDENTIFIER", Value: "x"},
-		{Type: "OPERATOR", Value: "="},
 		{Type: "NUMBER", Value: "3"},
-		{Type: "PUNCTUATION", Value: ";"},
 	}
-	expected_res_unidentified := []string{}
+	expected_res_unidentified := []string{
+		"=",
+		";",
+	}
 
-	source_code := "int y = 2;"
+	source_code := "int x = 3;"
 	dfa := services.Automata{
 		States: []string{"START", "S1", "S2", "S3", "S4", "S5"},
 		Transitions: []services.Transition{
@@ -564,39 +565,45 @@ func TestConvertTokensFromDFA_Success(t *testing.T) {
 			t.Errorf("Tokenisation incorrect")
 		}
 	}
-}
+}*/
 
-func TestConvertDFAToRegex_Success(t *testing.T) {
-	user_input := []byte(`{
-							"states": ["START","S1","S2","S3","S4","S5"],
-							"transitions":[
-								{"from": "START", "to": "S1", "label": "i"},
-								{"from": "S1", "to": "S5", "label": "n"},
-								{"from": "S5", "to": "S4", "label": "t"},
-								{"from": "S1", "to": "S6", "label": "f"},
-								{"from": "START", "to": "S2", "label": "0123456789"},
-								{"from": "S2", "to": "S2", "label": "0123456789"},
-								{"from": "START", "to": "S3", "label": "abcdefghijklmnopqrstuvwxyz"},
-								{"from": "S3", "to": "S3", "label": "abcdefghijklmnopqrstuvwxyz0123456789"}
-							],
-							"start_state": "START",
-							"accepting_states":[
-								{"state":"S3","token_type":"IDENTIFIER"},
-								{"state":"S4","token_type":"KEYWORD"},
-								{"state":"S2","token_type":"NUMBER"},
-								{"state":"S6","token_type":"KEYWORD"}
-							]
-						}`,
-	)
-	err := services.ReadDFA(user_input)
-	if err != nil {
-		t.Errorf("Test failed: %v", err)
+func TestConvertDFAToRegex_ValidDFA(t *testing.T) {
+	expected_res := []services.TypeRegex{
+		{Type: "IDENTIFIER", Regex: `[a-zA-Z_]\\w*`},
+		{Type: "KEYWORD", Regex: `\\b(int|if)\\b`},
+		{Type: "NUMBER", Regex: `\\d+(\\.\\d+)?`},
 	}
 
-	err = services.ConvertDFAToRegex()
-	if err != nil {
-		t.Errorf("Test failed: %v", err)
+	dfa := services.Automata{
+		States: []string{"START", "S1", "S2", "S3", "S4", "S5"},
+		Transitions: []services.Transition{
+			{From: "START", To: "S1", Label: "i"},
+			{From: "S1", To: "S5", Label: "n"},
+			{From: "S5", To: "S4", Label: "t"},
+			{From: "S1", To: "S6", Label: "f"},
+			{From: "START", To: "S2", Label: "0123456789"},
+			{From: "S2", To: "S2", Label: "0123456789"},
+			{From: "START", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz"},
+			{From: "S3", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz0123456789"},
+		},
+		Start: "START",
+		Accepting: []services.AcceptingState{
+			{State: "S3", Type: "IDENTIFIER"},
+			{State: "S4", Type: "KEYWORD"},
+			{State: "S2", Type: "NUMBER"},
+			{State: "S6", Type: "KEYWORD"},
+		},
 	}
 
+	rules, err := services.ConvertDFAToRegex(dfa)
+
+	if err == nil {
+		for i, rule := range rules {
+			if rule != expected_res[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", rule, expected_res[i])
+			}
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
 }
-*/

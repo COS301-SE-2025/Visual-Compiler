@@ -280,25 +280,25 @@ func CreateTokensFromDFA(source_code string, dfa Automata) ([]TypeValue, []strin
 //
 // Convert the DFA received from the ReadDFA function to a regular expression.
 // Generates a regex for every accepting state and converts the paths to regex rules.
-func ConvertDFAToRegex(dfa Automata) error {
+func ConvertDFAToRegex(dfa Automata) ([]TypeRegex, error) {
 
 	if len(dfa.States) == 0 {
-		return fmt.Errorf("no states identified")
+		return nil, fmt.Errorf("no states identified")
 	}
 	if len(dfa.Transitions) == 0 {
-		return fmt.Errorf("no transitions identified")
+		return nil, fmt.Errorf("no transitions identified")
 	}
 	if len(dfa.Accepting) == 0 {
-		return fmt.Errorf("no accepting states identified")
+		return nil, fmt.Errorf("no accepting states identified")
 	}
 	if dfa.Start == "" {
-		return fmt.Errorf("no start state identified")
+		return nil, fmt.Errorf("no start state identified")
 	}
 
 	paths := make(map[string]string)
 
 	for _, accepting := range dfa.Accepting {
-		regex := buildRegexForPath(dfa.Start, accepting.State, Automata{})
+		regex := buildRegexForPath(dfa.Start, accepting.State, dfa)
 		if paths[accepting.Type] != "" {
 			paths[accepting.Type] = paths[accepting.Type] + "|" + regex
 		} else {
@@ -324,7 +324,7 @@ func ConvertDFAToRegex(dfa Automata) error {
 		rules = append(rules, new_rule)
 	}
 
-	return nil
+	return rules, nil
 }
 
 // Name: convertKeywordToRegex
