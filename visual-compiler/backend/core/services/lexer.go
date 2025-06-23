@@ -539,3 +539,59 @@ func (c *Converter) addTransition(from, to, label string) {
 		Label: label,
 	})
 }
+
+// Name: parseRegex (for Converter)
+// Parameters: string
+// Return: *Fragment
+// Parses a regex string and returns an NFA fragment
+func (c *Converter) parseRegex(regex string) *Fragment {
+
+	fragment, _ := c.parseAlter(regex, 0)
+	return fragment
+}
+
+// Name: parseAlter (for Converter)
+// Parameters: string, int
+// Return: *Fragment, int
+// Handles the alternation regex fragments
+func (c *Converter) parseAlter(regex string, position int) (*Fragment, int) {
+
+	left, update := c.parseConcat(regex, position)
+
+	if update >= len(regex) || regex[update] != '|' {
+		return left, update
+	}
+
+	right, final := c.parseAlter(regex, update+1)
+
+	start := c.newState()
+	end := c.newState()
+
+	c.addTransition(start, left.start, "ε")
+	c.addTransition(left.end, end, "ε")
+
+	c.addTransition(start, right.start, "ε")
+	c.addTransition(right.end, end, "ε")
+
+	return &Fragment{start: start, end: end}, final
+}
+
+// Name: parseConcat (for Converter)
+// Parameters: string, int
+// Return: *Fragment, int
+// Handles the concatenation regex fragments
+func (c *Converter) parseConcat(regex string, position int) (*Fragment, int) {
+
+	left, update := c.parseStar(regex, position)
+
+	for update < len(regex) && regex[update] != '|' && regex[update] != ')' {
+
+		right, next := c.parseStar(regex, update)
+
+		c.addTransition(left.end, right.start, "ε")
+		left = &Fragment{start: left.start, end: right.end}
+		update = next
+	}
+
+	return left, update
+}
