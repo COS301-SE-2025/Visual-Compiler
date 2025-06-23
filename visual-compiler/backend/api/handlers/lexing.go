@@ -10,20 +10,23 @@ import (
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/services"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 // Specifies the JSON body request.
 type SourceCodeRequest struct {
 	// Represents the source code the user enters
-	Code string `json:"source_code" bson:"required"`
+	Code string `json:"source_code" binding:"required"`
 	// Represents the pairs of Type and Regex
-	Pairs []services.TypeRegex `json:"pairs" bson:"required"`
+	Pairs []services.TypeRegex `json:"pairs" binding:"required"`
+	// Represents the User's ID from frontend
+	UsersID bson.ObjectID `json:"users_id" binding:"required"`
 }
 
 // Specifies the JSON body request for the Users ID.
 type IDRequest struct {
 	// Represents the User's ID from frontend
-	UsersID bson.ObjectID `json:"users_id" bson:"required"`
+	UsersID bson.ObjectID `json:"users_id" binding:"required"`
 }
 
 // Locally store a user's source code and regex expressions.
@@ -49,8 +52,53 @@ func StoreSourceCode(c *gin.Context) {
 
 	pairs := jsonAsBytes
 
-	services.SourceCode(req.Code)
-	services.ReadRegexRules(pairs)
+	// services.SourceCode(req.Code)
+	rules, err := services.ReadRegexRules(pairs)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Regex rule creation failed"})
+	}
+
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	filers := bson.M{"users_id": req.UsersID}
+	var userexisting bson.M
+
+	err = collection.FindOne(ctx, filers).Decode(&userexisting)
+
+	if err == mongo.ErrNoDocuments {
+		_, err = collection.InsertOne(ctx, bson.M{
+			"code":     req.Code,
+			"rules":    rules,
+			"users_id": req.UsersID,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
+			return
+		}
+	} else if err == nil {
+		updateexisting := bson.D{
+			bson.E{Key: "$unset", Value: bson.M{
+				"tokens":              "",
+				"tokens_unidentified": "",
+			}},
+			bson.E{Key: "$set", Value: bson.M{
+				"code":  req.Code,
+				"rules": rules,
+			}},
+		}
+		_, err = collection.UpdateOne(ctx, filers, updateexisting)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Update error"})
+			return
+		}
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database lookup error"})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Code is ready for lexing"})
 }
@@ -68,24 +116,43 @@ func StoreSourceCode(c *gin.Context) {
 func Lexing(c *gin.Context) {
 	var req IDRequest
 
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
+		return
+	}
+
 	mongoCli := db.ConnectClient()
 	collection := mongoCli.Database("visual-compiler").Collection("lexing")
-
-	services.CreateTokens()
-
-	tokens := services.GetTokens()
-	tokens_unidentified := services.GetInvalidInput()
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := collection.InsertOne(ctx, bson.M{
-		"code":     services.GetSourceCode(),
-		"tokens":   tokens,
-		"users_id": req.UsersID,
-	})
+	var res struct {
+		Code  string               `bson:"code"`
+		Rules []services.TypeRegex `bson:"rules"`
+	}
+
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Source code not found"})
+		return
+	}
+
+	tokens, unidentified, errorcaught := services.CreateTokens(res.Code, res.Rules)
+	if errorcaught != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Tokenization failed", "details": errorcaught.Error()})
+		return
+	}
+
+	filters := bson.M{"users_id": req.UsersID}
+	updateuserslexing := bson.M{"$set": bson.M{
+		"tokens":              tokens,
+		"tokens_unidentified": unidentified,
+	}}
+
+	_, err = collection.UpdateOne(ctx, filters, updateuserslexing)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tokens"})
 		return
 	}
 
@@ -93,6 +160,6 @@ func Lexing(c *gin.Context) {
 		"users_id":            req.UsersID,
 		"message":             "Successfully tokenised your code",
 		"tokens":              tokens,
-		"tokens_unidentified": tokens_unidentified,
+		"tokens_unidentified": unidentified,
 	})
 }
