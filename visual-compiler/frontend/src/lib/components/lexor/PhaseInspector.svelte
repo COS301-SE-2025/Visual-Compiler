@@ -3,7 +3,8 @@
   import type { Token } from '$lib/types';
   import type { NodeType } from '$lib/types';
 	import { addToast } from '$lib/stores/toast';
-  
+  import { onMount } from 'svelte';
+
   export let sourceCode = '';  
   
   let inputRows = [{ type: '', regex: '', error: '' }];
@@ -193,71 +194,270 @@
     }
   }
 
-  let selectedAutomaton: 'NFA' | 'DFA' | 'REGEX' | null = null;
+  let selectedType: 'AUTOMATA' | 'REGEX' | null = null;
   let showDefault = false;
 
-  // NFA/DFA input state
-  let nfaStates = '';
-  let nfaAlphabets = '';
-  let nfaStartState = '';
-  let nfaAcceptedStates = '';
-  let nfaTransitions = '';
+  // Automata input state
+  let states = '';
+  let startState = '';
+  let acceptedStates = '';
+  let transitions = '';
 
-  let dfaStates = '';
-  let dfaAlphabets = '';
-  let dfaStartState = '';
-  let dfaAcceptedStates = '';
-  let dfaTransitions = '';
+
+  function parseAutomaton() {
+    const stateList = states.split(',').map(s => s.trim()).filter(Boolean);
+    const start = startState.trim();
+    const accepted = acceptedStates.split(',').map(s => s.trim()).filter(Boolean);
+    const transitionLines = transitions.split('\n').map(line => line.trim()).filter(Boolean);
+    const transitionObj: Record<string, Record<string, string[]>> = {};
+    let alphabetSet = new Set<string>();
+    for (const line of transitionLines) {
+      const match = line.match(/^(.+),(.+)->(.+)$/);
+      if (match) {
+        const [_, from, symbol, to] = match;
+        alphabetSet.add(symbol);
+        if (!transitionObj[from]) transitionObj[from] = {};
+        if (!transitionObj[from][symbol]) transitionObj[from][symbol] = [];
+        transitionObj[from][symbol].push(to);
+      }
+    }
+    return {
+      states: stateList,
+      startState: start,
+      acceptedStates: accepted,
+      transitions: transitionObj,
+      alphabet: Array.from(alphabetSet)
+    };
+  }
+
+  // NFA to DFA subset construction
+  function nfaToDfa(nfa) {
+    const { alphabet, startState, acceptedStates, transitions } = nfa;
+    const dfaStates: string[] = [];
+    const dfaTransitions: Record<string, Record<string, string>> = {};
+    const dfaAcceptedStates: string[] = [];
+    const stateMap: Record<string, string[]> = {};
+
+    function stateSetToName(set: string[]) {
+      return set.sort().join(',');
+    }
+
+    let unmarked: string[][] = [[startState]];
+    let marked: string[][] = [];
+
+    while (unmarked.length > 0) {
+      const currentSet = unmarked.pop();
+      const name = stateSetToName(currentSet);
+      if (!dfaStates.includes(name)) dfaStates.push(name);
+      stateMap[name] = currentSet;
+
+      dfaTransitions[name] = {};
+
+      for (const symbol of alphabet) {
+        let nextSet: string[] = [];
+        for (const state of currentSet) {
+          if (transitions[state] && transitions[state][symbol]) {
+            nextSet = nextSet.concat(transitions[state][symbol]);
+          }
+        }
+        nextSet = Array.from(new Set(nextSet));
+        if (nextSet.length === 0) continue;
+        const nextName = stateSetToName(nextSet);
+        dfaTransitions[name][symbol] = nextName;
+        if (!dfaStates.includes(nextName) && !unmarked.some(s => stateSetToName(s) === nextName)) {
+          unmarked.push(nextSet);
+        }
+      }
+      marked.push(currentSet);
+    }
+
+    for (const dfaState of dfaStates) {
+      const nfaStatesInDfa = dfaState.split(',');
+      if (nfaStatesInDfa.some(s => acceptedStates.includes(s))) {
+        dfaAcceptedStates.push(dfaState);
+      }
+    }
+
+    return {
+      states: dfaStates,
+      startState: stateSetToName([startState]),
+      acceptedStates: dfaAcceptedStates,
+      transitions: dfaTransitions,
+      alphabet
+    };
+  }
+
+  let nfaContainer;
+  let dfaContainer;
+  let showNfaVis = false;
+  let showDfaVis = false;
+
+  // Helper to generate unique node ids for DFA states
+  function safeStateId(name: string) {
+    return name.replace(/[^a-zA-Z0-9_]/g, '_');
+  }
+
+  async function renderNfaVis() {
+    const vis = await import('vis-network/standalone');
+    const DataSet = vis.DataSet;
+    const Network = vis.Network;
+
+    const nfa = parseAutomaton();
+    // Map state names to node ids
+    const nodeIds = {};
+    nfa.states.forEach((state, idx) => {
+      nodeIds[state] = safeStateId(state);
+    });
+
+    // Nodes
+    const nodes = new DataSet(
+      nfa.states.map(state => ({
+        id: nodeIds[state],
+        label: state,
+        shape: "circle",
+        color: nfa.acceptedStates.includes(state)
+          ? "#D2FFD2"
+          : (state === nfa.startState ? "#D2E5FF" : "#FFD2D2"),
+        borderWidth: nfa.acceptedStates.includes(state) ? 3 : 1
+      }))
+    );
+
+    // Edges
+    const edgesArr = [];
+    for (const from of nfa.states) {
+      for (const symbol of nfa.alphabet) {
+        const tos = nfa.transitions[from]?.[symbol] || [];
+        for (const to of tos) {
+          edgesArr.push({
+            from: nodeIds[from],
+            to: nodeIds[to],
+            label: symbol,
+            arrows: "to"
+          });
+        }
+      }
+    }
+    const edges = new DataSet(edgesArr);
+
+    // Render
+    new Network(nfaContainer, { nodes, edges }, {
+      nodes: {
+        shape: "circle",
+        font: { size: 16 },
+        margin: 10
+      },
+      edges: {
+        smooth: {
+          enabled: true,
+          type: "curvedCW", // or "curvedCCW"
+          roundness: 0.3
+        },
+        font: { size: 14, strokeWidth: 0 }
+      },
+      physics: false
+    });
+  }
+
+  async function renderDfaVis() {
+    // Dynamically import vis-network only on the client
+    const vis = await import('vis-network/standalone');
+    const DataSet = vis.DataSet;
+    const Network = vis.Network;
+
+    const dfa = nfaToDfa(parseAutomaton());
+
+    // Map DFA state names to node ids
+    const nodeIds: Record<string, string> = {};
+    dfa.states.forEach((state) => {
+      nodeIds[state] = state.replace(/[^a-zA-Z0-9_]/g, '_');
+    });
+
+    // Nodes
+    const nodes = new DataSet(
+      dfa.states.map(state => ({
+        id: nodeIds[state],
+        label: state,
+        shape: "circle",
+        color: dfa.acceptedStates.includes(state)
+          ? "#D2FFD2"
+          : (state === dfa.startState ? "#D2E5FF" : "#FFD2D2"),
+        borderWidth: dfa.acceptedStates.includes(state) ? 3 : 1
+      }))
+    );
+
+    // Edges
+    const edgesArr = [];
+    for (const from of dfa.states) {
+      for (const symbol of dfa.alphabet) {
+        const to = dfa.transitions[from]?.[symbol];
+        if (to) {
+          edgesArr.push({
+            from: nodeIds[from],
+            to: nodeIds[to],
+            label: symbol,
+            arrows: "to"
+          });
+        }
+      }
+    }
+    const edges = new DataSet(edgesArr);
+
+    // Render
+    new Network(dfaContainer, { nodes, edges }, {
+      nodes: {
+        shape: "circle",
+        font: { size: 16 },
+        margin: 10
+      },
+      edges: {
+        smooth: {
+          enabled: true,
+          type: "curvedCW", // or "curvedCCW"
+          roundness: 0.3
+        },
+        font: { size: 14, strokeWidth: 0 }
+      },
+      physics: false
+    });
+  }
+
+  function showNfaDiagram() {
+    showNfaVis = true;
+    showDfaVis = false;
+    setTimeout(() => renderNfaVis(), 0);
+  }
+
+  function showDfaDiagram() {
+    showDfaVis = true;
+    showNfaVis = false;
+    setTimeout(() => renderDfaVis(), 0);
+  }
 
   function resetInputs() {
-    nfaStates = '';
-    nfaAlphabets = '';
-    nfaStartState = '';
-    nfaAcceptedStates = '';
-    nfaTransitions = '';
-    dfaStates = '';
-    dfaAlphabets = '';
-    dfaStartState = '';
-    dfaAcceptedStates = '';
-    dfaTransitions = '';
+    states = '';
+    startState = '';
+    acceptedStates = '';
+    transitions = '';
     showDefault = false;
   }
 
-  function selectAutomaton(type: 'NFA' | 'DFA' | 'REGEX') {
-    selectedAutomaton = type;
+   function selectType(type: 'AUTOMATA' | 'REGEX') {
+    selectedType = type;
     resetInputs();
   }
 
   function insertDefault() {
     showDefault = true;
-    if (selectedAutomaton === 'NFA') {
-      nfaStates = 'q0,q1,q2';
-      nfaAlphabets = 'a,b';
-      nfaStartState = 'q0';
-      nfaAcceptedStates = 'q2';
-      nfaTransitions = 'q0,a->q1\nq1,b->q2'; // <-- Make sure this is set
-    } else if (selectedAutomaton === 'DFA') {
-      dfaStates = 'A,B';
-      dfaAlphabets = '0,1';
-      dfaStartState = 'A';
-      dfaAcceptedStates = 'B';
-      dfaTransitions = 'A,0->A\nA,1->B\nB,0->A\nB,1->B';
-    }
-    // No default for REGEX yet
+    states = 'q0,q1,q2';
+    startState = 'q0';
+    acceptedStates = 'q2';
+    transitions = 'q0,0->q0\nq0,0->q1\nq1,0->q2\nq1,1->q0\nq2,0->q1\nq2,1->q2';
+    //add default for regex here
   }
 
   function removeDefault() {
     showDefault = false;
-    nfaStates = '';
-    nfaAlphabets = '';
-    nfaStartState = '';
-    nfaAcceptedStates = '';
-    nfaTransitions = '';
-    dfaStates = '';
-    dfaAlphabets = '';
-    dfaStartState = '';
-    dfaAcceptedStates = '';
-    dfaTransitions = '';
+    resetInputs();
   }
 </script>
 
@@ -273,21 +473,16 @@
   <!-- Automaton selection buttons -->
 <div class="automaton-btn-row">
   <button
-    class="automaton-btn {selectedAutomaton === 'NFA' ? 'selected' : ''}"
-    on:click={() => selectAutomaton('NFA')}
+    class="automaton-btn {selectedType === 'AUTOMATA' ? 'selected' : ''}"
+    on:click={() => selectType('AUTOMATA')}
     type="button"
-  >NFA</button>
+  >Automata</button>
   <button
-    class="automaton-btn {selectedAutomaton === 'DFA' ? 'selected' : ''}"
-    on:click={() => selectAutomaton('DFA')}
-    type="button"
-  >DFA</button>
-  <button
-    class="automaton-btn {selectedAutomaton === 'REGEX' ? 'selected' : ''}"
-    on:click={() => selectAutomaton('REGEX')}
+    class="automaton-btn {selectedType === 'REGEX' ? 'selected' : ''}"
+    on:click={() => selectType('REGEX')}
     type="button"
   >Regular Expression</button>
-  {#if selectedAutomaton && !showDefault}
+  {#if selectedType && !showDefault}
     <button
       class="default-toggle-btn"
       on:click={insertDefault}
@@ -298,7 +493,7 @@
       <span class="icon">🪄</span>
     </button>
   {/if}
-  {#if selectedAutomaton && showDefault}
+  {#if selectedType && showDefault}
     <button
       class="default-toggle-btn selected"
       on:click={removeDefault}
@@ -312,7 +507,7 @@
 </div>
 
   <!-- Conditional content rendering -->
-  {#if selectedAutomaton === 'REGEX'}
+  {#if selectedType === 'REGEX'}
     <!-- Place your existing lexing/regex UI here -->
     <div>
       <!-- BEGIN LEXING UI -->
@@ -392,57 +587,53 @@
   {/if}
       <!-- END LEXING UI -->
     </div>
-  {:else if selectedAutomaton === 'NFA'}
-    <div class="automaton-section">
+{:else if selectedType === 'AUTOMATA'}
+  <div class="automaton-section">
+    <div class="automaton-left">
       <label>
         States:
-        <input class="automaton-input" bind:value={nfaStates} placeholder="e.g. q0,q1,q2" />
-      </label>
-      <label>
-        Alphabets:
-        <input class="automaton-input" bind:value={nfaAlphabets} placeholder="e.g. a,b" />
+        <input class="automaton-input" bind:value={states} placeholder="e.g. q0,q1,q2" />
       </label>
       <label>
         Start State:
-        <input class="automaton-input" bind:value={nfaStartState} placeholder="e.g. q0" />
+        <input class="automaton-input" bind:value={startState} placeholder="e.g. q0" />
       </label>
       <label>
         Accepted States:
-        <input class="automaton-input" bind:value={nfaAcceptedStates} placeholder="e.g. q2" />
+        <input class="automaton-input" bind:value={acceptedStates} placeholder="e.g. q2" />
       </label>
-      <label class="automaton-transitions-label">
+    </div>
+    <div class="automaton-right">
+      <label>
         Transitions:
         <textarea
           class="automaton-input automaton-transitions"
-          bind:value={nfaTransitions}
+          bind:value={transitions}
           placeholder="e.g. q0,a->q1&#10;q1,b->q2"
         ></textarea>
       </label>
     </div>
-  {:else if selectedAutomaton === 'DFA'}
-    <div class="automaton-section">
-      <label>
-        States:
-        <input class="automaton-input" bind:value={dfaStates} placeholder="e.g. A,B" />
-      </label>
-      <label>
-        Alphabets:
-        <input class="automaton-input" bind:value={dfaAlphabets} placeholder="e.g. 0,1" />
-      </label>
-      <label>
-        Start State:
-        <input class="automaton-input" bind:value={dfaStartState} placeholder="e.g. A" />
-      </label>
-      <label>
-        Accepted States:
-        <input class="automaton-input" bind:value={dfaAcceptedStates} placeholder="e.g. B" />
-      </label>
-      <label class="automaton-transitions-label">
-        Transitions:
-        <textarea class="automaton-input automaton-transitions" bind:value={dfaTransitions} placeholder="e.g. A,0->A&#10;A,1->B"></textarea>
-      </label>
+    <div class="automata-action-row" style="grid-column: span 2;">
+      <button class="action-btn" type="button" on:click={showNfaDiagram}>Show NFA</button>
+      <button class="action-btn" type="button" on:click={showDfaDiagram}>Show DFA</button>
+      <button class="action-btn" type="button">Tokenisation</button>
+      <button class="action-btn" type="button" title="Convert to Regular Expression">RE</button>
+    </div>
+  </div>
+
+  {#if showNfaVis}
+    <div class="automata-container">
+      <h4 style="margin-bottom:0.5rem;">NFA Visualization</h4>
+      <div bind:this={nfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
     </div>
   {/if}
+  {#if showDfaVis}
+    <div class="automata-container">
+      <h4 style="margin-bottom:0.5rem;">DFA Visualization</h4>
+      <div bind:this={dfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
+    </div>
+  {/if}
+{/if}
 </div>
 
 <style>
@@ -747,19 +938,20 @@
   }
 
   .automaton-section {
-    margin-top: 2rem;
+    margin-top: 0rem;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.2rem 1.5rem;
     max-width: 600px;
   }
   .automaton-section label {
+    margin-top: 0.75rem;;
     font-weight: 500;
     color: #001A6E;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    font-size: 1rem;
+    font-size: 1.05rem;
   }
   .automaton-input {
     padding: 0.7rem 1rem;
@@ -777,13 +969,93 @@
     outline: none;
     background: #e6edfa;
   }
-  .automaton-transitions-label {
-    grid-column: span 2;
-  }
+
   .automaton-transitions {
-    min-height: 6rem;
+    min-height: 13rem;
     min-width: 100%;
     font-family: 'Fira Mono', monospace;
     resize: vertical;
   }
+
+
+  .automata-action-row {
+    grid-column: span 2;
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 1.75rem;
+    justify-content: flex-start;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .action-btn {
+    /* Base styles */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    border: none;
+    outline: none;
+    position: relative;
+    overflow: hidden;
+    
+    /* Default button style */
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    background: #e0e7ff;
+    color: #1e40af;
+    box-shadow: 0 1px 2px 0 rgba(30, 64, 175, 0.05);
+    
+    /* Hover/focus states */
+    &:hover, &:focus {
+      background: #d0d9ff;
+      color: #1e3a8a;
+      box-shadow: 0 1px 3px 0 rgba(30, 64, 175, 0.1), 
+                  0 1px 2px 0 rgba(30, 64, 175, 0.06);
+      transform: translateY(-1px);
+    }
+    
+    /* Active state */
+    &:active {
+      transform: translateY(0);
+      box-shadow: inset 0 2px 4px 0 rgba(30, 64, 175, 0.06);
+    }
+    
+    /* Disabled state (if you add disabled buttons later) */
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    
+    /* Tooltip styles for the RE button */
+    &[title] {
+      position: relative;
+      
+      &:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1e3a8a;
+        color: white;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        white-space: nowrap;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+    }
+  }
+
 </style>
