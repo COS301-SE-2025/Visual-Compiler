@@ -1,28 +1,36 @@
 <script lang="ts">
   import type { NodeType } from '$lib/types';
-  
-  let currentStep = 1;
-  const totalSteps = 4;
 
+  let current_step = 1;
+  const total_steps = 4;
+
+  // nextStep
+  // Return type: void
+  // Parameter type(s): none
+  // Increments the current step of the tutorial if not on the last step.
   function nextStep() {
-    if (currentStep < totalSteps) currentStep++;
+    if (current_step < total_steps) current_step++;
   }
 
+  // prevStep
+  // Return type: void
+  // Parameter type(s): none
+  // Decrements the current step of the tutorial if not on the first step.
   function prevStep() {
-    if (currentStep > 1) currentStep--;
+    if (current_step > 1) current_step--;
   }
 
-  const sampleCode = `if (count &gt; 0) { return true; }`;
-  const tokenResult = `[KEYWORD:if] [PUNCTUATION:(] [IDENTIFIER:count] [OPERATOR:>] [NUMBER:0] [PUNCTUATION:)] [PUNCTUATION:{] [KEYWORD:return] [BOOLEAN:true] [PUNCTUATION:;] [PUNCTUATION:}]`;
+  const sample_code = `if (count &gt; 0) { return true; }`;
+  const token_result = `[KEYWORD:if] [PUNCTUATION:(] [IDENTIFIER:count] [OPERATOR:>] [NUMBER:0] [PUNCTUATION:)] [PUNCTUATION:{] [KEYWORD:return] [BOOLEAN:true] [PUNCTUATION:;] [PUNCTUATION:}]`;
 
-  const regexBasics = [
+  const regex_basics = [
     { type: 'Literal Match', pattern: 'hello', example: 'Matches "hello" in text' },
     { type: 'Any Character', pattern: 'h.llo', example: 'Matches "hello", "hallo"' },
     { type: 'Digits', pattern: '\\d+', example: 'Matches "42", "123"' },
     { type: 'Letters', pattern: '[a-zA-Z]+', example: 'Matches "hello", "Test"' }
   ];
 
-  const regexExamples = [
+  const regex_examples = [
     { type: 'Keyword', pattern: '(int|string|)', example: 'int, string' },
     { type: 'Integer', pattern: '\\d+', example: '42, 123, 0' },
     { type: 'Identifier', pattern: '[a-zA-Z_]+', example: 'count, total_sum' },
@@ -30,7 +38,7 @@
     { type: 'Assignment', pattern: '=', example: '=' }
   ];
 
-  const tokensByType = [
+  const tokens_by_type = [
     {
       type: 'Keyword',
       tokens: ['if', 'return']
@@ -61,31 +69,29 @@
 <div class="phase-tutorial">
   <div class="tutorial-content">
     <h2>What is Lexing?</h2>
-    
+
     <p class="description">
-      A lexer breaks down source code into tokens. Each token has a type and value.
-      Tokens are identified using regular expressions that match specific patterns.
+      A lexer breaks down source code into tokens. Each token has a type and value. Tokens are
+      identified using regular expressions that match specific patterns.
     </p>
     <div class="separator"></div>
-<h3>Steps to Follow:</h3>
+    <h3>Steps to Follow:</h3>
     <div class="tutorial-container">
-      <!-- Content area -->
       <div class="tutorial-content-area">
-        <!-- Step content -->
-        {#if currentStep === 1}
+        {#if current_step === 1}
           <div class="tutorial-step">
             <h3>1. Source Code Input</h3>
             <p>Start by entering your source code in the input box:</p>
             <div class="code-sample">
-              <code>{@html sampleCode}</code>
+              <code>{@html sample_code}</code>
             </div>
           </div>
-        {:else if currentStep === 2}
+        {:else if current_step === 2}
           <div class="tutorial-step">
             <h3>2. Regular Expression Basics</h3>
             <p>Regular expressions use special characters to match patterns:</p>
             <div class="pattern-example">
-              {#each regexBasics as {type, pattern, example}}
+              {#each regex_basics as { type, pattern, example }}
                 <div class="type-pair">
                   <span class="type">{type}</span>
                   <code class="pattern-code">{pattern}</code>
@@ -94,12 +100,12 @@
               {/each}
             </div>
           </div>
-        {:else if currentStep === 3}
+        {:else if current_step === 3}
           <div class="tutorial-step">
             <h3>3. Common Token Patterns</h3>
             <p>Here are some common patterns used in lexical analysis:</p>
             <div class="type-example">
-              {#each regexExamples as {type, pattern, example}}
+              {#each regex_examples as { type, pattern, example }}
                 <div class="type-pair">
                   <span class="type">{type}</span>
                   <code class="pattern-code">{pattern}</code>
@@ -108,7 +114,7 @@
               {/each}
             </div>
           </div>
-        {:else if currentStep === 4}
+        {:else if current_step === 4}
           <div class="tutorial-step">
             <h3>4. Tokenisation Result</h3>
             <div class="token-table">
@@ -116,7 +122,7 @@
                 <span class="header-type">Type</span>
                 <span class="header-tokens">Tokens</span>
               </div>
-              {#each tokensByType as {type, tokens}}
+              {#each tokens_by_type as { type, tokens }}
                 <div class="table-row">
                   <span class="token-type">{type}</span>
                   <span class="token-values">{tokens.join(', ')}</span>
@@ -127,23 +133,14 @@
         {/if}
         <div class="separator"></div>
       </div>
-      
-      <!-- Navigation - Positioned higher -->
+
       <div class="navigation-container">
         <div class="navigation">
-          <button 
-            class="nav-button" 
-            disabled={currentStep === 1} 
-            on:click={prevStep}
-          >
+          <button class="nav-button" disabled={current_step === 1} on:click={prevStep}>
             ← Previous
           </button>
-          <span class="step-counter">{currentStep} / {totalSteps}</span>
-          <button 
-            class="nav-button" 
-            disabled={currentStep === totalSteps} 
-            on:click={nextStep}
-          >
+          <span class="step-counter">{current_step} / {total_steps}</span>
+          <button class="nav-button" disabled={current_step === total_steps} on:click={nextStep}>
             Next →
           </button>
         </div>
@@ -168,7 +165,7 @@
   }
 
   h2 {
-    color: #001A6E;
+    color: #001a6e;
     margin-bottom: 1rem;
     font-size: 1.5rem;
   }
@@ -216,7 +213,8 @@
     font-family: monospace;
   }
 
-  .pattern-example, .type-example {
+  .pattern-example,
+  .type-example {
     background: #f8f9fa;
     padding: 1rem;
     border-radius: 8px;
@@ -230,7 +228,7 @@
     background: #f1f3f5;
     padding: 0.2rem 0.4rem;
     border-radius: 4px;
-    color: #001A6E;
+    color: #001a6e;
     width: fit-content;
   }
 
@@ -257,7 +255,7 @@
 
   .nav-button {
     padding: 0.5rem 1rem;
-    background: #001A6E;
+    background: #001a6e;
     color: white;
     border: none;
     border-radius: 4px;
@@ -289,7 +287,7 @@
   .table-header {
     display: grid;
     grid-template-columns: 90px 1fr;
-    background: #001A6E;
+    background: #001a6e;
     color: white;
     padding: 0.5rem 0.75rem;
     font-weight: 500;
@@ -314,13 +312,14 @@
   }
 
   .token-type {
-    color: #001A6E;
+    color: #001a6e;
     font-weight: 500;
     font-family: 'Fira Code', monospace;
     font-size: 0.85rem;
   }
 
-  .header-tokens, .token-values {
+  .header-tokens,
+  .token-values {
     padding-left: 3rem;
   }
 
@@ -339,7 +338,7 @@
   }
 
   .type {
-    color: #001A6E;
+    color: #001a6e;
     font-weight: 500;
     font-family: 'Fira Code', monospace;
     font-size: 0.9rem;
@@ -425,11 +424,4 @@
     background: #4b5563;
     color: #041a47;
   }
-
-  :global(html.dark-mode) .nav-button:disabled {
-    background: #4b5563;
-    color: #041a47;
-  }
-
- 
 </style>

@@ -1,16 +1,20 @@
 <script lang="ts">
   import type { NodeType } from '$lib/types';
   import { theme } from '../../stores/theme';
-  
+
   export let handleCreateNode: (type: NodeType) => void;
   export let tooltips: Record<NodeType, string>;
 
-  const nodeTypes: { id: NodeType; label: string }[] = [
+  const node_types: { id: NodeType; label: string }[] = [
     { id: 'source', label: 'Source Code' },
-    { id: 'lexer',  label: 'Lexer' },
-    { id: 'parser', label: 'Parser' } 
+    { id: 'lexer', label: 'Lexer' },
+    { id: 'parser', label: 'Parser' }
   ];
 
+  // createNode
+  // Return type: void
+  // Parameter type(s): NodeType
+  // A wrapper function that calls the handleCreateNode prop passed from the parent.
   function createNode(type: NodeType) {
     handleCreateNode(type);
   }
@@ -19,11 +23,8 @@
 <aside class="toolbox">
   <h2 class="toolbox-heading">Blocks</h2>
   <h2 class="toolbox-instruction">Click a block to add it to the canvas.</h2>
-  {#each nodeTypes as n}
-    <button
-      class="phase-btn"
-      on:click={() => createNode(n.id)}
-    >
+  {#each node_types as n}
+    <button class="phase-btn" on:click={() => createNode(n.id)}>
       {n.label}
       <span class="custom-tooltip">{tooltips[n.id]}</span>
     </button>
@@ -31,7 +32,6 @@
 </aside>
 
 <style>
-
   .toolbox {
     flex: 0 0 clamp(240px, 20%, 300px);
     background: #ffffff;
@@ -42,11 +42,10 @@
     gap: 1rem;
     align-items: center;
     transition: all 0.3s ease;
-
-    margin: 0; 
+    margin: 0;
     border-radius: 12px;
     border: 1px solid #e0e0e0;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
   }
 
   .toolbox-heading {
@@ -99,7 +98,7 @@
   .phase-btn:active {
     transform: translateY(0);
     background: #e8edf8;
-    box-shadow: 0 2px 3px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.08);
   }
 
   .custom-tooltip {
@@ -145,7 +144,7 @@
   }
 
   :global(html.dark-mode) .toolbox-heading {
-    color: #D3D3D3;
+    color: #d3d3d3;
   }
 
   :global(html.dark-mode) .toolbox-instruction {

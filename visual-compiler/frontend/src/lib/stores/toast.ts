@@ -13,7 +13,11 @@ export const toasts = writable<Toast[]>([]);
 
 let counter = 0;
 
-export function addToast(message: string, type: ToastType = 'info', duration = 2000) {
+// AddToast
+// Return type: void
+// Parameter type(s): string, ToastType, number
+// Adds a new toast notification to the store and sets a timer to remove it.
+export function AddToast(message: string, type: ToastType = 'info', duration = 2000) {
   const id = counter++;
   toasts.update(all => [...all, { id, message, type, duration }]);
 

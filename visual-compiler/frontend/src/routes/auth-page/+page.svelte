@@ -1,8 +1,7 @@
 <script lang="ts">
-
   import { addToast } from '$lib/stores/toast';
   import { goto } from '$app/navigation';
-  
+
   let active_tab: 'login' | 'register' = 'login';
   let show_password = false;
   let show_confirm_password = false;
@@ -16,25 +15,32 @@
   let login_password = '';
 
   $: is_login_button_disabled = !login_username.trim() || !login_password.trim();
-  $: is_register_button_disabled = !reg_username.trim() || !reg_email.trim() || 
-      !reg_password.trim() || !reg_confirm_password.trim();
+  $: is_register_button_disabled =
+    !reg_username.trim() ||
+    !reg_email.trim() ||
+    !reg_password.trim() ||
+    !reg_confirm_password.trim();
 
   const disabled_icon_path = '/disabled_state.png';
   const enabled_icon_path = '/enabled_state.png';
 
-  async function handle_register(event: Event) {
+  // handleRegister
+  // Return type: Promise<void>
+  // Parameter type(s): Event
+  // Handles the user registration form submission, validates input, and sends data to the API.
+  async function handleRegister(event: Event) {
     event.preventDefault();
 
     if (reg_password !== reg_confirm_password) {
-      addToast("Passwords don't match!", "error");
+      addToast("Passwords don't match!", 'error');
       return;
     }
 
     try {
-      const response = await fetch("http://localhost:8080/api/users/register", {
-        method: "POST",
+      const response = await fetch('http://localhost:8080/api/users/register', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json"
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           email: reg_email,
@@ -46,11 +52,11 @@
       const data = await response.json();
 
       if (!response.ok) {
-        addToast(`Registration failed: ${data.error || response.statusText}`, "error");
+        addToast(`Registration failed: ${data.error || response.statusText}`, 'error');
         return;
       }
 
-      addToast(data.message || "Registration successful!", "success");
+      addToast(data.message || 'Registration successful!', 'success');
 
       // Reset the form
       reg_email = '';
@@ -59,66 +65,75 @@
       reg_confirm_password = '';
 
       active_tab = 'login';
-
     } catch (error) {
-      addToast(`Something went wrong: ${(error as Error).message}`, "error");
+      addToast(`Something went wrong: ${(error as Error).message}`, 'error');
     }
   }
- 
 
-  async function handle_login(event: Event) {
-  event.preventDefault();
-  if (is_login_button_disabled) return;
+  // handleLogin
+  // Return type: Promise<void>
+  // Parameter type(s): Event
+  // Handles the user login form submission, sends credentials to the API, and navigates on success.
+  async function handleLogin(event: Event) {
+    event.preventDefault();
+    if (is_login_button_disabled) return;
 
-  try {
-    const response = await fetch("http://localhost:8080/api/users/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        login: login_username,
-        password: login_password
-      })
-    });
+    try {
+      const response = await fetch('http://localhost:8080/api/users/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          login: login_username,
+          password: login_password
+        })
+      });
 
-    if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
-      addToast(`Login failed: ${data.error || response.statusText}`, "error");
-      return;
-    }
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        addToast(`Login failed: ${data.error || response.statusText}`, 'error');
+        return;
+      }
 
-    addToast("Login successful!", "success");
+      addToast('Login successful!', 'success');
 
-    // TODO: Store the token/session data if provided
-    
+      // TODO: Store the token/session data if provided
+
       await new Promise((res) => setTimeout(res, 2000));
 
       await goto('/main');
-
-  } catch (error) {
-    addToast(`Something went wrong: ${(error as Error).message}`, "error");
+    } catch (error) {
+      addToast(`Something went wrong: ${(error as Error).message}`, 'error');
+    }
   }
-}
 
-  function toggle_password_visibility() {
+  // togglePasswordVisibility
+  // Return type: void
+  // Parameter type(s): none
+  // Toggles the visibility of the password field.
+  function togglePasswordVisibility() {
     show_password = !show_password;
   }
 
-  function toggle_confirm_password_visibility() {
+  // toggleConfirmPasswordVisibility
+  // Return type: void
+  // Parameter type(s): none
+  // Toggles the visibility of the confirm password field.
+  function toggleConfirmPasswordVisibility() {
     show_confirm_password = !show_confirm_password;
   }
 </script>
 
 <div class="video-background">
   <video autoplay muted loop playsinline>
-    <source src="/backgrounds.mp4" type="video/mp4">
+    <source src="/backgrounds.mp4" type="video/mp4" />
   </video>
 
   <div class="container">
     <aside class="side-panel">
       <div class="logo">
-      <img src="/half_stack_blue.png" alt="Brand Logo" width="80" height="80" class="brand-logo"/>
+        <img src="/half_stack_blue.png" alt="Brand Logo" width="80" height="80" class="brand-logo" />
       </div>
 
       <nav class="tab-nav">
@@ -132,7 +147,7 @@
 
       <section class="tab-content">
         {#if active_tab === 'login'}
-          <form on:submit={handle_login}>
+          <form on:submit={handleLogin}>
             <div class="input-group">
               <input
                 type="text"
@@ -143,8 +158,8 @@
               />
               <label for="loginUsername">Username</label>
               <svg class="input-icon" viewBox="0 0 24 24">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
               </svg>
             </div>
 
@@ -158,17 +173,19 @@
               />
               <label for="loginPassword">Password</label>
               <svg class="input-icon" viewBox="0 0 24 24">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
-              <button type="button" class="show-password" on:click={toggle_password_visibility}>
+              <button type="button" class="show-password" on:click={togglePasswordVisibility}>
                 <svg viewBox="0 0 24 24" width="20" height="20">
                   {#if show_password}
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
                   {:else}
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>
+                    <path
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                    />
+                    <line x1="1" y1="1" x2="23" y2="23" />
                   {/if}
                 </svg>
               </button>
@@ -188,7 +205,7 @@
             </button>
           </form>
         {:else}
-          <form on:submit={handle_register}>
+          <form on:submit={handleRegister}>
             <div class="input-group">
               <input
                 type="text"
@@ -199,8 +216,8 @@
               />
               <label for="regUsername">Username</label>
               <svg class="input-icon" viewBox="0 0 24 24">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
               </svg>
             </div>
 
@@ -214,8 +231,10 @@
               />
               <label for="regEmail">Email</label>
               <svg class="input-icon" viewBox="0 0 24 24">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
+                <path
+                  d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+                />
+                <polyline points="22,6 12,13 2,6" />
               </svg>
             </div>
 
@@ -229,17 +248,19 @@
               />
               <label for="regPassword">Password</label>
               <svg class="input-icon" viewBox="0 0 24 24">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
-              <button type="button" class="show-password" on:click={toggle_password_visibility}>
+              <button type="button" class="show-password" on:click={togglePasswordVisibility}>
                 <svg viewBox="0 0 24 24" width="20" height="20">
                   {#if show_password}
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
                   {:else}
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>
+                    <path
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                    />
+                    <line x1="1" y1="1" x2="23" y2="23" />
                   {/if}
                 </svg>
               </button>
@@ -256,17 +277,23 @@
               />
               <label for="regConfirmPassword">Confirm Password</label>
               <svg class="input-icon" viewBox="0 0 24 24">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
-              <button type="button" class="show-password" on:click={toggle_confirm_password_visibility}>
+              <button
+                type="button"
+                class="show-password"
+                on:click={toggleConfirmPasswordVisibility}
+              >
                 <svg viewBox="0 0 24 24" width="20" height="20">
                   {#if show_confirm_password}
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
                   {:else}
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-                    <line x1="1" y1="1" x2="23" y2="23"/>
+                    <path
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                    />
+                    <line x1="1" y1="1" x2="23" y2="23" />
                   {/if}
                 </svg>
               </button>
@@ -518,8 +545,6 @@
     transform: translateY(0);
   }
 
-
-
   .icon-submit-btn {
     background: transparent;
     border: none;
@@ -546,7 +571,6 @@
     transform: scale(1.1);
   }
 
-
   .icon-submit-btn:disabled .login-action-icon {
     opacity: 0.5;
     cursor: not-allowed;
@@ -564,10 +588,6 @@
     padding: 2rem;
   }
 
-  
-
-  
-
   @media (max-width: 768px) {
     .container {
       flex-direction: column;
@@ -582,17 +602,16 @@
     .icon-submit-btn {
       max-width: 280px;
     }
-     .tab-content form {
+    .tab-content form {
       align-items: center;
     }
   }
 
   .app-title {
-  font-size: 3.rem; 
-  font-weight: 900;
-  margin: 0 auto;
-  line-height: 1.1;
-  color:#1d3159 ;
-}
-
+    font-size: 3rem;
+    font-weight: 900;
+    margin: 0 auto;
+    line-height: 1.1;
+    color: #1d3159;
+  }
 </style>

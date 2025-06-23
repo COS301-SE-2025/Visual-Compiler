@@ -1,19 +1,18 @@
 <script lang="ts">
   import type { Token } from '$lib/types';
-  
+
   export let phase: string;
   export let tokens: Token[] = [];
-  export let unexpectedTokens: string[] = [];
-  export let showTokens = false;
-
+  export let unexpected_tokens: string[] = [];
+  export let show_tokens = false;
 
   $: console.log('ArtifactViewer phase:', phase);
   $: console.log('ArtifactViewer tokens:', tokens);
-  $: console.log('ArtifactViewer unexpected tokens:', unexpectedTokens);
+  $: console.log('ArtifactViewer unexpected tokens:', unexpected_tokens);
 </script>
 
 <div class="artifact-viewer">
-  {#if phase === 'lexer' && showTokens}
+  {#if phase === 'lexer' && show_tokens}
     <div class="tokens-heading">
       <h3>Tokens</h3>
     </div>
@@ -38,20 +37,18 @@
       <div class="no-tokens">No tokens generated yet</div>
     {/if}
 
-    {#if unexpectedTokens && unexpectedTokens.length > 0}
+    {#if unexpected_tokens && unexpected_tokens.length > 0}
       <div class="unexpected-tokens-container">
         <h4>Unidentified Input</h4>
         <div class="token-list">
-          {#each unexpectedTokens as token}
+          {#each unexpected_tokens as token}
             <span class="unexpected-token">{token}</span>
           {/each}
         </div>
       </div>
     {/if}
   {:else if phase === 'lexer'}
-    <div class="empty-state">
-      Tokens will appear here after generation
-    </div>
+    <div class="empty-state">Tokens will appear here after generation</div>
   {/if}
 </div>
 
@@ -61,7 +58,7 @@
   }
 
   h3 {
-    color: #001A6E;
+    color: #001a6e;
     font-size: 1.25rem;
     margin: 0 0 1.5rem 0;
     padding-bottom: 1rem;
@@ -87,7 +84,7 @@
   }
 
   .token-table th {
-    background: #001A6E;
+    background: #001a6e;
     color: white;
     font-weight: 500;
   }
@@ -102,7 +99,7 @@
   }
 
   .unexpected-tokens-container h4 {
-    color: #001A6E;
+    color: #001a6e;
     font-size: 1.1rem;
     margin: 0 0 1.5rem 0;
     padding-bottom: 0.6rem;
@@ -116,15 +113,15 @@
   }
 
   .tokens-heading {
-    color: #001A6E;
+    color: #001a6e;
   }
-  
+
   .unexpected-token {
     padding: 0.5rem 1rem;
     background: white;
     border: 1px solid #e5e7eb;
     border-radius: 6px;
-    color: #001A6E;
+    color: #001a6e;
     font-family: monospace;
     font-size: 0.9rem;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);

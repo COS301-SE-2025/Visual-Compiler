@@ -1,8 +1,8 @@
 import {describe,expect,vi } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { fireEvent, render, screen,waitFor } from '@testing-library/svelte';
-import page_comp from '../../src/routes/login/+page.svelte';
-import toasts from '../../src/lib/components/ToastContainer.svelte';
+import page_comp from '../../src/routes/auth-page/+page.svelte';
+import toasts from '../../src/lib/components/toast-conatiner.svelte';
 
 const mockSuccessResponse = {
     ok:true,

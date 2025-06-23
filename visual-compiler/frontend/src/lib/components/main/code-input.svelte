@@ -1,53 +1,54 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import { addToast } from '$lib/stores/toast';
+  import { AddToast } from '$lib/stores/toast';
 
-  
-  let codeText = '';
-
+  let code_text = '';
 
   const dispatch = createEventDispatcher<{ codeSubmitted: string }>();
 
-  
+  // handleFileChange
+  // Return type: void
+  // Parameter type(s): Event
+  // Handles the file upload event, validates the file type, and reads its content.
   function handleFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
 
-  
     if (!file.name.toLowerCase().endsWith('.txt')) {
-      addToast('Only .txt files are allowed. Please upload a valid plain text file.', 'error');
+      AddToast('Only .txt files are allowed. Please upload a valid plain text file.', 'error');
       input.value = ''; // Reset the input
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
-      codeText = reader.result as string;
-      addToast('File uploaded successfully!', 'success');
+      code_text = reader.result as string;
+      AddToast('File uploaded successfully!', 'success');
     };
     reader.onerror = () => {
-      addToast('Failed to read file.', 'error');
+      AddToast('Failed to read file.', 'error');
     };
     reader.readAsText(file);
   }
 
-
+  // submitCode
+  // Return type: void
+  // Parameter type(s): none
+  // Dispatches the current code text to the parent component.
   function submitCode() {
-    if (!codeText.trim()) return;
-    dispatch('codeSubmitted', codeText);
-    addToast('Code confirmed!', 'success');
+    if (!code_text.trim()) return;
+    dispatch('codeSubmitted', code_text);
+    AddToast('Code confirmed!', 'success');
   }
 </script>
 
 <div class="code-input-container">
-  <textarea bind:value={codeText}
+  <textarea
+    bind:value={code_text}
     placeholder="Paste or type your source code here…"
-    rows="10">
-
-  </textarea>
-    
-
+    rows="10"
+  ></textarea>
 
   <div class="controls">
     <label class="upload-btn" title="📝 Hi there! Please make sure to upload a .txt file. Other file types won't work here!">
@@ -64,7 +65,7 @@
       type="button"
       class="confirm-btn"
       on:click={submitCode}
-      disabled={!codeText.trim()}
+      disabled={!code_text.trim()}
     >
       Confirm Code
     </button>
@@ -89,7 +90,7 @@
     line-height: 1.2;
     border: 1px solid #ccc;
     border-radius: 4px;
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
     height: 86px;
   }
 
@@ -112,25 +113,25 @@
     cursor: pointer;
     font: inherit;
   }
-  .upload-btn input[type="file"] {
+  .upload-btn input[type='file'] {
     position: absolute;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
     opacity: 0;
     cursor: pointer;
-   
   }
 
   .confirm-btn {
     padding: 0.5rem 1.5rem;
-    background: #001A6E;
+    background: #001a6e;
     color: white;
     border: none;
     border-radius: 4px;
     font-size: 0.95rem;
     cursor: pointer;
     transition: background 0.2s ease;
-  
   }
   .confirm-btn:disabled {
     background: #ccc;
