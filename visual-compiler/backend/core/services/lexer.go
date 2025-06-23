@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -486,4 +487,55 @@ func regexStructure(label string) string {
 	}
 
 	return structured_label
+}
+
+type Fragment struct {
+	start string
+	end   string
+}
+
+type Converter struct {
+	states      map[string]bool
+	transitions []Transition
+	count       int
+}
+
+// Name: newConverter
+// Parameters: None
+// Return: None
+// Creates a new converter for the regex to automata conversion
+func newConverter() *Converter {
+
+	return &Converter{
+		states:      make(map[string]bool),
+		transitions: make([]Transition, 0),
+		count:       0,
+	}
+}
+
+// Name: newState (for Converter)
+// Parameters: None
+// Return: string
+// Adds a new state to the converter and returns its name
+func (c *Converter) newState() string {
+
+	state := "S" + strconv.Itoa(c.count)
+
+	c.count++
+	c.states[state] = true
+
+	return state
+}
+
+// Name: addTransition (for Converter)
+// Parameters: string, string, string
+// Return: None
+// Adds a new transition to the converter
+func (c *Converter) addTransition(from, to, label string) {
+
+	c.transitions = append(c.transitions, Transition{
+		From:  from,
+		To:    to,
+		Label: label,
+	})
 }
