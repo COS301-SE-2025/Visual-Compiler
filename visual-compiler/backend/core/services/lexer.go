@@ -10,29 +10,6 @@ import (
 	"unicode"
 )
 
-// =========== //
-// SOURCE CODE //
-// =========== //
-
-// String variable that stores the source code
-var source string
-
-// Name: SourceCode
-// Parameters: string
-// Return: None
-// Setter function which sets the source variable to the value of parameter
-func SourceCode(data string) {
-	source = data
-}
-
-// Name: GetSourceCode
-// Parameters: None
-// Return: string
-// Getter function to get the value of the source variable
-func GetSourceCode() string {
-	return source
-}
-
 // ============ //
 // TOKENISATION //
 // ============ //
@@ -43,33 +20,28 @@ type TypeRegex struct {
 	Regex string `json:"regex"`
 }
 
-// Array that stores the user's regex rules
-var rules []TypeRegex
-
 // Struct for the tokens
 type TypeValue struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
 }
 
-// Array that stores the user's generated tokens
-var tokens []TypeValue
-
-// Array that stores unidentified input
-var tokens_unidentified []string
-
 // Name: ReadRegexRules
 // Parameters: []byte
-// Return: error
+// Return: []TypeRegex, error
 // Receive an array of regex rules, validate them and store them in the rules struct
-func ReadRegexRules(input []byte) error {
+func ReadRegexRules(input []byte) ([]TypeRegex, error) {
 
-	rules = []TypeRegex{}
+	if len(input) == 0 {
+		return nil, fmt.Errorf("no source code specified")
+	}
+
+	rules := []TypeRegex{}
 
 	err := json.Unmarshal(input, &rules)
 
 	if err != nil {
-		return fmt.Errorf("invalid JSON for rules: %v", err)
+		return nil, fmt.Errorf("invalid JSON for rules: %v", err)
 	}
 
 	for _, rule := range rules {
@@ -77,23 +49,30 @@ func ReadRegexRules(input []byte) error {
 		_, err := regexp.Compile(rule.Regex)
 
 		if err != nil {
-			return fmt.Errorf("invalid regex input: %v", err)
+			return nil, fmt.Errorf("invalid regex input: %v", err)
 		}
 
 		rule.Type = strings.ToUpper(rule.Type)
 	}
 
-	return nil
+	return rules, nil
 }
 
 // Name: CreateTokens
-// Parameters: None
-// Return: None
+// Parameters: string, []TypeRegex
+// Return: []TypeValue, []string, error
 // Loop through the source code to find all tokens that match the regex rules stored
-func CreateTokens() {
+func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, error) {
 
-	tokens = []TypeValue{}
-	tokens_unidentified = []string{}
+	tokens := []TypeValue{}
+	tokens_unidentified := []string{}
+
+	if source == "" {
+		return nil, nil, fmt.Errorf("source code is empty")
+	}
+	if len(rules) == 0 {
+		return nil, nil, fmt.Errorf("no rules specified")
+	}
 
 	var builder strings.Builder
 
@@ -146,22 +125,8 @@ func CreateTokens() {
 			tokens_unidentified = append(tokens_unidentified, word)
 		}
 	}
-}
 
-// Name: GetTokens
-// Parameters: None
-// Return: []TypeValue
-// Getter function that returns the array of tokens
-func GetTokens() []TypeValue {
-	return tokens
-}
-
-// Name: GetInvalidInput
-// Parameters: None
-// Return: []string
-// Getter function that returns the array of unidentified input
-func GetInvalidInput() []string {
-	return tokens_unidentified
+	return tokens, tokens_unidentified, nil
 }
 
 // ================== //
@@ -186,49 +151,29 @@ type AcceptingState struct {
 	Type  string `json:"token_type"`
 }
 
-// Structs that store the automata data
-var dfa Automata
-var nfa Automata
-
-// Name: GetNFA
-// Parameters: None
-// Return: Automata
-// Getter function to get the stored NFA
-func GetNFA() Automata {
-	return nfa
-}
-
-// Name: GetDFA
-// Parameters: None
-// Return: Automata
-// Getter function to get the stored DFA
-func GetDFA() Automata {
-	return dfa
-}
-
 // Name: ReadDFA
 // Parameters: []byte
 // Return: error
 // Receive an array of DFA data, validate them and store them in the struct
-func ReadDFA(input []byte) error {
+func ReadDFA(input []byte) (Automata, error) {
 
-	dfa = Automata{}
+	dfa := Automata{}
 
 	err := json.Unmarshal(input, &dfa)
 
 	if err != nil {
-		return fmt.Errorf("invalid JSON for automata: %v", err)
+		return dfa, fmt.Errorf("invalid JSON for automata: %v", err)
 	}
 
-	return nil
+	return dfa, nil
 }
 
-type candidate struct {
+type Candidate struct {
 	value string
 	token string
 }
 
-type candidate_sol struct {
+type CandidateSol struct {
 	state        string
 	source_index int
 	sol          string
@@ -238,9 +183,9 @@ type candidate_sol struct {
 // Parameters: None
 // Return: None
 // Convert the source code, using DFA received from the ReadDFA function, to a set of tokens
-func CreateTokensFromDFA() {
-	tokens = []TypeValue{}
-	tokens_unidentified = []string{}
+func CreateTokensFromDFA(source string, dfa Automata) {
+	tokens := []TypeValue{}
+	tokens_unidentified := []string{}
 	source_pos := 0
 
 	for source_pos < len(source) {
@@ -253,13 +198,13 @@ func CreateTokensFromDFA() {
 		}
 
 		solution_found := false
-		best_solution := candidate{
+		best_solution := Candidate{
 			value: "",
 			token: "",
 		}
 
-		initial_sol := candidate_sol{state: dfa.Start, source_index: source_pos, sol: ""}
-		queue := []candidate_sol{initial_sol}
+		initial_sol := CandidateSol{state: dfa.Start, source_index: source_pos, sol: ""}
+		queue := []CandidateSol{initial_sol}
 
 		for len(queue) > 0 {
 
@@ -269,7 +214,7 @@ func CreateTokensFromDFA() {
 			for _, accepting := range dfa.Accepting {
 				if accepting.State == current_state.state {
 					solution_found = true
-					candidate_solution := candidate{
+					candidate_solution := Candidate{
 						value: current_state.sol,
 						token: accepting.Type,
 					}
@@ -286,7 +231,7 @@ func CreateTokensFromDFA() {
 					if current_transition.From == current_state.state {
 						if strings.Contains(current_transition.Label, current_char) {
 
-							next_state := candidate_sol{
+							next_state := CandidateSol{
 								state:        current_transition.To,
 								source_index: current_state.source_index + 1,
 								sol:          current_state.sol + current_char,
@@ -321,7 +266,7 @@ func CreateTokensFromDFA() {
 // Return: None
 // Convert the DFA received from the ReadDFA function to a regular expression
 // Generates a regex for every accepting state and converts the paths to regex rules
-func ConvertDFAToRegex() error {
+func ConvertDFAToRegex(dfa Automata) error {
 
 	if len(dfa.States) == 0 {
 		return fmt.Errorf("no states identified")
@@ -339,7 +284,7 @@ func ConvertDFAToRegex() error {
 	paths := make(map[string]string)
 
 	for _, accepting := range dfa.Accepting {
-		regex := buildRegexForPath(dfa.Start, accepting.State)
+		regex := buildRegexForPath(dfa.Start, accepting.State, Automata{})
 		if paths[accepting.Type] != "" {
 			paths[accepting.Type] = paths[accepting.Type] + "|" + regex
 		} else {
@@ -347,7 +292,7 @@ func ConvertDFAToRegex() error {
 		}
 	}
 
-	rules = []TypeRegex{}
+	rules := []TypeRegex{}
 	for token_type, regex := range paths {
 		convertRawRegexToRegexRules(&regex)
 		switch token_type {
@@ -422,7 +367,7 @@ func convertRawRegexToRegexRules(regex *string) {
 // Return: string
 // Helper function to convert DFA to regex, which builds the regex string
 // Uses BFS to traverse the states till it reaches accepting saves, for which it saves the current path
-func buildRegexForPath(start, accept string) string {
+func buildRegexForPath(start, accept string, dfa Automata) string {
 	type state_regex struct {
 		state string
 		regex string
@@ -494,7 +439,7 @@ func regexStructure(label string) string {
 // Parameters: map[string]string
 // Return: None
 // Converts a set of regular expressions to a single nondeterministic finite automata
-func ConvertRegexToNFA(regexes map[string]string) {
+func ConvertRegexToNFA(regexes map[string]string, nfa Automata) {
 
 	converter := newConverter()
 
@@ -531,15 +476,15 @@ func ConvertRegexToNFA(regexes map[string]string) {
 // Converts a set of regular expressions to a single deterministic finite automata
 func ConvertRegexToDFA(regexes map[string]string) {
 
-	ConvertRegexToNFA(regexes)
-	ConvertNFAToDFA()
+	ConvertRegexToNFA(regexes, Automata{})
+	ConvertNFAToDFA(Automata{}, Automata{})
 }
 
 // Name: ConvertNFAToDFA
 // Parameters: None
 // Return: None
 // Converts the stored NFA to a DFA and stores it
-func ConvertNFAToDFA() {
+func ConvertNFAToDFA(nfa Automata, dfa Automata) {
 
 	transition_map := make(map[string]map[string][]string)
 
