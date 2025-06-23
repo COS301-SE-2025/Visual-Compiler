@@ -3,12 +3,12 @@ This document contains a short description of functions to be called in the API
   
 ## Lexer functions
 - Read Regex rules from user and store them in appropriate struct
-  - `ReadRegexRules(input []byte)`
+  - `func ReadRegexRules(input []byte) ([]TypeRegex, error)`
   - Input example:  
   ```go
   input := []byte(`[{"Type": "KEYWORD""},{"Type": "IDENTIFIER","regex":"[a-zA-Z_]\\w*"}]`)
 - Tokenise source code using regex
-  - `CreateTokens(source string, rules []TypeRegex)`
+  - `func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, error) `
   - Input example:  
   ```go
   source := "int x = 3;"
@@ -20,7 +20,7 @@ This document contains a short description of functions to be called in the API
 		{Type: "PUNCTUATION", Regex: ";"},
 	}
 - Tokenise source code using DFA
-  - `CreateTokensFromDFA(source string, dfa Automata)`
+  - `func CreateTokensFromDFA(source_code string, dfa Automata) ([]TypeValue, []string, error)`
   ```go
   source := "int x = 3;"
   dfa := services.Automata{
@@ -44,7 +44,7 @@ This document contains a short description of functions to be called in the API
 		},
 	}
 - Convert DFA to regex
-  - `ConvertDFAToRegex(dfa Automata)`  
+  - `func ConvertDFAToRegex(dfa Automata) ([]TypeRegex, error)`  
   ```go
   dfa := services.Automata{
 		States: []string{"START", "S1", "S2", "S3", "S4", "S5"},
@@ -67,9 +67,48 @@ This document contains a short description of functions to be called in the API
 		},
 	}
 - Convert regex to NFA
-  - `ConvertRegexToNFA(regexes map[string]string, nfa Automata)`
+  - `func ConvertRegexToNFA(regexes map[string]string) (Automata, error)`
+  - Input example:
+  ```go
+  regexes := map[string]string {
+    "IDENTIFIER": "[a-zA-Z_]\\w*",
+    "NUMBER":     "\\d+(\\.\\d+)?",
+    "KEYWORD":    "if|else",
+	}
 - Convert regex to DFA
-  - `ConvertRegexToDFA(regexes map[string]string)`
+  - `func ConvertRegexToDFA(regexes map[string]string) (Automata, error)`
+  - Input example:
+  ```go
+  regexes := map[string]string {
+    "IDENTIFIER": "[a-zA-Z_]\\w*",
+    "NUMBER":     "\\d+(\\.\\d+)?",
+    "KEYWORD":    "if|else",
+	}
 - Convert NFA to DFA
-  - `ConvertNFAToDFA(nfa Automata, dfa Automata)`
+  - `func ConvertNFAToDFA(nfa Automata) (Automata, error)`
+  - Input example:
+  ```go
+  nfa := services.Automata{
+		States: []string{"START", "S1", "S2", "S3", "S4", "S5", "S6"},
+		Transitions: []services.Transition{
+			{From: "START", To: "S1", Label: "i"},
+			{From: "START", To: "S1", Label: "f"},
+			{From: "S1", To: "S5", Label: "n"},
+			{From: "S5", To: "S4", Label: "t"},
+			{From: "S1", To: "S6", Label: "ε"},
+			{From: "START", To: "S2", Label: "0-9"},
+			{From: "S2", To: "S2", Label: "0-9"},
+			{From: "START", To: "S3", Label: "a-z"},
+			{From: "S3", To: "S3", Label: "a-z0-9"},
+			{From: "START", To: "S3", Label: "ε"},
+		},
+		Start: "START",
+		Accepting: []services.AcceptingState{
+			{State: "S3", Type: "IDENTIFIER"},
+			{State: "S4", Type: "KEYWORD"},
+			{State: "S2", Type: "NUMBER"},
+			{State: "S6", Type: "KEYWORD"},
+		},
+	}
+
 

@@ -471,10 +471,14 @@ func regexStructure(label string) string {
 //
 // Parameters: map[string]string
 //
-// Return: None
+// Return: Automata, error
 //
 // Converts a set of regular expressions to a single nondeterministic finite automata
-func ConvertRegexToNFA(regexes map[string]string, nfa Automata) {
+func ConvertRegexToNFA(regexes map[string]string) (Automata, error) {
+
+	if len(regexes) == 0 {
+		return Automata{}, fmt.Errorf("no regex specified")
+	}
 
 	converter := newConverter()
 
@@ -499,33 +503,59 @@ func ConvertRegexToNFA(regexes map[string]string, nfa Automata) {
 		states_list = append(states_list, state)
 	}
 
+	nfa := Automata{}
 	nfa.States = states_list
 	nfa.Transitions = converter.transitions
 	nfa.Start = start_state
 	nfa.Accepting = accepting_states
+
+	return nfa, nil
 }
 
 // Name: ConvertRegexToDFA
 //
 // Parameters: map[string]string
 //
-// Return: None
+// Return: Automata, error
 //
 // Converts a set of regular expressions to a single deterministic finite automata
-func ConvertRegexToDFA(regexes map[string]string) {
+func ConvertRegexToDFA(regexes map[string]string) (Automata, error) {
 
-	ConvertRegexToNFA(regexes, Automata{})
-	ConvertNFAToDFA(Automata{}, Automata{})
+	nfa, err := ConvertRegexToNFA(regexes)
+	if err != nil {
+		return Automata{}, fmt.Errorf("could not convert regex to nfa: %v", err)
+	}
+
+	dfa, err := ConvertNFAToDFA(nfa)
+	if err != nil {
+		return Automata{}, fmt.Errorf("could not convert regex to dfa: %v", err)
+	}
+
+	return dfa, nil
+
 }
 
 // Name: ConvertNFAToDFA
 //
-// Parameters: None
+// Parameters: nfa Automata
 //
-// Return: None
+// Return: Automata, error
 //
-// Converts the stored NFA to a DFA and stores it
-func ConvertNFAToDFA(nfa Automata, dfa Automata) {
+// Converts the NFA to a DFA
+func ConvertNFAToDFA(nfa Automata) (Automata, error) {
+
+	if len(nfa.States) == 0 {
+		return Automata{}, fmt.Errorf("no states identified")
+	}
+	if len(nfa.Transitions) == 0 {
+		return Automata{}, fmt.Errorf("no transitions identified")
+	}
+	if len(nfa.Accepting) == 0 {
+		return Automata{}, fmt.Errorf("no accepting states identified")
+	}
+	if nfa.Start == "" {
+		return Automata{}, fmt.Errorf("no start state identified")
+	}
 
 	transition_map := make(map[string]map[string][]string)
 
@@ -645,10 +675,13 @@ func ConvertNFAToDFA(nfa Automata, dfa Automata) {
 		}
 	}
 
+	dfa := Automata{}
 	dfa.States = final_states
 	dfa.Transitions = new_transitions
 	dfa.Start = state_names[start_state_key]
 	dfa.Accepting = accepting_states
+
+	return dfa, nil
 }
 
 type Fragment struct {
@@ -679,8 +712,11 @@ func newConverter() *Converter {
 }
 
 // Name: newState (for Converter)
+//
 // Parameters: None
+//
 // Return: string
+//
 // Adds a new state to the converter and returns its name
 func (c *Converter) newState() string {
 
@@ -693,8 +729,11 @@ func (c *Converter) newState() string {
 }
 
 // Name: addTransition (for Converter)
+//
 // Parameters: string, string, string
+//
 // Return: None
+//
 // Adds a new transition to the converter
 func (c *Converter) addTransition(from, to, label string) {
 
@@ -706,8 +745,11 @@ func (c *Converter) addTransition(from, to, label string) {
 }
 
 // Name: parseRegex (for Converter)
+//
 // Parameters: string
+//
 // Return: *Fragment
+//
 // Parses a regex string and returns an NFA fragment
 func (c *Converter) parseRegex(regex string) *Fragment {
 
@@ -716,8 +758,11 @@ func (c *Converter) parseRegex(regex string) *Fragment {
 }
 
 // Name: parseAlter (for Converter)
+//
 // Parameters: string, int
+//
 // Return: *Fragment, int
+//
 // Handles the alternation regex fragments
 func (c *Converter) parseAlter(regex string, position int) (*Fragment, int) {
 
@@ -742,8 +787,11 @@ func (c *Converter) parseAlter(regex string, position int) (*Fragment, int) {
 }
 
 // Name: parseConcat (for Converter)
+//
 // Parameters: string, int
+//
 // Return: *Fragment, int
+//
 // Handles the concatenation regex fragments
 func (c *Converter) parseConcat(regex string, position int) (*Fragment, int) {
 
@@ -762,8 +810,11 @@ func (c *Converter) parseConcat(regex string, position int) (*Fragment, int) {
 }
 
 // Name: parseStar (for Converter)
+//
 // Parameters: string, int
+//
 // Return: *Fragment, int
+//
 // Handles the zero or more and one or more regex fragments
 func (c *Converter) parseStar(regex string, position int) (*Fragment, int) {
 
@@ -803,8 +854,11 @@ func (c *Converter) parseStar(regex string, position int) (*Fragment, int) {
 }
 
 // Name: parseAtom (for Converter)
+//
 // Parameters: string, int
+//
 // Return: *Fragment, int
+//
 // Handles the characters and groups regex fragments
 func (c *Converter) parseAtom(regex string, position int) (*Fragment, int) {
 
@@ -868,8 +922,11 @@ func (c *Converter) parseAtom(regex string, position int) (*Fragment, int) {
 }
 
 // Name: parseRange (for Converter)
+//
 // Parameters: string
+//
 // Return: *Fragment
+//
 // Handles the ranges like [a-z] regex fragments
 func (c *Converter) parseRange(range_str string) *Fragment {
 
@@ -900,8 +957,11 @@ func (c *Converter) parseRange(range_str string) *Fragment {
 }
 
 // Name: closureEpsilon
+//
 // Parameters: []string, map[string]map[string][]string
+//
 // Return: []string
+//
 // Removes epsilon transitions from NFA for DFA
 func closureEpsilon(states []string, transition_map map[string]map[string][]string) []string {
 
