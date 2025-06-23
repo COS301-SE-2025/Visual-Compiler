@@ -13,8 +13,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var UsersID bson.ObjectID
-
 // Specifies the JSON body request for logging in
 type LoginReq struct {
 	// Either the user's email or username
@@ -78,6 +76,6 @@ func Login(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login Successful. Welcome " + dbUser.Username,
+		"user_id": dbUser.ID,
 	})
-	UsersID = dbUser.ID
 }

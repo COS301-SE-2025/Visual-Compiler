@@ -20,6 +20,12 @@ type SourceCodeRequest struct {
 	Pairs []services.TypeRegex `json:"pairs" bson:"required"`
 }
 
+// Specifies the JSON body request for the Users ID.
+type IDRequest struct {
+	// Represents the User's ID from frontend
+	UsersID bson.ObjectID `json:"users_id" bson:"required"`
+}
+
 // Locally store a user's source code and regex expressions.
 // Gets the source code from a JSON request.
 // Formats the response as a JSON Body
@@ -60,6 +66,8 @@ func StoreSourceCode(c *gin.Context) {
 //   - A 200 OK response if successful
 //   - A 500 Internal Server Error if any errors are caught for parsing and lexing errors
 func Lexing(c *gin.Context) {
+	var req IDRequest
+
 	mongoCli := db.ConnectClient()
 	collection := mongoCli.Database("visual-compiler").Collection("lexing")
 
@@ -74,7 +82,7 @@ func Lexing(c *gin.Context) {
 	_, err := collection.InsertOne(ctx, bson.M{
 		"code":     services.GetSourceCode(),
 		"tokens":   tokens,
-		"users_id": UsersID,
+		"users_id": req.UsersID,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
@@ -82,7 +90,7 @@ func Lexing(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"users_id":            UsersID,
+		"users_id":            req.UsersID,
 		"message":             "Successfully tokenised your code",
 		"tokens":              tokens,
 		"tokens_unidentified": tokens_unidentified,
