@@ -343,3 +343,154 @@ func ConvertDFAToRG(c *gin.Context) {
 		"rules":   rules,
 	})
 }
+
+func ConvertRGToNFA(c *gin.Context) {
+	var req IDRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
+		return
+	}
+
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var res struct {
+		Rules []services.TypeRegex `bson:"rules"`
+	}
+
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Regex rules not found. Please create one"})
+		return
+	}
+
+	regexesfromrules := make(map[string]string)
+	for _, rule := range res.Rules {
+		regexesfromrules[rule.Type] = rule.Regex
+	}
+
+	nfa, errorcaught := services.ConvertRegexToNFA(regexesfromrules)
+	if errorcaught != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conversion failed", "details": errorcaught.Error()})
+		return
+	}
+
+	filters := bson.M{"users_id": req.UsersID}
+	updateuserslexing := bson.M{"$set": bson.M{
+		"nfa": nfa,
+	}}
+
+	_, err = collection.UpdateOne(ctx, filters, updateuserslexing)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert NFA"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Successfully converted Regex to NFA",
+		"nfa":     nfa,
+	})
+}
+
+func ConvertRGToDFA(c *gin.Context) {
+	var req IDRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
+		return
+	}
+
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var res struct {
+		Rules []services.TypeRegex `bson:"rules"`
+	}
+
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Regex rules not found. Please create one"})
+		return
+	}
+
+	regexesfromrules := make(map[string]string)
+	for _, rule := range res.Rules {
+		regexesfromrules[rule.Type] = rule.Regex
+	}
+
+	dfa, errorcaught := services.ConvertRegexToDFA(regexesfromrules)
+	if errorcaught != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conversion failed", "details": errorcaught.Error()})
+		return
+	}
+
+	filters := bson.M{"users_id": req.UsersID}
+	updateuserslexing := bson.M{"$set": bson.M{
+		"dfa": dfa,
+	}}
+
+	_, err = collection.UpdateOne(ctx, filters, updateuserslexing)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert DFA"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Successfully converted Regex to DFA",
+		"dfa":     dfa,
+	})
+}
+
+func ConvertNFAToDFA(c *gin.Context) {
+	var req IDRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
+		return
+	}
+
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var res struct {
+		NFA services.Automata `bson:"nfa"`
+	}
+
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "NFA not found. Please create one"})
+		return
+	}
+
+	dfa, errorcaught := services.ConvertNFAToDFA(res.NFA)
+	if errorcaught != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conversion failed", "details": errorcaught.Error()})
+		return
+	}
+
+	filters := bson.M{"users_id": req.UsersID}
+	updateuserslexing := bson.M{"$set": bson.M{
+		"dfa": dfa,
+	}}
+
+	_, err = collection.UpdateOne(ctx, filters, updateuserslexing)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert DFA"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Successfully converted NFA to DFA",
+		"dfa":     dfa,
+	})
+}
