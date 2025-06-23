@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -522,6 +523,183 @@ func ConvertRegexToNFA(regexes map[string]string) {
 	nfa.Transitions = converter.transitions
 	nfa.Start = start_state
 	nfa.Accepting = accepting_states
+}
+
+// Name: ConvertRegexToDFA
+// Parameters: map[string]string
+// Return: None
+// Converts a set of regular expressions to a single deterministic finite automata
+func ConvertRegexToDFA(regexes map[string]string) {
+
+	ConvertRegexToNFA(regexes)
+	ConvertNFAToDFA()
+}
+
+// Name: ConvertNFAToDFA
+// Parameters: None
+// Return: None
+// Converts the stored NFA to a DFA and stores it
+func ConvertNFAToDFA() {
+
+	transition_map := make(map[string]map[string][]string)
+
+	for _, t := range nfa.Transitions {
+
+		if transition_map[t.From] == nil {
+			transition_map[t.From] = make(map[string][]string)
+		}
+
+		transition_map[t.From][t.Label] = append(transition_map[t.From][t.Label], t.To)
+	}
+
+	epsilon_closure := func(states []string) []string {
+
+		closure := make(map[string]bool)
+
+		stack := make([]string, len(states))
+		copy(stack, states)
+
+		for _, s := range states {
+			closure[s] = true
+		}
+
+		for len(stack) > 0 {
+
+			current := stack[len(stack)-1]
+			stack = stack[:len(stack)-1]
+
+			if epsilon_transition, exists := transition_map[current]["ε"]; exists {
+
+				for _, next := range epsilon_transition {
+
+					if !closure[next] {
+						stack = append(stack, next)
+						closure[next] = true
+					}
+				}
+			}
+		}
+
+		result := make([]string, 0, len(closure))
+		for state := range closure {
+			result = append(result, state)
+		}
+		sort.Strings(result)
+
+		return result
+	}
+
+	start_closure := epsilon_closure([]string{nfa.Start})
+	start_state_key := strings.Join(start_closure, ",")
+
+	dfa_states := make(map[string][]string)
+	new_transitions := make([]Transition, 0)
+	state_queue := []string{start_state_key}
+	processed := make(map[string]bool)
+
+	dfa_states[start_state_key] = start_closure
+
+	count := 0
+	state_names := make(map[string]string)
+	state_names[start_state_key] = "D" + strconv.Itoa(count)
+	count++
+
+	for len(state_queue) > 0 {
+
+		current_state_key := state_queue[0]
+		state_queue = state_queue[1:]
+
+		if processed[current_state_key] {
+			continue
+		}
+		processed[current_state_key] = true
+
+		current_states := dfa_states[current_state_key]
+
+		symbols := make(map[string]bool)
+
+		for _, state := range current_states {
+
+			if trans, exists := transition_map[state]; exists {
+
+				for symbol := range trans {
+
+					if symbol != "ε" {
+						symbols[symbol] = true
+					}
+				}
+			}
+		}
+
+		for symbol := range symbols {
+
+			next_states := make([]string, 0)
+
+			for _, current_state := range current_states {
+
+				if trans, exists := transition_map[current_state]; exists {
+
+					if destinations, exists := trans[symbol]; exists {
+						next_states = append(next_states, destinations...)
+					}
+				}
+			}
+
+			if len(next_states) > 0 {
+
+				next_closure := epsilon_closure(next_states)
+				next_state_key := strings.Join(next_closure, ",")
+
+				if _, exists := dfa_states[next_state_key]; !exists {
+
+					dfa_states[next_state_key] = next_closure
+					state_names[next_state_key] = "D" + strconv.Itoa(count)
+					count++
+					state_queue = append(state_queue, next_state_key)
+				}
+
+				new_transitions = append(new_transitions, Transition{
+					From:  state_names[current_state_key],
+					To:    state_names[next_state_key],
+					Label: symbol,
+				})
+			}
+		}
+	}
+
+	final_states := make([]string, 0, len(state_names))
+
+	for _, name := range state_names {
+		final_states = append(final_states, name)
+	}
+
+	accepting_states := make([]AcceptingState, 0)
+
+	for state_key, nfa_states := range dfa_states {
+
+		dfa_state_name := state_names[state_key]
+
+		for _, nfa_state := range nfa_states {
+
+			for _, accepting := range nfa.Accepting {
+
+				if accepting.State == nfa_state {
+
+					accepting_states = append(accepting_states, AcceptingState{
+						State: dfa_state_name,
+						Type:  accepting.Type,
+					})
+
+					break
+				}
+			}
+		}
+	}
+
+	dfa.States = final_states
+	dfa.Transitions = new_transitions
+	dfa.Start = state_names[start_state_key]
+	dfa.Accepting = accepting_states
 }
 
 type Fragment struct {
