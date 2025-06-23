@@ -595,3 +595,44 @@ func (c *Converter) parseConcat(regex string, position int) (*Fragment, int) {
 
 	return left, update
 }
+
+// Name: parseStar (for Converter)
+// Parameters: string, int
+// Return: *Fragment, int
+// Handles the zero or more and one or more regex fragments
+func (c *Converter) parseStar(regex string, position int) (*Fragment, int) {
+
+	fragment, update := c.parseAtom(regex, position)
+
+	if update < len(regex) {
+
+		switch regex[update] {
+
+		case '*':
+
+			start := c.newState()
+			end := c.newState()
+
+			c.addTransition(start, fragment.start, "ε")
+			c.addTransition(start, end, "ε")
+
+			c.addTransition(fragment.end, fragment.start, "ε")
+			c.addTransition(fragment.end, end, "ε")
+
+			return &Fragment{start: start, end: end}, update + 1
+
+		case '+':
+
+			start := c.newState()
+			end := c.newState()
+
+			c.addTransition(start, fragment.start, "ε")
+			c.addTransition(fragment.end, fragment.start, "ε")
+			c.addTransition(fragment.end, end, "ε")
+
+			return &Fragment{start: start, end: end}, update + 1
+		}
+	}
+
+	return fragment, update
+}
