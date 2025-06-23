@@ -27,8 +27,11 @@ type TypeValue struct {
 }
 
 // Name: ReadRegexRules
+//
 // Parameters: []byte
+//
 // Return: []TypeRegex, error
+//
 // Receive an array of regex rules, validate them and store them in the rules struct
 func ReadRegexRules(input []byte) ([]TypeRegex, error) {
 
@@ -59,8 +62,11 @@ func ReadRegexRules(input []byte) ([]TypeRegex, error) {
 }
 
 // Name: CreateTokens
+//
 // Parameters: string, []TypeRegex
+//
 // Return: []TypeValue, []string, error
+//
 // Loop through the source code to find all tokens that match the regex rules stored
 func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, error) {
 
@@ -133,6 +139,7 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 // REGEX AND AUTOMATA //
 // ================== //
 
+// struct to store nfa and dfa data
 type Automata struct {
 	States      []string         `json:"states"`
 	Transitions []Transition     `json:"transitions"`
@@ -151,28 +158,13 @@ type AcceptingState struct {
 	Type  string `json:"token_type"`
 }
 
-// Name: ReadDFA
-// Parameters: []byte
-// Return: error
-// Receive an array of DFA data, validate them and store them in the struct
-func ReadDFA(input []byte) (Automata, error) {
-
-	dfa := Automata{}
-
-	err := json.Unmarshal(input, &dfa)
-
-	if err != nil {
-		return dfa, fmt.Errorf("invalid JSON for automata: %v", err)
-	}
-
-	return dfa, nil
-}
-
+// struct to store possible tokens
 type Candidate struct {
 	value string
 	token string
 }
 
+// struct to store possible solutions considered when converting dfa to regex
 type CandidateSol struct {
 	state        string
 	source_index int
@@ -180,20 +172,37 @@ type CandidateSol struct {
 }
 
 // Name: CreateTokensFromDFA
-// Parameters: None
+//
+// Parameters: string, Automata
+//
 // Return: None
-// Convert the source code, using DFA received from the ReadDFA function, to a set of tokens
-func CreateTokensFromDFA(source string, dfa Automata) {
+//
+// Convert the source code, using DFA received from the ReadDFA function, to a set of tokens.
+// Returns tokens,identified tokens, and an error if tokenisation not possible.
+func CreateTokensFromDFA(source_code string, dfa Automata) ([]TypeValue, []string, error) {
+	if source_code == "" {
+		return nil, nil, fmt.Errorf("source code is empty")
+	}
+	if len(dfa.Transitions) == 0 {
+		return nil, nil, fmt.Errorf("no transitions identified in dfa")
+	}
+	if dfa.Start == "" {
+		return nil, nil, fmt.Errorf("no start state identified in dfa")
+	}
+	if len(dfa.Accepting) == 0 {
+		return nil, nil, fmt.Errorf("no accepting states identified in dfa")
+	}
+
 	tokens := []TypeValue{}
 	tokens_unidentified := []string{}
 	source_pos := 0
 
-	for source_pos < len(source) {
+	for source_pos < len(source_code) {
 
-		for source_pos < len(source) && unicode.IsSpace(rune(source[source_pos])) {
+		for source_pos < len(source_code) && unicode.IsSpace(rune(source_code[source_pos])) {
 			source_pos++
 		}
-		if source_pos >= len(source) {
+		if source_pos >= len(source_code) {
 			break
 		}
 
@@ -224,8 +233,8 @@ func CreateTokensFromDFA(source string, dfa Automata) {
 				}
 			}
 
-			if current_state.source_index < len(source) {
-				current_char := string(source[current_state.source_index])
+			if current_state.source_index < len(source_code) {
+				current_char := string(source_code[current_state.source_index])
 				for _, current_transition := range dfa.Transitions { //add children of current_state to queue
 
 					if current_transition.From == current_state.state {
@@ -251,21 +260,26 @@ func CreateTokensFromDFA(source string, dfa Automata) {
 			source_pos += len(best_solution.value)
 		} else {
 			unexpected_pos := source_pos + 1
-			for unexpected_pos < len(source) && !unicode.IsSpace(rune(source[unexpected_pos])) {
+			for unexpected_pos < len(source_code) && !unicode.IsSpace(rune(source_code[unexpected_pos])) {
 				unexpected_pos++
 			}
-			unidentified_token := source[source_pos:unexpected_pos]
+			unidentified_token := source_code[source_pos:unexpected_pos]
 			tokens_unidentified = append(tokens_unidentified, unidentified_token)
 			source_pos = unexpected_pos
 		}
 	}
+
+	return tokens, tokens_unidentified, nil
 }
 
 // Name: ConvertDFAToRegex
+//
 // Parameters: None
+//
 // Return: None
-// Convert the DFA received from the ReadDFA function to a regular expression
-// Generates a regex for every accepting state and converts the paths to regex rules
+//
+// Convert the DFA received from the ReadDFA function to a regular expression.
+// Generates a regex for every accepting state and converts the paths to regex rules.
 func ConvertDFAToRegex(dfa Automata) error {
 
 	if len(dfa.States) == 0 {
@@ -314,8 +328,11 @@ func ConvertDFAToRegex(dfa Automata) error {
 }
 
 // Name: convertKeywordToRegex
+//
 // Parameters: *string
+//
 // Return: None
+//
 // Helper function to convert Keyword to proper regex
 func convertKeywordToRegex(regex *string) {
 
@@ -328,8 +345,11 @@ func convertKeywordToRegex(regex *string) {
 }
 
 // Name: convertIdentifierToRegex
+//
 // Parameters: *string
+//
 // Return: None
+//
 // Helper function to convert Identifiers to proper regex
 func convertIdentifierToRegex(regex *string) {
 
@@ -343,16 +363,22 @@ func convertIdentifierToRegex(regex *string) {
 }
 
 // Name: convertNumberToRegex
+//
 // Parameters: *string
+//
 // Return: None
+//
 // Helper function to convert Numbers to proper regex
 func convertNumberToRegex(regex *string) {
 	*regex = `\\d+(\\.\\d+)?`
 }
 
 // Name: convertRawRegexToRegexRules
+//
 // Parameters: *string
+//
 // Return: None
+//
 // Helper function to replace grammar with regex rules
 func convertRawRegexToRegexRules(regex *string) {
 	*regex = strings.ReplaceAll(*regex, "abcdefghijklmnopqrstuvwxyz0123456789", "[a-z0-9]")
@@ -363,10 +389,13 @@ func convertRawRegexToRegexRules(regex *string) {
 }
 
 // Name: buildRegexForPath
+//
 // Parameters: string,string
+//
 // Return: string
-// Helper function to convert DFA to regex, which builds the regex string
-// Uses BFS to traverse the states till it reaches accepting saves, for which it saves the current path
+//
+// Helper function to convert DFA to regex, which builds the regex string.
+// Uses BFS to traverse the states till it reaches accepting saves, for which it saves the current path.
 func buildRegexForPath(start, accept string, dfa Automata) string {
 	type state_regex struct {
 		state string
@@ -420,8 +449,11 @@ func buildRegexForPath(start, accept string, dfa Automata) string {
 }
 
 // Name: regexStructure
+//
 // Parameters: string
+//
 // Return: string
+//
 // Helper function escape special regex characters
 func regexStructure(label string) string {
 
@@ -436,8 +468,11 @@ func regexStructure(label string) string {
 }
 
 // Name: ConvertRegexToNFA
+//
 // Parameters: map[string]string
+//
 // Return: None
+//
 // Converts a set of regular expressions to a single nondeterministic finite automata
 func ConvertRegexToNFA(regexes map[string]string, nfa Automata) {
 
@@ -471,8 +506,11 @@ func ConvertRegexToNFA(regexes map[string]string, nfa Automata) {
 }
 
 // Name: ConvertRegexToDFA
+//
 // Parameters: map[string]string
+//
 // Return: None
+//
 // Converts a set of regular expressions to a single deterministic finite automata
 func ConvertRegexToDFA(regexes map[string]string) {
 
@@ -481,8 +519,11 @@ func ConvertRegexToDFA(regexes map[string]string) {
 }
 
 // Name: ConvertNFAToDFA
+//
 // Parameters: None
+//
 // Return: None
+//
 // Converts the stored NFA to a DFA and stores it
 func ConvertNFAToDFA(nfa Automata, dfa Automata) {
 
@@ -622,8 +663,11 @@ type Converter struct {
 }
 
 // Name: newConverter
+//
 // Parameters: None
+//
 // Return: None
+//
 // Creates a new converter for the regex to automata conversion
 func newConverter() *Converter {
 
