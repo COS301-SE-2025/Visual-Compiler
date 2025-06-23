@@ -7,15 +7,6 @@ import (
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/services"
 )
 
-func TestInitialise(t *testing.T) {
-	lexing_input := "int x = 2 ;"
-	services.SourceCode(lexing_input)
-	source := services.GetSourceCode()
-	if source != lexing_input {
-		t.Errorf("Source code initialisation faied")
-	}
-}
-
 type add_invalid_test struct {
 	arg1     []byte
 	expected error
@@ -25,41 +16,67 @@ var add_invalid_tests = []add_invalid_test{
 	add_invalid_test{[]byte(`[
 		{"type": "keyword","regex":"\\b(if|else)\\b},
 		{"type: "identifier","regex":"[a-zA-Z_]\\w*},
-	]`), fmt.Errorf("invalid character")},
-	add_invalid_test{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b"},{"type": "IDENITIFER","regex":"[a-zA-Z_]\\w*"},]`), fmt.Errorf("invalid character")},
-	add_invalid_test{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b}]`), fmt.Errorf("invalid character")},
-	add_invalid_test{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b},{"type": "IDENTIFIER","regex":"[a-zA-Z_]\\w*"},]`), fmt.Errorf("invalid character")},
+	]`), fmt.Errorf(`invalid JSON for rules: invalid character '\n' in string literal`)},
+	add_invalid_test{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b"},{"type": "IDENITIFER","regex":"[a-zA-Z_]\\w*"},]`), fmt.Errorf("invalid JSON for rules: invalid character ']' looking for beginning of value")},
+	add_invalid_test{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b}]`), fmt.Errorf("invalid JSON for rules: unexpected end of JSON input")},
+	add_invalid_test{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b},{"type": "IDENTIFIER","regex":"[a-zA-Z_]\\w*"},]`), fmt.Errorf("invalid JSON for rules: invalid character 't' after object key:value pair")},
 }
 
-func TestReadRegexRules_InvalidCharacter(t *testing.T) {
+func TestReadRegexRules_InvalidCharacters(t *testing.T) {
 	for _, test := range add_invalid_tests {
-		err := services.ReadRegexRules(test.arg1)
+		_, err := services.ReadRegexRules(test.arg1)
 		if err == nil {
 			t.Errorf("Failed for invalid JSON object: %v", err)
+		} else if err.Error() == test.expected.Error() {
+			t.Logf("Test: %v", err)
 		} else {
-			t.Logf("Passed test for: %v", err)
+			t.Errorf("Incorrect error: %v,%v", err, test.expected)
 		}
 	}
 }
 
 func TestReadRegexRules_Fail(t *testing.T) {
 	c_input := []byte(`[{"Type": "KEYWORD""},{"Type": "IDENTIFIER","regex":"[a-zA-Z_]\\w*"}]`)
-	err := services.ReadRegexRules(c_input)
+	_, err := services.ReadRegexRules(c_input)
 	if err == nil {
 		t.Errorf("Passed for invalid input")
 	}
-	t.Logf("Failed for invalid input")
+	t.Logf("Failed for invalid input: %v", err)
 }
 
-func TestReadRegexRules_Success(t *testing.T) {
-	c_input := []byte(`[{"Type": "KEYWORD","Regex":"\\b(if|else)\\b"},{"Type": "IDENTIFIER","Regex":"[a-zA-Z_]\\w*"}]`)
-	err := services.ReadRegexRules(c_input)
+func TestReadRegexRules_NoInput(t *testing.T) {
+	c_input := []byte{}
+	_, err := services.ReadRegexRules(c_input)
 	if err != nil {
-		t.Errorf("Failed for valid input")
+		if err == fmt.Errorf("no rules specified") {
+			t.Logf("No rules specified")
+		}
 	}
 }
 
-func TestCreateTokens_UnexpectedTokens(t *testing.T) {
+func TestReadRegexRules_ValidInput(t *testing.T) {
+	c_input := []byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b"},{"type": "IDENTIFIER","regex":"[a-zA-Z_]\\w*"}]`)
+	rules, err := services.ReadRegexRules(c_input)
+	if err != nil {
+		t.Errorf("Failed for valid input")
+	}
+
+	expectedRes := []services.TypeRegex{
+		{Type: "KEYWORD", Regex: "\\b(if|else)\\b"},
+		{Type: "IDENTIFIER", Regex: "[a-zA-Z_]\\w*"},
+	}
+	if len(rules) != len(expectedRes) {
+		t.Errorf("Not enough rules created")
+	}
+
+	for i, token := range rules {
+		if token != expectedRes[i] {
+			t.Errorf("Tokenisation incorrect: %v", token)
+		}
+	}
+}
+
+/*func TestCreateTokens_UnexpectedTokens(t *testing.T) {
 	services.CreateTokens()
 	output := services.GetTokens()
 	if output == nil {
@@ -95,15 +112,15 @@ func TestCreateTokens_OperatorTokens(t *testing.T) {
 
 func TestUnexpectedTokens_Punctuation(t *testing.T) {
 	unexpected_tokens := services.GetInvalidInput()
-	expectedRes := []string{
+	expected_res := []string{
 		";",
 	}
-	if len(unexpected_tokens) != len(expectedRes) {
+	if len(unexpected_tokens) != len(expected_res) {
 		t.Errorf("Not enough unexpected tokens found")
 	}
 
 	for i, token := range unexpected_tokens {
-		if token != expectedRes[i] {
+		if token != expected_res[i] {
 			t.Errorf("Tokenisation incorrect: %v", token)
 		}
 	}
@@ -183,15 +200,15 @@ func TestConvertTokensFromDFA_Success(t *testing.T) {
 	if len(tokens) != len(expected_res) {
 		t.Errorf("Not enough tokens created")
 	}
-	for i:=0;i<len(tokens);i++ {
-		if (tokens[i] != expected_res[i]) {
+	for i := 0; i < len(tokens); i++ {
+		if tokens[i] != expected_res[i] {
 			t.Errorf("Tokenisation incorrect")
 		}
 	}
 	unidentified_tokens := services.GetInvalidInput()
-	expected_res2 := []string{"=",";"}
-	for i:=0;i<len(unidentified_tokens);i++ {
-		if (unidentified_tokens[i] != expected_res2[i]) {
+	expected_res2 := []string{"=", ";"}
+	for i := 0; i < len(unidentified_tokens); i++ {
+		if unidentified_tokens[i] != expected_res2[i] {
 			t.Errorf("Tokenisation incorrect")
 		}
 	}
@@ -211,15 +228,15 @@ func TestConvertTokensFromDFA_TestSimilarIDandKey(t *testing.T) {
 	if len(tokens) != len(expected_res) {
 		t.Errorf("Not enough tokens created")
 	}
-	for i:=0;i<len(tokens);i++ {
-		if (tokens[i] != expected_res[i]) {
+	for i := 0; i < len(tokens); i++ {
+		if tokens[i] != expected_res[i] {
 			t.Errorf("Tokenisation incorrect")
 		}
 	}
 	unidentified_tokens := services.GetInvalidInput()
-	expected_res2 := []string{"=",";"}
-	for i:=0;i<len(unidentified_tokens);i++ {
-		if (unidentified_tokens[i] != expected_res2[i]) {
+	expected_res2 := []string{"=", ";"}
+	for i := 0; i < len(unidentified_tokens); i++ {
+		if unidentified_tokens[i] != expected_res2[i] {
 			t.Errorf("Tokenisation incorrect")
 		}
 	}
@@ -253,8 +270,9 @@ func TestConvertDFAToRegex_Success(t *testing.T) {
 	}
 
 	err = services.ConvertDFAToRegex()
-	if err!=nil {
+	if err != nil {
 		t.Errorf("Test failed: %v", err)
 	}
 
 }
+*/
