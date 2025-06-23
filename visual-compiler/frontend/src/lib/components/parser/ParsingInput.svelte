@@ -98,9 +98,7 @@
                   placeholder="expr + term"
                   bind:value={translation.value}
                 />
-                {#if j < rule.translations.length - 1}
-                  <span class="separator">|</span>
-                {/if}
+                <!-- THE CHANGE IS HERE: The '|' separator has been removed -->
               {/each}
               <button class="add-translation-btn" on:click={() => addTranslation(rule.id)}>
                 +
@@ -219,10 +217,6 @@
     font-family: monospace;
     width: 5rem; 
   }
-  .separator {
-    font-size: 1.2rem;
-    color: #999;
-  }
   .add-translation-btn {
     background: #e0e0e0;
     color: #333;
@@ -281,7 +275,6 @@
     color: #f0f0f0;
   }
   :global(html.dark-mode) .arrow { color: #9ca3af; }
-  :global(html.dark-mode) .separator { color: #6b7280; }
   :global(html.dark-mode) .add-translation-btn {
     background-color: #4b5563;
     color: #f0f0f0;

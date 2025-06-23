@@ -8,8 +8,7 @@
   import { addToast } from '$lib/stores/toast';
   import { theme } from '../../lib/stores/theme';
   import { onMount } from 'svelte';
-
-  // --- Import ALL phase components with specific names ---
+  
   import LexerPhaseTutorial from '$lib/components/lexor/PhaseTutorial.svelte';
   import LexerPhaseInspector from '$lib/components/lexor/PhaseInspector.svelte';
   import LexerArtifactViewer from '$lib/components/lexor/ArtifactViewer.svelte';
@@ -17,17 +16,17 @@
   import ParserPhaseInspector from '$lib/components/parser/ParsingInput.svelte';
   import ParserArtifactViewer from '$lib/components/parser/ArtifactViewer.svelte';
 
- 
+
   let workspaceEl: HTMLElement;
 
-
+  // --- NEW: State for the one-time help tip ---
   let showDragTip = false;
 
   // Initialize theme
   onMount(() => {
     document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
 
-
+    // --- NEW: Check if the user has seen the tip before ---
     if (!localStorage.getItem('hasSeenDragTip')) {
       showDragTip = true;
     }
@@ -89,11 +88,12 @@
       return [...curr, new_node];
     });
 
-
+    // --- FIX: Programmatically focus the workspace after creating a node ---
+    // This prevents the "jumping" bug by ensuring the canvas is the active element.
     workspaceEl?.focus();
   }
   
-
+  // --- NEW: Function to dismiss the help tip permanently ---
   function dismissDragTip() {
     localStorage.setItem('hasSeenDragTip', 'true');
     showDragTip = false;
@@ -132,7 +132,7 @@
 
   function handleTokenGeneration(event: CustomEvent<{ tokens: Token[], unexpected_tokens: string[] }>) {
     showTokens = true;
-    console.log('Received event:', event.detail); 
+    console.log('Received event:', event.detail); // Debug log
     tokens = event.detail.tokens;
     unexpectedTokens = event.detail.unexpected_tokens;
   }
@@ -146,11 +146,13 @@
   <div class="workspace" bind:this={workspaceEl} tabindex="-1">
     <DrawerCanvas {nodes} on:phaseSelect={handlePhaseSelect} />
 
-    <!-- One-time dismissible help tip -->
+    <!-- UPDATED: Help tip with an 'X' close icon -->
     {#if showDragTip}
       <div class="help-tip">
         <span><b>Pro-Tip:</b> For the smoothest experience, click to select a node before dragging it.</span>
-        <button on:click={dismissDragTip} class="dismiss-tip-btn">Got it!</button>
+        <button on:click={dismissDragTip} class="dismiss-tip-btn" aria-label="Dismiss tip">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
     {/if}
   </div>
@@ -204,26 +206,23 @@
   :global(html, body) {
     margin: 0; padding: 0; height: 100%; overflow: hidden;
   }
-
-
   :global(*) {
     box-sizing: border-box;
   }
-
   .main {
     display: flex;
     height: calc(100vh - 3.5rem);
     overflow: hidden;
-    background-color: #f0f2f5; 
-    padding: 1rem; 
-    gap: 1rem; 
+    background-color: #f0f2f5;
+    padding: 1rem;
+    gap: 1rem;
     transition: background-color 0.3s ease;
   }
   .workspace {
     flex: 1;
     display: flex;
     flex-direction: column;
-    position: relative; 
+    position: relative;
     outline: none;
   }
   .analysis-overlay {
@@ -306,33 +305,42 @@
     cursor: pointer;
   }
 
+  /* UPDATED: Help tip styles */
   .help-tip {
     position: absolute;
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: rgba(4, 26, 71, 0.9);
+    background-color: rgba(4, 26, 71, 0.95);
     color: white;
-    padding: 12px 20px;
+    padding: 10px 15px 10px 20px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     display: flex;
     align-items: center;
     gap: 1rem;
     z-index: 50;
+    font-size: 0.9rem;
   }
 
   .dismiss-tip-btn {
-    background-color: #fafafa;
-    color: #041a47;
+    background: none;
     border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
+    color: white;
+    opacity: 0.7;
     cursor: pointer;
-    font-weight: 500;
+    padding: 5px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.2s ease;
+  }
+  .dismiss-tip-btn:hover {
+    opacity: 1;
   }
   
-
+  /* Dark Mode Styles */
   :global(html.dark-mode) .main {
     background-color: #161823;
   }
