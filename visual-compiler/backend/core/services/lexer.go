@@ -636,3 +636,100 @@ func (c *Converter) parseStar(regex string, position int) (*Fragment, int) {
 
 	return fragment, update
 }
+
+// Name: parseAtom (for Converter)
+// Parameters: string, int
+// Return: *Fragment, int
+// Handles the characters and groups regex fragments
+func (c *Converter) parseAtom(regex string, position int) (*Fragment, int) {
+
+	if position >= len(regex) {
+
+		start := c.newState()
+		return &Fragment{start: start, end: start}, position
+	}
+
+	switch regex[position] {
+
+	case '(':
+
+		level := 1
+		i := position + 1
+
+		for i < len(regex) && level > 0 {
+
+			if regex[i] == '(' {
+				level++
+			} else if regex[i] == ')' {
+				level--
+			}
+
+			i++
+		}
+
+		inner := regex[position+1 : i-1]
+		fragment := c.parseRegex(inner)
+
+		return fragment, i
+
+	case '[':
+
+		end := strings.Index(regex[position:], "]")
+
+		if end == -1 {
+
+			start := c.newState()
+			end := c.newState()
+
+			c.addTransition(start, end, string(regex[position]))
+
+			return &Fragment{start: start, end: end}, position + 1
+		}
+
+		range_str := regex[position+1 : position+end]
+		fragment := c.parseRange(range_str)
+
+		return fragment, position + end + 1
+
+	default:
+
+		start := c.newState()
+		end := c.newState()
+
+		c.addTransition(start, end, string(regex[position]))
+
+		return &Fragment{start: start, end: end}, position + 1
+	}
+}
+
+// Name: parseRange (for Converter)
+// Parameters: string
+// Return: *Fragment
+// Handles the ranges like [a-z] regex fragments
+func (c *Converter) parseRange(range_str string) *Fragment {
+
+	start := c.newState()
+	end := c.newState()
+
+	i := 0
+
+	for i < len(range_str) {
+
+		if i+2 < len(range_str) && range_str[i+1] == '-' {
+
+			for char := range_str[i]; char <= range_str[i+2]; char++ {
+
+				c.addTransition(start, end, string(char))
+			}
+
+			i = i + 3
+
+		} else {
+
+			c.addTransition(start, end, string(range_str[i]))
+			i++
+		}
+	}
+
+	return &Fragment{start: start, end: end}
+}
