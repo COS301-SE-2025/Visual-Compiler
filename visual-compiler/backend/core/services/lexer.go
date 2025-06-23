@@ -489,6 +489,41 @@ func regexStructure(label string) string {
 	return structured_label
 }
 
+// Name: ConvertRegexToNFA
+// Parameters: map[string]string
+// Return: None
+// Converts a set of regular expressions to a single nondeterministic finite automata
+func ConvertRegexToNFA(regexes map[string]string) {
+
+	converter := newConverter()
+
+	start_state := converter.newState()
+	var accepting_states []AcceptingState
+
+	for token_type, regex := range regexes {
+
+		fragment := converter.parseRegex(regex)
+
+		converter.addTransition(start_state, fragment.start, "ε")
+
+		accepting_states = append(accepting_states, AcceptingState{
+			State: fragment.end,
+			Type:  token_type,
+		})
+	}
+
+	states_list := make([]string, 0, len(converter.states))
+
+	for state := range converter.states {
+		states_list = append(states_list, state)
+	}
+
+	nfa.States = states_list
+	nfa.Transitions = converter.transitions
+	nfa.Start = start_state
+	nfa.Accepting = accepting_states
+}
+
 type Fragment struct {
 	start string
 	end   string
