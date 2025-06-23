@@ -259,8 +259,8 @@ func TokensFromDFA(c *gin.Context) {
 	defer cancel()
 
 	var res struct {
-		Code string              `bson:"code"`
-		DFA  []services.Automata `bson:"dfa"`
+		Code string            `bson:"code"`
+		DFA  services.Automata `bson:"dfa"`
 	}
 
 	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
@@ -269,30 +269,32 @@ func TokensFromDFA(c *gin.Context) {
 		return
 	}
 
-	// tokens, unidentified, errorcaught := services.CreateTokensFromDFA(res.Code, res.DFA)
-	// if errorcaught != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Tokenization failed", "details": errorcaught.Error()})
-	// 	return
-	// }
+	tokens, unidentified, errorcaught := services.CreateTokensFromDFA(res.Code, res.DFA)
+	if errorcaught != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Tokenization failed", "details": errorcaught.Error()})
+		return
+	}
 
-	// filters := bson.M{"users_id": req.UsersID}
-	// updateuserslexing := bson.M{"$set": bson.M{
-	// 	"tokens":              tokens,
-	// 	"tokens_unidentified": unidentified,
-	// }}
+	filters := bson.M{"users_id": req.UsersID}
+	updateuserslexing := bson.D{
+		bson.E{
+			Key: "$set", Value: bson.M{
+				"tokens":              tokens,
+				"tokens_unidentified": unidentified,
+			},
+		}}
 
-	// _, err = collection.UpdateOne(ctx, filters, updateuserslexing)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tokens"})
-	// 	return
-	// }
+	_, err = collection.UpdateOne(ctx, filters, updateuserslexing)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tokens"})
+		return
+	}
 
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"users_id":            req.UsersID,
-	// 	"message":             "Successfully tokenised your code",
-	// 	"tokens":              tokens,
-	// 	"tokens_unidentified": unidentified,
-	// })
+	c.JSON(http.StatusOK, gin.H{
+		"message":             "Successfully tokenised your code",
+		"tokens":              tokens,
+		"tokens_unidentified": unidentified,
+	})
 }
 
 func ConvertDFAToRG(c *gin.Context) {
@@ -310,7 +312,7 @@ func ConvertDFAToRG(c *gin.Context) {
 	defer cancel()
 
 	var res struct {
-		DFA []services.Automata `bson:"dfa"`
+		DFA services.Automata `bson:"dfa"`
 	}
 
 	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
@@ -319,26 +321,25 @@ func ConvertDFAToRG(c *gin.Context) {
 		return
 	}
 
-	// rules, errorCaught := services.ConvertDFAToRegex(res.DFA)
-	// if errorcaught != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Tokenization failed", "details": errorcaught.Error()})
-	// 	return
-	// }
+	rules, errorcaught := services.ConvertDFAToRegex(res.DFA)
+	if errorcaught != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Tokenization failed", "details": errorcaught.Error()})
+		return
+	}
 
-	// filters := bson.M{"users_id": req.UsersID}
-	// updateuserslexing := bson.M{"$set": bson.M{
-	// 	"rules" : rules,
-	// }}
+	filters := bson.M{"users_id": req.UsersID}
+	updateuserslexing := bson.M{"$set": bson.M{
+		"rules": rules,
+	}}
 
-	// _, err = collection.UpdateOne(ctx, filters, updateuserslexing)
-	// if err != nil {
-	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert rules"})
-	// 	return
-	// }
+	_, err = collection.UpdateOne(ctx, filters, updateuserslexing)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert rules"})
+		return
+	}
 
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"users_id":            req.UsersID,
-	// 	"message":             "Successfully converted DFA to Regex",
-	// 	"rules":              rules,
-	// })
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Successfully converted DFA to Regex",
+		"rules":   rules,
+	})
 }
