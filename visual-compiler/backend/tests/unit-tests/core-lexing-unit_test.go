@@ -727,7 +727,7 @@ func TestCreateTokensFromDFA_ComplexDFAWithSimpleCode(t *testing.T) {
 			{From: "G", To: "H", Label: "[.]"},
 			{From: "G", To: "I", Label: "[eE]"},
 			{From: "G", To: "G", Label: "[0-9]"},
-			{From: "H", To: "I", Label: "[eE"},
+			{From: "H", To: "I", Label: "[eE]"},
 			{From: "H", To: "H", Label: "[0-9]"},
 			{From: "I", To: "J", Label: "[+-]"},
 			{From: "I", To: "K", Label: "[0-9]"},
@@ -1033,5 +1033,865 @@ func TestConvertDFAToRegex_ValidDFA(t *testing.T) {
 		}
 	} else {
 		t.Errorf("Error not supposed to occur")
+	}
+}
+
+func TestConvertDFAToRegex_ValidDFARanges(t *testing.T) {
+	expected_res := []services.TypeRegex{
+		{Type: "IDENTIFIER", Regex: "[a-zA-Z_]\\w*"},
+		{Type: "KEYWORD", Regex: "\\b(int|if)\\b"},
+		{Type: "NUMBER", Regex: "\\d+"},
+	}
+
+	dfa := services.Automata{
+		States: []string{"START", "S1", "S2", "S3", "S4", "S5"},
+		Transitions: []services.Transition{
+			{From: "START", To: "S1", Label: "i"},
+			{From: "S1", To: "S5", Label: "n"},
+			{From: "S5", To: "S4", Label: "t"},
+			{From: "S1", To: "S6", Label: "f"},
+			{From: "START", To: "S2", Label: "[0-9]"},
+			{From: "S2", To: "S2", Label: "[0-9]"},
+			{From: "START", To: "S3", Label: "[a-z]"},
+			{From: "S3", To: "S3", Label: "[a-z0-9]"},
+		},
+		Start: "START",
+		Accepting: []services.AcceptingState{
+			{State: "S3", Type: "IDENTIFIER"},
+			{State: "S4", Type: "KEYWORD"},
+			{State: "S2", Type: "NUMBER"},
+			{State: "S6", Type: "KEYWORD"},
+		},
+	}
+
+	rules, err := services.ConvertDFAToRegex(dfa)
+
+	if err == nil {
+		for _, rule := range rules {
+			match_found := false
+			for _, res := range expected_res {
+				if rule != res {
+					match_found = true
+				}
+			}
+			if !match_found {
+				t.Errorf("Tokenisation incorrect: %v", rule)
+			}
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
+}
+
+func TestConvertDFAToRegex_Complex(t *testing.T) {
+	expected_res := []services.TypeRegex{
+		{Type: "ID", Regex: "i"},
+		{Type: "ID", Regex: "[a-hj-zA-Z_]([a-zA-Z_0-9])*"},
+		{Type: "ID", Regex: "i[a-eg-zA-Z_0-9]([a-zA-Z_0-9])*"},
+		{Type: "ID", Regex: "if[a-zA-Z_0-9]([a-zA-Z_0-9])*"},
+		{Type: "IF", Regex: "\\bif\\b"},
+		{Type: "NUM", Regex: "[+-]?\\d+"},
+		{Type: "FLOAT", Regex: `\d+\.\d+`},
+		{Type: "FLOAT", Regex: `\d+[eE][+-]?\d+`},
+	}
+
+	dfa := services.Automata{
+		States: []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"},
+		Transitions: []services.Transition{
+			{From: "A", To: "B", Label: "i"},
+			{From: "A", To: "D", Label: "[a-hj-zA-Z_]"},
+			{From: "A", To: "E", Label: "."},
+			{From: "A", To: "F", Label: "[+-]"},
+			{From: "A", To: "G", Label: "[0-9]"},
+			{From: "B", To: "C", Label: "f"},
+			{From: "B", To: "D", Label: "[a-eg-zA-Z_0-9]"},
+			{From: "C", To: "D", Label: "[a-zA-Z_0-9]"},
+			{From: "D", To: "D", Label: "[a-zA-Z_0-9]"},
+			{From: "E", To: "H", Label: "[0-9]"},
+			{From: "F", To: "E", Label: "."},
+			{From: "F", To: "G", Label: "[0-9]"},
+			{From: "G", To: "H", Label: "[.]"},
+			{From: "G", To: "I", Label: "[eE]"},
+			{From: "G", To: "G", Label: "[0-9]"},
+			{From: "H", To: "I", Label: "[eE"},
+			{From: "H", To: "H", Label: "[0-9]"},
+			{From: "I", To: "J", Label: "[+-]"},
+			{From: "I", To: "K", Label: "[0-9]"},
+			{From: "J", To: "K", Label: "[0-9]"},
+			{From: "K", To: "K", Label: "[0-9]"},
+		},
+		Start: "A",
+		Accepting: []services.AcceptingState{
+			{State: "B", Type: "ID"},
+			{State: "C", Type: "IF"},
+			{State: "D", Type: "ID"},
+			{State: "G", Type: "NUM"},
+			{State: "H", Type: "FLOAT"},
+			{State: "K", Type: "FLOAT"},
+		},
+	}
+
+	rules, err := services.ConvertDFAToRegex(dfa)
+
+	if err == nil {
+		for _, rule := range rules {
+			match_found := false
+			for _, res := range expected_res {
+				if rule != res {
+					match_found = true
+				}
+			}
+			if !match_found {
+				t.Errorf("Tokenisation incorrect: %v", rule)
+			}
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
+}
+
+func TestSimplifyRegex_Keyword(t *testing.T) {
+
+	regex := "\\b(if|else)\\b"
+
+	output := services.SimplifyRegex(regex)
+
+	if output != nil {
+		t.Errorf("Function not working correctly")
+	}
+}
+
+func TestSimplifyRegex_RemoveDuplictaes(t *testing.T) {
+
+	expected_res := []string{
+		"\\d+",
+		"[+-]\\d+",
+	}
+
+	regex := "\\d+|[+-]\\d+"
+
+	output := services.SimplifyRegex(regex)
+
+	if output == nil {
+		t.Errorf("Function not working correctly")
+	} else {
+		if len(output) != 2 {
+			t.Errorf("Incorrect number of items returned")
+		} else {
+			for i, item := range output {
+				if item != expected_res[i] {
+					t.Errorf("Incorrect item: %v", item)
+				}
+			}
+		}
+	}
+}
+
+func TestConvertTypeToRegex_Valid(t *testing.T) {
+
+	expected_res := "\\bif\\b"
+
+	regex := "if"
+
+	services.ConvertTypeToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+func TestConvertTypeToRegex_ValidMultiple(t *testing.T) {
+
+	expected_res := "\\b(if|else)\\b"
+
+	regex := "if|else"
+
+	services.ConvertTypeToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
+func TestConvertTypeToRegex_Invalid(t *testing.T) {
+
+	expected_res := "[0-9]"
+
+	regex := "[0-9]"
+
+	services.ConvertTypeToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
+func TestConvertKeywordToRegex_Valid(t *testing.T) {
+
+	expected_res := "\\bif\\b"
+
+	regex := "if"
+
+	services.ConvertKeywordToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+func TestConvertKeywordToRegex_ValidMultiple(t *testing.T) {
+
+	expected_res := "\\b(if|else)\\b"
+
+	regex := "if|else"
+
+	services.ConvertKeywordToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
+func TestConvertIdentifierToRegex_Valid(t *testing.T) {
+
+	expected_res := "[a-zA-Z_]\\w"
+
+	regex := "[a-z][a-z0-9]"
+
+	services.ConvertIdentifierToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+func TestConvertIdentifierToRegex_ValidLetterOrDigit(t *testing.T) {
+
+	expected_res := "\\w"
+
+	regex := "[a-z0-9]"
+
+	services.ConvertIdentifierToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
+func TestConvertIdentifierToRegex_ValidLetter(t *testing.T) {
+
+	expected_res := "[a-zA-Z_]"
+
+	regex := "[a-z]"
+
+	services.ConvertIdentifierToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
+func TestConvertNumberToRegex(t *testing.T) {
+
+	expected_res := `\d+`
+	regex := "([0-9])*"
+	services.ConvertNumberToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = `\d`
+	regex = "[0-9]"
+	services.ConvertNumberToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = `\d+`
+	regex = `\d(\d)*`
+	services.ConvertNumberToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = `\d+`
+	regex = `\d\d+`
+	services.ConvertNumberToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "[+-]?\\d+"
+	regex = "\\d+|[+-]\\d+"
+	services.ConvertNumberToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
+func TestConvertFloatToRegex(t *testing.T) {
+
+	expected_res := "\\d+\\.\\d+|\\d+[eE][+-]?\\d+"
+	regex := "\\d+[eE][+-]?\\d+"
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "\\d+(\\.\\d+)?"
+	regex = `\d+\.\d+`
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	regex = "([0-9])*"
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	regex = "[0-9]"
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	regex = `\d(\d)*`
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	regex = `\d\d+`
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	regex = "\\d+|[+-]\\d+"
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
+func TestConvertRawRegexToRegexRules(t *testing.T) {
+
+	expected_res := "[a-z0-9]"
+	regex := "abcdefghijklmnopqrstuvwxyz0123456789"
+
+	services.ConvertRawRegexToRegexRules(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "[A-Z0-9]"
+	regex = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+
+	services.ConvertRawRegexToRegexRules(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "[a-z]"
+	regex = "abcdefghijklmnopqrstuvwxyz"
+
+	services.ConvertRawRegexToRegexRules(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "[A-Z]"
+	regex = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+	services.ConvertRawRegexToRegexRules(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "[0-9]"
+	regex = "0123456789"
+
+	services.ConvertRawRegexToRegexRules(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+}
+
+// ========================= //
+//	TEST: ConvertRegexToNFA  //
+// ========================= //
+
+func TestConvertRegexToNFA_NoRegex(t *testing.T) {
+	regexes := map[string]string{}
+
+	_, err := services.ConvertRegexToNFA(regexes)
+
+	if err == nil {
+		t.Errorf("Error not returned for empty regex")
+	}
+}
+
+func TestConvertRegexToNFA_Valid(t *testing.T) {
+	expected_nfa := services.Automata{
+		Start: "S0",
+		Transitions: []services.Transition{
+			{From: "S1", To: "S2", Label: "a"},
+			{From: "S1", To: "S2", Label: "b"},
+			{From: "S1", To: "S2", Label: "c"},
+			{From: "S1", To: "S2", Label: "d"},
+			{From: "S1", To: "S2", Label: "e"},
+			{From: "S1", To: "S2", Label: "f"},
+			{From: "S1", To: "S2", Label: "g"},
+			{From: "S1", To: "S2", Label: "h"},
+			{From: "S1", To: "S2", Label: "i"},
+			{From: "S1", To: "S2", Label: "j"},
+			{From: "S1", To: "S2", Label: "k"},
+			{From: "S1", To: "S2", Label: "l"},
+			{From: "S1", To: "S2", Label: "m"},
+			{From: "S1", To: "S2", Label: "n"},
+			{From: "S1", To: "S2", Label: "o"},
+			{From: "S1", To: "S2", Label: "p"},
+			{From: "S1", To: "S2", Label: "q"},
+			{From: "S1", To: "S2", Label: "r"},
+			{From: "S1", To: "S2", Label: "s"},
+			{From: "S1", To: "S2", Label: "t"},
+			{From: "S1", To: "S2", Label: "u"},
+			{From: "S1", To: "S2", Label: "v"},
+			{From: "S1", To: "S2", Label: "w"},
+			{From: "S1", To: "S2", Label: "x"},
+			{From: "S1", To: "S2", Label: "y"},
+			{From: "S1", To: "S2", Label: "z"},
+			{From: "S1", To: "S2", Label: "A"},
+			{From: "S1", To: "S2", Label: "B"},
+			{From: "S1", To: "S2", Label: "C"},
+			{From: "S1", To: "S2", Label: "D"},
+			{From: "S1", To: "S2", Label: "E"},
+			{From: "S1", To: "S2", Label: "F"},
+			{From: "S1", To: "S2", Label: "G"},
+			{From: "S1", To: "S2", Label: "H"},
+			{From: "S1", To: "S2", Label: "I"},
+			{From: "S1", To: "S2", Label: "J"},
+			{From: "S1", To: "S2", Label: "K"},
+			{From: "S1", To: "S2", Label: "L"},
+			{From: "S1", To: "S2", Label: "M"},
+			{From: "S1", To: "S2", Label: "N"},
+			{From: "S1", To: "S2", Label: "O"},
+			{From: "S1", To: "S2", Label: "P"},
+			{From: "S1", To: "S2", Label: "Q"},
+			{From: "S1", To: "S2", Label: "R"},
+			{From: "S1", To: "S2", Label: "S"},
+			{From: "S1", To: "S2", Label: "T"},
+			{From: "S1", To: "S2", Label: "U"},
+			{From: "S1", To: "S2", Label: "V"},
+			{From: "S1", To: "S2", Label: "W"},
+			{From: "S1", To: "S2", Label: "X"},
+			{From: "S1", To: "S2", Label: "Y"},
+			{From: "S1", To: "S2", Label: "Z"},
+			{From: "S1", To: "S2", Label: "_"},
+			{From: "S3", To: "S4", Label: `\`},
+			{From: "S2", To: "S3", Label: "ε"},
+			{From: "S5", To: "S6", Label: "w"},
+			{From: "S7", To: "S5", Label: "ε"},
+			{From: "S7", To: "S8", Label: "ε"},
+			{From: "S6", To: "S5", Label: "ε"},
+			{From: "S6", To: "S8", Label: "ε"},
+			{From: "S4", To: "S7", Label: "ε"},
+			{From: "S0", To: "S1", Label: "ε"},
+			{From: "S9", To: "S10", Label: `\`},
+			{From: "S11", To: "S12", Label: "d"},
+			{From: "S13", To: "S11", Label: "ε"},
+			{From: "S12", To: "S11", Label: "ε"},
+			{From: "S12", To: "S14", Label: "ε"},
+			{From: "S10", To: "S13", Label: "ε"},
+			{From: "S15", To: "S16", Label: `\`},
+			{From: "S17", To: "S18", Label: "."},
+			{From: "S16", To: "S17", Label: "ε"},
+			{From: "S19", To: "S20", Label: `\`},
+			{From: "S18", To: "S19", Label: "ε"},
+			{From: "S21", To: "S22", Label: "d"},
+			{From: "S23", To: "S21", Label: "ε"},
+			{From: "S22", To: "S21", Label: "ε"},
+			{From: "S22", To: "S24", Label: "ε"},
+			{From: "S20", To: "S23", Label: "ε"},
+			{From: "S14", To: "S15", Label: "ε"},
+			{From: "S25", To: "S26", Label: "?"},
+			{From: "S24", To: "S25", Label: "ε"},
+			{From: "S0", To: "S9", Label: "ε"},
+			{From: "S27", To: "S28", Label: "i"},
+			{From: "S29", To: "S30", Label: "f"},
+			{From: "S28", To: "S29", Label: "ε"},
+			{From: "S31", To: "S32", Label: "e"},
+			{From: "S33", To: "S34", Label: "l"},
+			{From: "S32", To: "S33", Label: "ε"},
+			{From: "S35", To: "S36", Label: "s"},
+			{From: "S34", To: "S35", Label: "ε"},
+			{From: "S37", To: "S38", Label: "e"},
+			{From: "S36", To: "S37", Label: "ε"},
+			{From: "S39", To: "S27", Label: "ε"},
+			{From: "S30", To: "S40", Label: "ε"},
+			{From: "S39", To: "S31", Label: "ε"},
+			{From: "S38", To: "S40", Label: "ε"},
+			{From: "S0", To: "S39", Label: "ε"},
+		},
+		Accepting: []services.AcceptingState{
+			{State: "S8", Type: "IDENTIFIER"},
+			{State: "S26", Type: "NUMBER"},
+			{State: "S40", Type: "KEY"},
+		},
+		States: []string{"S24", "S32", "S35", "S40", "S0", "S4", "S11", "S13", "S6", "S8", "S20", "S21", "S29", "S3", " S15", "S23", "S26", "S37", "S38", "S5", "S9", "S19", "S25", "S1", "S28", "S31", "S36", "S33", "S39", "S16", "S17", "S18", "S30", "S10", "S22", "S27", "S34", "S2", "S7", "S12", "S14"},
+	}
+	regexes := map[string]string{
+		"IDENTIFIER": "[a-zA-Z_]\\w*",
+		"NUMBER":     "\\d+(\\.\\d+)?",
+		"KEYWORD":    "if|else",
+	}
+
+	nfa, err := services.ConvertRegexToNFA(regexes)
+
+	if err != nil {
+		t.Errorf("Error not supposed to occurr: %v", err)
+	}
+
+	if nfa.Start != expected_nfa.Start {
+		t.Errorf("Incorrect start: %v", nfa.Start)
+	}
+	for _, transition := range nfa.Transitions {
+		match_found := false
+		for _, res := range expected_nfa.Transitions {
+			if transition.Label != res.Label && transition.To != res.To && transition.From != res.From {
+				match_found = true
+			}
+		}
+		if !match_found {
+			t.Errorf("Incorrect transition: %v %v %v", transition.From, transition.To, transition.Label)
+		}
+	}
+	for _, state := range nfa.States {
+		match_found := false
+		for _, res := range expected_nfa.States {
+			if state != res {
+				match_found = true
+			}
+		}
+		if !match_found {
+			t.Errorf("Incorrect state: %v", state)
+		}
+	}
+	for _, accept := range nfa.Accepting {
+		match_found := false
+		for _, res := range expected_nfa.Accepting {
+			if accept.State != res.State && accept.Type != res.Type {
+				match_found = true
+			}
+		}
+		if !match_found {
+			t.Errorf("Incorrect Accepting state: %v, %v", accept.State, accept.Type)
+		}
+	}
+}
+
+// ========================= //
+//	TEST: ConvertRegexToDFA  //
+// ========================= //
+
+func TestConvertRegexToDFA_NoRegex(t *testing.T) {
+
+	regexes := map[string]string{}
+
+	_, err := services.ConvertRegexToDFA(regexes)
+
+	if err == nil {
+		t.Errorf("Error not received for empty regex")
+	} else {
+		if err.Error() != fmt.Errorf("could not convert regex to nfa: no regex specified").Error() {
+			t.Errorf("Incorrect error recieved fro empty regex: %v", err)
+		}
+	}
+
+}
+
+func TestConvertRegexToDFA_ValidRegex(t *testing.T) {
+
+	expected_dfa := services.Automata{
+		Start:       "D0",
+		Transitions: []services.Transition{},
+		Accepting: []services.AcceptingState{
+			{State: "D17", Type: "KEYWORD"},
+			{State: "D19", Type: "NUMBER"},
+			{State: "D3", Type: "IDENTIFIER"},
+			{State: "D6", Type: "IDENTIFIER"},
+		},
+		States: []string{"D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "D14", "D15", "D16", "D17", "D18", "D19"},
+	}
+
+	regexes := map[string]string{
+		"IDENTIFIER": "[a-zA-Z_]\\w*",
+		"NUMBER":     "\\d+(\\.\\d+)?",
+		"KEYWORD":    "\\b(if|else)\\b",
+	}
+
+	dfa, err := services.ConvertRegexToDFA(regexes)
+
+	if err != nil {
+		t.Errorf("Error received for valid regex")
+	} else {
+		if dfa.Start != expected_dfa.Start {
+			t.Errorf("Incorrect start: %v", dfa.Start)
+		}
+		for _, state := range dfa.States {
+			match_found := false
+			for _, res := range expected_dfa.States {
+				if state != res {
+					match_found = true
+				}
+			}
+			if !match_found {
+				t.Errorf("Incorrect state: %v", state)
+			}
+		}
+
+		if len(dfa.Transitions) < 10 {
+			t.Error("Incorrect conversion for transitions")
+		}
+
+		for _, accept := range dfa.Accepting {
+			match_found := false
+			for _, res := range expected_dfa.Accepting {
+				if accept.State != res.State && accept.Type != res.Type {
+					match_found = true
+				}
+			}
+			if !match_found {
+				t.Errorf("Incorrect Accepting state: %v, %v", accept.State, accept.Type)
+			}
+		}
+	}
+
+}
+
+// ========================= //
+//	 TEST: ConvertNFAToDFA   //
+// ========================= //
+
+func TestConvertNFAToDFA_NoStart(t *testing.T) {
+	nfa := services.Automata{
+		States: []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"},
+		Transitions: []services.Transition{
+			{From: "A", To: "B", Label: "i"},
+			{From: "A", To: "D", Label: "[a-hj-zA-Z_]"},
+			{From: "A", To: "E", Label: "."},
+			{From: "A", To: "F", Label: "[+-]"},
+			{From: "A", To: "G", Label: "[0-9]"},
+			{From: "B", To: "C", Label: "f"},
+			{From: "B", To: "D", Label: "[a-eg-zA-Z_0-9]"},
+			{From: "C", To: "D", Label: "[a-zA-Z_0-9]"},
+			{From: "D", To: "D", Label: "[a-zA-Z_0-9]"},
+		},
+		Start: "",
+		Accepting: []services.AcceptingState{
+			{State: "B", Type: "ID"},
+			{State: "C", Type: "IF"},
+			{State: "D", Type: "ID"},
+			{State: "G", Type: "NUM"},
+			{State: "H", Type: "FLOAT"},
+			{State: "K", Type: "FLOAT"},
+		},
+	}
+
+	_, err := services.ConvertNFAToDFA(nfa)
+
+	if err.Error() != fmt.Errorf("no start state identified").Error() {
+		t.Errorf("Error not received for no start")
+	}
+}
+
+func TestConvertNFAToDFA_NoStates(t *testing.T) {
+	nfa := services.Automata{
+		States: []string{},
+		Transitions: []services.Transition{
+			{From: "A", To: "B", Label: "i"},
+			{From: "A", To: "D", Label: "[a-hj-zA-Z_]"},
+			{From: "A", To: "E", Label: "."},
+			{From: "A", To: "F", Label: "[+-]"},
+			{From: "A", To: "G", Label: "[0-9]"},
+			{From: "B", To: "C", Label: "f"},
+			{From: "B", To: "D", Label: "[a-eg-zA-Z_0-9]"},
+			{From: "C", To: "D", Label: "[a-zA-Z_0-9]"},
+			{From: "D", To: "D", Label: "[a-zA-Z_0-9]"},
+		},
+		Start: "A",
+		Accepting: []services.AcceptingState{
+			{State: "B", Type: "ID"},
+			{State: "C", Type: "IF"},
+			{State: "D", Type: "ID"},
+			{State: "G", Type: "NUM"},
+			{State: "H", Type: "FLOAT"},
+			{State: "K", Type: "FLOAT"},
+		},
+	}
+
+	_, err := services.ConvertNFAToDFA(nfa)
+
+	if err.Error() != fmt.Errorf("no states identified").Error() {
+		t.Errorf("Error not received for no states")
+	}
+}
+
+func TestConvertNFAToDFA_NoTransisitions(t *testing.T) {
+	nfa := services.Automata{
+		States:      []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"},
+		Transitions: []services.Transition{},
+		Start:       "A",
+		Accepting: []services.AcceptingState{
+			{State: "B", Type: "ID"},
+			{State: "C", Type: "IF"},
+			{State: "D", Type: "ID"},
+			{State: "G", Type: "NUM"},
+			{State: "H", Type: "FLOAT"},
+			{State: "K", Type: "FLOAT"},
+		},
+	}
+
+	_, err := services.ConvertNFAToDFA(nfa)
+
+	if err.Error() != fmt.Errorf("no transitions identified").Error() {
+		t.Errorf("Error not received for no transitions")
+	}
+}
+
+func TestConvertNFAToDFA_NoAcceptingStates(t *testing.T) {
+	nfa := services.Automata{
+		States: []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"},
+		Transitions: []services.Transition{
+			{From: "A", To: "B", Label: "i"},
+			{From: "A", To: "D", Label: "[a-hj-zA-Z_]"},
+			{From: "A", To: "E", Label: "."},
+			{From: "A", To: "F", Label: "[+-]"},
+		},
+		Start:     "A",
+		Accepting: []services.AcceptingState{},
+	}
+
+	_, err := services.ConvertNFAToDFA(nfa)
+
+	if err.Error() != fmt.Errorf("no accepting states identified").Error() {
+		t.Errorf("Error not received for no accepting states")
+	}
+}
+
+func TestConvertNFAToDFA_ValidNFA(t *testing.T) {
+	expected_dfa := services.Automata{
+		Start: "D0",
+		Transitions: []services.Transition{
+			{From: "D0", To: "D1", Label: "a-z0-9"},
+			{From: "D0", To: "D2", Label: "i"},
+			{From: "D0", To: "D2", Label: "f"},
+			{From: "D0", To: "D3", Label: "0-9"},
+			{From: "D0", To: "D1", Label: "a-z"},
+			{From: "D1", To: "D1", Label: "a-z0-9"},
+			{From: "D2", To: "D4", Label: "n"},
+			{From: "D3", To: "D3", Label: "0-9"},
+			{From: "D4", To: "D5", Label: "t"},
+		},
+		Accepting: []services.AcceptingState{
+			{State: "D0", Type: "IDENTIFIER"},
+			{State: "D1", Type: "IDENTIFIER"},
+			{State: "D2", Type: "KEYWORD"},
+			{State: "D3", Type: "NUMBER"},
+			{State: "D5", Type: "KEYWORD"},
+		},
+		States: []string{"D1", "D2", "D3", "D4", "D5"},
+	}
+
+	nfa := services.Automata{
+		States: []string{"START", "S1", "S2", "S3", "S4", "S5", "S6"},
+		Transitions: []services.Transition{
+			{From: "START", To: "S1", Label: "i"},
+			{From: "START", To: "S1", Label: "f"},
+			{From: "S1", To: "S5", Label: "n"},
+			{From: "S5", To: "S4", Label: "t"},
+			{From: "S1", To: "S6", Label: "ε"},
+			{From: "START", To: "S2", Label: "0-9"},
+			{From: "S2", To: "S2", Label: "0-9"},
+			{From: "START", To: "S3", Label: "a-z"},
+			{From: "S3", To: "S3", Label: "a-z0-9"},
+			{From: "START", To: "S3", Label: "ε"},
+		},
+		Start: "START",
+		Accepting: []services.AcceptingState{
+			{State: "S3", Type: "IDENTIFIER"},
+			{State: "S4", Type: "KEYWORD"},
+			{State: "S2", Type: "NUMBER"},
+			{State: "S6", Type: "KEYWORD"},
+		},
+	}
+
+	dfa, err := services.ConvertNFAToDFA(nfa)
+
+	if err != nil {
+		t.Errorf("Error not expected")
+	} else {
+		if dfa.Start != expected_dfa.Start {
+			t.Errorf("Incorrect start: %v", dfa.Start)
+		}
+		for _, state := range dfa.States {
+			match_found := false
+			for _, res := range expected_dfa.States {
+				if state != res {
+					match_found = true
+				}
+			}
+			if !match_found {
+				t.Errorf("Incorrect state: %v", state)
+			}
+		}
+
+		if len(dfa.Transitions) < 8 {
+			t.Error("Incorrect conversion for transitions")
+		}
+		for _, transition := range dfa.Transitions {
+			match_found := false
+			for _, res := range expected_dfa.Transitions {
+				if transition.To != res.To && transition.From != res.From && transition.Label != res.Label {
+					match_found = true
+				}
+			}
+			if !match_found {
+				t.Errorf("Incorrect transition: %v %v %v", transition.From, transition.To, transition.Label)
+			}
+		}
+
+		for _, accept := range dfa.Accepting {
+			match_found := false
+			for _, res := range expected_dfa.Accepting {
+				if accept.State != res.State && accept.Type != res.Type {
+					match_found = true
+				}
+			}
+			if !match_found {
+				t.Errorf("Incorrect Accepting state: %v, %v", accept.State, accept.Type)
+			}
+		}
 	}
 }

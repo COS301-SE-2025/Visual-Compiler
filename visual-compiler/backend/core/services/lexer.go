@@ -330,27 +330,67 @@ func ConvertDFAToRegex(dfa Automata) ([]TypeRegex, error) {
 	var rules []TypeRegex
 	for token_type, regex := range paths {
 		raw := strings.Join(regex, "|")
-		convertRawRegexToRegexRules(&raw)
+		ConvertRawRegexToRegexRules(&raw)
 		switch token_type {
 		case "KEYWORD":
-			convertKeywordToRegex(&raw)
+			ConvertKeywordToRegex(&raw)
 		case "IDENTIFIER", "ID":
-			convertIdentifierToRegex(&raw)
+			ConvertIdentifierToRegex(&raw)
 		case "NUMBER", "NUM":
-			convertNumberToRegex(&raw)
+			ConvertNumberToRegex(&raw)
 		case "FLOAT":
-			convertFloatToRegex(&raw)
+			ConvertFloatToRegex(&raw)
 		default:
-			convertTypeToRegex(&raw)
+			ConvertTypeToRegex(&raw)
 		}
-		new_rule := TypeRegex{
-			Type:  token_type,
-			Regex: raw,
+		multiple_rules := SimplifyRegex(raw)
+		if len(multiple_rules) > 1 {
+			for _, rule := range multiple_rules {
+				new_rule := TypeRegex{
+					Type:  token_type,
+					Regex: rule,
+				}
+				rules = append(rules, new_rule)
+			}
+		} else {
+			new_rule := TypeRegex{
+				Type:  token_type,
+				Regex: raw,
+			}
+			rules = append(rules, new_rule)
 		}
-		rules = append(rules, new_rule)
 	}
 
 	return rules, nil
+}
+
+// Name: simplifyRegex
+//
+// Parameters: string
+//
+// Return: string
+//
+// Helper function to simplify regex
+func SimplifyRegex(regex string) []string {
+
+	if strings.Contains(regex, "\\b") {
+		return nil
+	}
+
+	parts := strings.Split(regex, "|")
+	unique_parts := make(map[string]bool)
+	no_duplicates := []string{}
+
+	for _, part := range parts {
+		_, match_found := unique_parts[part]
+		if !match_found {
+			unique_parts[part] = true
+			no_duplicates = append(no_duplicates, part)
+		}
+	}
+
+	return no_duplicates
+
 }
 
 // Name: convertTypeToRegex
@@ -360,15 +400,15 @@ func ConvertDFAToRegex(dfa Automata) ([]TypeRegex, error) {
 // Return: None
 //
 // Helper function to convert Keyword to proper regex
-func convertTypeToRegex(regex *string) {
+func ConvertTypeToRegex(regex *string) {
 
 	var valid bool
+	valid = true
 	for _, letter := range *regex {
 		if !unicode.IsLetter(letter) && letter != '|' && letter != '(' && letter != ')' {
 			valid = false
 		}
 	}
-	valid = true
 
 	if valid {
 		if strings.Contains(*regex, "|") {
@@ -387,7 +427,7 @@ func convertTypeToRegex(regex *string) {
 // Return: None
 //
 // Helper function to convert Keyword to proper regex
-func convertKeywordToRegex(regex *string) {
+func ConvertKeywordToRegex(regex *string) {
 
 	if strings.Contains(*regex, "|") {
 		*regex = "\\b(" + *regex + ")\\b"
@@ -404,7 +444,7 @@ func convertKeywordToRegex(regex *string) {
 // Return: None
 //
 // Helper function to convert Identifiers to proper regex
-func convertIdentifierToRegex(regex *string) {
+func ConvertIdentifierToRegex(regex *string) {
 
 	if matched, _ := regexp.MatchString(`^\[a-z\]\(\[a-z0-9\]\)\*$`, *regex); matched {
 		*regex = "[a-zA-Z_]\\w*"
@@ -422,12 +462,13 @@ func convertIdentifierToRegex(regex *string) {
 // Return: None
 //
 // Helper function to convert Numbers to proper regex
-func convertNumberToRegex(regex *string) {
+func ConvertNumberToRegex(regex *string) {
 
 	*regex = strings.ReplaceAll(*regex, "([0-9])*", `\d+`)
 	*regex = strings.ReplaceAll(*regex, "[0-9]", `\d`)
 	*regex = strings.ReplaceAll(*regex, `\d(\d)*`, `\d+`)
 	*regex = strings.ReplaceAll(*regex, `\d\d+`, `\d+`)
+	*regex = strings.ReplaceAll(*regex, "\\d+|[+-]\\d+", "[+-]?\\d+")
 
 }
 
@@ -438,25 +479,21 @@ func convertNumberToRegex(regex *string) {
 // Return: None
 //
 // Helper function to convert Numbers to proper regex
-func convertFloatToRegex(regex *string) {
+func ConvertFloatToRegex(regex *string) {
 
 	*regex = strings.ReplaceAll(*regex, "([0-9])*", `\d+`)
 	*regex = strings.ReplaceAll(*regex, "[0-9]", `\d`)
 	*regex = strings.ReplaceAll(*regex, `\d(\d)*`, `\d+`)
 	*regex = strings.ReplaceAll(*regex, `\d\d+`, `\d+`)
-	/*
-	   *regex = strings.ReplaceAll(*regex, "(\\[0-9\\])*", "\\d+")
-	   *regex = strings.ReplaceAll(*regex, "[0-9\\]", "\\d")
-	   *regex = strings.ReplaceAll(*regex, "\\d(\\d)*", "\\d+")
-	   *regex = strings.ReplaceAll(*regex, "\\d\\d+", "\\d+")
+	*regex = strings.ReplaceAll(*regex, "\\d+|[+-]\\d+", "[+-]?\\d+")
 
-	   	/*if strings.Contains(*regex, "[eE]") {
-	   		*regex = "\\d+\\.\\d+|\\d+[eE][+-]?\\d+"
-	   	} else {
+	if strings.Contains(*regex, "[eE]") {
+		*regex = "\\d+\\.\\d+|\\d+[eE][+-]?\\d+"
+	} else {
 
-	   		*regex = "\\d+(\\.\\d+)?"
-	   	}
-	*/
+		*regex = "\\d+(\\.\\d+)?"
+	}
+
 }
 
 // Name: convertRawRegexToRegexRules
@@ -466,7 +503,7 @@ func convertFloatToRegex(regex *string) {
 // Return: None
 //
 // Helper function to replace grammar with regex rules
-func convertRawRegexToRegexRules(regex *string) {
+func ConvertRawRegexToRegexRules(regex *string) {
 
 	*regex = strings.ReplaceAll(*regex, "abcdefghijklmnopqrstuvwxyz0123456789", "[a-z0-9]")
 	*regex = strings.ReplaceAll(*regex, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", "[A-Z0-9]")
