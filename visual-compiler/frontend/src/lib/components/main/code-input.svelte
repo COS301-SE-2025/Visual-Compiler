@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import { AddToast } from '$lib/stores/toast';
 
   let code_text = '';
 
-  const dispatch = createEventDispatcher<{ codeSubmitted: string }>();
+   export let onCodeSubmitted: (code: string) => void = () => {};
 
   // handleFileChange
   // Return type: void
@@ -38,7 +37,7 @@
   // Dispatches the current code text to the parent component.
   function submitCode() {
     if (!code_text.trim()) return;
-    dispatch('codeSubmitted', code_text);
+    onCodeSubmitted(code_text);
     AddToast('Code confirmed!', 'success');
   }
 </script>

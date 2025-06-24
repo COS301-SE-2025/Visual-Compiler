@@ -10,7 +10,7 @@
   import CodeInput from '$lib/components/main/code-input.svelte';
   import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 
-  // FIX: Define types for our dynamically imported components
+
   let LexerPhaseTutorial: any;
   let LexerPhaseInspector: any;
   let LexerArtifactViewer: any;
@@ -22,8 +22,7 @@
   let show_drag_tip = false;
 
   onMount(async () => {
-    // FIX: Dynamically import components only on the client-side (in the browser).
-    // This prevents old Svelte 4 type definitions from breaking the server render (SSR).
+
     LexerPhaseTutorial = (await import('$lib/components/lexor/lexer-phase-tutorial.svelte')).default;
     LexerPhaseInspector = (await import('$lib/components/lexor/phase-inspector.svelte')).default;
     LexerArtifactViewer = (await import('$lib/components/lexor/artifact-viewer.svelte')).default;
@@ -130,11 +129,11 @@
 
   // handleCodeSubmit
   // Return type: void
-  // Parameter type(s): CustomEvent<string>
+  // Parameter type(s): <string>
   // Receives submitted source code from the input modal.
-  function handleCodeSubmit(event: CustomEvent<string>) {
+  function handleCodeSubmit(code: string) {  
     show_tokens = false;
-    source_code = event.detail;
+    source_code = code; 
     show_code_input = false;
   }
 
@@ -200,7 +199,7 @@
     <div class="code-input-overlay">
       <div class="code-input-modal">
         <h2 class="modal-title">Enter Source Code</h2>
-        <CodeInput on:codeSubmitted={handleCodeSubmit} />
+        <CodeInput onCodeSubmitted={handleCodeSubmit} />
         <button class="close-btn" on:click={() => (show_code_input = false)}>✕</button>
       </div>
     </div>
