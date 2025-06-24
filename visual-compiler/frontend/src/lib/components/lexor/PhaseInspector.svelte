@@ -6,8 +6,10 @@
   import { onMount } from 'svelte';
 
   export let sourceCode = '';  
-  
   let inputRows = [{ type: '', regex: '', error: '' }];
+  
+  let userSourceCode = '';
+  let userInputRows = [{ type: '', regex: '', error: '' }];
   let formError = '';
   let submissionStatus = { show: false, success: false, message: '' };
   let showGenerateButton = false;
@@ -18,7 +20,7 @@
   }>();
 
   function addNewRow() {
-    inputRows = [...inputRows, { type: '', regex: '', error: '' }];
+    userInputRows = [...userInputRows, { type: '', regex: '', error: '' }];
   }
 
   function validateRegex(pattern: string): boolean {
@@ -35,8 +37,10 @@
     let hasErrors = false;
     let nonEmptyRows = [];
 
+    const rowsToValidate = showDefault ? editableDefaultRows : userInputRows;
+
     // Handle validation and filtering in one pass
-    for (const row of inputRows) {
+    for (const row of rowsToValidate) {
       if (!row.type && !row.regex) continue;
 
       row.error = '';
@@ -53,7 +57,7 @@
     }
 
     // First check if we have a single empty row
-    if (inputRows.length === 1 && !inputRows[0].type && !inputRows[0].regex) {
+    if (rowsToValidate.length === 1 && !rowsToValidate[0].type && !rowsToValidate[0].regex) {
       submissionStatus = {
         show: true,
         success: false,
@@ -62,8 +66,12 @@
       return;
     }
 
-    // Update inputRows with filtered rows
-    inputRows = nonEmptyRows;
+    // Only update userInputRows if not using default
+    if (showDefault) {
+      editableDefaultRows = nonEmptyRows;
+    } else {
+      userInputRows = nonEmptyRows;
+    }
 
     if (hasErrors) {
       submissionStatus = {
@@ -76,8 +84,8 @@
 
     // Prepare data for API call
     const requestData = {
-      source_code: sourceCode,
-      pairs: inputRows.map(row => ({
+      source_code: showDefault ? DEFAULT_SOURCE_CODE : userSourceCode,
+      pairs: nonEmptyRows.map(row => ({
         Type: row.type.toUpperCase(),
         Regex: row.regex
       }))
@@ -118,7 +126,7 @@
     try {
       const requestData = {
         source_code: sourceCode,
-        pairs: inputRows.map(row => ({
+        pairs: userInputRows.map(row => ({
           Type: row.type.toUpperCase(),
           Regex: row.regex
         }))
@@ -166,7 +174,7 @@
   }
 
   // Track previous input values
-  let previousInputs: typeof inputRows = [];
+  let previousInputs: typeof userInputRows = [];
 
   // Reset generate button when inputs change
   function handleInputChange() {
@@ -179,18 +187,18 @@
     };
   }
 
-  // Watch for changes in inputRows array
+  // Watch for changes in userInputRows array
   $: {
     // Check if array length changed or values changed
-    const inputsChanged = inputRows.length !== previousInputs.length ||
-      inputRows.some((row, index) => {
+    const inputsChanged = userInputRows.length !== previousInputs.length ||
+      userInputRows.some((row, index) => {
         const prevRow = previousInputs[index];
         return !prevRow || row.type !== prevRow.type || row.regex !== prevRow.regex;
       });
 
     if (inputsChanged) {
       handleInputChange();
-      previousInputs = [...inputRows];
+      previousInputs = [...userInputRows];
     }
   }
 
@@ -303,13 +311,11 @@
     const Network = vis.Network;
 
     const nfa = parseAutomaton();
-    // Map state names to node ids
     const nodeIds = {};
-    nfa.states.forEach((state, idx) => {
+    nfa.states.forEach((state) => {
       nodeIds[state] = safeStateId(state);
     });
 
-    // Nodes
     const nodes = new DataSet(
       nfa.states.map(state => ({
         id: nodeIds[state],
@@ -322,7 +328,6 @@
       }))
     );
 
-    // Edges
     const edgesArr = [];
     for (const from of nfa.states) {
       for (const symbol of nfa.alphabet) {
@@ -337,9 +342,39 @@
         }
       }
     }
+
+    // Add small, aesthetic black start arrow with a label above
+    const START_NODE_ID = '__start__';
+    nodes.add({
+      id: START_NODE_ID,
+      label: '',
+      shape: 'circle',
+      color: 'rgba(0,0,0,0)', // fully transparent
+      borderWidth: 0,
+      size: 1,                // smaller node
+      font: { size: 1 }
+    });
+    edgesArr.push({
+      from: START_NODE_ID,
+      to: nodeIds[nfa.startState],
+      arrows: { to: { enabled: true, scaleFactor: 0.6 } }, // smaller arrow
+      color: { color: '#222', opacity: 1 },
+      width: 1.75, // thinner line
+      label: 'start',
+      font: {
+        size: 13,
+        color: '#222',
+        vadjust: -18, // move label above the arrow
+        align: 'top'
+      },
+      smooth: { enabled: true, type: "curvedCCW", roundness: 0.18 },
+      length: 1, // shorter length
+      physics: false
+
+    });
+
     const edges = new DataSet(edgesArr);
 
-    // Render
     new Network(nfaContainer, { nodes, edges }, {
       nodes: {
         shape: "circle",
@@ -349,7 +384,7 @@
       edges: {
         smooth: {
           enabled: true,
-          type: "curvedCW", // or "curvedCCW"
+          type: "curvedCW",
           roundness: 0.3
         },
         font: { size: 14, strokeWidth: 0 }
@@ -400,9 +435,38 @@
         }
       }
     }
+
+    // Add small, aesthetic black start arrow with a label above
+    const START_NODE_ID = '__start__';
+    nodes.add({
+      id: START_NODE_ID,
+      label: '',
+      shape: 'circle',
+      color: 'rgba(0,0,0,0)',
+      borderWidth: 0,
+      size: 1,
+      font: { size: 1 }
+    });
+    edgesArr.push({
+      from: START_NODE_ID,
+      to: nodeIds[dfa.startState],
+      arrows: { to: { enabled: true, scaleFactor: 0.6 } },
+      color: { color: '#222', opacity: 1 },
+      width: 1.75,
+      label: 'start',
+      font: {
+        size: 13,
+        color: '#222',
+        vadjust: -18,
+        align: 'top'
+      },
+      smooth: { enabled: true, type: "curvedCCW", roundness: 0.18 },
+      length: 5,
+      physics: false
+    });
+
     const edges = new DataSet(edgesArr);
 
-    // Render
     new Network(dfaContainer, { nodes, edges }, {
       nodes: {
         shape: "circle",
@@ -412,7 +476,7 @@
       edges: {
         smooth: {
           enabled: true,
-          type: "curvedCW", // or "curvedCCW"
+          type: "curvedCW",
           roundness: 0.3
         },
         font: { size: 14, strokeWidth: 0 }
@@ -448,16 +512,41 @@
 
   function insertDefault() {
     showDefault = true;
+    // Save user input before overwriting
+    // (userSourceCode is already up-to-date from CodeInput)
+    editableDefaultRows = DEFAULT_INPUT_ROWS.map(row => ({ ...row }));
+    sourceCode = DEFAULT_SOURCE_CODE;
+    inputRows = DEFAULT_INPUT_ROWS.map(row => ({ ...row }));
     states = 'q0,q1,q2';
     startState = 'q0';
     acceptedStates = 'q2';
     transitions = 'q0,0->q0\nq0,0->q1\nq1,0->q2\nq1,1->q0\nq2,0->q1\nq2,1->q2';
-    //add default for regex here
   }
 
   function removeDefault() {
     showDefault = false;
+    // Restore user input
+    sourceCode = userSourceCode;
+    inputRows = [...userInputRows];
     resetInputs();
+  }
+
+  const DEFAULT_INPUT_ROWS = [
+    { type: 'keyword', regex: 'int|str|if', error: '' },
+    { type: 'identifier', regex: '[a-zA-Z]+', error: '' },
+    { type: 'integer', regex: '[0-9]+', error: '' },
+    { type: 'assignment', regex: '=', error: '' },
+    { type: 'operator', regex: '[+\\-*/%]', error: '' },
+    { type: 'separator', regex: ';', error: '' }
+  ];
+
+  let editableDefaultRows = DEFAULT_INPUT_ROWS.map(row => ({ ...row }));
+
+  const DEFAULT_SOURCE_CODE = 'int blue = 13 + 22';
+
+  // Keep userSourceCode in sync with sourceCode when not showing default
+  $: if (!showDefault && sourceCode) {
+    userSourceCode = sourceCode;
   }
 </script>
 
@@ -467,7 +556,7 @@
        <h1 class="lexor-heading-h1">LEXING</h1>
     </div>
     <h3 class="source-code-header">Source Code</h3>
-    <pre class="source-display">{sourceCode || 'No source code available'}</pre>
+    <pre class="source-display">{showDefault ? DEFAULT_SOURCE_CODE : (sourceCode || "no source code available")}</pre>
   </div>
   
   <!-- Automaton selection buttons -->
@@ -522,7 +611,7 @@
       </div>
     </div>
     <div class="input-rows">
-      {#each inputRows as row, i}
+      {#each (showDefault ? editableDefaultRows : userInputRows) as row, i}
         <div class="input-row">
           <div class="input-block">
             <input 
@@ -549,7 +638,7 @@
       {/each}
     </div>
 
-    {#if inputRows[inputRows.length - 1].type && inputRows[inputRows.length - 1].regex}
+    {#if userInputRows[userInputRows.length - 1].type && userInputRows[userInputRows.length - 1].regex}
       <button class="add-button" on:click={addNewRow}>
         <span>+</span>
       </button>
