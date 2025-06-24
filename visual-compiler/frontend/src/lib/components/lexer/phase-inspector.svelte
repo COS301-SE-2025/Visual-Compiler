@@ -152,7 +152,7 @@
       // UPDATED: Call the onGenerateTokens prop instead of dispatching
       onGenerateTokens({
         tokens: data.tokens,
-        unexpected_tokens: data.unexpected_tokens
+        unexpected_tokens: data.tokens_unidentified
       });
 
       showGenerateButton = false;
