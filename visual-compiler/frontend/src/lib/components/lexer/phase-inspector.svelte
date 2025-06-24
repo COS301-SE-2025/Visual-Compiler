@@ -2,13 +2,11 @@
   import type { Token } from '$lib/types';
   import { AddToast } from '$lib/stores/toast';
   import { onMount } from 'svelte';
-  // Add static import for vis-network
   import { DataSet, Network } from 'vis-network/standalone';
 
-  // FIX 1: Changed prop name back to 'source_code' for consistency
-  export let source_code = '';
 
-  // FIX 2: Added the function prop for handling generated tokens
+  export let source_code = '';
+  
   export let onGenerateTokens: (data: {
     tokens: Token[];
     unexpected_tokens: string[];
@@ -123,7 +121,7 @@
 
       onGenerateTokens({
         tokens: data.tokens,
-        unexpected_tokens: data.unexpected_tokens
+        unexpected_tokens: data.tokens_unidentified
       });
 
       showGenerateButton = false;
