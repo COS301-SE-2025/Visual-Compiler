@@ -76,6 +76,7 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 	if source == "" {
 		return nil, nil, fmt.Errorf("source code is empty")
 	}
+
 	if len(rules) == 0 {
 		return nil, nil, fmt.Errorf("no rules specified")
 	}
@@ -86,7 +87,7 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 
 		r := rune(source[i])
 
-		if unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsSpace(r) || r == '_' {
+		if unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) {
 
 			builder.WriteRune(r)
 
@@ -100,7 +101,7 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 				i++
 				r = rune(source[i])
 
-				if !(unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsSpace(r) || r == '_') {
+				if !(unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r)) {
 
 					builder.WriteRune(r)
 				}
@@ -987,9 +988,9 @@ func closureEpsilon(states []string, transition_map map[string]map[string][]stri
 		current := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
 
-		if epsilonTransition, exists := transition_map[current]["ε"]; exists {
+		if epsilon_transition, exists := transition_map[current]["ε"]; exists {
 
-			for _, next := range epsilonTransition {
+			for _, next := range epsilon_transition {
 
 				if !closure[next] {
 					stack = append(stack, next)
