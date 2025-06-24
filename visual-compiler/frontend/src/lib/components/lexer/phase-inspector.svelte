@@ -1,26 +1,23 @@
 <script lang="ts">
-  // REMOVED: createEventDispatcher is no longer needed
-  // import { createEventDispatcher } from 'svelte';
   import type { Token } from '$lib/types';
-  import type { NodeType } from '$lib/types';
   import { AddToast } from '$lib/stores/toast';
   import { onMount } from 'svelte';
 
-  export let sourceCode = '';
-  // ADDED: The function prop for handling generated tokens
+  // FIX 1: Changed prop name back to 'source_code' for consistency
+  export let source_code = '';
+
+  // FIX 2: Added the function prop for handling generated tokens
   export let onGenerateTokens: (data: {
     tokens: Token[];
     unexpected_tokens: string[];
   }) => void = () => {};
 
   let inputRows = [{ type: '', regex: '', error: '' }];
-
   let userSourceCode = '';
   let userInputRows = [{ type: '', regex: '', error: '' }];
   let formError = '';
   let submissionStatus = { show: false, success: false, message: '' };
   let showGenerateButton = false;
-
 
   function addNewRow() {
     userInputRows = [...userInputRows, { type: '', regex: '', error: '' }];
@@ -39,15 +36,11 @@
     formError = '';
     let hasErrors = false;
     let nonEmptyRows = [];
-
     const rowsToValidate = showDefault ? editableDefaultRows : userInputRows;
 
-    // Handle validation and filtering in one pass
     for (const row of rowsToValidate) {
       if (!row.type && !row.regex) continue;
-
       row.error = '';
-
       if (!row.type || !row.regex) {
         row.error = 'Please fill in both Type and Regular Expression';
         hasErrors = true;
@@ -55,16 +48,11 @@
         row.error = 'Invalid regular expression pattern';
         hasErrors = true;
       }
-
       nonEmptyRows.push(row);
     }
 
     if (rowsToValidate.length === 1 && !rowsToValidate[0].type && !rowsToValidate[0].regex) {
-      submissionStatus = {
-        show: true,
-        success: false,
-        message: 'Please fill in both Type and Regular Expression'
-      };
+      submissionStatus = { show: true, success: false, message: 'Please fill in both Type and Regular Expression' };
       return;
     }
 
@@ -75,11 +63,7 @@
     }
 
     if (hasErrors) {
-      submissionStatus = {
-        show: true,
-        success: false,
-        message: 'Please fix the errors before submitting'
-      };
+      submissionStatus = { show: true, success: false, message: 'Please fix the errors before submitting' };
       return;
     }
 
@@ -94,22 +78,14 @@
     try {
       const storeResponse = await fetch('http://localhost:8080/api/lexing/code', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestData)
       });
-
       if (!storeResponse.ok) {
         const errorText = await storeResponse.text();
         throw new Error(`Server error (${storeResponse.status}): ${errorText}`);
       }
-
-      submissionStatus = {
-        show: true,
-        success: true,
-        message: 'Code stored successfully!'
-      };
+      submissionStatus = { show: true, success: true, message: 'Code stored successfully!' };
       showGenerateButton = true;
     } catch (error) {
       console.error('Store error:', error);
@@ -120,20 +96,16 @@
   async function generateTokens() {
     try {
       const requestData = {
-        source_code: sourceCode,
-        pairs: userInputRows.map((row) => ({
+        source_code: source_code,
+        pairs: (showDefault ? editableDefaultRows : userInputRows).map((row) => ({
           Type: row.type.toUpperCase(),
           Regex: row.regex
         }))
       };
 
-      console.log('Sending request with data:', requestData);
-
       const response = await fetch('http://localhost:8080/api/lexing/lexer', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(requestData)
       });
 
@@ -141,26 +113,19 @@
         const errorText = await response.text();
         throw new Error(`Server error (${response.status}): ${errorText}`);
       }
-
       const data = await response.json();
-      console.log('Raw response:', data);
-
       if (!Array.isArray(data.tokens)) {
         throw new Error('Expected tokens array in response');
       }
 
-      // UPDATED: Call the onGenerateTokens prop instead of dispatching
+
       onGenerateTokens({
         tokens: data.tokens,
-        unexpected_tokens: data.tokens_unidentified
+        unexpected_tokens: data.unexpected_tokens
       });
 
       showGenerateButton = false;
-      submissionStatus = {
-        show: true,
-        success: true,
-        message: data.message || 'Tokens generated successfully!'
-      };
+      submissionStatus = { show: true, success: true, message: data.message || 'Tokens generated successfully!' };
     } catch (error) {
       console.error('Generate tokens error:', error);
       AddToast('Error generating tokens', 'error');
@@ -168,14 +133,9 @@
   }
 
   let previousInputs: typeof userInputRows = [];
-
   function handleInputChange() {
     showGenerateButton = false;
-    submissionStatus = {
-      show: false,
-      success: false,
-      message: ''
-    };
+    submissionStatus = { show: false, success: false, message: '' };
   }
 
   $: {
@@ -185,7 +145,6 @@
         const prevRow = previousInputs[index];
         return !prevRow || row.type !== prevRow.type || row.regex !== prevRow.regex;
       });
-
     if (inputsChanged) {
       handleInputChange();
       previousInputs = [...userInputRows];
@@ -194,7 +153,6 @@
 
   let selectedType: 'AUTOMATA' | 'REGEX' | null = null;
   let showDefault = false;
-
   let states = '';
   let startState = '';
   let acceptedStates = '';
@@ -231,20 +189,17 @@
     const dfaStates: string[] = [];
     const dfaTransitions: Record<string, Record<string, string>> = {};
     const dfaAcceptedStates: string[] = [];
-    const stateMap: Record<string, string[]> = {};
 
     function stateSetToName(set: string[]) {
       return set.sort().join(',');
     }
 
     let unmarked: string[][] = [[startState]];
-    let marked: string[][] = [];
 
     while (unmarked.length > 0) {
       const currentSet = unmarked.pop()!;
       const name = stateSetToName(currentSet);
       if (!dfaStates.includes(name)) dfaStates.push(name);
-      stateMap[name] = currentSet;
 
       dfaTransitions[name] = {};
 
@@ -263,7 +218,6 @@
           unmarked.push(nextSet);
         }
       }
-      marked.push(currentSet);
     }
 
     for (const dfaState of dfaStates) {
@@ -292,54 +246,32 @@
   }
 
   async function renderNfaVis() {
-    // CORRECTED import path
     const { DataSet, Network } = await import('vis-network/peer');
-
     const nfa = parseAutomaton();
     const nodeIds: Record<string, string> = {};
     nfa.states.forEach((state) => {
       nodeIds[state] = safeStateId(state);
     });
-
     const nodes = new DataSet(
       nfa.states.map((state) => ({
         id: nodeIds[state],
         label: state,
         shape: 'circle',
-        color: nfa.acceptedStates.includes(state)
-          ? '#D2FFD2'
-          : state === nfa.startState
-          ? '#D2E5FF'
-          : '#FFD2D2',
+        color: nfa.acceptedStates.includes(state) ? '#D2FFD2' : state === nfa.startState ? '#D2E5FF' : '#FFD2D2',
         borderWidth: nfa.acceptedStates.includes(state) ? 3 : 1
       }))
     );
-
-    const edgesArr = [];
+    const edgesArr: any[] = [];
     for (const from of nfa.states) {
       for (const symbol of nfa.alphabet) {
         const tos = nfa.transitions[from]?.[symbol] || [];
         for (const to of tos) {
-          edgesArr.push({
-            from: nodeIds[from],
-            to: nodeIds[to],
-            label: symbol,
-            arrows: 'to'
-          });
+          edgesArr.push({ from: nodeIds[from], to: nodeIds[to], label: symbol, arrows: 'to' });
         }
       }
     }
-
     const START_NODE_ID = '__start__';
-    nodes.add({
-      id: START_NODE_ID,
-      label: '',
-      shape: 'circle',
-      color: 'rgba(0,0,0,0)',
-      borderWidth: 0,
-      size: 1,
-      font: { size: 1 }
-    });
+    nodes.add({ id: START_NODE_ID, label: '', shape: 'circle', color: 'rgba(0,0,0,0)', borderWidth: 0, size: 1, font: { size: 1 } });
     edgesArr.push({
       from: START_NODE_ID,
       to: nodeIds[nfa.startState],
@@ -347,87 +279,46 @@
       color: { color: '#222', opacity: 1 },
       width: 1.75,
       label: 'start',
-      font: {
-        size: 13,
-        color: '#222',
-        vadjust: -18,
-        align: 'top'
-      },
+      font: { size: 13, color: '#222', vadjust: -18, align: 'top' },
       smooth: { enabled: true, type: 'curvedCCW', roundness: 0.18 },
       length: 1,
       physics: false
     });
-
     const edges = new DataSet(edgesArr);
-
     new Network(nfaContainer, { nodes, edges }, {
-      nodes: {
-        shape: 'circle',
-        font: { size: 16 },
-        margin: 10
-      },
-      edges: {
-        smooth: {
-          enabled: true,
-          type: 'curvedCW',
-          roundness: 0.3
-        },
-        font: { size: 14, strokeWidth: 0 }
-      },
+      nodes: { shape: 'circle', font: { size: 16 }, margin: 10 },
+      edges: { smooth: { enabled: true, type: 'curvedCW', roundness: 0.3 }, font: { size: 14, strokeWidth: 0 } },
       physics: false
     });
   }
 
   async function renderDfaVis() {
-    // CORRECTED import path
     const { DataSet, Network } = await import('vis-network/peer');
-
     const dfa = nfaToDfa(parseAutomaton());
-
     const nodeIds: Record<string, string> = {};
     dfa.states.forEach((state) => {
       nodeIds[state] = state.replace(/[^a-zA-Z0-9_]/g, '_');
     });
-
     const nodes = new DataSet(
       dfa.states.map((state) => ({
         id: nodeIds[state],
         label: state,
         shape: 'circle',
-        color: dfa.acceptedStates.includes(state)
-          ? '#D2FFD2'
-          : state === dfa.startState
-          ? '#D2E5FF'
-          : '#FFD2D2',
+        color: dfa.acceptedStates.includes(state) ? '#D2FFD2' : state === dfa.startState ? '#D2E5FF' : '#FFD2D2',
         borderWidth: dfa.acceptedStates.includes(state) ? 3 : 1
       }))
     );
-
-    const edgesArr = [];
+    const edgesArr: any[] = [];
     for (const from of dfa.states) {
       for (const symbol of dfa.alphabet) {
         const to = dfa.transitions[from]?.[symbol];
         if (to) {
-          edgesArr.push({
-            from: nodeIds[from],
-            to: nodeIds[to],
-            label: symbol,
-            arrows: 'to'
-          });
+          edgesArr.push({ from: nodeIds[from], to: nodeIds[to], label: symbol, arrows: 'to' });
         }
       }
     }
-
     const START_NODE_ID = '__start__';
-    nodes.add({
-      id: START_NODE_ID,
-      label: '',
-      shape: 'circle',
-      color: 'rgba(0,0,0,0)',
-      borderWidth: 0,
-      size: 1,
-      font: { size: 1 }
-    });
+    nodes.add({ id: START_NODE_ID, label: '', shape: 'circle', color: 'rgba(0,0,0,0)', borderWidth: 0, size: 1, font: { size: 1 } });
     edgesArr.push({
       from: START_NODE_ID,
       to: nodeIds[dfa.startState],
@@ -435,33 +326,15 @@
       color: { color: '#222', opacity: 1 },
       width: 1.75,
       label: 'start',
-      font: {
-        size: 13,
-        color: '#222',
-        vadjust: -18,
-        align: 'top'
-      },
+      font: { size: 13, color: '#222', vadjust: -18, align: 'top' },
       smooth: { enabled: true, type: 'curvedCCW', roundness: 0.18 },
       length: 5,
       physics: false
     });
-
     const edges = new DataSet(edgesArr);
-
     new Network(dfaContainer, { nodes, edges }, {
-      nodes: {
-        shape: 'circle',
-        font: { size: 16 },
-        margin: 10
-      },
-      edges: {
-        smooth: {
-          enabled: true,
-          type: 'curvedCW',
-          roundness: 0.3
-        },
-        font: { size: 14, strokeWidth: 0 }
-      },
+      nodes: { shape: 'circle', font: { size: 16 }, margin: 10 },
+      edges: { smooth: { enabled: true, type: 'curvedCW', roundness: 0.3 }, font: { size: 14, strokeWidth: 0 } },
       physics: false
     });
   }
@@ -503,7 +376,7 @@
   function insertDefault() {
     showDefault = true;
     editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
-    sourceCode = DEFAULT_SOURCE_CODE;
+    source_code = DEFAULT_SOURCE_CODE;
     inputRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
     states = 'q0,q1,q2';
     startState = 'q0';
@@ -513,7 +386,7 @@
 
   function removeDefault() {
     showDefault = false;
-    sourceCode = userSourceCode;
+    source_code = userSourceCode;
     inputRows = [...userInputRows];
     resetInputs();
   }
@@ -528,11 +401,10 @@
   ];
 
   let editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
-
   const DEFAULT_SOURCE_CODE = 'int blue = 13 + 22 ;';
 
-  $: if (!showDefault && sourceCode) {
-    userSourceCode = sourceCode;
+  $: if (!showDefault && source_code) {
+    userSourceCode = source_code;
   }
 </script>
 
@@ -542,7 +414,8 @@
       <h1 class="lexor-heading-h1">LEXING</h1>
     </div>
     <h3 class="source-code-header">Source Code</h3>
-    <pre class="source-display">{showDefault ? DEFAULT_SOURCE_CODE : sourceCode || 'no source code available'}</pre>
+    <pre
+      class="source-display">{showDefault ? DEFAULT_SOURCE_CODE : source_code || 'no source code available'}</pre>
   </div>
 
   <div class="automaton-btn-row">
@@ -550,12 +423,16 @@
       class="automaton-btn {selectedType === 'AUTOMATA' ? 'selected' : ''}"
       on:click={() => selectType('AUTOMATA')}
       type="button"
-    >Automata</button>
+    >
+      Automata
+    </button>
     <button
       class="automaton-btn {selectedType === 'REGEX' ? 'selected' : ''}"
       on:click={() => selectType('REGEX')}
       type="button"
-    >Regular Expression</button>
+    >
+      Regular Expression
+    </button>
     {#if selectedType && !showDefault}
       <button
         class="default-toggle-btn"
@@ -631,18 +508,12 @@
       {/if}
 
       <div class="button-container">
-        <button
-          class="submit-button"
-          class:shifted={showGenerateButton}
-          on:click={handleSubmit}
-        >
+        <button class="submit-button" class:shifted={showGenerateButton} on:click={handleSubmit}>
           Submit
         </button>
 
         {#if showGenerateButton}
-          <button class="generate-button" on:click={generateTokens}>
-            Generate Tokens
-          </button>
+          <button class="generate-button" on:click={generateTokens}> Generate Tokens </button>
         {/if}
       </div>
 
@@ -693,17 +564,18 @@
     {#if showNfaVis}
       <div class="automata-container">
         <h4 style="margin-bottom:0.5rem;">NFA Visualization</h4>
-        <div bind:this={nfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;"></div>
+        <div bind:this={nfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
       </div>
     {/if}
     {#if showDfaVis}
       <div class="automata-container">
         <h4 style="margin-bottom:0.5rem;">DFA Visualization</h4>
-        <div bind:this={dfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;"></div>
+        <div bind:this={dfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
       </div>
     {/if}
   {/if}
 </div>
+
 <style>
   .source-code-header {
     color: #444;
@@ -716,11 +588,9 @@
     padding-bottom: 2rem;
     background: #fff;
   }
-
   .source-code-section {
     margin-bottom: 2rem;
   }
-
   .source-display {
     background: #f5f5f5;
     padding: 1rem;
@@ -730,7 +600,6 @@
     white-space: pre-wrap;
     margin: 0;
   }
-
   .shared-block {
     background: #f5f5f5;
     padding: 1.2rem;
@@ -738,7 +607,6 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     position: relative;
   }
-
   .lexor-heading {
     justify-items: center;
   }
@@ -749,35 +617,29 @@
     padding-bottom: 0.8rem;
     border-bottom: 1px solid #e0e0e0;
   }
-
   .header-section {
     flex: 1;
   }
-
   .header-section h3 {
     margin: 0;
     color: #001a6e;
     font-size: 1rem;
     font-weight: 600;
   }
-
   .input-rows {
     display: flex;
     flex-direction: column;
     gap: 1rem;
     padding-top: 0.5rem;
   }
-
   .input-row {
     display: flex;
     gap: 2rem;
     position: relative;
   }
-
   .input-block {
     flex: 1;
   }
-
   .input-block input {
     width: 100%;
     padding: 0.8rem;
@@ -788,22 +650,18 @@
     box-sizing: border-box;
     transition: border-color 0.2s, box-shadow 0.2s;
   }
-
   .input-block input:focus {
     outline: none;
     border-color: #001a6e;
     box-shadow: 0 0 0 2px rgba(32, 87, 129, 0.1);
   }
-
   .input-block input.error {
     border-color: #dc3545;
   }
-
   .input-block input.error:focus {
     border-color: #dc3545;
     box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25);
   }
-
   .error-message {
     color: #dc3545;
     font-size: 0.8rem;
@@ -811,14 +669,12 @@
     position: absolute;
     bottom: -1.2rem;
   }
-
   .form-error {
     color: #dc3545;
     text-align: center;
     margin: 0.5rem 0;
     font-size: 0.9rem;
   }
-
   .add-button {
     position: absolute;
     right: -16px;
@@ -836,18 +692,15 @@
     font-size: 1.2rem;
     transition: background 0.2s;
   }
-
   .add-button:hover {
     background: #27548a;
   }
-
   .button-container {
     display: flex;
     justify-content: center;
     gap: 0.5rem;
     margin-top: 0.75rem;
   }
-
   .submit-button {
     padding: 0.6rem 1.5rem;
     background: #001a6e;
@@ -862,15 +715,12 @@
     position: relative;
     margin-top: 1rem;
   }
-
   .submit-button.shifted {
     transform: translateX(-1rem);
   }
-
   .submit-button:not(.shifted) {
     transform: translateX(0);
   }
-
   .generate-button {
     padding: 0.6rem 1.5rem;
     background: #666;
@@ -886,22 +736,18 @@
     height: 100%;
     line-height: 1.1;
   }
-
   .submit-button:hover {
     background: #27548a;
   }
-
   :global(html.dark-mode) .submit-button {
     background: #cccccc;
     color: #041a47;
     transition: transform 0.2s ease;
     margin-top: 1rem;
   }
-
   .generate-button:hover {
     background: #3d3d3d;
   }
-
   .status-message {
     text-align: center;
     padding: 0.5rem 1rem;
@@ -913,15 +759,12 @@
     opacity: 0;
     animation: fadeInOut 3s ease-in-out;
   }
-
   .status-message.success {
     background: #28a745;
   }
-
   .status-message.info {
     background: #0096c7;
   }
-
   @keyframes fadeInOut {
     0% {
       opacity: 0;
@@ -943,11 +786,9 @@
   :global(html.dark-mode) .lexor-heading-h1 {
     color: #ebeef1;
   }
-
   :global(html.dark-mode) .source-display {
     color: black;
   }
-
   .automaton-btn-row {
     display: flex;
     gap: 0.7rem;
@@ -1006,7 +847,6 @@
     line-height: 1;
     pointer-events: none;
   }
-
   .automaton-section {
     margin-top: 0rem;
     display: grid;
@@ -1039,14 +879,12 @@
     outline: none;
     background: #e6edfa;
   }
-
   .automaton-transitions {
     min-height: 13rem;
     min-width: 100%;
     font-family: 'Fira Mono', monospace;
     resize: vertical;
   }
-
   .automata-action-row {
     grid-column: span 2;
     display: flex;
@@ -1056,7 +894,6 @@
     align-items: center;
     flex-wrap: wrap;
   }
-
   .action-btn {
     display: inline-flex;
     align-items: center;
@@ -1072,7 +909,6 @@
     outline: none;
     position: relative;
     overflow: hidden;
-
     padding: 0.625rem 1.25rem;
     border-radius: 0.75rem;
     font-size: 0.9375rem;
@@ -1080,44 +916,40 @@
     background: #e0e7ff;
     color: #1e40af;
     box-shadow: 0 1px 2px 0 rgba(30, 64, 175, 0.05);
-
-    &:hover,
-    &:focus {
-      background: #d0d9ff;
-      color: #1e3a8a;
-      box-shadow: 0 1px 3px 0 rgba(30, 64, 175, 0.1), 0 1px 2px 0 rgba(30, 64, 175, 0.06);
-      transform: translateY(-1px);
-    }
-
-    &:active {
-      transform: translateY(0);
-      box-shadow: inset 0 2px 4px 0 rgba(30, 64, 175, 0.06);
-    }
-
-    &:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none !important;
-    }
-
-    &[title] {
-      position: relative;
-
-      &:hover::after {
-        content: attr(title);
-        position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #1e3a8a;
-        color: white;
-        padding: 0.5rem 0.75rem;
-        border-radius: 0.375rem;
-        font-size: 0.875rem;
-        white-space: nowrap;
-        margin-bottom: 0.5rem;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-    }
+  }
+  .action-btn:hover,
+  .action-btn:focus {
+    background: #d0d9ff;
+    color: #1e3a8a;
+    box-shadow: 0 1px 3px 0 rgba(30, 64, 175, 0.1), 0 1px 2px 0 rgba(30, 64, 175, 0.06);
+    transform: translateY(-1px);
+  }
+  .action-btn:active {
+    transform: translateY(0);
+    box-shadow: inset 0 2px 4px 0 rgba(30, 64, 175, 0.06);
+  }
+  .action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+  }
+  .action-btn[title] {
+    position: relative;
+  }
+  .action-btn[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e3a8a;
+    color: white;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    margin-bottom: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 </style>
+
