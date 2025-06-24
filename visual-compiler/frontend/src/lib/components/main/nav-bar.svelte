@@ -15,7 +15,7 @@
   // Parameter type(s): none
   // Navigates the user to the login page.
   function logout() {
-    goto('/login');
+    goto('/auth-page');
   }
 </script>
 

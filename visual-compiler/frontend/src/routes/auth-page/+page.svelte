@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { addToast } from '$lib/stores/toast';
+  import { AddToast } from '$lib/stores/toast';
   import { goto } from '$app/navigation';
 
   let active_tab: 'login' | 'register' = 'login';
@@ -32,7 +32,7 @@
     event.preventDefault();
 
     if (reg_password !== reg_confirm_password) {
-      addToast("Passwords don't match!", 'error');
+      AddToast("Passwords don't match!", 'error');
       return;
     }
 
@@ -52,11 +52,11 @@
       const data = await response.json();
 
       if (!response.ok) {
-        addToast(`Registration failed: ${data.error || response.statusText}`, 'error');
+        AddToast(`Registration failed: ${data.error || response.statusText}`, 'error');
         return;
       }
 
-      addToast(data.message || 'Registration successful!', 'success');
+      AddToast(data.message || 'Registration successful!', 'success');
 
       // Reset the form
       reg_email = '';
@@ -66,7 +66,7 @@
 
       active_tab = 'login';
     } catch (error) {
-      addToast(`Something went wrong: ${(error as Error).message}`, 'error');
+      AddToast(`Something went wrong: ${(error as Error).message}`, 'error');
     }
   }
 
@@ -92,19 +92,19 @@
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        addToast(`Login failed: ${data.error || response.statusText}`, 'error');
+        AddToast(`Login failed: ${data.error || response.statusText}`, 'error');
         return;
       }
 
-      addToast('Login successful!', 'success');
+      AddToast('Login successful!', 'success');
 
       // TODO: Store the token/session data if provided
 
       await new Promise((res) => setTimeout(res, 2000));
 
-      await goto('/main');
+      await goto('/main-workspace');
     } catch (error) {
-      addToast(`Something went wrong: ${(error as Error).message}`, 'error');
+      AddToast(`Something went wrong: ${(error as Error).message}`, 'error');
     }
   }
 

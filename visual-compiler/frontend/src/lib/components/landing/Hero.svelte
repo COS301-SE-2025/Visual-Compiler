@@ -6,7 +6,7 @@
   // Parameter type(s): none
   // Navigates the user to the login page.
   async function launch() {
-    await goto('/login');
+    await goto('/auth-page');
   }
 </script>
 

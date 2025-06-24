@@ -1,31 +1,37 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+  import type { Writable } from 'svelte/store';
+  import { writable } from 'svelte/store';
+  import type { NodeType, Token } from '$lib/types';
+  import { AddToast } from '$lib/stores/toast';
+  import { theme } from '../../lib/stores/theme';
   import NavBar from '$lib/components/main/nav-bar.svelte';
   import Toolbox from '$lib/components/main/toolbox.svelte';
   import CodeInput from '$lib/components/main/code-input.svelte';
   import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
-  import type { NodeType, Token } from '$lib/types';
-  import { writable } from 'svelte/store';
-  import { addToast } from '$lib/stores/toast';
-  import { theme } from '../../lib/stores/theme';
-  import { onMount } from 'svelte';
 
-  import LexerPhaseTutorial from '$lib/components/lexor/lexer-phase-tutorial';
-  import LexerPhaseInspector from '$lib/components/lexor/phase-inspector.svelte';
-  import LexerArtifactViewer from '$lib/components/lexor/artifact-viewer.svelte';
-  import ParserPhaseTutorial from '$lib/components/parser/PhaseTutorial.svelte';
-  import ParserPhaseInspector from '$lib/components/parser/ParsingInput.svelte';
-  import ParserArtifactViewer from '$lib/components/parser/ArtifactViewer.svelte';
+  // FIX: Define types for our dynamically imported components
+  let LexerPhaseTutorial: any;
+  let LexerPhaseInspector: any;
+  let LexerArtifactViewer: any;
+  let ParserPhaseTutorial: any;
+  let ParserPhaseInspector: any;
+  let ParserArtifactViewer: any;
 
   let workspace_el: HTMLElement;
-
-  // State for the one-time help tip ---
   let show_drag_tip = false;
 
-  // Initialize theme
-  onMount(() => {
-    document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
+  onMount(async () => {
+    // FIX: Dynamically import components only on the client-side (in the browser).
+    // This prevents old Svelte 4 type definitions from breaking the server render (SSR).
+    LexerPhaseTutorial = (await import('$lib/components/lexor/lexer-phase-tutorial.svelte')).default;
+    LexerPhaseInspector = (await import('$lib/components/lexor/phase-inspector.svelte')).default;
+    LexerArtifactViewer = (await import('$lib/components/lexor/artifact-viewer.svelte')).default;
+    ParserPhaseTutorial = (await import('$lib/components/parser/PhaseTutorial.svelte')).default;
+    ParserPhaseInspector = (await import('$lib/components/parser/ParsingInput.svelte')).default;
+    ParserArtifactViewer = (await import('$lib/components/parser/ArtifactViewer.svelte')).default;
 
-    // Check if the user has seen the tip before ---
+    document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
     if (!localStorage.getItem('hasSeenDragTip')) {
       show_drag_tip = true;
     }
@@ -38,7 +44,6 @@
     label: string;
     position: { x: number; y: number };
   }
-
   const nodes = writable<CanvasNode[]>([]);
   let node_counter = 0;
   let selected_phase: NodeType | null = null;
@@ -66,31 +71,24 @@
   function handleCreateNode(type: NodeType) {
     node_counter++;
     nodes.update((curr) => {
-      // Define the layout parameters for a clean grid
       const start_x = 100; // Initial X position
       const start_y = 100; // Initial Y position
       const x_offset = 300; // Horizontal space between nodes
       const y_offset = 150; // Vertical space between rows
       const nodes_per_row = 3; // How many nodes before starting a new row
-
-      // Calculate position based on the number of existing nodes
       const new_node_index = curr.length;
       const new_position = {
         x: start_x + (new_node_index % nodes_per_row) * x_offset,
         y: start_y + Math.floor(new_node_index / nodes_per_row) * y_offset
       };
-
       const new_node = {
         id: `${type}-${node_counter}`,
         type,
         label: node_labels[type] || type[0].toUpperCase() + type.slice(1),
         position: new_position
       };
-
       return [...curr, new_node];
     });
-
-    // This prevents the "jumping" bug by ensuring the canvas is the active element.
     workspace_el?.focus();
   }
 
@@ -114,7 +112,7 @@
     } else {
       selected_phase = type;
       if (!source_code.trim()) {
-        addToast('Please enter source code before proceeding', 'error');
+        AddToast('Please enter source code before proceeding', 'error');
         selected_phase = null;
         return;
       }
@@ -144,14 +142,14 @@
   // Return type: void
   // Parameter type(s): CustomEvent<{ tokens: Token[], unexpected_tokens: string[] }>
   // Receives generated tokens from the lexer inspector component.
-  function handleTokenGeneration(
-    event: CustomEvent<{ tokens: Token[]; unexpected_tokens: string[] }>
-  ) {
+  function handleTokenGeneration(event: CustomEvent<{ tokens: Token[]; unexpected_tokens: string[] }>) {
     show_tokens = true;
-    console.log('Received event:', event.detail); // Debug log
     tokens = event.detail.tokens;
     unexpected_tokens = event.detail.unexpected_tokens;
   }
+
+  let tokens: Token[] = [];
+  let unexpected_tokens: string[] = [];
 </script>
 
 <NavBar />
@@ -175,21 +173,22 @@
     <div class="analysis-overlay">
       <div class="analysis-view">
         <div class="three-column-layout">
-          {#if selected_phase === 'lexer'}
-            <LexerPhaseTutorial />
-            <LexerPhaseInspector {source_code} on:generateTokens={handleTokenGeneration} />
-            <LexerArtifactViewer
+          {#if selected_phase === 'lexer' && LexerPhaseTutorial}
+            <svelte:component this={LexerPhaseTutorial} />
+            <svelte:component this={LexerPhaseInspector} {source_code} on:generateTokens={handleTokenGeneration} />
+            <svelte:component
+              this={LexerArtifactViewer}
               phase={selected_phase}
               {tokens}
-              unexpectedTokens={unexpected_tokens}
+              unexpected_tokens={unexpected_tokens}
               {show_tokens}
             />
           {/if}
 
-          {#if selected_phase === 'parser'}
-            <ParserPhaseTutorial />
-            <ParserPhaseInspector {source_code} />
-            <ParserArtifactViewer />
+          {#if selected_phase === 'parser' && ParserPhaseTutorial}
+            <svelte:component this={ParserPhaseTutorial} />
+            <svelte:component this={ParserPhaseInspector} {source_code} />
+            <svelte:component this={ParserArtifactViewer} />
           {/if}
         </div>
         <button on:click={returnToCanvas} class="return-button"> ← Return to Canvas </button>
@@ -314,7 +313,6 @@
     cursor: pointer;
   }
 
-
   .help-tip {
     position: absolute;
     bottom: 20px;
@@ -324,7 +322,7 @@
     color: white;
     padding: 10px 15px 10px 20px;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     display: flex;
     align-items: center;
     gap: 1rem;
@@ -348,7 +346,6 @@
   .dismiss-tip-btn:hover {
     opacity: 1;
   }
-
 
   :global(html.dark-mode) .main {
     background-color: #161823;
