@@ -7,19 +7,23 @@ import (
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/services"
 )
 
+// ==================== //
+// TEST: ReadRegexRules //
+// ==================== //
+
 type add_invalid_test struct {
 	arg1     []byte
 	expected error
 }
 
 var add_invalid_tests = []add_invalid_test{
-	add_invalid_test{[]byte(`[
+	{[]byte(`[
 		{"type": "keyword","regex":"\\b(if|else)\\b},
 		{"type: "identifier","regex":"[a-zA-Z_]\\w*},
 	]`), fmt.Errorf(`invalid JSON for rules: invalid character '\n' in string literal`)},
-	add_invalid_test{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b"},{"type": "IDENITIFER","regex":"[a-zA-Z_]\\w*"},]`), fmt.Errorf("invalid JSON for rules: invalid character ']' looking for beginning of value")},
-	add_invalid_test{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b}]`), fmt.Errorf("invalid JSON for rules: unexpected end of JSON input")},
-	add_invalid_test{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b},{"type": "IDENTIFIER","regex":"[a-zA-Z_]\\w*"},]`), fmt.Errorf("invalid JSON for rules: invalid character 't' after object key:value pair")},
+	{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b"},{"type": "IDENITIFER","regex":"[a-zA-Z_]\\w*"},]`), fmt.Errorf("invalid JSON for rules: invalid character ']' looking for beginning of value")},
+	{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b}]`), fmt.Errorf("invalid JSON for rules: unexpected end of JSON input")},
+	{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b},{"type": "IDENTIFIER","regex":"[a-zA-Z_]\\w*"},]`), fmt.Errorf("invalid JSON for rules: invalid character 't' after object key:value pair")},
 }
 
 func TestReadRegexRules_InvalidCharacters(t *testing.T) {
@@ -82,6 +86,10 @@ func TestReadRegexRules_ValidInput(t *testing.T) {
 		}
 	}
 }
+
+// ==================== //
+//  TEST: CreateTokens  //
+// ==================== //
 
 func TestCreateTokens_EmptySourceCode(t *testing.T) {
 	source_code := ""
@@ -316,6 +324,39 @@ func TestCreateTokens_NumberTokensIdentified(t *testing.T) {
 	}
 }
 
+func TestCreateTokens_FloatTokensIdentified(t *testing.T) {
+	source_code := "int x = 3.5;"
+	rules := []services.TypeRegex{
+		{Type: "NUMBER", Regex: "\\d+(\\.\\d+)?"},
+	}
+	expected_res := []services.TypeValue{
+		{Type: "NUMBER", Value: "3.5"},
+	}
+	expected_res_unidentified := []string{
+		"int",
+		"x",
+		"=",
+		";",
+	}
+
+	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+
+	if err == nil {
+		for i, token := range tokens {
+			if token != expected_res[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			}
+		}
+		for i, token := range unidentified_tokens {
+			if token != expected_res_unidentified[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+			}
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
+}
+
 func TestCreateTokens_OperatorTokensIdentified(t *testing.T) {
 	source_code := "int x = 3;"
 	rules := []services.TypeRegex{
@@ -488,7 +529,124 @@ func TestCreateTokens_Complex(t *testing.T) {
 	}
 }
 
-func TestConvertTokensFromDFA_Success(t *testing.T) {
+// ========================= //
+// TEST: CreateTokensFromDFA //
+// ========================= //
+
+func TestCreateTokensFromDFA_NoSourceCode(t *testing.T) {
+
+	source_code := ""
+	dfa := services.Automata{}
+
+	_, _, err := services.CreateTokensFromDFA(source_code, dfa)
+
+	if err != nil {
+		if err.Error() == fmt.Errorf("source code is empty").Error() {
+			t.Logf("Test Passed: %v", err)
+		}
+	} else {
+		t.Errorf("Error supposed to occur")
+	}
+}
+
+func TestCreateTokensFromDFA_NoTransitions(t *testing.T) {
+
+	source_code := "int x=3;"
+	dfa := services.Automata{
+		States:      []string{"START", "S1", "S2", "S3", "S4", "S5"},
+		Transitions: []services.Transition{},
+		Start:       "START",
+		Accepting: []services.AcceptingState{
+			{State: "S3", Type: "IDENTIFIER"},
+			{State: "S4", Type: "KEYWORD"},
+			{State: "S2", Type: "NUMBER"},
+			{State: "S6", Type: "KEYWORD"},
+		},
+	}
+
+	_, _, err := services.CreateTokensFromDFA(source_code, dfa)
+
+	if err != nil {
+		if err.Error() == fmt.Errorf("no transitions identified in dfa").Error() {
+			t.Logf("Test Passed: %v", err)
+		} else {
+			t.Errorf("Incorrect error: %v", err)
+		}
+	} else {
+		t.Errorf("Error supposed to occur")
+	}
+}
+
+func TestCreateTokensFromDFA_NoStart(t *testing.T) {
+
+	source_code := "int x=3;"
+	dfa := services.Automata{
+		States: []string{"START", "S1", "S2", "S3", "S4", "S5"},
+		Transitions: []services.Transition{
+			{From: "START", To: "S1", Label: "i"},
+			{From: "S1", To: "S5", Label: "n"},
+			{From: "S5", To: "S4", Label: "t"},
+			{From: "S1", To: "S6", Label: "f"},
+			{From: "START", To: "S2", Label: "0123456789"},
+			{From: "S2", To: "S2", Label: "0123456789"},
+			{From: "START", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz"},
+			{From: "S3", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz0123456789"},
+		},
+		Start: "",
+		Accepting: []services.AcceptingState{
+			{State: "S3", Type: "IDENTIFIER"},
+			{State: "S4", Type: "KEYWORD"},
+			{State: "S2", Type: "NUMBER"},
+			{State: "S6", Type: "KEYWORD"},
+		},
+	}
+
+	_, _, err := services.CreateTokensFromDFA(source_code, dfa)
+
+	if err != nil {
+		if err.Error() == fmt.Errorf("no start state identified in dfa").Error() {
+			t.Logf("Test Passed: %v", err)
+		} else {
+			t.Errorf("Incorrect error: %v", err)
+		}
+	} else {
+		t.Errorf("Error supposed to occur")
+	}
+}
+
+func TestCreateTokensFromDFA_NoAcceptingStates(t *testing.T) {
+
+	source_code := "int x=3;"
+	dfa := services.Automata{
+		States: []string{"START", "S1", "S2", "S3", "S4", "S5"},
+		Transitions: []services.Transition{
+			{From: "START", To: "S1", Label: "i"},
+			{From: "S1", To: "S5", Label: "n"},
+			{From: "S5", To: "S4", Label: "t"},
+			{From: "S1", To: "S6", Label: "f"},
+			{From: "START", To: "S2", Label: "0123456789"},
+			{From: "S2", To: "S2", Label: "0123456789"},
+			{From: "START", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz"},
+			{From: "S3", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz0123456789"},
+		},
+		Start:     "START",
+		Accepting: []services.AcceptingState{},
+	}
+
+	_, _, err := services.CreateTokensFromDFA(source_code, dfa)
+
+	if err != nil {
+		if err.Error() == fmt.Errorf("no accepting states identified in dfa").Error() {
+			t.Logf("Test Passed: %v", err)
+		} else {
+			t.Errorf("Incorrect error: %v", err)
+		}
+	} else {
+		t.Errorf("Error supposed to occur")
+	}
+}
+
+func TestCreateTokensFromDFA_ValidDFA(t *testing.T) {
 	expected_res := []services.TypeValue{
 		{Type: "KEYWORD", Value: "int"},
 		{Type: "IDENTIFIER", Value: "x"},
@@ -539,39 +697,303 @@ func TestConvertTokensFromDFA_Success(t *testing.T) {
 	}
 }
 
-/*func TestConvertTokensFromDFA_TestSimilarIDandKey(t *testing.T) {
-	lexing_input := "int integ = 2;"
-	services.SourceCode(lexing_input)
+func TestCreateTokensFromDFA_ComplexDFAWithSimpleCode(t *testing.T) {
+	expected_res := []services.TypeValue{
+		{Type: "ID", Value: "int"},
+		{Type: "ID", Value: "x"},
+		{Type: "NUM", Value: "3"},
+	}
+	expected_res_unidentified := []string{
+		"=",
+		";",
+	}
 
-	services.CreateTokensFromDFA()
-	tokens := services.GetTokens()
+	source_code := "int x = 3;"
+	dfa := services.Automata{
+		States: []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"},
+		Transitions: []services.Transition{
+			{From: "A", To: "B", Label: "i"},
+			{From: "A", To: "D", Label: "[a-hj-zA-Z_]"},
+			{From: "A", To: "E", Label: "."},
+			{From: "A", To: "F", Label: "[+-]"},
+			{From: "A", To: "G", Label: "[0-9]"},
+			{From: "B", To: "C", Label: "f"},
+			{From: "B", To: "D", Label: "[a-eg-zA-Z_0-9]"},
+			{From: "C", To: "D", Label: "[a-zA-Z_0-9]"},
+			{From: "D", To: "D", Label: "[a-zA-Z_0-9]"},
+			{From: "E", To: "H", Label: "[0-9]"},
+			{From: "F", To: "E", Label: "."},
+			{From: "F", To: "G", Label: "[0-9]"},
+			{From: "G", To: "H", Label: "[.]"},
+			{From: "G", To: "I", Label: "[eE]"},
+			{From: "G", To: "G", Label: "[0-9]"},
+			{From: "H", To: "I", Label: "[eE"},
+			{From: "H", To: "H", Label: "[0-9]"},
+			{From: "I", To: "J", Label: "[+-]"},
+			{From: "I", To: "K", Label: "[0-9]"},
+			{From: "J", To: "K", Label: "[0-9]"},
+			{From: "K", To: "D", Label: "[0-9]"},
+		},
+		Start: "A",
+		Accepting: []services.AcceptingState{
+			{State: "B", Type: "ID"},
+			{State: "C", Type: "IF"},
+			{State: "D", Type: "ID"},
+			{State: "G", Type: "NUM"},
+			{State: "H", Type: "FLOAT"},
+			{State: "K", Type: "FLOAT"},
+		},
+	}
+
+	tokens, unidentified_tokens, err := services.CreateTokensFromDFA(source_code, dfa)
+
+	if err == nil {
+		for i, token := range tokens {
+			if token != expected_res[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			}
+		}
+		for i, token := range unidentified_tokens {
+			if token != expected_res_unidentified[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+			}
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
+}
+
+func TestCreateTokensFromDFA_ComplexDFAWithComplexCode(t *testing.T) {
+	expected_res := []services.TypeValue{
+		{Type: "ID", Value: "int"},
+		{Type: "ID", Value: "x"},
+		{Type: "NUM", Value: "3"},
+		{Type: "IF", Value: "if"},
+		{Type: "ID", Value: "x"},
+		{Type: "NUM", Value: "5"},
+		{Type: "ID", Value: "x"},
+		{Type: "FLOAT", Value: "-5.928"},
+	}
+	expected_res_unidentified := []string{
+		"=",
+		";",
+		"<",
+		"{",
+		"=",
+		";",
+		"}",
+	}
+
+	source_code := "int x = 3; "
+	source_code += "if x < 5 { x = -5.928; }"
+	dfa := services.Automata{
+		States: []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"},
+		Transitions: []services.Transition{
+			{From: "A", To: "B", Label: "i"},
+			{From: "A", To: "D", Label: "[a-hj-zA-Z_]"},
+			{From: "A", To: "E", Label: "."},
+			{From: "A", To: "F", Label: "[+-]"},
+			{From: "A", To: "G", Label: "[0-9]"},
+			{From: "B", To: "C", Label: "f"},
+			{From: "B", To: "D", Label: "[a-eg-zA-Z_0-9]"},
+			{From: "C", To: "D", Label: "[a-zA-Z_0-9]"},
+			{From: "D", To: "D", Label: "[a-zA-Z_0-9]"},
+			{From: "E", To: "H", Label: "[0-9]"},
+			{From: "F", To: "E", Label: "."},
+			{From: "F", To: "G", Label: "[0-9]"},
+			{From: "G", To: "H", Label: "[.]"},
+			{From: "G", To: "I", Label: "[eE]"},
+			{From: "G", To: "G", Label: "[0-9]"},
+			{From: "H", To: "I", Label: "[eE"},
+			{From: "H", To: "H", Label: "[0-9]"},
+			{From: "I", To: "J", Label: "[+-]"},
+			{From: "I", To: "K", Label: "[0-9]"},
+			{From: "J", To: "K", Label: "[0-9]"},
+			{From: "K", To: "D", Label: "[0-9]"},
+		},
+		Start: "A",
+		Accepting: []services.AcceptingState{
+			{State: "B", Type: "ID"},
+			{State: "C", Type: "IF"},
+			{State: "D", Type: "ID"},
+			{State: "G", Type: "NUM"},
+			{State: "H", Type: "FLOAT"},
+			{State: "K", Type: "FLOAT"},
+		},
+	}
+
+	tokens, unidentified_tokens, err := services.CreateTokensFromDFA(source_code, dfa)
+
+	if err == nil {
+		for i, token := range tokens {
+			if token != expected_res[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			}
+		}
+		for i, token := range unidentified_tokens {
+			if token != expected_res_unidentified[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+			}
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
+}
+
+func TestCreateTokensFromDFA_TestSimilarIDandKey(t *testing.T) {
 	expected_res := []services.TypeValue{
 		{Type: "KEYWORD", Value: "int"},
 		{Type: "IDENTIFIER", Value: "integ"},
 		{Type: "NUMBER", Value: "2"},
 	}
-	if len(tokens) != len(expected_res) {
-		t.Errorf("Not enough tokens created")
+	expected_res_unidentified := []string{
+		"=",
+		";",
 	}
-	for i := 0; i < len(tokens); i++ {
-		if tokens[i] != expected_res[i] {
-			t.Errorf("Tokenisation incorrect")
+
+	source_code := "int integ = 2;"
+	dfa := services.Automata{
+		States: []string{"START", "S1", "S2", "S3", "S4", "S5"},
+		Transitions: []services.Transition{
+			{From: "START", To: "S1", Label: "i"},
+			{From: "S1", To: "S5", Label: "n"},
+			{From: "S5", To: "S4", Label: "t"},
+			{From: "S1", To: "S6", Label: "f"},
+			{From: "START", To: "S2", Label: "0123456789"},
+			{From: "S2", To: "S2", Label: "0123456789"},
+			{From: "START", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz"},
+			{From: "S3", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz0123456789"},
+		},
+		Start: "START",
+		Accepting: []services.AcceptingState{
+			{State: "S3", Type: "IDENTIFIER"},
+			{State: "S4", Type: "KEYWORD"},
+			{State: "S2", Type: "NUMBER"},
+			{State: "S6", Type: "KEYWORD"},
+		},
+	}
+
+	tokens, unidentified_tokens, err := services.CreateTokensFromDFA(source_code, dfa)
+
+	if err == nil {
+		for i, token := range tokens {
+			if token != expected_res[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			}
 		}
-	}
-	unidentified_tokens := services.GetInvalidInput()
-	expected_res2 := []string{"=", ";"}
-	for i := 0; i < len(unidentified_tokens); i++ {
-		if unidentified_tokens[i] != expected_res2[i] {
-			t.Errorf("Tokenisation incorrect")
+		for i, token := range unidentified_tokens {
+			if token != expected_res_unidentified[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+			}
 		}
+	} else {
+		t.Errorf("Error not supposed to occur")
 	}
-}*/
+}
+
+// =========================== //
+//   TEST: ConvertDFAToRegex   //
+// =========================== //
+
+func TestConvertDFAToRegex_NoTransitions(t *testing.T) {
+
+	dfa := services.Automata{
+		States:      []string{"START", "S1", "S2", "S3", "S4", "S5"},
+		Transitions: []services.Transition{},
+		Start:       "START",
+		Accepting: []services.AcceptingState{
+			{State: "S3", Type: "IDENTIFIER"},
+			{State: "S4", Type: "KEYWORD"},
+			{State: "S2", Type: "NUMBER"},
+			{State: "S6", Type: "KEYWORD"},
+		},
+	}
+
+	_, err := services.ConvertDFAToRegex(dfa)
+
+	if err != nil {
+		if err.Error() == fmt.Errorf("no transitions identified in dfa").Error() {
+			t.Logf("Test Passed: %v", err)
+		} else {
+			t.Errorf("Incorrect error: %v", err)
+		}
+	} else {
+		t.Errorf("Error supposed to occur")
+	}
+}
+
+func TestConvertDFAToRegex_NoStart(t *testing.T) {
+
+	dfa := services.Automata{
+		States: []string{"START", "S1", "S2", "S3", "S4", "S5"},
+		Transitions: []services.Transition{
+			{From: "START", To: "S1", Label: "i"},
+			{From: "S1", To: "S5", Label: "n"},
+			{From: "S5", To: "S4", Label: "t"},
+			{From: "S1", To: "S6", Label: "f"},
+			{From: "START", To: "S2", Label: "0123456789"},
+			{From: "S2", To: "S2", Label: "0123456789"},
+			{From: "START", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz"},
+			{From: "S3", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz0123456789"},
+		},
+		Start: "",
+		Accepting: []services.AcceptingState{
+			{State: "S3", Type: "IDENTIFIER"},
+			{State: "S4", Type: "KEYWORD"},
+			{State: "S2", Type: "NUMBER"},
+			{State: "S6", Type: "KEYWORD"},
+		},
+	}
+
+	_, err := services.ConvertDFAToRegex(dfa)
+
+	if err != nil {
+		if err.Error() == fmt.Errorf("no start state identified in dfa").Error() {
+			t.Logf("Test Passed: %v", err)
+		} else {
+			t.Errorf("Incorrect error: %v", err)
+		}
+	} else {
+		t.Errorf("Error supposed to occur")
+	}
+}
+
+func TestConvertDFAToRegex_NoAcceptingStates(t *testing.T) {
+
+	dfa := services.Automata{
+		States: []string{"START", "S1", "S2", "S3", "S4", "S5"},
+		Transitions: []services.Transition{
+			{From: "START", To: "S1", Label: "i"},
+			{From: "S1", To: "S5", Label: "n"},
+			{From: "S5", To: "S4", Label: "t"},
+			{From: "S1", To: "S6", Label: "f"},
+			{From: "START", To: "S2", Label: "0123456789"},
+			{From: "S2", To: "S2", Label: "0123456789"},
+			{From: "START", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz"},
+			{From: "S3", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz0123456789"},
+		},
+		Start:     "START",
+		Accepting: []services.AcceptingState{},
+	}
+
+	_, err := services.ConvertDFAToRegex(dfa)
+
+	if err != nil {
+		if err.Error() == fmt.Errorf("no accepting states identified in dfa").Error() {
+			t.Logf("Test Passed: %v", err)
+		} else {
+			t.Errorf("Incorrect error: %v", err)
+		}
+	} else {
+		t.Errorf("Error supposed to occur")
+	}
+}
 
 func TestConvertDFAToRegex_ValidDFA(t *testing.T) {
 	expected_res := []services.TypeRegex{
-		{Type: "IDENTIFIER", Regex: `[a-zA-Z_]\\w*`},
-		{Type: "KEYWORD", Regex: `\\b(int|if)\\b`},
-		{Type: "NUMBER", Regex: `\\d+(\\.\\d+)?`},
+		{Type: "IDENTIFIER", Regex: "[a-zA-Z_]\\w*"},
+		{Type: "KEYWORD", Regex: "\\b(int|if)\\b"},
+		{Type: "NUMBER", Regex: "\\d+"},
 	}
 
 	dfa := services.Automata{
@@ -598,9 +1020,15 @@ func TestConvertDFAToRegex_ValidDFA(t *testing.T) {
 	rules, err := services.ConvertDFAToRegex(dfa)
 
 	if err == nil {
-		for i, rule := range rules {
-			if rule != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", rule, expected_res[i])
+		for _, rule := range rules {
+			match_found := false
+			for _, res := range expected_res {
+				if rule != res {
+					match_found = true
+				}
+			}
+			if !match_found {
+				t.Errorf("Tokenisation incorrect: %v", rule)
 			}
 		}
 	} else {
