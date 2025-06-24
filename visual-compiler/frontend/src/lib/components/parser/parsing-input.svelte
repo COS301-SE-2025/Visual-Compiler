@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  export let sourceCode = '';
+  export let source_code = '';
 
   // --- DATA STRUCTURE for CFG ---
   // A single translation for a rule (e.g., "expr + term")
@@ -26,6 +26,10 @@
     addNewRule();
   });
 
+  // addNewRule
+  // Return type: void
+  // Parameter type(s): none
+  // Adds a new, empty grammar rule to the editor.
   function addNewRule() {
     rule_id_counter++;
     translation_id_counter++;
@@ -39,9 +43,13 @@
     ];
   }
 
+  // addTranslation
+  // Return type: void
+  // Parameter type(s): number (ruleId)
+  // Adds a new, empty translation (production) to a specific grammar rule.
   function addTranslation(ruleId: number) {
     translation_id_counter++;
-    grammar = grammar.map(rule => {
+    grammar = grammar.map((rule) => {
       if (rule.id === ruleId) {
         return {
           ...rule,
@@ -55,6 +63,10 @@
     });
   }
 
+  // handleSubmitGrammar
+  // Return type: void
+  // Parameter type(s): none
+  // Logs the current grammar structure to the console for submission.
   function handleSubmitGrammar() {
     console.log('Submitting Grammar:', grammar);
     // API call would go here
@@ -68,9 +80,9 @@
 
   <div class="source-code-section">
     <h3 class="source-code-header">Source Code</h3>
-    <pre class="source-display">{sourceCode || 'No source code available'}</pre>
+    <pre class="source-display">{source_code || 'No source code available'}</pre>
   </div>
-  
+
   <div class="grammar-editor">
     <h3>Context-Free Grammar</h3>
     <div class="rules-container">
@@ -83,22 +95,21 @@
           </div>
 
           <div class="rule-inputs">
-            <input 
-              type="text" 
-              class="non-terminal-input" 
-              placeholder="expr"
+            <input
+              type="text"
+              class="non-terminal-input"
+              placeholder="rule"
               bind:value={rule.nonTerminal}
             />
             <span class="arrow">→</span>
             <div class="translations-container">
               {#each rule.translations as translation, j (translation.id)}
-                <input 
-                  type="text" 
-                  class="translation-input" 
-                  placeholder="expr + term"
+                <input
+                  type="text"
+                  class="translation-input"
+                  placeholder="part"
                   bind:value={translation.value}
                 />
-                <!-- THE CHANGE IS HERE: The '|' separator has been removed -->
               {/each}
               <button class="add-translation-btn" on:click={() => addTranslation(rule.id)}>
                 +
@@ -108,15 +119,11 @@
         </div>
       {/each}
     </div>
-    <button class="add-rule-btn" on:click={addNewRule}>
-      + Add New Rule
-    </button>
+    <button class="add-rule-btn" on:click={addNewRule}> + Add New Rule </button>
   </div>
-  
+
   <div class="button-container">
-    <button class="submit-button" on:click={handleSubmitGrammar}>
-      Submit Grammar
-    </button>
+    <button class="submit-button" on:click={handleSubmitGrammar}> Submit Grammar </button>
   </div>
 </div>
 
@@ -152,7 +159,7 @@
     background: #f8f9fa;
     padding: 1.5rem;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   }
   .grammar-editor h3 {
     margin-top: 0;
@@ -162,14 +169,14 @@
   .rules-container {
     display: flex;
     flex-direction: column;
-    gap: 1rem; 
+    gap: 1rem;
   }
   .rule-row {
     display: flex;
     align-items: center;
   }
   .rule-label {
-    width: 80px; 
+    width: 80px;
     flex-shrink: 0;
     text-align: right;
     padding-right: 0.75rem;
@@ -185,17 +192,16 @@
     align-items: center;
     gap: 0.75rem;
     width: 100%;
-    /* This prevents the container from overflowing its parent */
-    overflow: hidden; 
+    overflow: hidden;
   }
   .non-terminal-input {
-    flex: 0 0 60px; 
+    flex: 0 0 60px;
     padding: 0.6rem;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-family: monospace;
     text-align: center;
-    width : 90%;
+    width: 90%;
   }
   .arrow {
     font-size: 1.2rem;
@@ -207,7 +213,7 @@
     align-items: center;
     gap: 0.5rem;
     flex: 1;
-    overflow-x: auto; 
+    overflow-x: auto;
     padding-bottom: 0.5rem;
   }
   .translation-input {
@@ -215,7 +221,7 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     font-family: monospace;
-    width: 5rem; 
+    width: 4rem;
   }
   .add-translation-btn {
     background: #e0e0e0;
@@ -262,19 +268,33 @@
   }
 
   /* Dark Mode Styles */
-  :global(html.dark-mode) .parser-heading-h1 { color: #ebeef1; }
-  :global(html.dark-mode) .source-code-header { color: #ebeef1; }
-  :global(html.dark-mode) .source-display { color: black; }
-  :global(html.dark-mode) .grammar-editor { background: #1f2937; }
-  :global(html.dark-mode) .grammar-editor h3 { color: #ebeef1; }
-  :global(html.dark-mode) .start-label { color: #60a5fa; }
-  :global(html.dark-mode) .non-terminal-input, 
+  :global(html.dark-mode) .parser-heading-h1 {
+    color: #ebeef1;
+  }
+  :global(html.dark-mode) .source-code-header {
+    color: #ebeef1;
+  }
+  :global(html.dark-mode) .source-display {
+    color: black;
+  }
+  :global(html.dark-mode) .grammar-editor {
+    background: #1f2937;
+  }
+  :global(html.dark-mode) .grammar-editor h3 {
+    color: #ebeef1;
+  }
+  :global(html.dark-mode) .start-label {
+    color: #60a5fa;
+  }
+  :global(html.dark-mode) .non-terminal-input,
   :global(html.dark-mode) .translation-input {
     background-color: #2d3748;
     border-color: #4b5563;
     color: #f0f0f0;
   }
-  :global(html.dark-mode) .arrow { color: #9ca3af; }
+  :global(html.dark-mode) .arrow {
+    color: #9ca3af;
+  }
   :global(html.dark-mode) .add-translation-btn {
     background-color: #4b5563;
     color: #f0f0f0;

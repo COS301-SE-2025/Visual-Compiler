@@ -20,7 +20,7 @@
   }
 </script>
 
-<aside class="toolbox">
+<aside class="toolbox" data-testid="toolbox">
   <h2 class="toolbox-heading">Blocks</h2>
   <h2 class="toolbox-instruction">Click a block to add it to the canvas.</h2>
   {#each node_types as n}
