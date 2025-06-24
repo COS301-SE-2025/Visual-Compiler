@@ -508,6 +508,15 @@
    function selectType(type: 'AUTOMATA' | 'REGEX') {
     selectedType = type;
     resetInputs();
+    if (type === 'REGEX') {
+      showDefault = false;
+      userInputRows = [{ type: '', regex: '', error: '' }];
+      inputRows = [{ type: '', regex: '', error: '' }];
+      editableDefaultRows = DEFAULT_INPUT_ROWS.map(row => ({ ...row })); // reset defaults too
+      formError = '';
+      submissionStatus = { show: false, success: false, message: '' };
+      showGenerateButton = false;
+    }
   }
 
   function insertDefault() {
