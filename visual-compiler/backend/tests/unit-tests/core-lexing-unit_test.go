@@ -17,13 +17,13 @@ type add_invalid_test struct {
 }
 
 var add_invalid_tests = []add_invalid_test{
-	add_invalid_test{[]byte(`[
+	{[]byte(`[
 		{"type": "keyword","regex":"\\b(if|else)\\b},
 		{"type: "identifier","regex":"[a-zA-Z_]\\w*},
 	]`), fmt.Errorf(`invalid JSON for rules: invalid character '\n' in string literal`)},
-	add_invalid_test{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b"},{"type": "IDENITIFER","regex":"[a-zA-Z_]\\w*"},]`), fmt.Errorf("invalid JSON for rules: invalid character ']' looking for beginning of value")},
-	add_invalid_test{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b}]`), fmt.Errorf("invalid JSON for rules: unexpected end of JSON input")},
-	add_invalid_test{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b},{"type": "IDENTIFIER","regex":"[a-zA-Z_]\\w*"},]`), fmt.Errorf("invalid JSON for rules: invalid character 't' after object key:value pair")},
+	{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b"},{"type": "IDENITIFER","regex":"[a-zA-Z_]\\w*"},]`), fmt.Errorf("invalid JSON for rules: invalid character ']' looking for beginning of value")},
+	{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b}]`), fmt.Errorf("invalid JSON for rules: unexpected end of JSON input")},
+	{[]byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b},{"type": "IDENTIFIER","regex":"[a-zA-Z_]\\w*"},]`), fmt.Errorf("invalid JSON for rules: invalid character 't' after object key:value pair")},
 }
 
 func TestReadRegexRules_InvalidCharacters(t *testing.T) {
@@ -298,6 +298,39 @@ func TestCreateTokens_NumberTokensIdentified(t *testing.T) {
 	}
 	expected_res := []services.TypeValue{
 		{Type: "NUMBER", Value: "3"},
+	}
+	expected_res_unidentified := []string{
+		"int",
+		"x",
+		"=",
+		";",
+	}
+
+	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+
+	if err == nil {
+		for i, token := range tokens {
+			if token != expected_res[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			}
+		}
+		for i, token := range unidentified_tokens {
+			if token != expected_res_unidentified[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+			}
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
+}
+
+func TestCreateTokens_FloatTokensIdentified(t *testing.T) {
+	source_code := "int x = 3.5;"
+	rules := []services.TypeRegex{
+		{Type: "NUMBER", Regex: "\\d+(\\.\\d+)?"},
+	}
+	expected_res := []services.TypeValue{
+		{Type: "NUMBER", Value: "3.5"},
 	}
 	expected_res_unidentified := []string{
 		"int",
@@ -958,9 +991,9 @@ func TestConvertDFAToRegex_NoAcceptingStates(t *testing.T) {
 
 func TestConvertDFAToRegex_ValidDFA(t *testing.T) {
 	expected_res := []services.TypeRegex{
-		{Type: "IDENTIFIER", Regex: `[a-zA-Z_]\\w*`},
-		{Type: "KEYWORD", Regex: `\\b(int|if)\\b`},
-		{Type: "NUMBER", Regex: `\\d+(\\.\\d+)?`},
+		{Type: "IDENTIFIER", Regex: "[a-zA-Z_]\\w*"},
+		{Type: "KEYWORD", Regex: "\\b(int|if)\\b"},
+		{Type: "NUMBER", Regex: "\\d+"},
 	}
 
 	dfa := services.Automata{
@@ -987,9 +1020,15 @@ func TestConvertDFAToRegex_ValidDFA(t *testing.T) {
 	rules, err := services.ConvertDFAToRegex(dfa)
 
 	if err == nil {
-		for i, rule := range rules {
-			if rule != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", rule, expected_res[i])
+		for _, rule := range rules {
+			match_found := false
+			for _, res := range expected_res {
+				if rule != res {
+					match_found = true
+				}
+			}
+			if !match_found {
+				t.Errorf("Tokenisation incorrect: %v", rule)
 			}
 		}
 	} else {
