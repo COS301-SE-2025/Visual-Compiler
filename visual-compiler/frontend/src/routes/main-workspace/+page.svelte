@@ -21,9 +21,9 @@
   let show_drag_tip = false;
 
   onMount(async () => {
-    LexerPhaseTutorial = (await import('$lib/components/lexor/lexer-phase-tutorial.svelte')).default;
-    LexerPhaseInspector = (await import('$lib/components/lexor/phase-inspector.svelte')).default;
-    LexerArtifactViewer = (await import('$lib/components/lexor/lexor-artifact-viewer.svelte')).default;
+    LexerPhaseTutorial = (await import('$lib/components/lexer/lexer-phase-tutorial.svelte')).default;
+    LexerPhaseInspector = (await import('$lib/components/lexer/phase-inspector.svelte')).default;
+    LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte')).default;
     ParserPhaseTutorial = (await import('$lib/components/parser/parser-phase-tutorial.svelte')).default;
     ParserPhaseInspector = (await import('$lib/components/parser/parsing-input.svelte')).default;
     ParserArtifactViewer = (await import('$lib/components/parser/parser-artifact-viewer.svelte')).default;

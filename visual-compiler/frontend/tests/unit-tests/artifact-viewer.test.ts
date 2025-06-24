@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, it, expect } from 'vitest';
-import ArtifactViewer from '../../src/lib/components/lexor/lexor-artifact-viewer.svelte';
+import ArtifactViewer from '../../src/lib/components/lexer/lexer-artifact-viewer.svelte';
 import ToastContainer from '../../src/lib/components/toast-conatiner.svelte';
 import type { Token } from '$lib/types';
 

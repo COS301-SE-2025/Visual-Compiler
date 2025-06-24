@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import PhaseInspector from '../../src/lib/components/lexor/phase-inspector.svelte';
+import PhaseInspector from '../../src/lib/components/lexer/phase-inspector.svelte';
 import type { Token } from '$lib/types';
 
 // Mock the toast store and fetch API

@@ -1,23 +1,26 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  // REMOVED: createEventDispatcher is no longer needed
+  // import { createEventDispatcher } from 'svelte';
   import type { Token } from '$lib/types';
   import type { NodeType } from '$lib/types';
-	import { addToast } from '$lib/stores/toast';
+  import { AddToast } from '$lib/stores/toast';
   import { onMount } from 'svelte';
 
-  export let sourceCode = '';  
+  export let sourceCode = '';
+  // ADDED: The function prop for handling generated tokens
+  export let onGenerateTokens: (data: {
+    tokens: Token[];
+    unexpected_tokens: string[];
+  }) => void = () => {};
+
   let inputRows = [{ type: '', regex: '', error: '' }];
-  
+
   let userSourceCode = '';
   let userInputRows = [{ type: '', regex: '', error: '' }];
   let formError = '';
   let submissionStatus = { show: false, success: false, message: '' };
   let showGenerateButton = false;
-  const dispatch = createEventDispatcher<{ 
-    generateTokens: { 
-      tokens: Token[] 
-    } 
-  }>();
+
 
   function addNewRow() {
     userInputRows = [...userInputRows, { type: '', regex: '', error: '' }];
@@ -56,7 +59,6 @@
       nonEmptyRows.push(row);
     }
 
-    // First check if we have a single empty row
     if (rowsToValidate.length === 1 && !rowsToValidate[0].type && !rowsToValidate[0].regex) {
       submissionStatus = {
         show: true,
@@ -66,7 +68,6 @@
       return;
     }
 
-    // Only update userInputRows if not using default
     if (showDefault) {
       editableDefaultRows = nonEmptyRows;
     } else {
@@ -82,21 +83,19 @@
       return;
     }
 
-    // Prepare data for API call
     const requestData = {
       source_code: showDefault ? DEFAULT_SOURCE_CODE : userSourceCode,
-      pairs: nonEmptyRows.map(row => ({
+      pairs: nonEmptyRows.map((row) => ({
         Type: row.type.toUpperCase(),
         Regex: row.regex
       }))
     };
 
     try {
-      // First, store the source code and regex pairs
       const storeResponse = await fetch('http://localhost:8080/api/lexing/code', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(requestData)
       });
@@ -106,19 +105,15 @@
         throw new Error(`Server error (${storeResponse.status}): ${errorText}`);
       }
 
-      // Show success message
       submissionStatus = {
         show: true,
         success: true,
         message: 'Code stored successfully!'
       };
-
-      // Show generate button
       showGenerateButton = true;
-
     } catch (error) {
       console.error('Store error:', error);
-      addToast("Cannot connect to server. Please ensure the backend is running.", "error");
+      AddToast('Cannot connect to server. Please ensure the backend is running.', 'error');
     }
   }
 
@@ -126,18 +121,18 @@
     try {
       const requestData = {
         source_code: sourceCode,
-        pairs: userInputRows.map(row => ({
+        pairs: userInputRows.map((row) => ({
           Type: row.type.toUpperCase(),
           Regex: row.regex
         }))
       };
 
-      console.log('Sending request with data:', requestData); // Debug log
+      console.log('Sending request with data:', requestData);
 
       const response = await fetch('http://localhost:8080/api/lexing/lexer', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(requestData)
       });
@@ -148,14 +143,14 @@
       }
 
       const data = await response.json();
-      console.log('Raw response:', data); // Debug entire response
-      
+      console.log('Raw response:', data);
+
       if (!Array.isArray(data.tokens)) {
         throw new Error('Expected tokens array in response');
       }
 
-      // Dispatch token data to parent component
-      dispatch('generateTokens', {
+      // UPDATED: Call the onGenerateTokens prop instead of dispatching
+      onGenerateTokens({
         tokens: data.tokens,
         unexpected_tokens: data.unexpected_tokens
       });
@@ -166,31 +161,26 @@
         success: true,
         message: data.message || 'Tokens generated successfully!'
       };
-
     } catch (error) {
       console.error('Generate tokens error:', error);
-      addToast("Error generating tokens","error");
+      AddToast('Error generating tokens', 'error');
     }
   }
 
-  // Track previous input values
   let previousInputs: typeof userInputRows = [];
 
-  // Reset generate button when inputs change
   function handleInputChange() {
     showGenerateButton = false;
-    // Reset submission status
-    submissionStatus = { 
-      show: false, 
-      success: false, 
-      message: '' 
+    submissionStatus = {
+      show: false,
+      success: false,
+      message: ''
     };
   }
 
-  // Watch for changes in userInputRows array
   $: {
-    // Check if array length changed or values changed
-    const inputsChanged = userInputRows.length !== previousInputs.length ||
+    const inputsChanged =
+      userInputRows.length !== previousInputs.length ||
       userInputRows.some((row, index) => {
         const prevRow = previousInputs[index];
         return !prevRow || row.type !== prevRow.type || row.regex !== prevRow.regex;
@@ -205,18 +195,16 @@
   let selectedType: 'AUTOMATA' | 'REGEX' | null = null;
   let showDefault = false;
 
-  // Automata input state
   let states = '';
   let startState = '';
   let acceptedStates = '';
   let transitions = '';
 
-
   function parseAutomaton() {
-    const stateList = states.split(',').map(s => s.trim()).filter(Boolean);
+    const stateList = states.split(',').map((s) => s.trim()).filter(Boolean);
     const start = startState.trim();
-    const accepted = acceptedStates.split(',').map(s => s.trim()).filter(Boolean);
-    const transitionLines = transitions.split('\n').map(line => line.trim()).filter(Boolean);
+    const accepted = acceptedStates.split(',').map((s) => s.trim()).filter(Boolean);
+    const transitionLines = transitions.split('\n').map((line) => line.trim()).filter(Boolean);
     const transitionObj: Record<string, Record<string, string[]>> = {};
     let alphabetSet = new Set<string>();
     for (const line of transitionLines) {
@@ -238,8 +226,7 @@
     };
   }
 
-  // NFA to DFA subset construction
-  function nfaToDfa(nfa) {
+  function nfaToDfa(nfa: any) {
     const { alphabet, startState, acceptedStates, transitions } = nfa;
     const dfaStates: string[] = [];
     const dfaTransitions: Record<string, Record<string, string>> = {};
@@ -254,7 +241,7 @@
     let marked: string[][] = [];
 
     while (unmarked.length > 0) {
-      const currentSet = unmarked.pop();
+      const currentSet = unmarked.pop()!;
       const name = stateSetToName(currentSet);
       if (!dfaStates.includes(name)) dfaStates.push(name);
       stateMap[name] = currentSet;
@@ -272,7 +259,7 @@
         if (nextSet.length === 0) continue;
         const nextName = stateSetToName(nextSet);
         dfaTransitions[name][symbol] = nextName;
-        if (!dfaStates.includes(nextName) && !unmarked.some(s => stateSetToName(s) === nextName)) {
+        if (!dfaStates.includes(nextName) && !unmarked.some((s) => stateSetToName(s) === nextName)) {
           unmarked.push(nextSet);
         }
       }
@@ -281,7 +268,7 @@
 
     for (const dfaState of dfaStates) {
       const nfaStatesInDfa = dfaState.split(',');
-      if (nfaStatesInDfa.some(s => acceptedStates.includes(s))) {
+      if (nfaStatesInDfa.some((s) => acceptedStates.includes(s))) {
         dfaAcceptedStates.push(dfaState);
       }
     }
@@ -295,35 +282,35 @@
     };
   }
 
-  let nfaContainer;
-  let dfaContainer;
+  let nfaContainer: HTMLElement;
+  let dfaContainer: HTMLElement;
   let showNfaVis = false;
   let showDfaVis = false;
 
-  // Helper to generate unique node ids for DFA states
   function safeStateId(name: string) {
     return name.replace(/[^a-zA-Z0-9_]/g, '_');
   }
 
   async function renderNfaVis() {
-    const vis = await import('vis-network/standalone');
-    const DataSet = vis.DataSet;
-    const Network = vis.Network;
+    // CORRECTED import path
+    const { DataSet, Network } = await import('vis-network/peer');
 
     const nfa = parseAutomaton();
-    const nodeIds = {};
+    const nodeIds: Record<string, string> = {};
     nfa.states.forEach((state) => {
       nodeIds[state] = safeStateId(state);
     });
 
     const nodes = new DataSet(
-      nfa.states.map(state => ({
+      nfa.states.map((state) => ({
         id: nodeIds[state],
         label: state,
-        shape: "circle",
+        shape: 'circle',
         color: nfa.acceptedStates.includes(state)
-          ? "#D2FFD2"
-          : (state === nfa.startState ? "#D2E5FF" : "#FFD2D2"),
+          ? '#D2FFD2'
+          : state === nfa.startState
+          ? '#D2E5FF'
+          : '#FFD2D2',
         borderWidth: nfa.acceptedStates.includes(state) ? 3 : 1
       }))
     );
@@ -337,54 +324,52 @@
             from: nodeIds[from],
             to: nodeIds[to],
             label: symbol,
-            arrows: "to"
+            arrows: 'to'
           });
         }
       }
     }
 
-    // Add small, aesthetic black start arrow with a label above
     const START_NODE_ID = '__start__';
     nodes.add({
       id: START_NODE_ID,
       label: '',
       shape: 'circle',
-      color: 'rgba(0,0,0,0)', // fully transparent
+      color: 'rgba(0,0,0,0)',
       borderWidth: 0,
-      size: 1,                // smaller node
+      size: 1,
       font: { size: 1 }
     });
     edgesArr.push({
       from: START_NODE_ID,
       to: nodeIds[nfa.startState],
-      arrows: { to: { enabled: true, scaleFactor: 0.6 } }, // smaller arrow
+      arrows: { to: { enabled: true, scaleFactor: 0.6 } },
       color: { color: '#222', opacity: 1 },
-      width: 1.75, // thinner line
+      width: 1.75,
       label: 'start',
       font: {
         size: 13,
         color: '#222',
-        vadjust: -18, // move label above the arrow
+        vadjust: -18,
         align: 'top'
       },
-      smooth: { enabled: true, type: "curvedCCW", roundness: 0.18 },
-      length: 1, // shorter length
+      smooth: { enabled: true, type: 'curvedCCW', roundness: 0.18 },
+      length: 1,
       physics: false
-
     });
 
     const edges = new DataSet(edgesArr);
 
     new Network(nfaContainer, { nodes, edges }, {
       nodes: {
-        shape: "circle",
+        shape: 'circle',
         font: { size: 16 },
         margin: 10
       },
       edges: {
         smooth: {
           enabled: true,
-          type: "curvedCW",
+          type: 'curvedCW',
           roundness: 0.3
         },
         font: { size: 14, strokeWidth: 0 }
@@ -394,33 +379,30 @@
   }
 
   async function renderDfaVis() {
-    // Dynamically import vis-network only on the client
-    const vis = await import('vis-network/standalone');
-    const DataSet = vis.DataSet;
-    const Network = vis.Network;
+    // CORRECTED import path
+    const { DataSet, Network } = await import('vis-network/peer');
 
     const dfa = nfaToDfa(parseAutomaton());
 
-    // Map DFA state names to node ids
     const nodeIds: Record<string, string> = {};
     dfa.states.forEach((state) => {
       nodeIds[state] = state.replace(/[^a-zA-Z0-9_]/g, '_');
     });
 
-    // Nodes
     const nodes = new DataSet(
-      dfa.states.map(state => ({
+      dfa.states.map((state) => ({
         id: nodeIds[state],
         label: state,
-        shape: "circle",
+        shape: 'circle',
         color: dfa.acceptedStates.includes(state)
-          ? "#D2FFD2"
-          : (state === dfa.startState ? "#D2E5FF" : "#FFD2D2"),
+          ? '#D2FFD2'
+          : state === dfa.startState
+          ? '#D2E5FF'
+          : '#FFD2D2',
         borderWidth: dfa.acceptedStates.includes(state) ? 3 : 1
       }))
     );
 
-    // Edges
     const edgesArr = [];
     for (const from of dfa.states) {
       for (const symbol of dfa.alphabet) {
@@ -430,13 +412,12 @@
             from: nodeIds[from],
             to: nodeIds[to],
             label: symbol,
-            arrows: "to"
+            arrows: 'to'
           });
         }
       }
     }
 
-    // Add small, aesthetic black start arrow with a label above
     const START_NODE_ID = '__start__';
     nodes.add({
       id: START_NODE_ID,
@@ -460,7 +441,7 @@
         vadjust: -18,
         align: 'top'
       },
-      smooth: { enabled: true, type: "curvedCCW", roundness: 0.18 },
+      smooth: { enabled: true, type: 'curvedCCW', roundness: 0.18 },
       length: 5,
       physics: false
     });
@@ -469,14 +450,14 @@
 
     new Network(dfaContainer, { nodes, edges }, {
       nodes: {
-        shape: "circle",
+        shape: 'circle',
         font: { size: 16 },
         margin: 10
       },
       edges: {
         smooth: {
           enabled: true,
-          type: "curvedCW",
+          type: 'curvedCW',
           roundness: 0.3
         },
         font: { size: 14, strokeWidth: 0 }
@@ -505,14 +486,14 @@
     showDefault = false;
   }
 
-   function selectType(type: 'AUTOMATA' | 'REGEX') {
+  function selectType(type: 'AUTOMATA' | 'REGEX') {
     selectedType = type;
     resetInputs();
     if (type === 'REGEX') {
       showDefault = false;
       userInputRows = [{ type: '', regex: '', error: '' }];
       inputRows = [{ type: '', regex: '', error: '' }];
-      editableDefaultRows = DEFAULT_INPUT_ROWS.map(row => ({ ...row })); // reset defaults too
+      editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
       formError = '';
       submissionStatus = { show: false, success: false, message: '' };
       showGenerateButton = false;
@@ -521,11 +502,9 @@
 
   function insertDefault() {
     showDefault = true;
-    // Save user input before overwriting
-    // (userSourceCode is already up-to-date from CodeInput)
-    editableDefaultRows = DEFAULT_INPUT_ROWS.map(row => ({ ...row }));
+    editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
     sourceCode = DEFAULT_SOURCE_CODE;
-    inputRows = DEFAULT_INPUT_ROWS.map(row => ({ ...row }));
+    inputRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
     states = 'q0,q1,q2';
     startState = 'q0';
     acceptedStates = 'q2';
@@ -534,7 +513,6 @@
 
   function removeDefault() {
     showDefault = false;
-    // Restore user input
     sourceCode = userSourceCode;
     inputRows = [...userInputRows];
     resetInputs();
@@ -549,11 +527,10 @@
     { type: 'separator', regex: ';', error: '' }
   ];
 
-  let editableDefaultRows = DEFAULT_INPUT_ROWS.map(row => ({ ...row }));
+  let editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
 
   const DEFAULT_SOURCE_CODE = 'int blue = 13 + 22 ;';
 
-  // Keep userSourceCode in sync with sourceCode when not showing default
   $: if (!showDefault && sourceCode) {
     userSourceCode = sourceCode;
   }
@@ -562,181 +539,173 @@
 <div class="phase-inspector">
   <div class="source-code-section">
     <div class="lexor-heading">
-       <h1 class="lexor-heading-h1">LEXING</h1>
+      <h1 class="lexor-heading-h1">LEXING</h1>
     </div>
     <h3 class="source-code-header">Source Code</h3>
-    <pre class="source-display">{showDefault ? DEFAULT_SOURCE_CODE : (sourceCode || "no source code available")}</pre>
+    <pre class="source-display">{showDefault ? DEFAULT_SOURCE_CODE : sourceCode || 'no source code available'}</pre>
   </div>
-  
-  <!-- Automaton selection buttons -->
-<div class="automaton-btn-row">
-  <button
-    class="automaton-btn {selectedType === 'AUTOMATA' ? 'selected' : ''}"
-    on:click={() => selectType('AUTOMATA')}
-    type="button"
-  >Automata</button>
-  <button
-    class="automaton-btn {selectedType === 'REGEX' ? 'selected' : ''}"
-    on:click={() => selectType('REGEX')}
-    type="button"
-  >Regular Expression</button>
-  {#if selectedType && !showDefault}
-    <button
-      class="default-toggle-btn"
-      on:click={insertDefault}
-      type="button"
-      aria-label="Insert default input"
-      title="Insert default input"
-    >
-      <span class="icon">🪄</span>
-    </button>
-  {/if}
-  {#if selectedType && showDefault}
-    <button
-      class="default-toggle-btn selected"
-      on:click={removeDefault}
-      type="button"
-      aria-label="Remove default input"
-      title="Remove default input"
-    >
-      <span class="icon">🧹</span>
-    </button>
-  {/if}
-</div>
 
-  <!-- Conditional content rendering -->
+  <div class="automaton-btn-row">
+    <button
+      class="automaton-btn {selectedType === 'AUTOMATA' ? 'selected' : ''}"
+      on:click={() => selectType('AUTOMATA')}
+      type="button"
+    >Automata</button>
+    <button
+      class="automaton-btn {selectedType === 'REGEX' ? 'selected' : ''}"
+      on:click={() => selectType('REGEX')}
+      type="button"
+    >Regular Expression</button>
+    {#if selectedType && !showDefault}
+      <button
+        class="default-toggle-btn"
+        on:click={insertDefault}
+        type="button"
+        aria-label="Insert default input"
+        title="Insert default input"
+      >
+        <span class="icon">🪄</span>
+      </button>
+    {/if}
+    {#if selectedType && showDefault}
+      <button
+        class="default-toggle-btn selected"
+        on:click={removeDefault}
+        type="button"
+        aria-label="Remove default input"
+        title="Remove default input"
+      >
+        <span class="icon">🧹</span>
+      </button>
+    {/if}
+  </div>
+
   {#if selectedType === 'REGEX'}
-    <!-- Place your existing lexing/regex UI here -->
     <div>
-      <!-- BEGIN LEXING UI -->
-      <!-- ...everything from your shared-block and below, up to the closing </style>... -->
       <div class="shared-block">
-    <div class="block-headers">
-      <div class="header-section">
-        <h3>Type</h3>
-      </div>
-      <div class="header-section">
-        <h3>Regular Expression</h3>
-      </div>
-    </div>
-    <div class="input-rows">
-      {#each (showDefault ? editableDefaultRows : userInputRows) as row, i}
-        <div class="input-row">
-          <div class="input-block">
-            <input 
-              type="text" 
-              bind:value={row.type} 
-              on:input={handleInputChange}
-              placeholder="Enter type..."
-              class:error={row.error}
-            />
+        <div class="block-headers">
+          <div class="header-section">
+            <h3>Type</h3>
           </div>
-          <div class="input-block">
-            <input 
-              type="text" 
-              bind:value={row.regex} 
-              on:input={handleInputChange}
-              placeholder="Enter regex pattern..."
-              class:error={row.error}
-            />
+          <div class="header-section">
+            <h3>Regular Expression</h3>
           </div>
-          {#if row.error}
-            <div class="error-message">{row.error}</div>
-          {/if}
         </div>
-      {/each}
+        <div class="input-rows">
+          {#each (showDefault ? editableDefaultRows : userInputRows) as row, i}
+            <div class="input-row">
+              <div class="input-block">
+                <input
+                  type="text"
+                  bind:value={row.type}
+                  on:input={handleInputChange}
+                  placeholder="Enter type..."
+                  class:error={row.error}
+                />
+              </div>
+              <div class="input-block">
+                <input
+                  type="text"
+                  bind:value={row.regex}
+                  on:input={handleInputChange}
+                  placeholder="Enter regex pattern..."
+                  class:error={row.error}
+                />
+              </div>
+              {#if row.error}
+                <div class="error-message">{row.error}</div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+
+        {#if userInputRows[userInputRows.length - 1].type && userInputRows[userInputRows.length - 1].regex}
+          <button class="add-button" on:click={addNewRow}>
+            <span>+</span>
+          </button>
+        {/if}
+      </div>
+
+      {#if formError}
+        <div class="form-error">{formError}</div>
+      {/if}
+
+      <div class="button-container">
+        <button
+          class="submit-button"
+          class:shifted={showGenerateButton}
+          on:click={handleSubmit}
+        >
+          Submit
+        </button>
+
+        {#if showGenerateButton}
+          <button class="generate-button" on:click={generateTokens}>
+            Generate Tokens
+          </button>
+        {/if}
+      </div>
+
+      {#if submissionStatus.show}
+        <div
+          class="status-message"
+          class:success={submissionStatus.success === true}
+          class:info={submissionStatus.message === 'info'}
+        >
+          {submissionStatus.message}
+        </div>
+      {/if}
+    </div>
+  {:else if selectedType === 'AUTOMATA'}
+    <div class="automaton-section">
+      <div class="automaton-left">
+        <label>
+          States:
+          <input class="automaton-input" bind:value={states} placeholder="e.g. q0,q1,q2" />
+        </label>
+        <label>
+          Start State:
+          <input class="automaton-input" bind:value={startState} placeholder="e.g. q0" />
+        </label>
+        <label>
+          Accepted States:
+          <input class="automaton-input" bind:value={acceptedStates} placeholder="e.g. q2" />
+        </label>
+      </div>
+      <div class="automaton-right">
+        <label>
+          Transitions:
+          <textarea
+            class="automaton-input automaton-transitions"
+            bind:value={transitions}
+            placeholder="e.g. q0,a->q1&#10;q1,b->q2"
+          ></textarea>
+        </label>
+      </div>
+      <div class="automata-action-row" style="grid-column: span 2;">
+        <button class="action-btn" type="button" on:click={showNfaDiagram}>Show NFA</button>
+        <button class="action-btn" type="button" on:click={showDfaDiagram}>Show DFA</button>
+        <button class="action-btn" type="button">Tokenisation</button>
+        <button class="action-btn" type="button" title="Convert to Regular Expression">RE</button>
+      </div>
     </div>
 
-    {#if userInputRows[userInputRows.length - 1].type && userInputRows[userInputRows.length - 1].regex}
-      <button class="add-button" on:click={addNewRow}>
-        <span>+</span>
-      </button>
+    {#if showNfaVis}
+      <div class="automata-container">
+        <h4 style="margin-bottom:0.5rem;">NFA Visualization</h4>
+        <div bind:this={nfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;"></div>
+      </div>
     {/if}
-  </div>
-  
-  {#if formError}
-    <div class="form-error">{formError}</div>
-  {/if}
-
-  <div class="button-container">
-    <button 
-      class="submit-button" 
-      class:shifted={showGenerateButton} 
-      on:click={handleSubmit}
-    >
-      Submit
-    </button>
-    
-    {#if showGenerateButton}
-      <button class="generate-button" on:click={generateTokens}>
-        Generate Tokens
-      </button>
+    {#if showDfaVis}
+      <div class="automata-container">
+        <h4 style="margin-bottom:0.5rem;">DFA Visualization</h4>
+        <div bind:this={dfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;"></div>
+      </div>
     {/if}
-  </div>
-
-  {#if submissionStatus.show}
-    <div 
-      class="status-message" 
-      class:success={submissionStatus.success === true}
-      class:info={submissionStatus.message === 'info'}
-    >
-      {submissionStatus.message}
-    </div>
   {/if}
-      <!-- END LEXING UI -->
-    </div>
-{:else if selectedType === 'AUTOMATA'}
-  <div class="automaton-section">
-    <div class="automaton-left">
-      <label>
-        States:
-        <input class="automaton-input" bind:value={states} placeholder="e.g. q0,q1,q2" />
-      </label>
-      <label>
-        Start State:
-        <input class="automaton-input" bind:value={startState} placeholder="e.g. q0" />
-      </label>
-      <label>
-        Accepted States:
-        <input class="automaton-input" bind:value={acceptedStates} placeholder="e.g. q2" />
-      </label>
-    </div>
-    <div class="automaton-right">
-      <label>
-        Transitions:
-        <textarea
-          class="automaton-input automaton-transitions"
-          bind:value={transitions}
-          placeholder="e.g. q0,a->q1&#10;q1,b->q2"
-        ></textarea>
-      </label>
-    </div>
-    <div class="automata-action-row" style="grid-column: span 2;">
-      <button class="action-btn" type="button" on:click={showNfaDiagram}>Show NFA</button>
-      <button class="action-btn" type="button" on:click={showDfaDiagram}>Show DFA</button>
-      <button class="action-btn" type="button">Tokenisation</button>
-      <button class="action-btn" type="button" title="Convert to Regular Expression">RE</button>
-    </div>
-  </div>
-
-  {#if showNfaVis}
-    <div class="automata-container">
-      <h4 style="margin-bottom:0.5rem;">NFA Visualization</h4>
-      <div bind:this={nfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
-    </div>
-  {/if}
-  {#if showDfaVis}
-    <div class="automata-container">
-      <h4 style="margin-bottom:0.5rem;">DFA Visualization</h4>
-      <div bind:this={dfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
-    </div>
-  {/if}
-{/if}
 </div>
-
 <style>
-
-  .source-code-header{
+  .source-code-header {
     color: #444;
   }
   .phase-inspector {
@@ -766,12 +735,12 @@
     background: #f5f5f5;
     padding: 1.2rem;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     position: relative;
   }
 
-  .lexor-heading{
-    justify-items:center;
+  .lexor-heading {
+    justify-items: center;
   }
   .block-headers {
     display: flex;
@@ -785,14 +754,12 @@
     flex: 1;
   }
 
- 
   .header-section h3 {
     margin: 0;
-    color: #001A6E;
+    color: #001a6e;
     font-size: 1rem;
     font-weight: 600;
   }
-
 
   .input-rows {
     display: flex;
@@ -824,8 +791,8 @@
 
   .input-block input:focus {
     outline: none;
-    border-color: #001A6E;
-    box-shadow: 0 0 0 2px rgba(32,87,129,0.1);
+    border-color: #001a6e;
+    box-shadow: 0 0 0 2px rgba(32, 87, 129, 0.1);
   }
 
   .input-block input.error {
@@ -859,7 +826,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #001A6E;
+    background: #001a6e;
     color: white;
     border: none;
     cursor: pointer;
@@ -871,7 +838,7 @@
   }
 
   .add-button:hover {
-    background: #27548A;
+    background: #27548a;
   }
 
   .button-container {
@@ -883,16 +850,16 @@
 
   .submit-button {
     padding: 0.6rem 1.5rem;
-    background: #001A6E;
+    background: #001a6e;
     color: white;
     border: none;
     border-radius: 6px;
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: transform 0.2s ease; 
+    transition: transform 0.2s ease;
     box-shadow: 0 2px 4px rgba(0, 26, 110, 0.1);
-    position: relative; 
+    position: relative;
     margin-top: 1rem;
   }
 
@@ -900,36 +867,34 @@
     transform: translateX(-1rem);
   }
 
-
   .submit-button:not(.shifted) {
     transform: translateX(0);
   }
 
   .generate-button {
-  padding: 0.6rem 1.5rem; 
-  background: #666;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
-  margin-top: 1rem; 
-  height: 100%; 
-  line-height: 1.1; 
-}
+    padding: 0.6rem 1.5rem;
+    background: #666;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
+    margin-top: 1rem;
+    height: 100%;
+    line-height: 1.1;
+  }
 
   .submit-button:hover {
-    background: #27548A;
-    
-  } 
+    background: #27548a;
+  }
 
-   :global(html.dark-mode) .submit-button {
+  :global(html.dark-mode) .submit-button {
     background: #cccccc;
-    color:#041a47;
-    transition: transform 0.2s ease; 
+    color: #041a47;
+    transition: transform 0.2s ease;
     margin-top: 1rem;
   }
 
@@ -954,26 +919,33 @@
   }
 
   .status-message.info {
-    background: #0096c7; 
+    background: #0096c7;
   }
 
   @keyframes fadeInOut {
-    0% { opacity: 0; }
-    10% { opacity: 1; }
-    90% { opacity: 1; }
-    100% { opacity: 0; }
+    0% {
+      opacity: 0;
+    }
+    10% {
+      opacity: 1;
+    }
+    90% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
   }
   :global(html.dark-mode) .source-code-header {
     color: #ebeef1;
   }
- 
-  
+
   :global(html.dark-mode) .lexor-heading-h1 {
     color: #ebeef1;
   }
 
-  :global(html.dark-mode)  .source-display{
-    color : black;
+  :global(html.dark-mode) .source-display {
+    color: black;
   }
 
   .automaton-btn-row {
@@ -987,7 +959,7 @@
     border: 2px solid #e5e7eb;
     border-radius: 1.2rem;
     background: white;
-    color: #001A6E;
+    color: #001a6e;
     font-weight: 500;
     font-size: 0.95rem;
     cursor: pointer;
@@ -995,31 +967,31 @@
     outline: none;
   }
   .automaton-btn.selected {
-    border-color: #001A6E;
+    border-color: #001a6e;
     background: #e6edfa;
-    color: #001A6E;
+    color: #001a6e;
   }
   .automaton-btn:not(.selected):hover {
     border-color: #7da2e3;
     background: #f5f8fd;
   }
   .default-toggle-btn {
-  margin-left: 1.2rem;
-  padding: 0.4rem 0.7rem;
-  border-radius: 1.2rem;
-  border: 2px solid #e5e7eb;      /* match unselected automaton-btn */
-  background: white;              /* match unselected automaton-btn */
-  color: #001A6E;
-  font-size: 1.2rem;
-  cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
-  display: flex;
-  align-items: center;
-  height: 2.2rem;
-  width: 2.2rem;
-  justify-content: center;
-  position: relative;
-}
+    margin-left: 1.2rem;
+    padding: 0.4rem 0.7rem;
+    border-radius: 1.2rem;
+    border: 2px solid #e5e7eb; /* match unselected automaton-btn */
+    background: white; /* match unselected automaton-btn */
+    color: #001a6e;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+    display: flex;
+    align-items: center;
+    height: 2.2rem;
+    width: 2.2rem;
+    justify-content: center;
+    position: relative;
+  }
   .default-toggle-btn.selected {
     background: #d0e2ff;
     border-color: #003399;
@@ -1043,9 +1015,9 @@
     max-width: 600px;
   }
   .automaton-section label {
-    margin-top: 0.75rem;;
+    margin-top: 0.75rem;
     font-weight: 500;
-    color: #001A6E;
+    color: #001a6e;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -1057,13 +1029,13 @@
     border-radius: 0.7rem;
     font-size: 1rem;
     background: #f8fafc;
-    color: #001A6E;
+    color: #001a6e;
     transition: border-color 0.2s;
     width: 100%;
     box-sizing: border-box;
   }
   .automaton-input:focus {
-    border-color: #001A6E;
+    border-color: #001a6e;
     outline: none;
     background: #e6edfa;
   }
@@ -1074,7 +1046,6 @@
     font-family: 'Fira Mono', monospace;
     resize: vertical;
   }
-
 
   .automata-action-row {
     grid-column: span 2;
@@ -1087,7 +1058,6 @@
   }
 
   .action-btn {
-    /* Base styles */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -1102,8 +1072,7 @@
     outline: none;
     position: relative;
     overflow: hidden;
-    
-    /* Default button style */
+
     padding: 0.625rem 1.25rem;
     border-radius: 0.75rem;
     font-size: 0.9375rem;
@@ -1111,33 +1080,29 @@
     background: #e0e7ff;
     color: #1e40af;
     box-shadow: 0 1px 2px 0 rgba(30, 64, 175, 0.05);
-    
-    /* Hover/focus states */
-    &:hover, &:focus {
+
+    &:hover,
+    &:focus {
       background: #d0d9ff;
       color: #1e3a8a;
-      box-shadow: 0 1px 3px 0 rgba(30, 64, 175, 0.1), 
-                  0 1px 2px 0 rgba(30, 64, 175, 0.06);
+      box-shadow: 0 1px 3px 0 rgba(30, 64, 175, 0.1), 0 1px 2px 0 rgba(30, 64, 175, 0.06);
       transform: translateY(-1px);
     }
-    
-    /* Active state */
+
     &:active {
       transform: translateY(0);
       box-shadow: inset 0 2px 4px 0 rgba(30, 64, 175, 0.06);
     }
-    
-    /* Disabled state (if you add disabled buttons later) */
+
     &:disabled {
       opacity: 0.6;
       cursor: not-allowed;
       transform: none !important;
     }
-    
-    /* Tooltip styles for the RE button */
+
     &[title] {
       position: relative;
-      
+
       &:hover::after {
         content: attr(title);
         position: absolute;
@@ -1151,9 +1116,8 @@
         font-size: 0.875rem;
         white-space: nowrap;
         margin-bottom: 0.5rem;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
     }
   }
-
 </style>
