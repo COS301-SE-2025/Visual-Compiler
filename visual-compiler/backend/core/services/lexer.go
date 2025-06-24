@@ -10,10 +10,6 @@ import (
 	"unicode"
 )
 
-// ============ //
-// TOKENISATION //
-// ============ //
-
 // Struct for the type and regex pairs
 type TypeRegex struct {
 	Type  string `json:"type"`
@@ -24,6 +20,51 @@ type TypeRegex struct {
 type TypeValue struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
+}
+
+// Struct for the nfa and dfa data
+type Automata struct {
+	States      []string         `json:"states"`
+	Transitions []Transition     `json:"transitions"`
+	Start       string           `json:"start_state"`
+	Accepting   []AcceptingState `json:"accepting_states"`
+}
+
+type Transition struct {
+	From  string `json:"from"`
+	To    string `json:"to"`
+	Label string `json:"label"`
+}
+
+type AcceptingState struct {
+	State string `json:"state"`
+	Type  string `json:"token_type"`
+}
+
+// Struct for the possible tokens from dfa
+type Candidate struct {
+	value string
+	token string
+}
+
+// Struct for the possible solutions considered when converting dfa to regex
+type CandidateSol struct {
+	state        string
+	source_index int
+	sol          string
+}
+
+// Struct for the fragments of the regex
+type Fragment struct {
+	start string
+	end   string
+}
+
+// Struct for the regular expression to automata converter
+type Converter struct {
+	states      map[string]bool
+	transitions []Transition
+	count       int
 }
 
 // Name: ReadRegexRules
@@ -136,42 +177,6 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 	return tokens, tokens_unidentified, nil
 }
 
-// ================== //
-// REGEX AND AUTOMATA //
-// ================== //
-
-// struct to store nfa and dfa data
-type Automata struct {
-	States      []string         `json:"states"`
-	Transitions []Transition     `json:"transitions"`
-	Start       string           `json:"start_state"`
-	Accepting   []AcceptingState `json:"accepting_states"`
-}
-
-type Transition struct {
-	From  string `json:"from"`
-	To    string `json:"to"`
-	Label string `json:"label"`
-}
-
-type AcceptingState struct {
-	State string `json:"state"`
-	Type  string `json:"token_type"`
-}
-
-// struct to store possible tokens
-type Candidate struct {
-	value string
-	token string
-}
-
-// struct to store possible solutions considered when converting dfa to regex
-type CandidateSol struct {
-	state        string
-	source_index int
-	sol          string
-}
-
 // Name: CreateTokensFromDFA
 //
 // Parameters: string, Automata
@@ -181,15 +186,19 @@ type CandidateSol struct {
 // Convert the source code, using DFA received from the ReadDFA function, to a set of tokens.
 // Returns tokens,identified tokens, and an error if tokenisation not possible.
 func CreateTokensFromDFA(source_code string, dfa Automata) ([]TypeValue, []string, error) {
+
 	if source_code == "" {
 		return nil, nil, fmt.Errorf("source code is empty")
 	}
+
 	if len(dfa.Transitions) == 0 {
 		return nil, nil, fmt.Errorf("no transitions identified in dfa")
 	}
+
 	if dfa.Start == "" {
 		return nil, nil, fmt.Errorf("no start state identified in dfa")
 	}
+
 	if len(dfa.Accepting) == 0 {
 		return nil, nil, fmt.Errorf("no accepting states identified in dfa")
 	}
@@ -286,12 +295,15 @@ func ConvertDFAToRegex(dfa Automata) ([]TypeRegex, error) {
 	if len(dfa.States) == 0 {
 		return nil, fmt.Errorf("no states identified")
 	}
+
 	if len(dfa.Transitions) == 0 {
 		return nil, fmt.Errorf("no transitions identified")
 	}
+
 	if len(dfa.Accepting) == 0 {
 		return nil, fmt.Errorf("no accepting states identified")
 	}
+
 	if dfa.Start == "" {
 		return nil, fmt.Errorf("no start state identified")
 	}
@@ -371,6 +383,7 @@ func convertIdentifierToRegex(regex *string) {
 //
 // Helper function to convert Numbers to proper regex
 func convertNumberToRegex(regex *string) {
+
 	*regex = `\\d+(\\.\\d+)?`
 }
 
@@ -382,6 +395,7 @@ func convertNumberToRegex(regex *string) {
 //
 // Helper function to replace grammar with regex rules
 func convertRawRegexToRegexRules(regex *string) {
+
 	*regex = strings.ReplaceAll(*regex, "abcdefghijklmnopqrstuvwxyz0123456789", "[a-z0-9]")
 	*regex = strings.ReplaceAll(*regex, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", "[A-Z0-9]")
 	*regex = strings.ReplaceAll(*regex, "abcdefghijklmnopqrstuvwxyz", "[a-z]")
@@ -398,6 +412,7 @@ func convertRawRegexToRegexRules(regex *string) {
 // Helper function to convert DFA to regex, which builds the regex string.
 // Uses BFS to traverse the states till it reaches accepting saves, for which it saves the current path.
 func buildRegexForPath(start, accept string, dfa Automata) string {
+
 	type state_regex struct {
 		state string
 		regex string
@@ -533,7 +548,6 @@ func ConvertRegexToDFA(regexes map[string]string) (Automata, error) {
 	}
 
 	return dfa, nil
-
 }
 
 // Name: ConvertNFAToDFA
@@ -548,12 +562,15 @@ func ConvertNFAToDFA(nfa Automata) (Automata, error) {
 	if len(nfa.States) == 0 {
 		return Automata{}, fmt.Errorf("no states identified")
 	}
+
 	if len(nfa.Transitions) == 0 {
 		return Automata{}, fmt.Errorf("no transitions identified")
 	}
+
 	if len(nfa.Accepting) == 0 {
 		return Automata{}, fmt.Errorf("no accepting states identified")
 	}
+
 	if nfa.Start == "" {
 		return Automata{}, fmt.Errorf("no start state identified")
 	}
@@ -683,17 +700,6 @@ func ConvertNFAToDFA(nfa Automata) (Automata, error) {
 	dfa.Accepting = accepting_states
 
 	return dfa, nil
-}
-
-type Fragment struct {
-	start string
-	end   string
-}
-
-type Converter struct {
-	states      map[string]bool
-	transitions []Transition
-	count       int
 }
 
 // Name: newConverter
