@@ -1,33 +1,28 @@
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte';
   import type { Token } from '$lib/types';
   import type { NodeType } from '$lib/types';
-  import { AddToast } from '$lib/stores/toast';
+	import { addToast } from '$lib/stores/toast';
+  import { onMount } from 'svelte';
 
-  export let source_code = '';
+  export let sourceCode = '';  
+  let inputRows = [{ type: '', regex: '', error: '' }];
+  
+  let userSourceCode = '';
+  let userInputRows = [{ type: '', regex: '', error: '' }];
+  let formError = '';
+  let submissionStatus = { show: false, success: false, message: '' };
+  let showGenerateButton = false;
+  const dispatch = createEventDispatcher<{ 
+    generateTokens: { 
+      tokens: Token[] 
+    } 
+  }>();
 
-  // This prop will be called instead of dispatching an event
-  export let onGenerateTokens: (data: {
-    tokens: Token[];
-    unexpected_tokens: string[];
-  }) => void = () => {};
-
-  let input_rows = [{ type: '', regex: '', error: '' }];
-  let form_error = '';
-  let submission_status = { show: false, success: false, message: '' };
-  let show_generate_button = false;
-
-  // addNewRow
-  // Return type: void
-  // Parameter type(s): none
-  // Adds a new, empty row to the regex input form.
   function addNewRow() {
-    input_rows = [...input_rows, { type: '', regex: '', error: '' }];
+    userInputRows = [...userInputRows, { type: '', regex: '', error: '' }];
   }
 
-  // validateRegex
-  // Return type: boolean
-  // Parameter type(s): string
-  // Checks if a given string is a valid regular expression pattern.
   function validateRegex(pattern: string): boolean {
     try {
       new RegExp(pattern);
@@ -37,34 +32,33 @@
     }
   }
 
-  // handleSubmit
-  // Return type: Promise<void>
-  // Parameter type(s): none
-  // Validates the form and sends the source code and regex pairs to the backend.
   async function handleSubmit() {
-    form_error = '';
-    let has_errors = false;
-    let non_empty_rows = [];
+    formError = '';
+    let hasErrors = false;
+    let nonEmptyRows = [];
+
+    const rowsToValidate = showDefault ? editableDefaultRows : userInputRows;
 
     // Handle validation and filtering in one pass
-    for (const row of input_rows) {
+    for (const row of rowsToValidate) {
       if (!row.type && !row.regex) continue;
 
       row.error = '';
 
       if (!row.type || !row.regex) {
         row.error = 'Please fill in both Type and Regular Expression';
-        has_errors = true;
+        hasErrors = true;
       } else if (!validateRegex(row.regex)) {
         row.error = 'Invalid regular expression pattern';
-        has_errors = true;
+        hasErrors = true;
       }
 
-      non_empty_rows.push(row);
+      nonEmptyRows.push(row);
     }
 
-    if (input_rows.length === 1 && !input_rows[0].type && !input_rows[0].regex) {
-      submission_status = {
+    // First check if we have a single empty row
+    if (rowsToValidate.length === 1 && !rowsToValidate[0].type && !rowsToValidate[0].regex) {
+      submissionStatus = {
         show: true,
         success: false,
         message: 'Please fill in both Type and Regular Expression'
@@ -72,10 +66,15 @@
       return;
     }
 
-    input_rows = non_empty_rows;
+    // Only update userInputRows if not using default
+    if (showDefault) {
+      editableDefaultRows = nonEmptyRows;
+    } else {
+      userInputRows = nonEmptyRows;
+    }
 
-    if (has_errors) {
-      submission_status = {
+    if (hasErrors) {
+      submissionStatus = {
         show: true,
         success: false,
         message: 'Please fix the errors before submitting'
@@ -83,387 +82,661 @@
       return;
     }
 
-    const request_data = {
-      source_code: source_code,
-      pairs: input_rows.map((row) => ({
+    // Prepare data for API call
+    const requestData = {
+      source_code: showDefault ? DEFAULT_SOURCE_CODE : userSourceCode,
+      pairs: nonEmptyRows.map(row => ({
         Type: row.type.toUpperCase(),
         Regex: row.regex
       }))
     };
 
     try {
-      const store_response = await fetch('http://localhost:8080/api/lexing/code', {
+      // First, store the source code and regex pairs
+      const storeResponse = await fetch('http://localhost:8080/api/lexing/code', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request_data)
+        body: JSON.stringify(requestData)
       });
 
-      if (!store_response.ok) {
-        const error_text = await store_response.text();
-        throw new Error(`Server error (${store_response.status}): ${error_text}`);
+      if (!storeResponse.ok) {
+        const errorText = await storeResponse.text();
+        throw new Error(`Server error (${storeResponse.status}): ${errorText}`);
       }
 
-      submission_status = {
+      // Show success message
+      submissionStatus = {
         show: true,
         success: true,
         message: 'Code stored successfully!'
       };
 
-      show_generate_button = true;
+      // Show generate button
+      showGenerateButton = true;
+
     } catch (error) {
       console.error('Store error:', error);
-      AddToast('Cannot connect to server. Please ensure the backend is running.', 'error');
+      addToast("Cannot connect to server. Please ensure the backend is running.", "error");
     }
   }
 
-  // generateTokens
-  // Return type: Promise<void>
-  // Parameter type(s): none
-  // Requests token generation from the backend and dispatches the result.
   async function generateTokens() {
     try {
-      const request_data = {
-        source_code: source_code,
-        pairs: input_rows.map((row) => ({
+      const requestData = {
+        source_code: sourceCode,
+        pairs: userInputRows.map(row => ({
           Type: row.type.toUpperCase(),
           Regex: row.regex
         }))
       };
 
-      console.log('Sending request with data:', request_data); // Debug log
+      console.log('Sending request with data:', requestData); // Debug log
 
       const response = await fetch('http://localhost:8080/api/lexing/lexer', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify(request_data)
+        body: JSON.stringify(requestData)
       });
 
       if (!response.ok) {
-        const error_text = await response.text();
-        throw new Error(`Server error (${response.status}): ${error_text}`);
+        const errorText = await response.text();
+        throw new Error(`Server error (${response.status}): ${errorText}`);
       }
 
       const data = await response.json();
       console.log('Raw response:', data); // Debug entire response
-
+      
       if (!Array.isArray(data.tokens)) {
         throw new Error('Expected tokens array in response');
       }
 
-      // Call the prop function instead of dispatching
-      onGenerateTokens({
+      // Dispatch token data to parent component
+      dispatch('generateTokens', {
         tokens: data.tokens,
         unexpected_tokens: data.unexpected_tokens
       });
 
-      show_generate_button = false;
-      submission_status = {
+      showGenerateButton = false;
+      submissionStatus = {
         show: true,
         success: true,
         message: data.message || 'Tokens generated successfully!'
       };
+
     } catch (error) {
       console.error('Generate tokens error:', error);
-      AddToast('Error generating tokens', 'error');
+      addToast("Error generating tokens","error");
     }
   }
 
-  // handleInputChange
-  // Return type: void
-  // Parameter type(s): none
-  // Resets the generate button and submission status when form inputs change.
+  // Track previous input values
+  let previousInputs: typeof userInputRows = [];
+
+  // Reset generate button when inputs change
   function handleInputChange() {
-    show_generate_button = false;
-    submission_status = {
-      show: false,
-      success: false,
-      message: ''
+    showGenerateButton = false;
+    // Reset submission status
+    submissionStatus = { 
+      show: false, 
+      success: false, 
+      message: '' 
     };
   }
 
-  // resetInputs
-  // Return type: void
-  // Parameter type(s): none
-  // Clears all NFA/DFA input fields and hides the default view.
-  function resetInputs() {
-    nfa_states = '';
-    nfa_alphabets = '';
-    nfa_start_state = '';
-    nfa_accepted_states = '';
-    nfa_transitions = '';
-    dfa_states = '';
-    dfa_alphabets = '';
-    dfa_start_state = '';
-    dfa_accepted_states = '';
-    dfa_transitions = '';
-    show_default = false;
-  }
-
-  // selectAutomaton
-  // Return type: void
-  // Parameter type(s): 'NFA' | 'DFA' | 'REGEX'
-  // Sets the currently selected automaton type and resets inputs.
-  function selectAutomaton(type: 'NFA' | 'DFA' | 'REGEX') {
-    selected_automaton = type;
-    resetInputs();
-  }
-
-  // insertDefault
-  // Return type: void
-  // Parameter type(s): none
-  // Populates the NFA or DFA input fields with default example data.
-  function insertDefault() {
-    show_default = true;
-    if (selected_automaton === 'NFA') {
-      nfa_states = 'q0,q1,q2';
-      nfa_alphabets = 'a,b';
-      nfa_start_state = 'q0';
-      nfa_accepted_states = 'q2';
-      nfa_transitions = 'q0,a->q1\nq1,b->q2';
-    } else if (selected_automaton === 'DFA') {
-      dfa_states = 'A,B';
-      dfa_alphabets = '0,1';
-      dfa_start_state = 'A';
-      dfa_accepted_states = 'B';
-      dfa_transitions = 'A,0->A\nA,1->B\nB,0->A\nB,1->B';
-    }
-  }
-
-  // removeDefault
-  // Return type: void
-  // Parameter type(s): none
-  // Clears all NFA/DFA input fields from the default example data.
-  function removeDefault() {
-    show_default = false;
-    resetInputs();
-  }
-
-  let previous_inputs: typeof input_rows = [];
-
+  // Watch for changes in userInputRows array
   $: {
-    const inputs_changed =
-      input_rows.length !== previous_inputs.length ||
-      input_rows.some((row, index) => {
-        const prev_row = previous_inputs[index];
-        return !prev_row || row.type !== prev_row.type || row.regex !== prev_row.regex;
+    // Check if array length changed or values changed
+    const inputsChanged = userInputRows.length !== previousInputs.length ||
+      userInputRows.some((row, index) => {
+        const prevRow = previousInputs[index];
+        return !prevRow || row.type !== prevRow.type || row.regex !== prevRow.regex;
       });
 
-    if (inputs_changed) {
+    if (inputsChanged) {
       handleInputChange();
-      previous_inputs = [...input_rows];
+      previousInputs = [...userInputRows];
     }
   }
 
-  let selected_automaton: 'NFA' | 'DFA' | 'REGEX' | null = null;
-  let show_default = false;
+  let selectedType: 'AUTOMATA' | 'REGEX' | null = null;
+  let showDefault = false;
 
-  let nfa_states = '';
-  let nfa_alphabets = '';
-  let nfa_start_state = '';
-  let nfa_accepted_states = '';
-  let nfa_transitions = '';
+  // Automata input state
+  let states = '';
+  let startState = '';
+  let acceptedStates = '';
+  let transitions = '';
 
-  let dfa_states = '';
-  let dfa_alphabets = '';
-  let dfa_start_state = '';
-  let dfa_accepted_states = '';
-  let dfa_transitions = '';
+
+  function parseAutomaton() {
+    const stateList = states.split(',').map(s => s.trim()).filter(Boolean);
+    const start = startState.trim();
+    const accepted = acceptedStates.split(',').map(s => s.trim()).filter(Boolean);
+    const transitionLines = transitions.split('\n').map(line => line.trim()).filter(Boolean);
+    const transitionObj: Record<string, Record<string, string[]>> = {};
+    let alphabetSet = new Set<string>();
+    for (const line of transitionLines) {
+      const match = line.match(/^(.+),(.+)->(.+)$/);
+      if (match) {
+        const [_, from, symbol, to] = match;
+        alphabetSet.add(symbol);
+        if (!transitionObj[from]) transitionObj[from] = {};
+        if (!transitionObj[from][symbol]) transitionObj[from][symbol] = [];
+        transitionObj[from][symbol].push(to);
+      }
+    }
+    return {
+      states: stateList,
+      startState: start,
+      acceptedStates: accepted,
+      transitions: transitionObj,
+      alphabet: Array.from(alphabetSet)
+    };
+  }
+
+  // NFA to DFA subset construction
+  function nfaToDfa(nfa) {
+    const { alphabet, startState, acceptedStates, transitions } = nfa;
+    const dfaStates: string[] = [];
+    const dfaTransitions: Record<string, Record<string, string>> = {};
+    const dfaAcceptedStates: string[] = [];
+    const stateMap: Record<string, string[]> = {};
+
+    function stateSetToName(set: string[]) {
+      return set.sort().join(',');
+    }
+
+    let unmarked: string[][] = [[startState]];
+    let marked: string[][] = [];
+
+    while (unmarked.length > 0) {
+      const currentSet = unmarked.pop();
+      const name = stateSetToName(currentSet);
+      if (!dfaStates.includes(name)) dfaStates.push(name);
+      stateMap[name] = currentSet;
+
+      dfaTransitions[name] = {};
+
+      for (const symbol of alphabet) {
+        let nextSet: string[] = [];
+        for (const state of currentSet) {
+          if (transitions[state] && transitions[state][symbol]) {
+            nextSet = nextSet.concat(transitions[state][symbol]);
+          }
+        }
+        nextSet = Array.from(new Set(nextSet));
+        if (nextSet.length === 0) continue;
+        const nextName = stateSetToName(nextSet);
+        dfaTransitions[name][symbol] = nextName;
+        if (!dfaStates.includes(nextName) && !unmarked.some(s => stateSetToName(s) === nextName)) {
+          unmarked.push(nextSet);
+        }
+      }
+      marked.push(currentSet);
+    }
+
+    for (const dfaState of dfaStates) {
+      const nfaStatesInDfa = dfaState.split(',');
+      if (nfaStatesInDfa.some(s => acceptedStates.includes(s))) {
+        dfaAcceptedStates.push(dfaState);
+      }
+    }
+
+    return {
+      states: dfaStates,
+      startState: stateSetToName([startState]),
+      acceptedStates: dfaAcceptedStates,
+      transitions: dfaTransitions,
+      alphabet
+    };
+  }
+
+  let nfaContainer;
+  let dfaContainer;
+  let showNfaVis = false;
+  let showDfaVis = false;
+
+  // Helper to generate unique node ids for DFA states
+  function safeStateId(name: string) {
+    return name.replace(/[^a-zA-Z0-9_]/g, '_');
+  }
+
+  async function renderNfaVis() {
+    const vis = await import('vis-network/standalone');
+    const DataSet = vis.DataSet;
+    const Network = vis.Network;
+
+    const nfa = parseAutomaton();
+    const nodeIds = {};
+    nfa.states.forEach((state) => {
+      nodeIds[state] = safeStateId(state);
+    });
+
+    const nodes = new DataSet(
+      nfa.states.map(state => ({
+        id: nodeIds[state],
+        label: state,
+        shape: "circle",
+        color: nfa.acceptedStates.includes(state)
+          ? "#D2FFD2"
+          : (state === nfa.startState ? "#D2E5FF" : "#FFD2D2"),
+        borderWidth: nfa.acceptedStates.includes(state) ? 3 : 1
+      }))
+    );
+
+    const edgesArr = [];
+    for (const from of nfa.states) {
+      for (const symbol of nfa.alphabet) {
+        const tos = nfa.transitions[from]?.[symbol] || [];
+        for (const to of tos) {
+          edgesArr.push({
+            from: nodeIds[from],
+            to: nodeIds[to],
+            label: symbol,
+            arrows: "to"
+          });
+        }
+      }
+    }
+
+    // Add small, aesthetic black start arrow with a label above
+    const START_NODE_ID = '__start__';
+    nodes.add({
+      id: START_NODE_ID,
+      label: '',
+      shape: 'circle',
+      color: 'rgba(0,0,0,0)', // fully transparent
+      borderWidth: 0,
+      size: 1,                // smaller node
+      font: { size: 1 }
+    });
+    edgesArr.push({
+      from: START_NODE_ID,
+      to: nodeIds[nfa.startState],
+      arrows: { to: { enabled: true, scaleFactor: 0.6 } }, // smaller arrow
+      color: { color: '#222', opacity: 1 },
+      width: 1.75, // thinner line
+      label: 'start',
+      font: {
+        size: 13,
+        color: '#222',
+        vadjust: -18, // move label above the arrow
+        align: 'top'
+      },
+      smooth: { enabled: true, type: "curvedCCW", roundness: 0.18 },
+      length: 1, // shorter length
+      physics: false
+
+    });
+
+    const edges = new DataSet(edgesArr);
+
+    new Network(nfaContainer, { nodes, edges }, {
+      nodes: {
+        shape: "circle",
+        font: { size: 16 },
+        margin: 10
+      },
+      edges: {
+        smooth: {
+          enabled: true,
+          type: "curvedCW",
+          roundness: 0.3
+        },
+        font: { size: 14, strokeWidth: 0 }
+      },
+      physics: false
+    });
+  }
+
+  async function renderDfaVis() {
+    // Dynamically import vis-network only on the client
+    const vis = await import('vis-network/standalone');
+    const DataSet = vis.DataSet;
+    const Network = vis.Network;
+
+    const dfa = nfaToDfa(parseAutomaton());
+
+    // Map DFA state names to node ids
+    const nodeIds: Record<string, string> = {};
+    dfa.states.forEach((state) => {
+      nodeIds[state] = state.replace(/[^a-zA-Z0-9_]/g, '_');
+    });
+
+    // Nodes
+    const nodes = new DataSet(
+      dfa.states.map(state => ({
+        id: nodeIds[state],
+        label: state,
+        shape: "circle",
+        color: dfa.acceptedStates.includes(state)
+          ? "#D2FFD2"
+          : (state === dfa.startState ? "#D2E5FF" : "#FFD2D2"),
+        borderWidth: dfa.acceptedStates.includes(state) ? 3 : 1
+      }))
+    );
+
+    // Edges
+    const edgesArr = [];
+    for (const from of dfa.states) {
+      for (const symbol of dfa.alphabet) {
+        const to = dfa.transitions[from]?.[symbol];
+        if (to) {
+          edgesArr.push({
+            from: nodeIds[from],
+            to: nodeIds[to],
+            label: symbol,
+            arrows: "to"
+          });
+        }
+      }
+    }
+
+    // Add small, aesthetic black start arrow with a label above
+    const START_NODE_ID = '__start__';
+    nodes.add({
+      id: START_NODE_ID,
+      label: '',
+      shape: 'circle',
+      color: 'rgba(0,0,0,0)',
+      borderWidth: 0,
+      size: 1,
+      font: { size: 1 }
+    });
+    edgesArr.push({
+      from: START_NODE_ID,
+      to: nodeIds[dfa.startState],
+      arrows: { to: { enabled: true, scaleFactor: 0.6 } },
+      color: { color: '#222', opacity: 1 },
+      width: 1.75,
+      label: 'start',
+      font: {
+        size: 13,
+        color: '#222',
+        vadjust: -18,
+        align: 'top'
+      },
+      smooth: { enabled: true, type: "curvedCCW", roundness: 0.18 },
+      length: 5,
+      physics: false
+    });
+
+    const edges = new DataSet(edgesArr);
+
+    new Network(dfaContainer, { nodes, edges }, {
+      nodes: {
+        shape: "circle",
+        font: { size: 16 },
+        margin: 10
+      },
+      edges: {
+        smooth: {
+          enabled: true,
+          type: "curvedCW",
+          roundness: 0.3
+        },
+        font: { size: 14, strokeWidth: 0 }
+      },
+      physics: false
+    });
+  }
+
+  function showNfaDiagram() {
+    showNfaVis = true;
+    showDfaVis = false;
+    setTimeout(() => renderNfaVis(), 0);
+  }
+
+  function showDfaDiagram() {
+    showDfaVis = true;
+    showNfaVis = false;
+    setTimeout(() => renderDfaVis(), 0);
+  }
+
+  function resetInputs() {
+    states = '';
+    startState = '';
+    acceptedStates = '';
+    transitions = '';
+    showDefault = false;
+  }
+
+   function selectType(type: 'AUTOMATA' | 'REGEX') {
+    selectedType = type;
+    resetInputs();
+    if (type === 'REGEX') {
+      showDefault = false;
+      userInputRows = [{ type: '', regex: '', error: '' }];
+      inputRows = [{ type: '', regex: '', error: '' }];
+      editableDefaultRows = DEFAULT_INPUT_ROWS.map(row => ({ ...row })); // reset defaults too
+      formError = '';
+      submissionStatus = { show: false, success: false, message: '' };
+      showGenerateButton = false;
+    }
+  }
+
+  function insertDefault() {
+    showDefault = true;
+    // Save user input before overwriting
+    // (userSourceCode is already up-to-date from CodeInput)
+    editableDefaultRows = DEFAULT_INPUT_ROWS.map(row => ({ ...row }));
+    sourceCode = DEFAULT_SOURCE_CODE;
+    inputRows = DEFAULT_INPUT_ROWS.map(row => ({ ...row }));
+    states = 'q0,q1,q2';
+    startState = 'q0';
+    acceptedStates = 'q2';
+    transitions = 'q0,0->q0\nq0,0->q1\nq1,0->q2\nq1,1->q0\nq2,0->q1\nq2,1->q2';
+  }
+
+  function removeDefault() {
+    showDefault = false;
+    // Restore user input
+    sourceCode = userSourceCode;
+    inputRows = [...userInputRows];
+    resetInputs();
+  }
+
+  const DEFAULT_INPUT_ROWS = [
+    { type: 'keyword', regex: 'int|str|if', error: '' },
+    { type: 'identifier', regex: '[a-zA-Z]+', error: '' },
+    { type: 'integer', regex: '[0-9]+', error: '' },
+    { type: 'assignment', regex: '=', error: '' },
+    { type: 'operator', regex: '[+\\-*/%]', error: '' },
+    { type: 'separator', regex: ';', error: '' }
+  ];
+
+  let editableDefaultRows = DEFAULT_INPUT_ROWS.map(row => ({ ...row }));
+
+  const DEFAULT_SOURCE_CODE = 'int blue = 13 + 22 ;';
+
+  // Keep userSourceCode in sync with sourceCode when not showing default
+  $: if (!showDefault && sourceCode) {
+    userSourceCode = sourceCode;
+  }
 </script>
 
 <div class="phase-inspector">
   <div class="source-code-section">
     <div class="lexor-heading">
-      <h1 class="lexor-heading-h1">LEXING</h1>
+       <h1 class="lexor-heading-h1">LEXING</h1>
     </div>
     <h3 class="source-code-header">Source Code</h3>
-    <pre class="source-display">{source_code || 'No source code available'}</pre>
+    <pre class="source-display">{showDefault ? DEFAULT_SOURCE_CODE : (sourceCode || "no source code available")}</pre>
   </div>
+  
+  <!-- Automaton selection buttons -->
+<div class="automaton-btn-row">
+  <button
+    class="automaton-btn {selectedType === 'AUTOMATA' ? 'selected' : ''}"
+    on:click={() => selectType('AUTOMATA')}
+    type="button"
+  >Automata</button>
+  <button
+    class="automaton-btn {selectedType === 'REGEX' ? 'selected' : ''}"
+    on:click={() => selectType('REGEX')}
+    type="button"
+  >Regular Expression</button>
+  {#if selectedType && !showDefault}
+    <button
+      class="default-toggle-btn"
+      on:click={insertDefault}
+      type="button"
+      aria-label="Insert default input"
+      title="Insert default input"
+    >
+      <span class="icon">🪄</span>
+    </button>
+  {/if}
+  {#if selectedType && showDefault}
+    <button
+      class="default-toggle-btn selected"
+      on:click={removeDefault}
+      type="button"
+      aria-label="Remove default input"
+      title="Remove default input"
+    >
+      <span class="icon">🧹</span>
+    </button>
+  {/if}
+</div>
 
-  <div class="automaton-btn-row">
-    <button
-      class="automaton-btn {selected_automaton === 'NFA' ? 'selected' : ''}"
-      on:click={() => selectAutomaton('NFA')}
-      type="button">NFA</button
-    >
-    <button
-      class="automaton-btn {selected_automaton === 'DFA' ? 'selected' : ''}"
-      on:click={() => selectAutomaton('DFA')}
-      type="button">DFA</button
-    >
-    <button
-      class="automaton-btn {selected_automaton === 'REGEX' ? 'selected' : ''}"
-      on:click={() => selectAutomaton('REGEX')}
-      type="button">Regular Expression</button
-    >
-    {#if selected_automaton && !show_default}
-      <button
-        class="default-toggle-btn"
-        on:click={insertDefault}
-        type="button"
-        aria-label="Insert default input"
-        title="Insert default input"
-      >
-        <span class="icon">🪄</span>
-      </button>
-    {/if}
-    {#if selected_automaton && show_default}
-      <button
-        class="default-toggle-btn selected"
-        on:click={removeDefault}
-        type="button"
-        aria-label="Remove default input"
-        title="Remove default input"
-      >
-        <span class="icon">🧹</span>
-      </button>
-    {/if}
-  </div>
-
-  {#if selected_automaton === 'REGEX'}
+  <!-- Conditional content rendering -->
+  {#if selectedType === 'REGEX'}
+    <!-- Place your existing lexing/regex UI here -->
     <div>
+      <!-- BEGIN LEXING UI -->
+      <!-- ...everything from your shared-block and below, up to the closing </style>... -->
       <div class="shared-block">
-        <div class="block-headers">
-          <div class="header-section">
-            <h3>Type</h3>
-          </div>
-          <div class="header-section">
-            <h3>Regular Expression</h3>
-          </div>
-        </div>
-        <div class="input-rows">
-          {#each input_rows as row, i}
-            <div class="input-row">
-              <div class="input-block">
-                <input
-                  type="text"
-                  bind:value={row.type}
-                  on:input={handleInputChange}
-                  placeholder="Enter type..."
-                  class:error={row.error}
-                />
-              </div>
-              <div class="input-block">
-                <input
-                  type="text"
-                  bind:value={row.regex}
-                  on:input={handleInputChange}
-                  placeholder="Enter regex pattern..."
-                  class:error={row.error}
-                />
-              </div>
-              {#if row.error}
-                <div class="error-message">{row.error}</div>
-              {/if}
-            </div>
-          {/each}
-        </div>
-
-        {#if input_rows[input_rows.length - 1].type && input_rows[input_rows.length - 1].regex}
-          <button class="add-button" on:click={addNewRow}>
-            <span>+</span>
-          </button>
-        {/if}
+    <div class="block-headers">
+      <div class="header-section">
+        <h3>Type</h3>
       </div>
-
-      {#if form_error}
-        <div class="form-error">{form_error}</div>
-      {/if}
-
-      <div class="button-container">
-        <button
-          class="submit-button"
-          class:shifted={show_generate_button}
-          on:click={handleSubmit}
-        >
-          Submit
-        </button>
-
-        {#if show_generate_button}
-          <button class="generate-button" on:click={generateTokens}> Generate Tokens </button>
-        {/if}
+      <div class="header-section">
+        <h3>Regular Expression</h3>
       </div>
-
-      {#if submission_status.show}
-        <div
-          class="status-message"
-          class:success={submission_status.success === true}
-          class:info={submission_status.message === 'info'}
-        >
-          {submission_status.message}
-        </div>
-      {/if}
     </div>
-  {:else if selected_automaton === 'NFA'}
-    <div class="automaton-section">
+    <div class="input-rows">
+      {#each (showDefault ? editableDefaultRows : userInputRows) as row, i}
+        <div class="input-row">
+          <div class="input-block">
+            <input 
+              type="text" 
+              bind:value={row.type} 
+              on:input={handleInputChange}
+              placeholder="Enter type..."
+              class:error={row.error}
+            />
+          </div>
+          <div class="input-block">
+            <input 
+              type="text" 
+              bind:value={row.regex} 
+              on:input={handleInputChange}
+              placeholder="Enter regex pattern..."
+              class:error={row.error}
+            />
+          </div>
+          {#if row.error}
+            <div class="error-message">{row.error}</div>
+          {/if}
+        </div>
+      {/each}
+    </div>
+
+    {#if userInputRows[userInputRows.length - 1].type && userInputRows[userInputRows.length - 1].regex}
+      <button class="add-button" on:click={addNewRow}>
+        <span>+</span>
+      </button>
+    {/if}
+  </div>
+  
+  {#if formError}
+    <div class="form-error">{formError}</div>
+  {/if}
+
+  <div class="button-container">
+    <button 
+      class="submit-button" 
+      class:shifted={showGenerateButton} 
+      on:click={handleSubmit}
+    >
+      Submit
+    </button>
+    
+    {#if showGenerateButton}
+      <button class="generate-button" on:click={generateTokens}>
+        Generate Tokens
+      </button>
+    {/if}
+  </div>
+
+  {#if submissionStatus.show}
+    <div 
+      class="status-message" 
+      class:success={submissionStatus.success === true}
+      class:info={submissionStatus.message === 'info'}
+    >
+      {submissionStatus.message}
+    </div>
+  {/if}
+      <!-- END LEXING UI -->
+    </div>
+{:else if selectedType === 'AUTOMATA'}
+  <div class="automaton-section">
+    <div class="automaton-left">
       <label>
         States:
-        <input class="automaton-input" bind:value={nfa_states} placeholder="e.g. q0,q1,q2" />
-      </label>
-      <label>
-        Alphabets:
-        <input class="automaton-input" bind:value={nfa_alphabets} placeholder="e.g. a,b" />
+        <input class="automaton-input" bind:value={states} placeholder="e.g. q0,q1,q2" />
       </label>
       <label>
         Start State:
-        <input class="automaton-input" bind:value={nfa_start_state} placeholder="e.g. q0" />
+        <input class="automaton-input" bind:value={startState} placeholder="e.g. q0" />
       </label>
       <label>
         Accepted States:
-        <input
-          class="automaton-input"
-          bind:value={nfa_accepted_states}
-          placeholder="e.g. q2"
-        />
+        <input class="automaton-input" bind:value={acceptedStates} placeholder="e.g. q2" />
       </label>
-      <label class="automaton-transitions-label">
+    </div>
+    <div class="automaton-right">
+      <label>
         Transitions:
         <textarea
           class="automaton-input automaton-transitions"
-          bind:value={nfa_transitions}
+          bind:value={transitions}
           placeholder="e.g. q0,a->q1&#10;q1,b->q2"
         ></textarea>
       </label>
     </div>
-  {:else if selected_automaton === 'DFA'}
-    <div class="automaton-section">
-      <label>
-        States:
-        <input class="automaton-input" bind:value={dfa_states} placeholder="e.g. A,B" />
-      </label>
-      <label>
-        Alphabets:
-        <input class="automaton-input" bind:value={dfa_alphabets} placeholder="e.g. 0,1" />
-      </label>
-      <label>
-        Start State:
-        <input class="automaton-input" bind:value={dfa_start_state} placeholder="e.g. A" />
-      </label>
-      <label>
-        Accepted States:
-        <input
-          class="automaton-input"
-          bind:value={dfa_accepted_states}
-          placeholder="e.g. B"
-        />
-      </label>
-      <label class="automaton-transitions-label">
-        Transitions:
-        <textarea
-          class="automaton-input automaton-transitions"
-          bind:value={dfa_transitions}
-          placeholder="e.g. A,0->A&#10;A,1->B"></textarea
-        >
-      </label>
+    <div class="automata-action-row" style="grid-column: span 2;">
+      <button class="action-btn" type="button" on:click={showNfaDiagram}>Show NFA</button>
+      <button class="action-btn" type="button" on:click={showDfaDiagram}>Show DFA</button>
+      <button class="action-btn" type="button">Tokenisation</button>
+      <button class="action-btn" type="button" title="Convert to Regular Expression">RE</button>
+    </div>
+  </div>
+
+  {#if showNfaVis}
+    <div class="automata-container">
+      <h4 style="margin-bottom:0.5rem;">NFA Visualization</h4>
+      <div bind:this={nfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
     </div>
   {/if}
+  {#if showDfaVis}
+    <div class="automata-container">
+      <h4 style="margin-bottom:0.5rem;">DFA Visualization</h4>
+      <div bind:this={dfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
+    </div>
+  {/if}
+{/if}
 </div>
 
 <style>
-  .source-code-header {
+
+  .source-code-header{
     color: #444;
   }
   .phase-inspector {
@@ -493,12 +766,12 @@
     background: #f5f5f5;
     padding: 1.2rem;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
     position: relative;
   }
 
-  .lexor-heading {
-    justify-items: center;
+  .lexor-heading{
+    justify-items:center;
   }
   .block-headers {
     display: flex;
@@ -512,12 +785,14 @@
     flex: 1;
   }
 
+ 
   .header-section h3 {
     margin: 0;
-    color: #001a6e;
+    color: #001A6E;
     font-size: 1rem;
     font-weight: 600;
   }
+
 
   .input-rows {
     display: flex;
@@ -549,8 +824,8 @@
 
   .input-block input:focus {
     outline: none;
-    border-color: #001a6e;
-    box-shadow: 0 0 0 2px rgba(32, 87, 129, 0.1);
+    border-color: #001A6E;
+    box-shadow: 0 0 0 2px rgba(32,87,129,0.1);
   }
 
   .input-block input.error {
@@ -584,7 +859,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: #001a6e;
+    background: #001A6E;
     color: white;
     border: none;
     cursor: pointer;
@@ -596,7 +871,7 @@
   }
 
   .add-button:hover {
-    background: #27548a;
+    background: #27548A;
   }
 
   .button-container {
@@ -608,16 +883,16 @@
 
   .submit-button {
     padding: 0.6rem 1.5rem;
-    background: #001a6e;
+    background: #001A6E;
     color: white;
     border: none;
     border-radius: 6px;
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease; 
     box-shadow: 0 2px 4px rgba(0, 26, 110, 0.1);
-    position: relative;
+    position: relative; 
     margin-top: 1rem;
   }
 
@@ -625,34 +900,36 @@
     transform: translateX(-1rem);
   }
 
+
   .submit-button:not(.shifted) {
     transform: translateX(0);
   }
 
   .generate-button {
-    padding: 0.6rem 1.5rem;
-    background: #666;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
-    margin-top: 1rem;
-    height: 100%;
-    line-height: 1.1;
-  }
+  padding: 0.6rem 1.5rem; 
+  background: #666;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
+  margin-top: 1rem; 
+  height: 100%; 
+  line-height: 1.1; 
+}
 
   .submit-button:hover {
-    background: #27548a;
-  }
+    background: #27548A;
+    
+  } 
 
-  :global(html.dark-mode) .submit-button {
+   :global(html.dark-mode) .submit-button {
     background: #cccccc;
-    color: #041a47;
-    transition: transform 0.2s ease;
+    color:#041a47;
+    transition: transform 0.2s ease; 
     margin-top: 1rem;
   }
 
@@ -677,33 +954,26 @@
   }
 
   .status-message.info {
-    background: #0096c7;
+    background: #0096c7; 
   }
 
   @keyframes fadeInOut {
-    0% {
-      opacity: 0;
-    }
-    10% {
-      opacity: 1;
-    }
-    90% {
-      opacity: 1;
-    }
-    100% {
-      opacity: 0;
-    }
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { opacity: 0; }
   }
   :global(html.dark-mode) .source-code-header {
     color: #ebeef1;
   }
-
+ 
+  
   :global(html.dark-mode) .lexor-heading-h1 {
     color: #ebeef1;
   }
 
-  :global(html.dark-mode) .source-display {
-    color: black;
+  :global(html.dark-mode)  .source-display{
+    color : black;
   }
 
   .automaton-btn-row {
@@ -717,7 +987,7 @@
     border: 2px solid #e5e7eb;
     border-radius: 1.2rem;
     background: white;
-    color: #001a6e;
+    color: #001A6E;
     font-weight: 500;
     font-size: 0.95rem;
     cursor: pointer;
@@ -725,31 +995,31 @@
     outline: none;
   }
   .automaton-btn.selected {
-    border-color: #001a6e;
+    border-color: #001A6E;
     background: #e6edfa;
-    color: #001a6e;
+    color: #001A6E;
   }
   .automaton-btn:not(.selected):hover {
     border-color: #7da2e3;
     background: #f5f8fd;
   }
   .default-toggle-btn {
-    margin-left: 1.2rem;
-    padding: 0.4rem 0.7rem;
-    border-radius: 1.2rem;
-    border: 2px solid #e5e7eb;
-    background: white; 
-    color: #001a6e;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: background 0.2s, border-color 0.2s;
-    display: flex;
-    align-items: center;
-    height: 2.2rem;
-    width: 2.2rem;
-    justify-content: center;
-    position: relative;
-  }
+  margin-left: 1.2rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 1.2rem;
+  border: 2px solid #e5e7eb;      /* match unselected automaton-btn */
+  background: white;              /* match unselected automaton-btn */
+  color: #001A6E;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  display: flex;
+  align-items: center;
+  height: 2.2rem;
+  width: 2.2rem;
+  justify-content: center;
+  position: relative;
+}
   .default-toggle-btn.selected {
     background: #d0e2ff;
     border-color: #003399;
@@ -766,19 +1036,20 @@
   }
 
   .automaton-section {
-    margin-top: 2rem;
+    margin-top: 0rem;
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 1.2rem 1.5rem;
     max-width: 600px;
   }
   .automaton-section label {
+    margin-top: 0.75rem;;
     font-weight: 500;
-    color: #001a6e;
+    color: #001A6E;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    font-size: 1rem;
+    font-size: 1.05rem;
   }
   .automaton-input {
     padding: 0.7rem 1rem;
@@ -786,23 +1057,103 @@
     border-radius: 0.7rem;
     font-size: 1rem;
     background: #f8fafc;
-    color: #001a6e;
+    color: #001A6E;
     transition: border-color 0.2s;
     width: 100%;
     box-sizing: border-box;
   }
   .automaton-input:focus {
-    border-color: #001a6e;
+    border-color: #001A6E;
     outline: none;
     background: #e6edfa;
   }
-  .automaton-transitions-label {
-    grid-column: span 2;
-  }
+
   .automaton-transitions {
-    min-height: 6rem;
+    min-height: 13rem;
     min-width: 100%;
     font-family: 'Fira Mono', monospace;
     resize: vertical;
   }
+
+
+  .automata-action-row {
+    grid-column: span 2;
+    display: flex;
+    gap: 1.25rem;
+    margin-top: 1.75rem;
+    justify-content: flex-start;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .action-btn {
+    /* Base styles */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    border: none;
+    outline: none;
+    position: relative;
+    overflow: hidden;
+    
+    /* Default button style */
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    background: #e0e7ff;
+    color: #1e40af;
+    box-shadow: 0 1px 2px 0 rgba(30, 64, 175, 0.05);
+    
+    /* Hover/focus states */
+    &:hover, &:focus {
+      background: #d0d9ff;
+      color: #1e3a8a;
+      box-shadow: 0 1px 3px 0 rgba(30, 64, 175, 0.1), 
+                  0 1px 2px 0 rgba(30, 64, 175, 0.06);
+      transform: translateY(-1px);
+    }
+    
+    /* Active state */
+    &:active {
+      transform: translateY(0);
+      box-shadow: inset 0 2px 4px 0 rgba(30, 64, 175, 0.06);
+    }
+    
+    /* Disabled state (if you add disabled buttons later) */
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+    
+    /* Tooltip styles for the RE button */
+    &[title] {
+      position: relative;
+      
+      &:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1e3a8a;
+        color: white;
+        padding: 0.5rem 0.75rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        white-space: nowrap;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+    }
+  }
+
 </style>
