@@ -238,7 +238,15 @@ func CreateTokensFromDFA(source_code string, dfa Automata) ([]TypeValue, []strin
 				for _, current_transition := range dfa.Transitions { //add children of current_state to queue
 
 					if current_transition.From == current_state.state {
-						if strings.Contains(current_transition.Label, current_char) {
+
+						var match_found bool
+						if strings.Contains(current_transition.Label, "[") && strings.Contains(current_transition.Label, "]") {
+							match_found, _ = regexp.MatchString("^"+current_transition.Label+"$", current_char)
+						} else {
+							match_found = strings.Contains(current_transition.Label, current_char)
+						}
+
+						if match_found {
 
 							next_state := CandidateSol{
 								state:        current_transition.To,
@@ -283,16 +291,16 @@ func CreateTokensFromDFA(source_code string, dfa Automata) ([]TypeValue, []strin
 func ConvertDFAToRegex(dfa Automata) ([]TypeRegex, error) {
 
 	if len(dfa.States) == 0 {
-		return nil, fmt.Errorf("no states identified")
+		return nil, fmt.Errorf("no states identified in dfa")
 	}
 	if len(dfa.Transitions) == 0 {
-		return nil, fmt.Errorf("no transitions identified")
+		return nil, fmt.Errorf("no transitions identified in dfa")
 	}
 	if len(dfa.Accepting) == 0 {
-		return nil, fmt.Errorf("no accepting states identified")
+		return nil, fmt.Errorf("no accepting states identified in dfa")
 	}
 	if dfa.Start == "" {
-		return nil, fmt.Errorf("no start state identified")
+		return nil, fmt.Errorf("no start state identified in dfa")
 	}
 
 	paths := make(map[string]string)
