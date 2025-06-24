@@ -10,7 +10,6 @@
   import CodeInput from '$lib/components/main/code-input.svelte';
   import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 
-
   let LexerPhaseTutorial: any;
   let LexerPhaseInspector: any;
   let LexerArtifactViewer: any;
@@ -22,13 +21,12 @@
   let show_drag_tip = false;
 
   onMount(async () => {
-
     LexerPhaseTutorial = (await import('$lib/components/lexor/lexer-phase-tutorial.svelte')).default;
     LexerPhaseInspector = (await import('$lib/components/lexor/phase-inspector.svelte')).default;
-    LexerArtifactViewer = (await import('$lib/components/lexor/artifact-viewer.svelte')).default;
-    ParserPhaseTutorial = (await import('$lib/components/parser/PhaseTutorial.svelte')).default;
-    ParserPhaseInspector = (await import('$lib/components/parser/ParsingInput.svelte')).default;
-    ParserArtifactViewer = (await import('$lib/components/parser/ArtifactViewer.svelte')).default;
+    LexerArtifactViewer = (await import('$lib/components/lexor/lexor-artifact-viewer.svelte')).default;
+    ParserPhaseTutorial = (await import('$lib/components/parser/parser-phase-tutorial.svelte')).default;
+    ParserPhaseInspector = (await import('$lib/components/parser/parsing-input.svelte')).default;
+    ParserArtifactViewer = (await import('$lib/components/parser/parser-artifact-viewer.svelte')).default;
 
     document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
     if (!localStorage.getItem('hasSeenDragTip')) {
@@ -63,18 +61,14 @@
     parser: 'Parser'
   };
 
-  // handleCreateNode
-  // Return type: void
-  // Parameter type(s): NodeType
-  // Creates a new node on the canvas with a calculated position.
   function handleCreateNode(type: NodeType) {
     node_counter++;
     nodes.update((curr) => {
-      const start_x = 100; // Initial X position
-      const start_y = 100; // Initial Y position
-      const x_offset = 300; // Horizontal space between nodes
-      const y_offset = 150; // Vertical space between rows
-      const nodes_per_row = 3; // How many nodes before starting a new row
+      const start_x = 100;
+      const start_y = 100;
+      const x_offset = 300;
+      const y_offset = 150;
+      const nodes_per_row = 3;
       const new_node_index = curr.length;
       const new_position = {
         x: start_x + (new_node_index % nodes_per_row) * x_offset,
@@ -91,21 +85,13 @@
     workspace_el?.focus();
   }
 
-  // dismissDragTip
-  // Return type: void
-  // Parameter type(s): none
-  // Dismisses the one-time help tip and stores the state in localStorage.
   function dismissDragTip() {
     localStorage.setItem('hasSeenDragTip', 'true');
     show_drag_tip = false;
   }
 
-  // handlePhaseSelect
-  // Return type: void
-  // Parameter type(s): CustomEvent<NodeType>
-  // Handles the selection of a compiler phase from a node on the canvas.
-  function handlePhaseSelect(e: CustomEvent<NodeType>) {
-    const type = e.detail;
+  // UPDATED: This function now accepts the 'type' string directly
+  function handlePhaseSelect(type: NodeType) {
     if (type === 'source') {
       show_code_input = true;
     } else {
@@ -118,33 +104,21 @@
     }
   }
 
-  // returnToCanvas
-  // Return type: void
-  // Parameter type(s): none
-  // Closes any open analysis or input view and returns to the main canvas.
   function returnToCanvas() {
     selected_phase = null;
     show_code_input = false;
   }
 
-  // handleCodeSubmit
-  // Return type: void
-  // Parameter type(s): <string>
-  // Receives submitted source code from the input modal.
-  function handleCodeSubmit(code: string) {  
+  function handleCodeSubmit(code: string) {
     show_tokens = false;
-    source_code = code; 
+    source_code = code;
     show_code_input = false;
   }
 
-  // handleTokenGeneration
-  // Return type: void
-  // Parameter type(s): CustomEvent<{ tokens: Token[], unexpected_tokens: string[] }>
-  // Receives generated tokens from the lexer inspector component.
-  function handleTokenGeneration(event: CustomEvent<{ tokens: Token[]; unexpected_tokens: string[] }>) {
+  function handleTokenGeneration(data: { tokens: Token[]; unexpected_tokens: string[] }) {
     show_tokens = true;
-    tokens = event.detail.tokens;
-    unexpected_tokens = event.detail.unexpected_tokens;
+    tokens = data.tokens;
+    unexpected_tokens = data.unexpected_tokens;
   }
 
   let tokens: Token[] = [];
@@ -156,7 +130,7 @@
 <div class="main">
   <Toolbox {handleCreateNode} {tooltips} />
   <div class="workspace" bind:this={workspace_el} tabindex="-1">
-    <DrawerCanvas {nodes} on:phaseSelect={handlePhaseSelect} />
+    <DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} />
 
     {#if show_drag_tip}
       <div class="help-tip">
@@ -174,7 +148,11 @@
         <div class="three-column-layout">
           {#if selected_phase === 'lexer' && LexerPhaseTutorial}
             <svelte:component this={LexerPhaseTutorial} />
-            <svelte:component this={LexerPhaseInspector} {source_code} on:generateTokens={handleTokenGeneration} />
+            <svelte:component
+              this={LexerPhaseInspector}
+              {source_code}
+              onGenerateTokens={handleTokenGeneration}
+            />
             <svelte:component
               this={LexerArtifactViewer}
               phase={selected_phase}

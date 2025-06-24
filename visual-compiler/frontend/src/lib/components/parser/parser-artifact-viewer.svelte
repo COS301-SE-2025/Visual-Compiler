@@ -1,5 +1,5 @@
 <script lang="ts">
-
+  // This script block is intentionally empty as no logic is needed for this placeholder component.
 </script>
 
 <div class="artifact-viewer">
@@ -10,7 +10,6 @@
 </div>
 
 <style>
-
   .artifact-viewer {
     padding: 1.5rem;
   }
@@ -29,6 +28,11 @@
   }
 
   /* Dark Mode Styles */
-  :global(html.dark-mode) h3 { color: #ebeef1; border-bottom-color: #4b5563; }
-  :global(html.dark-mode) .empty-state { color: #9ca3af; }
+  :global(html.dark-mode) h3 {
+    color: #ebeef1;
+    border-bottom-color: #4b5563;
+  }
+  :global(html.dark-mode) .empty-state {
+    color: #9ca3af;
+  }
 </style>

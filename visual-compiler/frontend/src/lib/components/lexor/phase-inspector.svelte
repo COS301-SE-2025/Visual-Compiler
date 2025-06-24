@@ -1,20 +1,20 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { Token } from '$lib/types';
   import type { NodeType } from '$lib/types';
   import { AddToast } from '$lib/stores/toast';
 
   export let source_code = '';
 
+  // This prop will be called instead of dispatching an event
+  export let onGenerateTokens: (data: {
+    tokens: Token[];
+    unexpected_tokens: string[];
+  }) => void = () => {};
+
   let input_rows = [{ type: '', regex: '', error: '' }];
   let form_error = '';
   let submission_status = { show: false, success: false, message: '' };
   let show_generate_button = false;
-  const dispatch = createEventDispatcher<{
-    generateTokens: {
-      tokens: Token[];
-    };
-  }>();
 
   // addNewRow
   // Return type: void
@@ -154,9 +154,10 @@
         throw new Error('Expected tokens array in response');
       }
 
-      dispatch('generateTokens', {
+      // Call the prop function instead of dispatching
+      onGenerateTokens({
         tokens: data.tokens,
-        unexpected_tokens: data.tokens_unidentified
+        unexpected_tokens: data.unexpected_tokens
       });
 
       show_generate_button = false;
@@ -736,8 +737,8 @@
     margin-left: 1.2rem;
     padding: 0.4rem 0.7rem;
     border-radius: 1.2rem;
-    border: 2px solid #e5e7eb; /* match unselected automaton-btn */
-    background: white; /* match unselected automaton-btn */
+    border: 2px solid #e5e7eb;
+    background: white; 
     color: #001a6e;
     font-size: 1.2rem;
     cursor: pointer;

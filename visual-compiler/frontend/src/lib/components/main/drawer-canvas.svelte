@@ -1,6 +1,5 @@
 <script lang="ts">
   import { Svelvet, Node } from 'svelvet';
-  import { createEventDispatcher } from 'svelte';
   import type { Writable } from 'svelte/store';
   import type { NodeType } from '$lib/types';
   import { theme } from '../../stores/theme';
@@ -14,9 +13,10 @@
 
   export let nodes: Writable<CanvasNode[]>;
 
-  const dispatch = createEventDispatcher<{ phaseSelect: NodeType }>();
+  export let onPhaseSelect: (type: NodeType) => void = () => {};
+
   let canvas_el: any;
-  let last_click = 0;
+  let last_click = -Infinity;
   const DOUBLE_CLICK_MILLISECONDS = 300;
 
   // onNodeClick
@@ -24,12 +24,20 @@
   // Parameter type(s): NodeType
   // Dispatches a 'phaseSelect' event if a node is double-clicked within a time limit.
   function onNodeClick(type: NodeType) {
-    const now = performance.now();
-    if (now - last_click < DOUBLE_CLICK_MILLISECONDS) {
-      dispatch('phaseSelect', type);
-    }
-    last_click = now;
+  const now = performance.now();
+
+  // Add these three lines for debugging
+  console.log('--------------------------------');
+  console.log(`Click registered! now: ${now}, last_click: ${last_click}`);
+  console.log(`DIFFERENCE: ${now - last_click}`);
+
+  if (now - last_click < DOUBLE_CLICK_MILLISECONDS) {
+    // Add this line for debugging
+    console.log('Double-click condition was MET!');
+    onPhaseSelect(type);
   }
+  last_click = now;
+}
 </script>
 
 <div class="drawer-canvas">
