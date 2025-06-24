@@ -551,7 +551,7 @@
 
   let editableDefaultRows = DEFAULT_INPUT_ROWS.map(row => ({ ...row }));
 
-  const DEFAULT_SOURCE_CODE = 'int blue = 13 + 22';
+  const DEFAULT_SOURCE_CODE = 'int blue = 13 + 22 ;';
 
   // Keep userSourceCode in sync with sourceCode when not showing default
   $: if (!showDefault && sourceCode) {
