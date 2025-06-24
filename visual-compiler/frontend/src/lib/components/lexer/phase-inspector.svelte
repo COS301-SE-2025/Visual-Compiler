@@ -2,6 +2,8 @@
   import type { Token } from '$lib/types';
   import { AddToast } from '$lib/stores/toast';
   import { onMount } from 'svelte';
+  // Add static import for vis-network
+  import { DataSet, Network } from 'vis-network/standalone';
 
   // FIX 1: Changed prop name back to 'source_code' for consistency
   export let source_code = '';
@@ -246,7 +248,7 @@
   }
 
   async function renderNfaVis() {
-    const { DataSet, Network } = await import('vis-network/peer');
+    // Use statically imported DataSet and Network
     const nfa = parseAutomaton();
     const nodeIds: Record<string, string> = {};
     nfa.states.forEach((state) => {
@@ -293,7 +295,7 @@
   }
 
   async function renderDfaVis() {
-    const { DataSet, Network } = await import('vis-network/peer');
+    // Use statically imported DataSet and Network
     const dfa = nfaToDfa(parseAutomaton());
     const nodeIds: Record<string, string> = {};
     dfa.states.forEach((state) => {
