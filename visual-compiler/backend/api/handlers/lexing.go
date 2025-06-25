@@ -13,10 +13,14 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
+type SourceCodeOnlyRequest struct {
+	// Represents the User's ID from frontend
+	UsersID bson.ObjectID `json:"users_id" binding:"required"`
+	Code    string        `json:"source_code" binding:"required"`
+}
+
 // Specifies the JSON body request.
-type SourceCodeRequest struct {
-	// Represents the source code the user enters
-	Code string `json:"source_code" binding:"required"`
+type RulesRequest struct {
 	// Represents the pairs of Type and Regex
 	Pairs []services.TypeRegex `json:"pairs" binding:"required"`
 	// Represents the User's ID from frontend
@@ -29,6 +33,60 @@ type IDRequest struct {
 	UsersID bson.ObjectID `json:"users_id" binding:"required"`
 }
 
+func StoreSourceCode(c *gin.Context) {
+	var req SourceCodeOnlyRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
+		return
+	}
+
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	filters := bson.M{"users_id": req.UsersID}
+	var userexisting bson.M
+
+	err := collection.FindOne(ctx, filters).Decode(&userexisting)
+
+	if err == mongo.ErrNoDocuments {
+		_, err = collection.InsertOne(ctx, bson.M{
+			"code":     req.Code,
+			"users_id": req.UsersID,
+		})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
+			return
+		}
+	} else if err == nil {
+		updateexisting := bson.D{
+			bson.E{Key: "$unset", Value: bson.M{
+				"tokens":              "",
+				"tokens_unidentified": "",
+				"nfa":                 "",
+				"dfa":                 "",
+				"rules":               "",
+			}},
+			bson.E{Key: "$set", Value: bson.M{
+				"code": req.Code,
+			}},
+		}
+		_, err = collection.UpdateOne(ctx, filters, updateexisting)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Update error"})
+			return
+		}
+	} else {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database lookup error"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Code is ready for further processing"})
+}
+
 // Locally store a user's source code and regex expressions.
 // Gets the source code from a JSON request.
 // Formats the response as a JSON Body
@@ -37,8 +95,8 @@ type IDRequest struct {
 //   - A JSON response body.
 //   - A 200 OK response if successful
 //   - A 500 Internal Server Error if any errors are caught for parsing errors
-func StoreSourceCode(c *gin.Context) {
-	var req SourceCodeRequest
+func CreateRulesFromCode(c *gin.Context) {
+	var req RulesRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
@@ -64,43 +122,28 @@ func StoreSourceCode(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	filters := bson.M{"users_id": req.UsersID}
-	var userexisting bson.M
+	var res struct {
+		Code string `bson:"code"`
+	}
 
-	err = collection.FindOne(ctx, filters).Decode(&userexisting)
-
-	if err == mongo.ErrNoDocuments {
-		_, err = collection.InsertOne(ctx, bson.M{
-			"code":     req.Code,
-			"rules":    rules,
-			"users_id": req.UsersID,
-		})
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
-			return
-		}
-	} else if err == nil {
-		updateexisting := bson.D{
-			bson.E{Key: "$unset", Value: bson.M{
-				"tokens":              "",
-				"tokens_unidentified": "",
-			}},
-			bson.E{Key: "$set", Value: bson.M{
-				"code":  req.Code,
-				"rules": rules,
-			}},
-		}
-		_, err = collection.UpdateOne(ctx, filters, updateexisting)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Update error"})
-			return
-		}
-	} else {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database lookup error"})
+	err = collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Source code not found. Please enter a source code"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Code is ready for lexing"})
+	filters := bson.M{"users_id": req.UsersID}
+	updateusersrules := bson.M{
+		"rules": rules,
+	}
+
+	_, err = collection.UpdateOne(ctx, filters, updateusersrules)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert rules"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Rules successfully created."})
 }
 
 // Lexes the user's source code that is locally stored.
@@ -208,8 +251,7 @@ func ReadDFAFromUser(c *gin.Context) {
 
 	if err == mongo.ErrNoDocuments {
 		_, err = collection.InsertOne(ctx, bson.M{
-			"dfa":      dfa,
-			"users_id": req.UsersID,
+			"dfa": dfa,
 		})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
