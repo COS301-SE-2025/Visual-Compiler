@@ -90,10 +90,16 @@
         })
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
         AddToast(`Login failed: ${data.error || response.statusText}`, 'error');
         return;
+      }
+
+      if (data.id) {
+        console.log('user_id from backend:', data.id);
+        localStorage.setItem('user_id', data.id);
       }
 
       AddToast('Login successful!', 'success');

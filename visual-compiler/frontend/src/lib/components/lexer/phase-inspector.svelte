@@ -67,7 +67,14 @@
       return;
     }
 
+    const user_id = localStorage.getItem('user_id');
+    if (!user_id) {
+      AddToast('User not logged in.', 'error');
+      return;
+    }
+
     const requestData = {
+      users_id: user_id,
       source_code: showDefault ? DEFAULT_SOURCE_CODE : userSourceCode,
       pairs: nonEmptyRows.map((row) => ({
         Type: row.type.toUpperCase(),
@@ -95,7 +102,13 @@
 
   async function generateTokens() {
     try {
+      const user_id = localStorage.getItem('user_id');
+      if (!user_id) {
+        AddToast('User not logged in.', 'error');
+        return;
+      }
       const requestData = {
+        users_id: user_id,
         source_code: source_code,
         pairs: (showDefault ? editableDefaultRows : userInputRows).map((row) => ({
           Type: row.type.toUpperCase(),
@@ -129,6 +142,105 @@
     } catch (error) {
       console.error('Generate tokens error:', error);
       AddToast('Error generating tokens', 'error');
+    }
+  }
+
+  async function handleTokenisation() {
+    await saveDfaToBackend()
+    const user_id = localStorage.getItem('user_id');
+    if (!user_id) {
+      AddToast('User not logged in.', 'error');
+      return;
+    }
+
+    // Build DFA object from your automata input fields
+    type DFATransition = { from: string; label: string; to: string };
+    type DFAAccepting = { state: string; type: string };
+    const dfa = {
+      states: states.split(',').map(s => s.trim()).filter(Boolean),
+      start: startState.trim(),
+      accepting: acceptedStates.split(',').map(s => ({ state: s.trim(), type: s.trim() })),
+      transitions: [],
+    };
+
+    // Parse transitions
+    const transitionLines = transitions.split('\n').map(line => line.trim()).filter(Boolean);
+    for (const line of transitionLines) {
+      const match = line.match(/^(.+),(.+)->(.+)$/);
+      if (match) {
+        const [_, from, label, to] = match;
+        dfa.transitions.push({ from: from.trim(), label: label.trim(), to: to.trim() });
+      }
+    }
+
+    const body = {
+      users_id: user_id,
+      dfa
+    };
+
+    try {
+      const response = await fetch('http://localhost:8080/api/lexing/dfaToTokens', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+      const data = await response.json();
+      onGenerateTokens({
+        tokens: data.tokens,
+        unexpected_tokens: data.tokens_unidentified
+      });
+      AddToast('Tokenisation successful!', 'success');
+    } catch (error) {
+      AddToast('Tokenisation failed: ' + error, 'error');
+    }
+  }
+
+  async function saveDfaToBackend() {
+    const user_id = localStorage.getItem('user_id');
+    if (!user_id) {
+      AddToast('User not logged in.', 'error');
+      return false;
+    }
+
+    // Build DFA object with correct keys for backend
+    const dfa = {
+      states: states.split(',').map(s => s.trim()).filter(Boolean),
+      transitions: [],
+      start_state: startState.trim(),
+      accepting_states: acceptedStates.split(',').map(s => ({ state: s.trim(), type: s.trim() })),
+      users_id: user_id
+    };
+
+    // Parse transitions
+    const transitionLines = transitions.split('\n').map(line => line.trim()).filter(Boolean);
+    for (const line of transitionLines) {
+      const match = line.match(/^(.+),(.+)->(.+)$/);
+      if (match) {
+        const [_, from, label, to] = match;
+        dfa.transitions.push({ from: from.trim(), label: label.trim(), to: to.trim() });
+      }
+    }
+
+    try {
+      const response = await fetch('http://localhost:8080/api/lexing/dfa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dfa)
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        AddToast('Failed to save DFA: ' + errorText, 'error');
+        return false;
+      }
+      AddToast('DFA saved successfully!', 'success');
+      return true;
+    } catch (error) {
+      AddToast('Failed to save DFA: ' + error, 'error');
+      return false;
     }
   }
 
@@ -339,16 +451,18 @@
     });
   }
 
+  async function showDfaDiagram() {
+    const saved = await saveDfaToBackend();
+    if (!saved) return;
+    showDfaVis = true;
+    showNfaVis = false;
+    setTimeout(() => renderDfaVis(), 0);
+  }
+
   function showNfaDiagram() {
     showNfaVis = true;
     showDfaVis = false;
     setTimeout(() => renderNfaVis(), 0);
-  }
-
-  function showDfaDiagram() {
-    showDfaVis = true;
-    showNfaVis = false;
-    setTimeout(() => renderDfaVis(), 0);
   }
 
   function resetInputs() {
@@ -401,10 +515,43 @@
   ];
 
   let editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
-  const DEFAULT_SOURCE_CODE = 'int blue = 13 + 22 ;';
+  const DEFAULT_SOURCE_CODE = 'int blue = 13 + 22;';
 
   $: if (!showDefault && source_code) {
     userSourceCode = source_code;
+  }
+
+  let regexRules: { type: string; regex: string }[] = [];
+  let showRegex = false;
+
+  async function handleDfaToRegex() {
+    // Save DFA first to ensure backend has latest version
+    const saved = await saveDfaToBackend();
+    if (!saved) return;
+
+    const user_id = localStorage.getItem('user_id');
+    if (!user_id) {
+      AddToast('User not logged in.', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users_id: user_id })
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText);
+      }
+      const data = await response.json();
+      regexRules = Array.isArray(data) ? data : data.rules || [];
+      showRegex = true;
+      AddToast('DFA converted to Regex successfully!', 'success');
+    } catch (error) {
+      AddToast('DFA to Regex failed: ' + error, 'error');
+    }
   }
 </script>
 
@@ -556,8 +703,8 @@
       <div class="automata-action-row" style="grid-column: span 2;">
         <button class="action-btn" type="button" on:click={showNfaDiagram}>Show NFA</button>
         <button class="action-btn" type="button" on:click={showDfaDiagram}>Show DFA</button>
-        <button class="action-btn" type="button">Tokenisation</button>
-        <button class="action-btn" type="button" title="Convert to Regular Expression">RE</button>
+        <button class="action-btn" type="button" on:click={handleTokenisation}>Tokenisation</button>
+        <button class="action-btn" type="button" on:click={handleDfaToRegex} title="Convert to Regular Expression">RE</button>
       </div>
     </div>
 
@@ -571,6 +718,27 @@
       <div class="automata-container">
         <h4 style="margin-bottom:0.5rem;">DFA Visualization</h4>
         <div bind:this={dfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
+      </div>
+    {/if}
+    {#if showRegex && regexRules.length > 0}
+      <div class="regex-display-container">
+        <h4>Generated Regular Expressions</h4>
+        <table class="regex-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Regular Expression</th>
+            </tr>
+          </thead>
+          <tbody>
+            {#each regexRules as rule}
+              <tr>
+                <td class="regex-type">{rule.type}</td>
+                <td class="regex-pattern"><code>{rule.regex}</code></td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
       </div>
     {/if}
   {/if}
@@ -950,6 +1118,45 @@
     white-space: nowrap;
     margin-bottom: 0.5rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  .regex-display-container {
+    margin-top: 2rem;
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    max-width: 700px;
+  }
+  .regex-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+  }
+  .regex-table th,
+  .regex-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid #e0e7ef;
+    text-align: left;
+  }
+  .regex-table th {
+    background: #e6edfa;
+    color: #001a6e;
+    font-size: 1.05rem;
+  }
+  .regex-type {
+    font-weight: 600;
+    color: #1e40af;
+    letter-spacing: 0.03em;
+  }
+  .regex-pattern code {
+    background: #e0e7ff;
+    color: #0a2540;
+    padding: 0.2em 0.5em;
+    border-radius: 5px;
+    font-family: 'Fira Mono', monospace;
+    font-size: 1.01em;
+    word-break: break-all;
+    display: inline-block;
   }
 </style>
 
