@@ -145,22 +145,20 @@
     }
   }
 
-  async function handleTokenisation() {
-    await saveDfaToBackend()
+  // Helper: Save DFA to backend
+  async function saveDfaToBackend() {
     const user_id = localStorage.getItem('user_id');
     if (!user_id) {
       AddToast('User not logged in.', 'error');
-      return;
+      return false;
     }
 
-    // Build DFA object from your automata input fields
-    type DFATransition = { from: string; label: string; to: string };
-    type DFAAccepting = { state: string; type: string };
     const dfa = {
       states: states.split(',').map(s => s.trim()).filter(Boolean),
-      start: startState.trim(),
-      accepting: acceptedStates.split(',').map(s => ({ state: s.trim(), type: s.trim() })),
       transitions: [],
+      start_state: startState.trim(),
+      accepting_states: parseAcceptedStates(acceptedStates),
+      users_id: user_id
     };
 
     // Parse transitions
@@ -173,10 +171,39 @@
       }
     }
 
-    const body = {
-      users_id: user_id,
-      dfa
-    };
+    // Log the DFA JSON being sent
+    console.log("DFA sent to backend:", JSON.stringify(dfa, null, 2));
+
+    try {
+      const response = await fetch('http://localhost:8080/api/lexing/dfa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dfa)
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        AddToast('Failed to save DFA: ' + errorText, 'error');
+        return false;
+      }
+      return true;
+    } catch (error) {
+      AddToast('Failed to save DFA: ' + error, 'error');
+      return false;
+    }
+  }
+
+  async function handleTokenisation() {
+    const saved = await saveDfaToBackend();
+    if (!saved) return;
+
+    const user_id = localStorage.getItem('user_id');
+    if (!user_id) {
+      AddToast('User not logged in.', 'error');
+      return;
+    }
+
+    // Only need to send users_id, backend loads DFA from DB
+    const body = { users_id: user_id };
 
     try {
       const response = await fetch('http://localhost:8080/api/lexing/dfaToTokens', {
@@ -196,51 +223,6 @@
       AddToast('Tokenisation successful!', 'success');
     } catch (error) {
       AddToast('Tokenisation failed: ' + error, 'error');
-    }
-  }
-
-  async function saveDfaToBackend() {
-    const user_id = localStorage.getItem('user_id');
-    if (!user_id) {
-      AddToast('User not logged in.', 'error');
-      return false;
-    }
-
-    // Build DFA object with correct keys for backend
-    const dfa = {
-      states: states.split(',').map(s => s.trim()).filter(Boolean),
-      transitions: [],
-      start_state: startState.trim(),
-      accepting_states: acceptedStates.split(',').map(s => ({ state: s.trim(), type: s.trim() })),
-      users_id: user_id
-    };
-
-    // Parse transitions
-    const transitionLines = transitions.split('\n').map(line => line.trim()).filter(Boolean);
-    for (const line of transitionLines) {
-      const match = line.match(/^(.+),(.+)->(.+)$/);
-      if (match) {
-        const [_, from, label, to] = match;
-        dfa.transitions.push({ from: from.trim(), label: label.trim(), to: to.trim() });
-      }
-    }
-
-    try {
-      const response = await fetch('http://localhost:8080/api/lexing/dfa', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dfa)
-      });
-      if (!response.ok) {
-        const errorText = await response.text();
-        AddToast('Failed to save DFA: ' + errorText, 'error');
-        return false;
-      }
-      AddToast('DFA saved successfully!', 'success');
-      return true;
-    } catch (error) {
-      AddToast('Failed to save DFA: ' + error, 'error');
-      return false;
     }
   }
 
@@ -273,7 +255,8 @@
   function parseAutomaton() {
     const stateList = states.split(',').map((s) => s.trim()).filter(Boolean);
     const start = startState.trim();
-    const accepted = acceptedStates.split(',').map((s) => s.trim()).filter(Boolean);
+    // Extract only the state names from acceptedStates
+    const accepted = parseAcceptedStates(acceptedStates).map(a => a.state);
     const transitionLines = transitions.split('\n').map((line) => line.trim()).filter(Boolean);
     const transitionObj: Record<string, Record<string, string[]>> = {};
     let alphabetSet = new Set<string>();
@@ -290,7 +273,7 @@
     return {
       states: stateList,
       startState: start,
-      acceptedStates: accepted,
+      acceptedStates: accepted, // <-- now an array of state names
       transitions: transitionObj,
       alphabet: Array.from(alphabetSet)
     };
@@ -451,14 +434,6 @@
     });
   }
 
-  async function showDfaDiagram() {
-    const saved = await saveDfaToBackend();
-    if (!saved) return;
-    showDfaVis = true;
-    showNfaVis = false;
-    setTimeout(() => renderDfaVis(), 0);
-  }
-
   function showNfaDiagram() {
     showNfaVis = true;
     showDfaVis = false;
@@ -494,7 +469,7 @@
     inputRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
     states = 'q0,q1,q2';
     startState = 'q0';
-    acceptedStates = 'q2';
+    acceptedStates = 'q2->int';
     transitions = 'q0,0->q0\nq0,0->q1\nq1,0->q2\nq1,1->q0\nq2,0->q1\nq2,1->q2';
   }
 
@@ -515,17 +490,45 @@
   ];
 
   let editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
-  const DEFAULT_SOURCE_CODE = 'int blue = 13 + 22;';
+  const DEFAULT_SOURCE_CODE = 'int blue = 13 + 22 ;';
 
   $: if (!showDefault && source_code) {
     userSourceCode = source_code;
   }
 
-  let regexRules: { type: string; regex: string }[] = [];
-  let showRegex = false;
+  function parseAcceptedStates(input: string): { state: string; token_type: string }[] {
+    return input
+      .split(',')
+      .map(s => s.trim())
+      .filter(Boolean)
+      .map(pair => {
+        const [state, token_type] = pair.split('->').map(x => x.trim());
+        if (state && token_type) {
+          return { state, token_type };
+        }
+        // fallback: if only state is provided, treat type as empty string
+        if (state) {
+          return { state, token_type: '' };
+        }
+        return null;
+      })
+      .filter((x): x is { state: string; token_type: string } => !!x);
+  }
 
-  async function handleDfaToRegex() {
-    // Save DFA first to ensure backend has latest version
+  // Show DFA button handler
+  async function handleShowDfa() {
+    const saved = await saveDfaToBackend();
+    if (!saved) return;
+    AddToast('DFA saved successfully!', 'success');
+    showDfaVis = true;
+    showNfaVis = false;
+    setTimeout(() => renderDfaVis(), 0);
+  }
+
+  let regexRules: { token_type?: string; Type?: string; Regex?: string; regex?: string }[] = [];
+  let showRegexOutput = false;
+
+  async function handleConvertToRegex() {
     const saved = await saveDfaToBackend();
     if (!saved) return;
 
@@ -543,14 +546,16 @@
       });
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(errorText);
+        AddToast('DFA→Regex failed: ' + errorText, 'error');
+        return;
       }
       const data = await response.json();
-      regexRules = Array.isArray(data) ? data : data.rules || [];
-      showRegex = true;
+      console.log("dfaToRegex response:", JSON.stringify(data, null, 2)); // <-- Add this line
+      regexRules = Array.isArray(data.rules) ? data.rules : [];
+      showRegexOutput = true;
       AddToast('DFA converted to Regex successfully!', 'success');
     } catch (error) {
-      AddToast('DFA to Regex failed: ' + error, 'error');
+      AddToast('DFA→Regex failed: ' + error, 'error');
     }
   }
 </script>
@@ -687,7 +692,7 @@
         </label>
         <label>
           Accepted States:
-          <input class="automaton-input" bind:value={acceptedStates} placeholder="e.g. q2" />
+          <input class="automaton-input" bind:value={acceptedStates} placeholder="e.g. q2->int, q1->string" />
         </label>
       </div>
       <div class="automaton-right">
@@ -702,9 +707,9 @@
       </div>
       <div class="automata-action-row" style="grid-column: span 2;">
         <button class="action-btn" type="button" on:click={showNfaDiagram}>Show NFA</button>
-        <button class="action-btn" type="button" on:click={showDfaDiagram}>Show DFA</button>
+        <button class="action-btn" type="button" on:click={handleShowDfa}>Show DFA</button>
         <button class="action-btn" type="button" on:click={handleTokenisation}>Tokenisation</button>
-        <button class="action-btn" type="button" on:click={handleDfaToRegex} title="Convert to Regular Expression">RE</button>
+        <button class="action-btn" type="button" on:click={handleConvertToRegex} title="Convert to Regular Expression">RE</button>
       </div>
     </div>
 
@@ -720,27 +725,28 @@
         <div bind:this={dfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
       </div>
     {/if}
-    {#if showRegex && regexRules.length > 0}
-      <div class="regex-display-container">
-        <h4>Generated Regular Expressions</h4>
-        <table class="regex-table">
-          <thead>
+  {/if}
+
+  {#if showRegexOutput && regexRules.length > 0}
+    <div class="regex-display-container">
+      <h4>Generated Regular Expressions</h4>
+      <table class="regex-table">
+        <thead>
+          <tr>
+            <th>Type</th>
+            <th>Regular Expression</th>
+          </tr>
+        </thead>
+        <tbody>
+          {#each regexRules as rule}
             <tr>
-              <th>Type</th>
-              <th>Regular Expression</th>
+              <td class="regex-type">{rule.token_type || rule.Type || rule.type  || '-'}</td>
+              <td class="regex-pattern"><code>{rule.regex || rule.Regex || '-'}</code></td>
             </tr>
-          </thead>
-          <tbody>
-            {#each regexRules as rule}
-              <tr>
-                <td class="regex-type">{rule.type}</td>
-                <td class="regex-pattern"><code>{rule.regex}</code></td>
-              </tr>
-            {/each}
-          </tbody>
-        </table>
-      </div>
-    {/if}
+          {/each}
+        </tbody>
+      </table>
+    </div>
   {/if}
 </div>
 
@@ -1118,6 +1124,40 @@
     white-space: nowrap;
     margin-bottom: 0.5rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  .regex-output-section {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #d1e7dd;
+    border-radius: 0.5rem;
+    background: #f8f9fa;
+  }
+  .regex-output-section h3 {
+    margin: 0 0 1rem 0;
+    color: #0f5132;
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+  .regex-rules-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+  .regex-rule {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.8rem;
+    border: 1px solid #cfe2ff;
+    border-radius: 0.5rem;
+    background: #f0f9ff;
+  }
+  .token-type {
+    font-weight: 500;
+    color: #084298;
+  }
+  .regex-pattern {
+    font-family: 'Fira Mono', monospace;
+    color: #333;
   }
   .regex-display-container {
     margin-top: 2rem;
