@@ -4,9 +4,7 @@
   import { onMount } from 'svelte';
   import { DataSet, Network } from 'vis-network/standalone';
 
-
   export let source_code = '';
-  
   export let onGenerateTokens: (data: {
     tokens: Token[];
     unexpected_tokens: string[];
@@ -18,6 +16,7 @@
   let formError = '';
   let submissionStatus = { show: false, success: false, message: '' };
   let showGenerateButton = false;
+  let showRegexActionButtons = false;
 
   function addNewRow() {
     userInputRows = [...userInputRows, { type: '', regex: '', error: '' }];
@@ -98,6 +97,11 @@
       console.error('Store error:', error);
       AddToast('Cannot connect to server. Please ensure the backend is running.', 'error');
     }
+
+    // Show regex action buttons after successful submit in REGEX mode
+    if (selectedType === 'REGEX' && !hasErrors) {
+      showRegexActionButtons = true;
+    }
   }
 
   async function generateTokens() {
@@ -130,7 +134,6 @@
       if (!Array.isArray(data.tokens)) {
         throw new Error('Expected tokens array in response');
       }
-
 
       onGenerateTokens({
         tokens: data.tokens,
@@ -229,6 +232,7 @@
   let previousInputs: typeof userInputRows = [];
   function handleInputChange() {
     showGenerateButton = false;
+    showRegexActionButtons = false;
     submissionStatus = { show: false, success: false, message: '' };
   }
 
@@ -341,7 +345,6 @@
   }
 
   async function renderNfaVis() {
-    // Use statically imported DataSet and Network
     const nfa = parseAutomaton();
     const nodeIds: Record<string, string> = {};
     nfa.states.forEach((state) => {
@@ -388,7 +391,6 @@
   }
 
   async function renderDfaVis() {
-    // Use statically imported DataSet and Network
     const dfa = nfaToDfa(parseAutomaton());
     const nodeIds: Record<string, string> = {};
     dfa.states.forEach((state) => {
@@ -550,13 +552,162 @@
         return;
       }
       const data = await response.json();
-      console.log("dfaToRegex response:", JSON.stringify(data, null, 2)); // <-- Add this line
+      console.log("dfaToRegex response:", JSON.stringify(data, null, 2));
       regexRules = Array.isArray(data.rules) ? data.rules : [];
       showRegexOutput = true;
       AddToast('DFA converted to Regex successfully!', 'success');
     } catch (error) {
       AddToast('DFA→Regex failed: ' + error, 'error');
     }
+  }
+
+  let regexNfa = null;
+  let regexDfa = null;
+  let showRegexNfaVis = false;
+  let showRegexDfaVis = false;
+  let regexNfaContainer: HTMLElement;
+  let regexDfaContainer: HTMLElement;
+
+  async function handleRegexToNFA() {
+    const user_id = localStorage.getItem('user_id');
+    if (!user_id) {
+      AddToast('User not logged in.', 'error');
+      return;
+    }
+    try {
+      const response = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users_id: user_id })
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        AddToast('Regex→NFA failed: ' + errorText, 'error');
+        return;
+      }
+      const data = await response.json();
+      console.log("NFA from backend:", JSON.stringify(data.nfa, null, 2));
+      regexNfa = adaptAutomatonForVis(data.nfa);
+      showRegexNfaVis = true;
+      showRegexDfaVis = false;
+      AddToast('Regex converted to NFA!', 'success');
+      setTimeout(() => renderRegexAutomatonVis(regexNfaContainer, regexNfa, false), 0);
+    } catch (error) {
+      AddToast('Regex→NFA failed: ' + error, 'error');
+    }
+  }
+
+  async function handleRegexToDFA() {
+    const user_id = localStorage.getItem('user_id');
+    if (!user_id) {
+      AddToast('User not logged in.', 'error');
+      return;
+    }
+    try {
+      const response = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users_id: user_id })
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        AddToast('Regex→DFA failed: ' + errorText, 'error');
+        return;
+      }
+      const data = await response.json();
+      console.log("DFA from backend:", JSON.stringify(data.dfa, null, 2));
+      regexDfa = adaptAutomatonForVis(data.dfa);
+      showRegexDfaVis = true;
+      showRegexNfaVis = false;
+      AddToast('Regex converted to DFA!', 'success');
+      setTimeout(() => renderRegexAutomatonVis(regexDfaContainer, regexDfa, true), 0);
+    } catch (error) {
+      AddToast('Regex→DFA failed: ' + error, 'error');
+    }
+  }
+
+  function adaptAutomatonForVis(automaton: any) {
+    // Convert transitions array to nested object if needed
+    let transitionsObj: Record<string, Record<string, string[]>> = {};
+    if (Array.isArray(automaton.transitions)) {
+      for (const t of automaton.transitions) {
+        if (!transitionsObj[t.from]) transitionsObj[t.from] = {};
+        if (!transitionsObj[t.from][t.label]) transitionsObj[t.from][t.label] = [];
+        transitionsObj[t.from][t.label].push(t.to);
+      }
+    } else {
+      transitionsObj = automaton.transitions || {};
+    }
+
+    // Try to infer alphabet if not present
+    let alphabet: string[] = automaton.alphabet || [];
+    if ((!alphabet || alphabet.length === 0) && Object.keys(transitionsObj).length > 0) {
+      const symbols = new Set<string>();
+      for (const from in transitionsObj) {
+        for (const symbol in transitionsObj[from]) {
+          symbols.add(symbol);
+        }
+      }
+      alphabet = Array.from(symbols);
+    }
+
+    return {
+      states: automaton.states || Object.keys(transitionsObj),
+      startState: automaton.start_state || automaton.startState || automaton.start || '',
+      acceptedStates: (automaton.accepting_states || automaton.acceptedStates || automaton.accepting || []).map(
+        (a: any) => typeof a === 'string' ? a : a.state || a
+      ),
+      transitions: transitionsObj,
+      alphabet
+    };
+  }
+
+  function renderRegexAutomatonVis(container: HTMLElement, automaton: any, isDfa = false) {
+    if (!automaton || !container) return;
+    const nodeIds: Record<string, string> = {};
+    automaton.states.forEach((state: string) => {
+      nodeIds[state] = state.replace(/[^a-zA-Z0-9_]/g, '_');
+    });
+    const nodes = new DataSet(
+      automaton.states.map((state: string) => ({
+        id: nodeIds[state],
+        label: state,
+        shape: 'circle',
+        color: automaton.acceptedStates.includes(state) ? '#D2FFD2' : state === automaton.startState ? '#D2E5FF' : '#FFD2D2',
+        borderWidth: automaton.acceptedStates.includes(state) ? 3 : 1
+      }))
+    );
+    const edgesArr: any[] = [];
+    for (const from of automaton.states) {
+      for (const symbol of automaton.alphabet) {
+        const tos = isDfa
+          ? [automaton.transitions[from]?.[symbol]].filter(Boolean)
+          : automaton.transitions[from]?.[symbol] || [];
+        for (const to of tos) {
+          edgesArr.push({ from: nodeIds[from], to: nodeIds[to], label: symbol, arrows: 'to' });
+        }
+      }
+    }
+    const START_NODE_ID = '__start__';
+    nodes.add({ id: START_NODE_ID, label: '', shape: 'circle', color: 'rgba(0,0,0,0)', borderWidth: 0, size: 1, font: { size: 1 } });
+    edgesArr.push({
+      from: START_NODE_ID,
+      to: nodeIds[automaton.startState],
+      arrows: { to: { enabled: true, scaleFactor: 0.6 } },
+      color: { color: '#222', opacity: 1 },
+      width: 1.75,
+      label: 'start',
+      font: { size: 13, color: '#222', vadjust: -18, align: 'top' },
+      smooth: { enabled: true, type: 'curvedCCW', roundness: 0.18 },
+      length: 1,
+      physics: false
+    });
+    const edges = new DataSet(edgesArr);
+    new Network(container, { nodes, edges }, {
+      nodes: { shape: 'circle', font: { size: 16 }, margin: 10 },
+      edges: { smooth: { enabled: true, type: 'curvedCW', roundness: 0.3 }, font: { size: 14, strokeWidth: 0 } },
+      physics: false
+    });
   }
 </script>
 
@@ -659,13 +810,16 @@
         <div class="form-error">{formError}</div>
       {/if}
 
-      <div class="button-container">
-        <button class="submit-button" class:shifted={showGenerateButton} on:click={handleSubmit}>
+      <div class="button-stack">
+        <button class="submit-button" on:click={handleSubmit}>
           Submit
         </button>
-
-        {#if showGenerateButton}
-          <button class="generate-button" on:click={generateTokens}> Generate Tokens </button>
+        {#if showRegexActionButtons}
+          <div class="regex-action-buttons">
+            <button class="generate-button" on:click={generateTokens}>Generate Tokens</button>
+            <button class="generate-button" on:click={handleRegexToNFA} title="Convert Regular Expression to a NFA">NFA</button>
+            <button class="generate-button" on:click={handleRegexToDFA} title="Convert Regular Expression to a DFA">DFA</button>
+          </div>
         {/if}
       </div>
 
@@ -746,6 +900,19 @@
           {/each}
         </tbody>
       </table>
+    </div>
+  {/if}
+
+  {#if showRegexNfaVis && regexNfa}
+    <div class="automata-container">
+      <h4 style="margin-bottom:0.5rem;">NFA Visualization (from REGEX)</h4>
+      <div bind:this={regexNfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
+    </div>
+  {/if}
+  {#if showRegexDfaVis && regexDfa}
+    <div class="automata-container">
+      <h4 style="margin-bottom:0.5rem;">DFA Visualization (from REGEX)</h4>
+      <div bind:this={regexDfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
     </div>
   {/if}
 </div>
@@ -884,16 +1051,17 @@
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: transform 0.2s ease;
     box-shadow: 0 2px 4px rgba(0, 26, 110, 0.1);
-    position: relative;
-    margin-top: 1rem;
+    margin: 0 auto;
+    display: block;
+    /* Remove transform and margin-top for centering */
   }
-  .submit-button.shifted {
-    transform: translateX(-1rem);
-  }
-  .submit-button:not(.shifted) {
-    transform: translateX(0);
+  .button-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem; /* Small gap between submit and action buttons */
+    margin-top: 0.75rem;
   }
   .generate-button {
     padding: 0.6rem 1.5rem;
@@ -906,7 +1074,7 @@
     cursor: pointer;
     transition: background-color 0.2s ease;
     box-shadow: 0 2px 4px rgba(40, 167, 69, 0.1);
-    margin-top: 1rem;
+    margin-top: 0.4rem;
     height: 100%;
     line-height: 1.1;
   }
@@ -1197,6 +1365,13 @@
     font-size: 1.01em;
     word-break: break-all;
     display: inline-block;
+  }
+
+  .regex-action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem; /* Minimal space below submit */
   }
 </style>
 
