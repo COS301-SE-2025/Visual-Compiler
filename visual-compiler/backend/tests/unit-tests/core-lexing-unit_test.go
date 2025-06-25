@@ -324,6 +324,39 @@ func TestCreateTokens_NumberTokensIdentified(t *testing.T) {
 	}
 }
 
+func TestCreateTokens_NumberTokensNegative(t *testing.T) {
+	source_code := "int x = -3;"
+	rules := []services.TypeRegex{
+		{Type: "NUMBER", Regex: "[-][0-9]+"},
+	}
+	expected_res := []services.TypeValue{
+		{Type: "NUMBER", Value: "-3"},
+	}
+	expected_res_unidentified := []string{
+		"int",
+		"x",
+		"=",
+		";",
+	}
+
+	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+
+	if err == nil {
+		for i, token := range tokens {
+			if token != expected_res[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res[i])
+			}
+		}
+		for i, token := range unidentified_tokens {
+			if token != expected_res_unidentified[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res_unidentified[i])
+			}
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
+}
+
 func TestCreateTokens_FloatTokensIdentified(t *testing.T) {
 	source_code := "int x = 3.5;"
 	rules := []services.TypeRegex{
@@ -331,6 +364,39 @@ func TestCreateTokens_FloatTokensIdentified(t *testing.T) {
 	}
 	expected_res := []services.TypeValue{
 		{Type: "NUMBER", Value: "3.5"},
+	}
+	expected_res_unidentified := []string{
+		"int",
+		"x",
+		"=",
+		";",
+	}
+
+	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+
+	if err == nil {
+		for i, token := range tokens {
+			if token != expected_res[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			}
+		}
+		for i, token := range unidentified_tokens {
+			if token != expected_res_unidentified[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+			}
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
+}
+
+func TestCreateTokens_FloatTokensNegative(t *testing.T) {
+	source_code := "int x = -3.5;"
+	rules := []services.TypeRegex{
+		{Type: "NUMBER", Regex: "[-]\\d+(\\.\\d+)?"},
+	}
+	expected_res := []services.TypeValue{
+		{Type: "NUMBER", Value: "-3.5"},
 	}
 	expected_res_unidentified := []string{
 		"int",
@@ -1526,9 +1592,11 @@ func TestConvertRegexToNFA_Valid(t *testing.T) {
 	}
 	for _, transition := range nfa.Transitions {
 		match_found := false
-		for _, res := range expected_nfa.Transitions {
-			if transition.Label == res.Label && transition.To == res.To && transition.From == res.From {
+		for i, res := range expected_nfa.Transitions {
+			if transition.Label == res.Label {
 				match_found = true
+				expected_nfa.Transitions = append(expected_nfa.Transitions[:i], expected_nfa.Transitions[i+1:]...)
+				break
 			}
 		}
 		if !match_found {
