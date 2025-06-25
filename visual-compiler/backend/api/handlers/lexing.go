@@ -110,7 +110,6 @@ func CreateRulesFromCode(c *gin.Context) {
 
 	pairs := jsonAsBytes
 
-	// services.SourceCode(req.Code)
 	rules, err := services.ReadRegexRules(pairs)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Regex rule creation failed"})
@@ -134,7 +133,9 @@ func CreateRulesFromCode(c *gin.Context) {
 
 	filters := bson.M{"users_id": req.UsersID}
 	updateusersrules := bson.M{
-		"rules": rules,
+		"$set": bson.M{
+			"rules": rules,
+		},
 	}
 
 	_, err = collection.UpdateOne(ctx, filters, updateusersrules)
