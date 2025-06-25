@@ -1,16 +1,21 @@
 _Must be run in the backend directory_  
   
-*To run all tests:* 
+**To run all tests:** 
 ``` 
     go test ./...  
     go test -v ./...  
+    go test ./... -coverprofile=coverage.out
+    go tool cover -html=coverage.out
 ```
 **To run specific tests:**  
 unit tests:
 ```
     go test -v ./core/unit-tests/core-lexing-unit_test.go  
-    go test -v ./api/unit-tests/api-users-unit_test.go  
-    go test -v ./api/unit-tests/api-lexing-unit_test.go
+    go test -v ./api/unit-tests/users-routers-unit_test.go  
+    go test -v ./api/unit-tests/delete-user-unit_test.go  
+    go test -v ./api/unit-tests/login-unit_test.go  
+    go test -v ./api/unit-tests/register-unit_test.go  
+    go test -v ./api/unit-tests/lexing-unit_test.go
 ```
 integration tests:  
 _(requires .env file to run)_
