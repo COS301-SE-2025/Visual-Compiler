@@ -111,29 +111,7 @@ func TestStoreSourceCode_Valid(t *testing.T) {
 	get_id(t)
 	re_data := map[string]interface{}{
 		"source_code": "int x = 2 ;",
-		"pairs": []map[string]string{
-			{
-				"Type":  "KEYWORD",
-				"Regex": "\\b(if|else|int)\\b",
-			},
-			{
-				"Type":  "IDENTIFIER",
-				"Regex": "[a-zA-Z_]\\w*",
-			},
-			{
-				"Type":  "NUMBER",
-				"Regex": "\\d+(\\.\\d+)?",
-			},
-			{
-				"Type":  "OPERATOR",
-				"Regex": "=",
-			},
-			{
-				"Type":  "PUNCTUATION",
-				"Regex": ";",
-			},
-		},
-		"users_id": test_user_id,
+		"users_id":    test_user_id,
 	}
 
 	req, err := json.Marshal(re_data)
@@ -162,7 +140,73 @@ func TestStoreSourceCode_Valid(t *testing.T) {
 
 	if res.StatusCode == http.StatusOK {
 		body_bytes, _ := io.ReadAll(res.Body)
-		if string(body_bytes) == `{"message":"Code is ready for lexing"}` {
+		if string(body_bytes) == `{"message":"Code is ready for further processing"}` {
+			t.Logf("ReadDFAFromUser: success")
+		} else {
+			t.Errorf("Error: %v", string(body_bytes))
+		}
+	}
+
+}
+
+func TestCreateRulesFromCode_Valid(t *testing.T) {
+	server := startServerCore(t)
+	defer closeServerCore(t, server)
+
+	get_id(t)
+	data := map[string]interface{}{
+		"users_id": test_user_id,
+		"pairs": []map[string]string{
+			{
+				"Type":  "KEYWORD",
+				"Regex": "\\b(if|else|int)\\b",
+			},
+			{
+				"Type":  "IDENTIFIER",
+				"Regex": "[a-zA-Z_]\\w*",
+			},
+			{
+				"Type":  "NUMBER",
+				"Regex": "\\d+(\\.\\d+)?",
+			},
+			{
+				"Type":  "OPERATOR",
+				"Regex": "=",
+			},
+			{
+				"Type":  "PUNCTUATION",
+				"Regex": ";",
+			},
+		},
+	}
+
+	req, err := json.Marshal(data)
+
+	if err != nil {
+		t.Errorf("converting data to json failed")
+	}
+
+	res, err := http.Post(
+		"http://localhost:8080/api/lexing/rules", "application/json",
+		bytes.NewBuffer(req),
+	)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	defer res.Body.Close()
+
+	if err != nil {
+		t.Errorf("Lexing integration error: %v", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		body_bytes, _ := io.ReadAll(res.Body)
+		t.Errorf("Lexer not working: %s", string(body_bytes))
+	}
+
+	if res.StatusCode == http.StatusOK {
+		body_bytes, _ := io.ReadAll(res.Body)
+		if string(body_bytes) == `{"message":"Rules successfully created."}` {
 			t.Logf("ReadDFAFromUser: success")
 		} else {
 			t.Errorf("Error: %v", string(body_bytes))
@@ -307,7 +351,7 @@ func TestReadDFAFromUser_Valid(t *testing.T) {
 				"token_type": "NUMBER",
 			},
 		},
-		"users_id": "6833695df0819feda85033e8",
+		"users_id": test_user_id,
 	}
 
 	req, err := json.Marshal(data)
@@ -351,7 +395,7 @@ func TestTokensFromDFA_Valid(t *testing.T) {
 
 	get_id(t)
 	data := map[string]interface{}{
-		"users_id": "6833695df0819feda85033e8",
+		"users_id": test_user_id,
 	}
 
 	req, err := json.Marshal(data)
@@ -380,7 +424,7 @@ func TestTokensFromDFA_Valid(t *testing.T) {
 
 	if res.StatusCode == http.StatusOK {
 		body_bytes, _ := io.ReadAll(res.Body)
-		if string(body_bytes) == `{"message":"Successfully tokenised your code","tokens":[{"type":"KEYWORD","value":"int"},{"type":"IDENTIFIER","value":"x"},{"type":"NUMBER","value":"20"}],"tokens_unidentified":["=",";"]}` {
+		if string(body_bytes) == `{"message":"Successfully tokenised your code","tokens":[{"type":"KEYWORD","value":"int"},{"type":"IDENTIFIER","value":"x"},{"type":"NUMBER","value":"2"}],"tokens_unidentified":["=",";"]}` {
 			t.Logf("ReadDFAFromUser: success")
 		} else {
 			t.Errorf("Error: %v", string(body_bytes))
@@ -395,7 +439,7 @@ func TestConvertDFAToRG_Valid(t *testing.T) {
 
 	get_id(t)
 	data := map[string]interface{}{
-		"users_id": "6833695df0819feda85033e8",
+		"users_id": test_user_id,
 	}
 
 	req, err := json.Marshal(data)
@@ -439,7 +483,7 @@ func TestConvertRGToNFA_Valid(t *testing.T) {
 
 	get_id(t)
 	data := map[string]interface{}{
-		"users_id": "6833695df0819feda85033e8",
+		"users_id": test_user_id,
 	}
 
 	req, err := json.Marshal(data)
@@ -488,7 +532,7 @@ func TestConvertRGToDFA_Valid(t *testing.T) {
 
 	get_id(t)
 	data := map[string]interface{}{
-		"users_id": "6833695df0819feda85033e8",
+		"users_id": test_user_id,
 	}
 
 	req, err := json.Marshal(data)
@@ -537,7 +581,7 @@ func TestConvertNFAToDFA_Valid(t *testing.T) {
 
 	get_id(t)
 	data := map[string]interface{}{
-		"users_id": "6833695df0819feda85033e8",
+		"users_id": test_user_id,
 	}
 
 	req, err := json.Marshal(data)

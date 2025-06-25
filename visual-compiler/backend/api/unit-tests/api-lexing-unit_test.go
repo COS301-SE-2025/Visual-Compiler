@@ -36,7 +36,7 @@ func TestLexingRouterRoutes(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := routers.SetupLexingRouter()
 	endpoints := router.Routes()
-	if len(endpoints) != 8 {
+	if len(endpoints) != 9 {
 		t.Errorf("Amount of routes does not match")
 	}
 }
