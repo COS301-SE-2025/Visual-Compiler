@@ -645,6 +645,19 @@ func ConvertRegexToNFA(regexes map[string]string) (Automata, error) {
 		states_list = append(states_list, state)
 	}
 
+	i := 0
+	for i < len(converter.transitions)-1 {
+		current_transition := &converter.transitions[i]
+		next_transition := converter.transitions[i+1]
+
+		if next_transition.To == current_transition.To && next_transition.From == current_transition.From {
+			current_transition.Label += next_transition.Label
+			converter.transitions = append(converter.transitions[:i+1], converter.transitions[i+2:]...)
+		} else {
+			i++
+		}
+	}
+
 	nfa := Automata{}
 	nfa.States = states_list
 	nfa.Transitions = converter.transitions
