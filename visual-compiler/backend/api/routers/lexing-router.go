@@ -12,7 +12,14 @@ func SetupLexingRouter() *gin.Engine {
 	r := gin.New()
 
 	r.POST("/code", handlers.StoreSourceCode)
+	r.POST("/rules", handlers.CreateRulesFromCode)
 	r.POST("/lexer", handlers.Lexing)
+	r.POST("/dfa", handlers.ReadDFAFromUser)
+	r.POST("/dfaToTokens", handlers.TokensFromDFA)
+	r.POST("/dfaToRegex", handlers.ConvertDFAToRG)
+	r.POST("/regexToNFA", handlers.ConvertRGToNFA)
+	r.POST("/regexToDFA", handlers.ConvertRGToDFA)
+	r.POST("/nfaToDFA", handlers.ConvertNFAToDFA)
 
 	return r
 }

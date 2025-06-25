@@ -39,5 +39,9 @@
 	},
 	"overrides": {
 		"cookie": "0.7.0"
+	},
+	"dependencies": {
+		"vis-data": "^7.1.9",
+		"vis-network": "^9.1.12"
 	}
 }
