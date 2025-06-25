@@ -324,6 +324,39 @@ func TestCreateTokens_NumberTokensIdentified(t *testing.T) {
 	}
 }
 
+func TestCreateTokens_NumberTokensNegative(t *testing.T) {
+	source_code := "int x = -3;"
+	rules := []services.TypeRegex{
+		{Type: "NUMBER", Regex: "[-][0-9]+"},
+	}
+	expected_res := []services.TypeValue{
+		{Type: "NUMBER", Value: "-3"},
+	}
+	expected_res_unidentified := []string{
+		"int",
+		"x",
+		"=",
+		";",
+	}
+
+	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+
+	if err == nil {
+		for i, token := range tokens {
+			if token != expected_res[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res[i])
+			}
+		}
+		for i, token := range unidentified_tokens {
+			if token != expected_res_unidentified[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res_unidentified[i])
+			}
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
+}
+
 func TestCreateTokens_FloatTokensIdentified(t *testing.T) {
 	source_code := "int x = 3.5;"
 	rules := []services.TypeRegex{
@@ -331,6 +364,39 @@ func TestCreateTokens_FloatTokensIdentified(t *testing.T) {
 	}
 	expected_res := []services.TypeValue{
 		{Type: "NUMBER", Value: "3.5"},
+	}
+	expected_res_unidentified := []string{
+		"int",
+		"x",
+		"=",
+		";",
+	}
+
+	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+
+	if err == nil {
+		for i, token := range tokens {
+			if token != expected_res[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			}
+		}
+		for i, token := range unidentified_tokens {
+			if token != expected_res_unidentified[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+			}
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
+}
+
+func TestCreateTokens_FloatTokensNegative(t *testing.T) {
+	source_code := "int x = -3.5;"
+	rules := []services.TypeRegex{
+		{Type: "NUMBER", Regex: "[-]\\d+(\\.\\d+)?"},
+	}
+	expected_res := []services.TypeValue{
+		{Type: "NUMBER", Value: "-3.5"},
 	}
 	expected_res_unidentified := []string{
 		"int",
@@ -1023,7 +1089,7 @@ func TestConvertDFAToRegex_ValidDFA(t *testing.T) {
 		for _, rule := range rules {
 			match_found := false
 			for _, res := range expected_res {
-				if rule != res {
+				if rule == res {
 					match_found = true
 				}
 			}
@@ -1070,7 +1136,7 @@ func TestConvertDFAToRegex_ValidDFARanges(t *testing.T) {
 		for _, rule := range rules {
 			match_found := false
 			for _, res := range expected_res {
-				if rule != res {
+				if rule == res {
 					match_found = true
 				}
 			}
@@ -1137,7 +1203,7 @@ func TestConvertDFAToRegex_Complex(t *testing.T) {
 		for _, rule := range rules {
 			match_found := false
 			for _, res := range expected_res {
-				if rule != res {
+				if rule == res {
 					match_found = true
 				}
 			}
@@ -1456,59 +1522,7 @@ func TestConvertRegexToNFA_Valid(t *testing.T) {
 	expected_nfa := services.Automata{
 		Start: "S0",
 		Transitions: []services.Transition{
-			{From: "S1", To: "S2", Label: "a"},
-			{From: "S1", To: "S2", Label: "b"},
-			{From: "S1", To: "S2", Label: "c"},
-			{From: "S1", To: "S2", Label: "d"},
-			{From: "S1", To: "S2", Label: "e"},
-			{From: "S1", To: "S2", Label: "f"},
-			{From: "S1", To: "S2", Label: "g"},
-			{From: "S1", To: "S2", Label: "h"},
-			{From: "S1", To: "S2", Label: "i"},
-			{From: "S1", To: "S2", Label: "j"},
-			{From: "S1", To: "S2", Label: "k"},
-			{From: "S1", To: "S2", Label: "l"},
-			{From: "S1", To: "S2", Label: "m"},
-			{From: "S1", To: "S2", Label: "n"},
-			{From: "S1", To: "S2", Label: "o"},
-			{From: "S1", To: "S2", Label: "p"},
-			{From: "S1", To: "S2", Label: "q"},
-			{From: "S1", To: "S2", Label: "r"},
-			{From: "S1", To: "S2", Label: "s"},
-			{From: "S1", To: "S2", Label: "t"},
-			{From: "S1", To: "S2", Label: "u"},
-			{From: "S1", To: "S2", Label: "v"},
-			{From: "S1", To: "S2", Label: "w"},
-			{From: "S1", To: "S2", Label: "x"},
-			{From: "S1", To: "S2", Label: "y"},
-			{From: "S1", To: "S2", Label: "z"},
-			{From: "S1", To: "S2", Label: "A"},
-			{From: "S1", To: "S2", Label: "B"},
-			{From: "S1", To: "S2", Label: "C"},
-			{From: "S1", To: "S2", Label: "D"},
-			{From: "S1", To: "S2", Label: "E"},
-			{From: "S1", To: "S2", Label: "F"},
-			{From: "S1", To: "S2", Label: "G"},
-			{From: "S1", To: "S2", Label: "H"},
-			{From: "S1", To: "S2", Label: "I"},
-			{From: "S1", To: "S2", Label: "J"},
-			{From: "S1", To: "S2", Label: "K"},
-			{From: "S1", To: "S2", Label: "L"},
-			{From: "S1", To: "S2", Label: "M"},
-			{From: "S1", To: "S2", Label: "N"},
-			{From: "S1", To: "S2", Label: "O"},
-			{From: "S1", To: "S2", Label: "P"},
-			{From: "S1", To: "S2", Label: "Q"},
-			{From: "S1", To: "S2", Label: "R"},
-			{From: "S1", To: "S2", Label: "S"},
-			{From: "S1", To: "S2", Label: "T"},
-			{From: "S1", To: "S2", Label: "U"},
-			{From: "S1", To: "S2", Label: "V"},
-			{From: "S1", To: "S2", Label: "W"},
-			{From: "S1", To: "S2", Label: "X"},
-			{From: "S1", To: "S2", Label: "Y"},
-			{From: "S1", To: "S2", Label: "Z"},
-			{From: "S1", To: "S2", Label: "_"},
+			{From: "S1", To: "S2", Label: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_"},
 			{From: "S3", To: "S4", Label: `\`},
 			{From: "S2", To: "S3", Label: "ε"},
 			{From: "S5", To: "S6", Label: "w"},
@@ -1557,9 +1571,9 @@ func TestConvertRegexToNFA_Valid(t *testing.T) {
 		Accepting: []services.AcceptingState{
 			{State: "S8", Type: "IDENTIFIER"},
 			{State: "S26", Type: "NUMBER"},
-			{State: "S40", Type: "KEY"},
+			{State: "S40", Type: "KEYWORD"},
 		},
-		States: []string{"S24", "S32", "S35", "S40", "S0", "S4", "S11", "S13", "S6", "S8", "S20", "S21", "S29", "S3", " S15", "S23", "S26", "S37", "S38", "S5", "S9", "S19", "S25", "S1", "S28", "S31", "S36", "S33", "S39", "S16", "S17", "S18", "S30", "S10", "S22", "S27", "S34", "S2", "S7", "S12", "S14"},
+		States: []string{"S24", "S32", "S35", "S40", "S0", "S4", "S11", "S13", "S6", "S8", "S20", "S21", "S29", "S3", " S15", "S23", "S26", "S37", "S38", "S5", "S9", "S19", "S25", "S1", "S28", "S31", "S36", "S33", "S39", "S16", "S17", "S18", "S30", "S10", "S22", "S27", "S34", "S2", "S7", "S12", "S14", "S15"},
 	}
 	regexes := map[string]string{
 		"IDENTIFIER": "[a-zA-Z_]\\w*",
@@ -1578,9 +1592,11 @@ func TestConvertRegexToNFA_Valid(t *testing.T) {
 	}
 	for _, transition := range nfa.Transitions {
 		match_found := false
-		for _, res := range expected_nfa.Transitions {
-			if transition.Label != res.Label && transition.To != res.To && transition.From != res.From {
+		for i, res := range expected_nfa.Transitions {
+			if transition.Label == res.Label {
 				match_found = true
+				expected_nfa.Transitions = append(expected_nfa.Transitions[:i], expected_nfa.Transitions[i+1:]...)
+				break
 			}
 		}
 		if !match_found {
@@ -1590,7 +1606,7 @@ func TestConvertRegexToNFA_Valid(t *testing.T) {
 	for _, state := range nfa.States {
 		match_found := false
 		for _, res := range expected_nfa.States {
-			if state != res {
+			if state == res {
 				match_found = true
 			}
 		}
@@ -1601,7 +1617,7 @@ func TestConvertRegexToNFA_Valid(t *testing.T) {
 	for _, accept := range nfa.Accepting {
 		match_found := false
 		for _, res := range expected_nfa.Accepting {
-			if accept.State != res.State && accept.Type != res.Type {
+			if accept.Type == res.Type {
 				match_found = true
 			}
 		}
@@ -1642,7 +1658,7 @@ func TestConvertRegexToDFA_ValidRegex(t *testing.T) {
 			{State: "D3", Type: "IDENTIFIER"},
 			{State: "D6", Type: "IDENTIFIER"},
 		},
-		States: []string{"D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "D14", "D15", "D16", "D17", "D18", "D19"},
+		States: []string{"D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "D14", "D15", "D16", "D17", "D18", "D19"},
 	}
 
 	regexes := map[string]string{
@@ -1662,7 +1678,7 @@ func TestConvertRegexToDFA_ValidRegex(t *testing.T) {
 		for _, state := range dfa.States {
 			match_found := false
 			for _, res := range expected_dfa.States {
-				if state != res {
+				if state == res {
 					match_found = true
 				}
 			}
@@ -1677,9 +1693,11 @@ func TestConvertRegexToDFA_ValidRegex(t *testing.T) {
 
 		for _, accept := range dfa.Accepting {
 			match_found := false
-			for _, res := range expected_dfa.Accepting {
-				if accept.State != res.State && accept.Type != res.Type {
+			for i, res := range expected_dfa.Accepting {
+				if accept.Type == res.Type {
 					match_found = true
+					expected_dfa.Accepting = append(expected_dfa.Accepting[:i], expected_dfa.Accepting[i+1:]...)
+					break
 				}
 			}
 			if !match_found {
