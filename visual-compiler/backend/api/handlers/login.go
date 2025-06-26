@@ -21,14 +21,13 @@ type LoginReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// Logs a user in.
-// Gets the inputs(Email/Username & Password) from a JSON request from the user.
-// Formats the response as a JSON Body
+// Name: Login
 //
-// Returns:
-//   - A JSON response body.
-//   - A 200 OK response if successful
-//   - A 500 Internal Server Error if any errors are caught for fetching or parsing
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Logs in a valid user into the system. Any issues (incorrect email/password) will be notfied to the user. If successful login, the user's ID is returned and will be used for authentication and storage purposes for many of the functions.
 func Login(c *gin.Context) {
 	var req LoginReq
 

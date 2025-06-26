@@ -44,6 +44,12 @@ func startServerCore(t *testing.T) *http.Server {
 		user_router.HandleContext(c)
 	})
 
+	parser_router := routers.SetupParsingRouter()
+	router.Any("/api/parsing/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		parser_router.HandleContext(c)
+	})
+
 	server := &http.Server{
 		Addr:    ":8080",
 		Handler: router,
@@ -247,7 +253,7 @@ func TestCreateRulesFromCode_CoreError(t *testing.T) {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode == http.StatusOK {
+	if res.StatusCode != http.StatusBadRequest {
 		body_bytes, _ := io.ReadAll(res.Body)
 		t.Errorf("Lexer not working: %s", string(body_bytes))
 	}

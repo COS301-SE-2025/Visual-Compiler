@@ -16,7 +16,8 @@ import (
 type SourceCodeOnlyRequest struct {
 	// Represents the User's ID from frontend
 	UsersID bson.ObjectID `json:"users_id" binding:"required"`
-	Code    string        `json:"source_code" binding:"required"`
+	// Represents the User's source code
+	Code string `json:"source_code" binding:"required"`
 }
 
 // Specifies the JSON body request.
@@ -33,6 +34,13 @@ type IDRequest struct {
 	UsersID bson.ObjectID `json:"users_id" binding:"required"`
 }
 
+// Name: StoreSourceCode
+//
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Stores the user's source code in the database. If any rules, tokens, unidentified tokens, NFA or DFA already exist at this point, they will be cleared
 func StoreSourceCode(c *gin.Context) {
 	var req SourceCodeOnlyRequest
 
@@ -87,14 +95,13 @@ func StoreSourceCode(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Code is ready for further processing"})
 }
 
-// Locally store a user's source code and regex expressions.
-// Gets the source code from a JSON request.
-// Formats the response as a JSON Body
+// Name: CreateRulesFromCode
 //
-// Returns:
-//   - A JSON response body.
-//   - A 200 OK response if successful
-//   - A 500 Internal Server Error if any errors are caught for parsing errors
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Stores the user's rules in the database. If any rules exist at this point, they will be cleared
 func CreateRulesFromCode(c *gin.Context) {
 	var req RulesRequest
 
@@ -147,16 +154,13 @@ func CreateRulesFromCode(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Rules successfully created."})
 }
 
-// Lexes the user's source code that is locally stored.
-// Stores the tokens, unidentified input, user's source code and the user's id in the database.
-// Gets the source code from the function GetSourceCode.
-// Gets the users id from a global variable `UsersID`.
-// Formats the response as a JSON Body
+// Name: Lexing
 //
-// Returns:
-//   - A JSON response body.
-//   - A 200 OK response if successful
-//   - A 500 Internal Server Error if any errors are caught for parsing and lexing errors
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Lexes the user's stored code and rules to create tokens. If source code or rules dont exist, you have to create one
 func Lexing(c *gin.Context) {
 	var req IDRequest
 
@@ -217,6 +221,13 @@ type readDFARequest struct {
 	UsersID bson.ObjectID `json:"users_id" binding:"required"`
 }
 
+// Name: ReadDFAFromUser
+//
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Creates a DFA from the users entered DFA request parameters and stores it in the database. If there is already tokens, unidentified tokens or rules, they will be cleared
 func ReadDFAFromUser(c *gin.Context) {
 	var req readDFARequest
 
@@ -287,6 +298,13 @@ func ReadDFAFromUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "DFA successfuly created. Ready to create tokens"})
 }
 
+// Name: TokensFromDFA
+//
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Creates tokens from the users stored DFA. If there is no code or DFA, an error is returned
 func TokensFromDFA(c *gin.Context) {
 	var req IDRequest
 
@@ -340,6 +358,13 @@ func TokensFromDFA(c *gin.Context) {
 	})
 }
 
+// Name: ConvertDFAtoRG
+//
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Converts user's stored DFA to regular expressions. If there is no stored DFA for that user, an error is showed
 func ConvertDFAToRG(c *gin.Context) {
 	var req IDRequest
 
@@ -387,6 +412,13 @@ func ConvertDFAToRG(c *gin.Context) {
 	})
 }
 
+// Name: ConvertRGToNFA
+//
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Converts regular expressions to NFA. If no regular expression is stored, an error is returned
 func ConvertRGToNFA(c *gin.Context) {
 	var req IDRequest
 
@@ -439,6 +471,13 @@ func ConvertRGToNFA(c *gin.Context) {
 	})
 }
 
+// Name: ConvertRGToDFA
+//
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Converts regular expressions to DFA. If no regular expression is stored, an error is returned
 func ConvertRGToDFA(c *gin.Context) {
 	var req IDRequest
 
@@ -491,6 +530,13 @@ func ConvertRGToDFA(c *gin.Context) {
 	})
 }
 
+// Name: ConvertNFAToDFA
+//
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Converts NFA to DFA. If no NFA is stored, an error is returned
 func ConvertNFAToDFA(c *gin.Context) {
 	var req IDRequest
 

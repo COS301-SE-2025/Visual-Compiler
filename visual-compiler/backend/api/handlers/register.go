@@ -23,14 +23,13 @@ type Request struct {
 	Username string `json:"username" binding:"required,min=6"`
 }
 
-// Registers a user on the Database
-// Gets the user's details from a JSON request.
-// Formats the response as a JSON Body
+// Name: Register
 //
-// Returns:
-//   - A JSON response body.
-//   - A 200 OK response if successful
-//   - A 500 Internal Server Error if any errors are caught for registering/inserting or parsing
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Registers a user into the database. If any inputs are missing, an error is displayed
 func Register(c *gin.Context) {
 	var req Request
 
