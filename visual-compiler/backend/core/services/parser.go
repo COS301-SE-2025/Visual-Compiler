@@ -32,9 +32,9 @@ type TreeNode struct {
 
 // Struct to track parsing
 type ParseState struct {
-	position int
-	tokens   []TypeValue
-	grammar  Grammar
+	Position int
+	Tokens   []TypeValue
+	Grammar  Grammar
 }
 
 // Name: ReadGrammar
@@ -109,12 +109,12 @@ func CreateSyntaxTree(tokens []TypeValue, grammar Grammar) (SyntaxTree, error) {
 	}
 
 	state := &ParseState{
-		position: 0,
-		tokens:   tokens,
-		grammar:  grammar,
+		Position: 0,
+		Tokens:   tokens,
+		Grammar:  grammar,
 	}
 
-	root, new_position, success := parseSymbol(state, grammar.Start, 0)
+	root, new_position, success := ParseSymbol(state, grammar.Start, 0)
 
 	if !success || new_position != len(tokens) {
 		return SyntaxTree{}, fmt.Errorf("syntax error")
@@ -123,48 +123,48 @@ func CreateSyntaxTree(tokens []TypeValue, grammar Grammar) (SyntaxTree, error) {
 	return SyntaxTree{Root: root}, nil
 }
 
-// Name: parseSymbol
+// Name: ParseSymbol
 //
 // Parameters: *ParseState, string, int
 //
 // Return: *TreeNode, int, bool
 //
 // Attempts to parse a variable or a terminal starting at the given position
-func parseSymbol(state *ParseState, symbol string, position int) (*TreeNode, int, bool) {
+func ParseSymbol(state *ParseState, symbol string, position int) (*TreeNode, int, bool) {
 
-	if position >= len(state.tokens) {
+	if position >= len(state.Tokens) {
 		return nil, position, false
 	}
 
 	found := false
 
-	for _, terminal := range state.grammar.Terminals {
+	for _, terminal := range state.Grammar.Terminals {
 		if terminal == symbol {
 			found = true
 		}
 	}
 
 	if found {
-		return parseTerminal(state, symbol, position)
+		return ParseTerminal(state, symbol, position)
 	} else {
-		return parseVariable(state, symbol, position)
+		return ParseVariable(state, symbol, position)
 	}
 }
 
-// Name: parseTerminal
+// Name: ParseTerminal
 //
 // Parameters: *ParseState, string, int
 //
 // Return: *TreeNode, int, bool
 //
 // Attempts to match a terminal symbol with the current token
-func parseTerminal(state *ParseState, terminal string, position int) (*TreeNode, int, bool) {
+func ParseTerminal(state *ParseState, terminal string, position int) (*TreeNode, int, bool) {
 
-	if position >= len(state.tokens) {
+	if position >= len(state.Tokens) {
 		return nil, position, false
 	}
 
-	token := state.tokens[position]
+	token := state.Tokens[position]
 
 	if token.Type == terminal {
 
@@ -180,20 +180,20 @@ func parseTerminal(state *ParseState, terminal string, position int) (*TreeNode,
 	return nil, position, false
 }
 
-// Name: parseVariable
+// Name: ParseVariable
 //
 // Parameters: *ParseState, string, int
 //
 // Return: *TreeNode, int, bool
 //
 // Attempts to parse a variable using all applicable rules
-func parseVariable(state *ParseState, variable string, position int) (*TreeNode, int, bool) {
+func ParseVariable(state *ParseState, variable string, position int) (*TreeNode, int, bool) {
 
-	for _, rule := range state.grammar.Rules {
+	for _, rule := range state.Grammar.Rules {
 
 		if rule.Input == variable {
 
-			node, new_position, success := tryRule(state, rule, position)
+			node, new_position, success := TryRule(state, rule, position)
 
 			if success {
 				return node, new_position, true
@@ -211,7 +211,7 @@ func parseVariable(state *ParseState, variable string, position int) (*TreeNode,
 // Return: *TreeNode, int, bool
 //
 // Attempts to apply a specific parsing rule
-func tryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int, bool) {
+func TryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int, bool) {
 
 	node := &TreeNode{
 		Symbol:   rule.Input,
@@ -223,7 +223,7 @@ func tryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int,
 
 	for _, symbol := range rule.Output {
 
-		child_node, new_position, success := parseSymbol(state, symbol, current_position)
+		child_node, new_position, success := ParseSymbol(state, symbol, current_position)
 
 		if !success {
 			return nil, position, false
@@ -234,4 +234,25 @@ func tryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int,
 	}
 
 	return node, current_position, true
+}
+
+// Name: ConvertTreeToString
+//
+// Parameters: *TreeNode, string, string
+//
+// Return: string
+//
+// Recursively build a string of the syntax tree and returns it
+func ConvertTreeToString(node *TreeNode, indent string, current_string string) string {
+	if node == nil {
+		current_string += indent + "nil\n"
+		return current_string
+	}
+
+	current_string += fmt.Sprintf("%sSymbol: %s, Value: %s\n", indent, node.Symbol, node.Value)
+	for _, child := range node.Children {
+		current_string = ConvertTreeToString(child, indent+"  ", current_string)
+	}
+
+	return current_string
 }
