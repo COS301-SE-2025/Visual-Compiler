@@ -10,7 +10,8 @@ _Must be run in the backend directory_
 **To run specific tests:**  
 unit tests:
 ```
-    go test -v ./core/unit-tests/core-lexing-unit_test.go  
+    go test -v ./core/unit-tests/lexer-unit_test.go  
+    go test -v ./core/unit-tests/parser-unit_test.go 
     go test -v ./api/unit-tests/users-routers-unit_test.go  
     go test -v ./api/unit-tests/delete-user-unit_test.go  
     go test -v ./api/unit-tests/login-unit_test.go  
