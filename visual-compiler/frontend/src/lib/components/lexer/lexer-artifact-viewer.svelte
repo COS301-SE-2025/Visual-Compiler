@@ -27,8 +27,8 @@
         <tbody>
           {#each tokens as token}
             <tr>
-              <td>{token.type}</td>
-              <td>{token.value}</td>
+              <td>{token.Type}</td>
+              <td>{token.Value}</td>
             </tr>
           {/each}
         </tbody>

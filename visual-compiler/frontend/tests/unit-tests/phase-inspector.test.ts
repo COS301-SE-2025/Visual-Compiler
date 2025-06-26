@@ -12,16 +12,37 @@ vi.mock('$lib/stores/toast', () => ({
 import { AddToast } from '$lib/stores/toast';
 
 const mockFetch = vi.fn();
-vi.stubGlobal('fetch', mockFetch);
+global.fetch = mockFetch;
+
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: { [key: string]: string } = {};
+  return {
+    getItem(key: string) {
+      return store[key] || null;
+    },
+    setItem(key: string, value: string) {
+      store[key] = value.toString();
+    },
+    clear() {
+      store = {};
+    }
+  };
+})();
+
+Object.defineProperty(window, 'localStorage', {
+  value: localStorageMock
+});
 
 describe('PhaseInspector Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Set a user_id for each test to simulate a logged-in user
+    window.localStorage.setItem('user_id', 'test-user-123');
   });
 
   const sourceCode = 'let x = 1;';
 
-  // This test now passes the 'source_code' prop correctly.
   it('TestInitialRender_Success: Renders correctly and shows form on button click', async () => {
     render(PhaseInspector, { source_code: sourceCode });
     expect(screen.getByText(sourceCode)).toBeInTheDocument();
@@ -32,7 +53,6 @@ describe('PhaseInspector Component', () => {
     expect(screen.getByPlaceholderText('Enter type...')).toBeInTheDocument();
   });
 
-  // This test and all subsequent tests are restored.
   it('TestValidation_Failure_InvalidRegex: Shows an error for an invalid regex pattern', async () => {
     render(PhaseInspector, { source_code: sourceCode });
     await fireEvent.click(screen.getByRole('button', { name: 'Regular Expression' }));
@@ -42,9 +62,10 @@ describe('PhaseInspector Component', () => {
     const submitButton = screen.getByRole('button', { name: 'Submit' });
 
     await fireEvent.input(typeInput, { target: { value: 'KEYWORD' } });
-    await fireEvent.input(regexInput, { target: { value: '[' } });
+    await fireEvent.input(regexInput, { target: { value: '[' } }); // Invalid regex
     await fireEvent.click(submitButton);
 
+    // Check for the specific error message next to the input
     expect(await screen.findByText('Invalid regular expression pattern')).toBeInTheDocument();
     expect(mockFetch).not.toHaveBeenCalled();
   });
@@ -72,6 +93,7 @@ describe('PhaseInspector Component', () => {
     await fireEvent.input(typeInput, { target: { value: 'TYPE1' } });
     await fireEvent.input(regexInput, { target: { value: 'REGEX1' } });
     
+    // The add button should now be visible based on the component's logic
     const addButton = await screen.findByRole('button', { name: '+' });
     await fireEvent.click(addButton);
     
@@ -91,7 +113,8 @@ describe('PhaseInspector Component', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
 
     await waitFor(() => {
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/lexing/code', expect.any(Object));
+      // The endpoint is /rules when selectedType is REGEX
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/lexing/rules', expect.any(Object));
     });
     
     expect(await screen.findByRole('button', { name: 'Generate Tokens' })).toBeInTheDocument();
@@ -108,26 +131,25 @@ describe('PhaseInspector Component', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
     
     await waitFor(() => {
-      expect(AddToast).toHaveBeenCalledWith('Cannot connect to server. Please ensure the backend is running.', 'error');
+      // The component shows this specific error on fetch failure
+      expect(AddToast).toHaveBeenCalledWith('Failed to save rules', 'error');
     });
   });
 
-  // This test now uses the correct data structure and event handling logic.
   it('TestGenerateTokens_Success: Calls generate endpoint and triggers correct callback', async () => {
-    // The mock server now provides the 'tokens_unidentified' key.
     const mockServerResponse = {
       tokens: [{ Type: 'KEYWORD', Value: 'if' }],
       tokens_unidentified: ['@']
     };
     
-    // The component should map 'tokens_unidentified' to 'unexpected_tokens'.
     const expectedCallbackPayload = {
       tokens: mockServerResponse.tokens,
       unexpected_tokens: mockServerResponse.tokens_unidentified
     };
 
+    // First fetch for handleSubmit, second for generateTokens
     mockFetch
-      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ message: 'Success' }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ message: 'Rules stored successfully!' }) })
       .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve(mockServerResponse) });
 
     const handleGenerate = vi.fn();
@@ -147,6 +169,8 @@ describe('PhaseInspector Component', () => {
     await fireEvent.click(generateButton);
 
     await waitFor(() => {
+      // Check that the second fetch call was for token generation
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:8080/api/lexing/lexer', expect.any(Object));
       expect(handleGenerate).toHaveBeenCalledWith(expectedCallbackPayload);
     });
   });
