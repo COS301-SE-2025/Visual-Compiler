@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-// Struct for the grammar components
+// Struct for the grammar
 type Grammar struct {
-	Variables []string      `json:"vars"`
+	Variables []string      `json:"variables"`
 	Terminals []string      `json:"terminals"`
 	Start     string        `json:"start"`
 	Rules     []ParsingRule `json:"rules"`
@@ -17,6 +17,17 @@ type Grammar struct {
 type ParsingRule struct {
 	Input  string   `json:"input"`
 	Output []string `json:"output"`
+}
+
+// Struct for the syntax tree
+type SyntaxTree struct {
+	Root *TreeNode `json:"root"`
+}
+
+type TreeNode struct {
+	Token    string      `json:"token"`
+	Value    string      `json:"value"`
+	Children []*TreeNode `json:"children"`
 }
 
 // Name: ReadGrammar
@@ -50,7 +61,7 @@ func ReadGrammar(input []byte) (Grammar, error) {
 	}
 
 	if !valid {
-		return Grammar{}, fmt.Errorf("start symbol is not in the list of vars")
+		return Grammar{}, fmt.Errorf("start symbol is not in the list of variables")
 	}
 
 	for i, term := range grammar.Terminals {
@@ -71,4 +82,16 @@ func ReadGrammar(input []byte) (Grammar, error) {
 	}
 
 	return grammar, nil
+}
+
+// Name: CreateSyntaxTree
+//
+// Parameters: []TypeValue, Grammar
+//
+// Return: SyntaxTree, error
+//
+// Recursively build the syntax tree from the tokens and the grammar
+func CreateSyntaxTree(tokens []TypeValue, grammar Grammar) (SyntaxTree, error) {
+
+	return SyntaxTree{}, nil
 }
