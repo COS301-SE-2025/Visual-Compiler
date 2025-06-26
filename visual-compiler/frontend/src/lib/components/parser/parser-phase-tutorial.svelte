@@ -391,5 +391,5 @@ h3 {
   .cfg-block {
     max-width: 100%;
   }
-
+}
 </style>
