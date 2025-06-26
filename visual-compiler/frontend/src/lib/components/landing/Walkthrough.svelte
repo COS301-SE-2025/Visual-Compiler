@@ -1,6 +1,7 @@
 <script>
   const CANVAS_IMAGE_URL = '/SvelvetcanvasFull.PNG';
   const CONFIGURATION_IMAGE_URL = '/NodeConfiguration.PNG';
+  const SYNTAX_TREE_IMAGE_URL = '/Parsing.PNG';
 </script>
 
 <section class="walkthrough_section">
@@ -45,7 +46,7 @@
     <div class="step">
       <div class="step_image_container">
         <img
-          src=""
+          src={SYNTAX_TREE_IMAGE_URL}
           alt="Syntax Tree Visualization"
           class="step_image"
         />
