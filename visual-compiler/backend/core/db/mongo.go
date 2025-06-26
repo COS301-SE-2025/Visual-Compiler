@@ -19,8 +19,13 @@ var (
 	client_once sync.Once
 )
 
-// This function creates the MongoDB connection as a Singleton.
-// Decouples the connection logic from the CRUD operations
+// Name: ConnectClient
+//
+// Parameters: None
+//
+// Return: Client instance
+//
+// This function creates the MongoDB connection as a Singleton. Decouples the connection logic from the CRUD operations
 func ConnectClient() *mongo.Client {
 	client_once.Do(func() {
 		if _, err := os.Stat(".env"); err == nil {
