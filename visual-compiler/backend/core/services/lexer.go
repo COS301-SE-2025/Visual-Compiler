@@ -88,7 +88,7 @@ func ReadRegexRules(input []byte) ([]TypeRegex, error) {
 		return nil, fmt.Errorf("invalid JSON for rules: %v", err)
 	}
 
-	for _, rule := range rules {
+	for i, rule := range rules {
 
 		_, err := regexp.Compile(rule.Regex)
 
@@ -96,7 +96,7 @@ func ReadRegexRules(input []byte) ([]TypeRegex, error) {
 			return nil, fmt.Errorf("invalid regex input: %v", err)
 		}
 
-		rule.Type = strings.ToUpper(rule.Type)
+		rules[i].Type = strings.ToUpper(rule.Type)
 	}
 
 	return rules, nil
@@ -128,7 +128,7 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 
 		r := rune(source[i])
 
-		if unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || r == '-' || unicode.IsSpace(r) {
+		if unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) || r == '-' {
 
 			builder.WriteRune(r)
 
@@ -142,7 +142,7 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 				i++
 				r = rune(source[i])
 
-				if !(unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || r == '-' || unicode.IsSpace(r)) {
+				if !(unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r)) || r == '-' {
 
 					builder.WriteRune(r)
 				}
@@ -390,7 +390,6 @@ func SimplifyRegex(regex string) []string {
 	}
 
 	return no_duplicates
-
 }
 
 // Name: convertTypeToRegex
