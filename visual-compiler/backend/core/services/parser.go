@@ -25,9 +25,16 @@ type SyntaxTree struct {
 }
 
 type TreeNode struct {
-	Token    string      `json:"token"`
+	Symbol   string      `json:"symbol"`
 	Value    string      `json:"value"`
 	Children []*TreeNode `json:"children"`
+}
+
+// Struct to track parsing
+type ParseState struct {
+	position int
+	tokens   []TypeValue
+	grammar  Grammar
 }
 
 // Name: ReadGrammar
@@ -54,7 +61,7 @@ func ReadGrammar(input []byte) (Grammar, error) {
 	valid := false
 
 	for _, vars := range grammar.Variables {
-		if grammar.Start == vars {
+		if vars == grammar.Start {
 			valid = true
 			break
 		}
@@ -93,5 +100,73 @@ func ReadGrammar(input []byte) (Grammar, error) {
 // Recursively build the syntax tree from the tokens and the grammar
 func CreateSyntaxTree(tokens []TypeValue, grammar Grammar) (SyntaxTree, error) {
 
-	return SyntaxTree{}, nil
+	if len(tokens) == 0 {
+		return SyntaxTree{}, fmt.Errorf("no tokens found")
+	}
+
+	if grammar.Start == "" {
+		return SyntaxTree{}, fmt.Errorf("no start variable found")
+	}
+
+	state := &ParseState{
+		position: 0,
+		tokens:   tokens,
+		grammar:  grammar,
+	}
+
+	root, new_position, success := parseSymbol(state, grammar.Start, 0)
+
+	if !success || new_position != len(tokens) {
+		return SyntaxTree{}, fmt.Errorf("syntax error!")
+	}
+
+	return SyntaxTree{Root: root}, nil
+}
+
+// Name: parseSymbol
+//
+// Parameters: *ParseState, string, int
+//
+// Return: *TreeNode, int, bool
+//
+// Attempts to parse a variable or a terminal starting at the given position
+func parseSymbol(state *ParseState, symbol string, position int) (*TreeNode, int, bool) {
+
+	return nil, 0, false
+}
+
+// Name: parseTerminal
+//
+// Parameters: *ParseState, string, int
+//
+// Return: *TreeNode, int, bool
+//
+// Attempts to match a terminal symbol with the current token
+func parseTerminal(state *ParseState, terminal string, position int) (*TreeNode, int, bool) {
+
+	return nil, 0, false
+}
+
+// Name: parseVariable
+//
+// Parameters: *ParseState, string, int
+//
+// Return: *TreeNode, int, bool
+//
+// Attempts to parse a variable using all applicable rules
+func parseVariable(state *ParseState, variable string, position int) (*TreeNode, int, bool) {
+
+	return nil, 0, false
+}
+
+// Name: tryRule
+//
+// Parameters: *ParseState, ParsingRule, int
+//
+// Return: *TreeNode, int, bool
+//
+// Attempts to apply a specific parsing rule
+func tryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int, bool) {
+
+	return nil, 0, false
 }
