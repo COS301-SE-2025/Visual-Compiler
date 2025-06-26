@@ -21,6 +21,13 @@ type ReadGrammerFromUser struct {
 	Rules     []services.ParsingRule `json:"rules" binding:"required"`
 }
 
+// Name: ReadGrammar
+//
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Reads the user's grammar and stores it in the database. If any syntax tree, or syntax tree string already exists, they are cleared
 func ReadGrammar(c *gin.Context) {
 	var req ReadGrammerFromUser
 
@@ -89,6 +96,13 @@ func ReadGrammar(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Grammar successfully inserted. Ready to create Syntax Tree"})
 }
 
+// Name: CreateSyntaxTree
+//
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Creates a syntax tree from the stored grammar. If there is no grammar saved, an error is returned. The tree is saved in the database
 func CreateSyntaxTree(c *gin.Context) {
 	var req IDRequest
 
@@ -147,6 +161,13 @@ func CreateSyntaxTree(c *gin.Context) {
 	})
 }
 
+// Name: CreateSyntaxTree
+//
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Creates a string version of the syntax tree from the stored syntax tree. If there is no syntax tree saved, an error is returned. The string version is saved in the database
 func TreeToString(c *gin.Context) {
 	var req IDRequest
 

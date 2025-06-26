@@ -6,9 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Sets up the router for the parsing specific endpoints
-// Sets up the following:
-//   - POST request: parsing functionality
+// Name: SetupParsingRouter
+//
+// Parameters: None
+//
+// Return: Endpoints
+//
+// Creates the endpoints for parsing, Links the endpoints to the respective function
 func SetupParsingRouter() *gin.Engine {
 	r := gin.New()
 

@@ -16,14 +16,13 @@ type DeleteRequest struct {
 	ID string `json:"id" binding:"required"`
 }
 
-// Deletes a user from the database.
-// Deletes the user from the "users" collection.
-// Formats the response as JSON
+// Name: DeleteUser
 //
-// Returns:
-//   - A JSON response body.
-//   - A 200 OK response if successful
-//   - A 500 Internal Server Error if any errors are caught for deleting or parsing
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Deletes the specified user from the database. If the user doesnt exist, an error is returned
 func DeleteUser(c *gin.Context) {
 	var req DeleteRequest
 
