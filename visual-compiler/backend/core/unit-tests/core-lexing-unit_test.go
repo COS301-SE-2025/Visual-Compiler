@@ -87,6 +87,23 @@ func TestReadRegexRules_ValidInput(t *testing.T) {
 	}
 }
 
+func TestReadRegexRules_InvalidRegex(t *testing.T) {
+	c_input := []byte(`[{"type": "KEYWORD","regex":"\\b(if|else)\\b"},{"type": "IDENTIFIER","regex":"[a-zA-Z_"}]`)
+	_, err := services.ReadRegexRules(c_input)
+	if err == nil {
+		t.Errorf("Expected error")
+	}
+	if err != nil {
+		if err.Error() == fmt.Errorf("invalid regex input: error parsing regexp: missing closing ]: `[a-zA-Z_`").Error() {
+			t.Logf("Error received successfully")
+		} else {
+			t.Errorf("Incorrect error: %v", err)
+		}
+	} else {
+		t.Errorf("Test not supposed to pass for no input")
+	}
+}
+
 // ==================== //
 //  TEST: CreateTokens  //
 // ==================== //
@@ -774,7 +791,7 @@ func TestCreateTokensFromDFA_ComplexDFAWithSimpleCode(t *testing.T) {
 		";",
 	}
 
-	source_code := "int x = 3;"
+	source_code := "int x = 3  ;   "
 	dfa := services.Automata{
 		States: []string{"A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"},
 		Transitions: []services.Transition{
@@ -1024,6 +1041,42 @@ func TestConvertDFAToRegex_NoStart(t *testing.T) {
 	}
 }
 
+func TestConvertDFAToRegex_NoStates(t *testing.T) {
+
+	dfa := services.Automata{
+		States: []string{},
+		Transitions: []services.Transition{
+			{From: "START", To: "S1", Label: "i"},
+			{From: "S1", To: "S5", Label: "n"},
+			{From: "S5", To: "S4", Label: "t"},
+			{From: "S1", To: "S6", Label: "f"},
+			{From: "START", To: "S2", Label: "0123456789"},
+			{From: "S2", To: "S2", Label: "0123456789"},
+			{From: "START", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz"},
+			{From: "S3", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz0123456789"},
+		},
+		Start: "START",
+		Accepting: []services.AcceptingState{
+			{State: "S3", Type: "IDENTIFIER"},
+			{State: "S4", Type: "KEYWORD"},
+			{State: "S2", Type: "NUMBER"},
+			{State: "S6", Type: "KEYWORD"},
+		},
+	}
+
+	_, err := services.ConvertDFAToRegex(dfa)
+
+	if err != nil {
+		if err.Error() == fmt.Errorf("no states identified in dfa").Error() {
+			t.Logf("Test Passed: %v", err)
+		} else {
+			t.Errorf("Incorrect error: %v", err)
+		}
+	} else {
+		t.Errorf("Error supposed to occur")
+	}
+}
+
 func TestConvertDFAToRegex_NoAcceptingStates(t *testing.T) {
 
 	dfa := services.Automata{
@@ -1080,6 +1133,46 @@ func TestConvertDFAToRegex_ValidDFA(t *testing.T) {
 			{State: "S4", Type: "KEYWORD"},
 			{State: "S2", Type: "NUMBER"},
 			{State: "S6", Type: "KEYWORD"},
+		},
+	}
+
+	rules, err := services.ConvertDFAToRegex(dfa)
+
+	if err == nil {
+		for _, rule := range rules {
+			match_found := false
+			for _, res := range expected_res {
+				if rule == res {
+					match_found = true
+				}
+			}
+			if !match_found {
+				t.Errorf("Tokenisation incorrect: %v", rule)
+			}
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
+}
+
+func TestConvertDFAToRegex_ValidDFANoRegex(t *testing.T) {
+	expected_res := []services.TypeRegex{}
+
+	dfa := services.Automata{
+		States: []string{"START", "S1", "S2", "S3", "S4", "S5"},
+		Transitions: []services.Transition{
+			{From: "START", To: "S1", Label: "i"},
+			{From: "S1", To: "S5", Label: "n"},
+			{From: "S5", To: "S4", Label: "t"},
+			{From: "S1", To: "S6", Label: "f"},
+			{From: "START", To: "S2", Label: "0123456789"},
+			{From: "S2", To: "S2", Label: "0123456789"},
+			{From: "START", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz"},
+			{From: "S3", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz0123456789"},
+		},
+		Start: "START",
+		Accepting: []services.AcceptingState{
+			{State: "S9", Type: "ID"},
 		},
 	}
 
