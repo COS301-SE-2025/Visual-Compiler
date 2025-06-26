@@ -599,7 +599,8 @@ func TestTryRule_True(t *testing.T) {
 
 func TestConvertTreeToString_Valid(t *testing.T) {
 
-	expected_res := `└──  STATEMENT
+	expected_res := `
+└──  STATEMENT
     ├──  DECLARATION
     │   ├──  TYPE
     │   │   └──  KEYWORD: int
