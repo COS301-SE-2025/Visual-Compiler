@@ -41,8 +41,8 @@ func StoreSourceCode(c *gin.Context) {
 		return
 	}
 
-	mongo_cli := db.ConnectClient()
-	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -62,7 +62,7 @@ func StoreSourceCode(c *gin.Context) {
 			return
 		}
 	} else if err == nil {
-		update_existing := bson.D{
+		updateexisting := bson.D{
 			bson.E{Key: "$unset", Value: bson.M{
 				"tokens":              "",
 				"tokens_unidentified": "",
@@ -74,7 +74,7 @@ func StoreSourceCode(c *gin.Context) {
 				"code": req.Code,
 			}},
 		}
-		_, err = collection.UpdateOne(ctx, filters, update_existing)
+		_, err = collection.UpdateOne(ctx, filters, updateexisting)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Update error"})
 			return
@@ -103,20 +103,20 @@ func CreateRulesFromCode(c *gin.Context) {
 		return
 	}
 
-	json_as_bytes, err := json.Marshal(req.Pairs)
+	jsonAsBytes, err := json.Marshal(req.Pairs)
 	if err != nil {
 		panic(err)
 	}
 
-	pairs := json_as_bytes
+	pairs := jsonAsBytes
 
 	rules, err := services.ReadRegexRules(pairs)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Regex rule creation failed"})
 	}
 
-	mongo_cli := db.ConnectClient()
-	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -132,13 +132,13 @@ func CreateRulesFromCode(c *gin.Context) {
 	}
 
 	filters := bson.M{"users_id": req.UsersID}
-	update_users_rules := bson.M{
+	updateusersrules := bson.M{
 		"$set": bson.M{
 			"rules": rules,
 		},
 	}
 
-	_, err = collection.UpdateOne(ctx, filters, update_users_rules)
+	_, err = collection.UpdateOne(ctx, filters, updateusersrules)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert rules"})
 		return
@@ -165,8 +165,8 @@ func Lexing(c *gin.Context) {
 		return
 	}
 
-	mongo_cli := db.ConnectClient()
-	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -182,19 +182,19 @@ func Lexing(c *gin.Context) {
 		return
 	}
 
-	tokens, unidentified, error_caught := services.CreateTokens(res.Code, res.Rules)
-	if error_caught != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Tokenization failed", "details": error_caught.Error()})
+	tokens, unidentified, errorcaught := services.CreateTokens(res.Code, res.Rules)
+	if errorcaught != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Tokenization failed", "details": errorcaught.Error()})
 		return
 	}
 
 	filters := bson.M{"users_id": req.UsersID}
-	update_users_lexing := bson.M{"$set": bson.M{
+	updateuserslexing := bson.M{"$set": bson.M{
 		"tokens":              tokens,
 		"tokens_unidentified": unidentified,
 	}}
 
-	_, err = collection.UpdateOne(ctx, filters, update_users_lexing)
+	_, err = collection.UpdateOne(ctx, filters, updateuserslexing)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert tokens"})
 		return
@@ -225,30 +225,30 @@ func ReadDFAFromUser(c *gin.Context) {
 		return
 	}
 
-	json_as_bytes, err := json.Marshal(req)
+	jsonAsBytes, err := json.Marshal(req)
 	if err != nil {
 		panic(err)
 	}
 
 	dfa := services.Automata{}
 
-	err = json.Unmarshal(json_as_bytes, &dfa)
+	err = json.Unmarshal(jsonAsBytes, &dfa)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error extracting details for DFA creation"})
 		return
 	}
 
-	mongo_cli := db.ConnectClient()
-	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
 	filters := bson.M{"users_id": req.UsersID}
 
-	var user_existing bson.M
-	err = collection.FindOne(ctx, filters).Decode(&user_existing)
+	var userexisting bson.M
+	err = collection.FindOne(ctx, filters).Decode(&userexisting)
 
 	if err == mongo.ErrNoDocuments {
 		_, err = collection.InsertOne(ctx, bson.M{
@@ -259,7 +259,7 @@ func ReadDFAFromUser(c *gin.Context) {
 			return
 		}
 	} else if err == nil {
-		update_existing := bson.D{
+		updateexisting := bson.D{
 			bson.E{Key: "$unset", Value: bson.M{
 				"tokens":              "",
 				"tokens_unidentified": "",
@@ -269,12 +269,12 @@ func ReadDFAFromUser(c *gin.Context) {
 				"dfa": dfa,
 			}},
 		}
-		_, err = collection.UpdateOne(ctx, filters, update_existing)
+		_, err = collection.UpdateOne(ctx, filters, updateexisting)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Update error"})
 			return
 		}
-		_, err = collection.UpdateOne(ctx, filters, update_existing)
+		_, err = collection.UpdateOne(ctx, filters, updateexisting)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Update error"})
 			return
@@ -295,8 +295,8 @@ func TokensFromDFA(c *gin.Context) {
 		return
 	}
 
-	mongo_cli := db.ConnectClient()
-	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -312,14 +312,14 @@ func TokensFromDFA(c *gin.Context) {
 		return
 	}
 
-	tokens, unidentified, error_caught := services.CreateTokensFromDFA(res.Code, res.DFA)
-	if error_caught != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Tokenization from DFA failed", "details": error_caught.Error()})
+	tokens, unidentified, errorcaught := services.CreateTokensFromDFA(res.Code, res.DFA)
+	if errorcaught != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Tokenization failed", "details": errorcaught.Error()})
 		return
 	}
 
 	filters := bson.M{"users_id": req.UsersID}
-	update_users_lexing := bson.D{
+	updateuserslexing := bson.D{
 		bson.E{
 			Key: "$set", Value: bson.M{
 				"tokens":              tokens,
@@ -327,7 +327,7 @@ func TokensFromDFA(c *gin.Context) {
 			},
 		}}
 
-	_, err = collection.UpdateOne(ctx, filters, update_users_lexing)
+	_, err = collection.UpdateOne(ctx, filters, updateuserslexing)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tokens"})
 		return
@@ -348,8 +348,8 @@ func ConvertDFAToRG(c *gin.Context) {
 		return
 	}
 
-	mongo_cli := db.ConnectClient()
-	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -364,18 +364,18 @@ func ConvertDFAToRG(c *gin.Context) {
 		return
 	}
 
-	rules, error_caught := services.ConvertDFAToRegex(res.DFA)
-	if error_caught != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conversion from DFA to Regex failed", "details": error_caught.Error()})
+	rules, errorcaught := services.ConvertDFAToRegex(res.DFA)
+	if errorcaught != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Tokenization failed", "details": errorcaught.Error()})
 		return
 	}
 
 	filters := bson.M{"users_id": req.UsersID}
-	update_users_lexing := bson.M{"$set": bson.M{
+	updateuserslexing := bson.M{"$set": bson.M{
 		"rules": rules,
 	}}
 
-	_, err = collection.UpdateOne(ctx, filters, update_users_lexing)
+	_, err = collection.UpdateOne(ctx, filters, updateuserslexing)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert rules"})
 		return
@@ -395,8 +395,8 @@ func ConvertRGToNFA(c *gin.Context) {
 		return
 	}
 
-	mongo_cli := db.ConnectClient()
-	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -411,23 +411,23 @@ func ConvertRGToNFA(c *gin.Context) {
 		return
 	}
 
-	regexes_from_rules := make(map[string]string)
+	regexesfromrules := make(map[string]string)
 	for _, rule := range res.Rules {
-		regexes_from_rules[rule.Type] = rule.Regex
+		regexesfromrules[rule.Type] = rule.Regex
 	}
 
-	nfa, error_caught := services.ConvertRegexToNFA(regexes_from_rules)
-	if error_caught != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conversion from Regex to NFA failed", "details": error_caught.Error()})
+	nfa, errorcaught := services.ConvertRegexToNFA(regexesfromrules)
+	if errorcaught != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conversion failed", "details": errorcaught.Error()})
 		return
 	}
 
 	filters := bson.M{"users_id": req.UsersID}
-	update_users_lexing := bson.M{"$set": bson.M{
+	updateuserslexing := bson.M{"$set": bson.M{
 		"nfa": nfa,
 	}}
 
-	_, err = collection.UpdateOne(ctx, filters, update_users_lexing)
+	_, err = collection.UpdateOne(ctx, filters, updateuserslexing)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert NFA"})
 		return
@@ -447,8 +447,8 @@ func ConvertRGToDFA(c *gin.Context) {
 		return
 	}
 
-	mongo_cli := db.ConnectClient()
-	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -463,23 +463,23 @@ func ConvertRGToDFA(c *gin.Context) {
 		return
 	}
 
-	regexes_from_rules := make(map[string]string)
+	regexesfromrules := make(map[string]string)
 	for _, rule := range res.Rules {
-		regexes_from_rules[rule.Type] = rule.Regex
+		regexesfromrules[rule.Type] = rule.Regex
 	}
 
-	dfa, error_caught := services.ConvertRegexToDFA(regexes_from_rules)
-	if error_caught != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conversion from Regex to DFA failed", "details": error_caught.Error()})
+	dfa, errorcaught := services.ConvertRegexToDFA(regexesfromrules)
+	if errorcaught != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conversion failed", "details": errorcaught.Error()})
 		return
 	}
 
 	filters := bson.M{"users_id": req.UsersID}
-	update_users_lexing := bson.M{"$set": bson.M{
+	updateuserslexing := bson.M{"$set": bson.M{
 		"dfa": dfa,
 	}}
 
-	_, err = collection.UpdateOne(ctx, filters, update_users_lexing)
+	_, err = collection.UpdateOne(ctx, filters, updateuserslexing)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert DFA"})
 		return
@@ -499,8 +499,8 @@ func ConvertNFAToDFA(c *gin.Context) {
 		return
 	}
 
-	mongo_cli := db.ConnectClient()
-	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
+	mongoCli := db.ConnectClient()
+	collection := mongoCli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -515,18 +515,18 @@ func ConvertNFAToDFA(c *gin.Context) {
 		return
 	}
 
-	dfa, error_caught := services.ConvertNFAToDFA(res.NFA)
-	if error_caught != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conversion from NFA to DFA failed", "details": error_caught.Error()})
+	dfa, errorcaught := services.ConvertNFAToDFA(res.NFA)
+	if errorcaught != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Conversion failed", "details": errorcaught.Error()})
 		return
 	}
 
 	filters := bson.M{"users_id": req.UsersID}
-	update_users_lexing := bson.M{"$set": bson.M{
+	updateuserslexing := bson.M{"$set": bson.M{
 		"dfa": dfa,
 	}}
 
-	_, err = collection.UpdateOne(ctx, filters, update_users_lexing)
+	_, err = collection.UpdateOne(ctx, filters, updateuserslexing)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert DFA"})
 		return

@@ -37,29 +37,29 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	normalise_input := strings.ToLower(req.Login)
+	normaliseInput := strings.ToLower(req.Login)
 
-	mongo_client := db.ConnectClient()
-	users_collection := mongo_client.Database("visual-compiler").Collection("users")
+	mongoClient := db.ConnectClient()
+	usersCollection := mongoClient.Database("visual-compiler").Collection("users")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	filter_login := bson.M{
+	filterLogin := bson.M{
 		"$or": []bson.M{
-			{"email": normalise_input},
-			{"username": normalise_input},
+			{"email": normaliseInput},
+			{"username": normaliseInput},
 		},
 	}
 
-	var db_user struct {
+	var dbUser struct {
 		Username string        `bson:"username"`
 		Email    string        `bson:"email"`
 		Password string        `bson:"password"`
 		ID       bson.ObjectID `bson:"_id"`
 	}
 
-	err := users_collection.FindOne(ctx, filter_login).Decode(&db_user)
+	err := usersCollection.FindOne(ctx, filterLogin).Decode(&dbUser)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
@@ -69,13 +69,13 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(db_user.Password), []byte(req.Password)) != nil {
+	if bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(req.Password)) != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Password is incorrect"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Login Successful. Welcome " + db_user.Username,
-		"id":      db_user.ID,
+		"message": "Login Successful. Welcome " + dbUser.Username,
+		"id": dbUser.ID,
 	})
 }

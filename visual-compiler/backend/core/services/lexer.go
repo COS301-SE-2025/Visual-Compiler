@@ -88,7 +88,7 @@ func ReadRegexRules(input []byte) ([]TypeRegex, error) {
 		return nil, fmt.Errorf("invalid JSON for rules: %v", err)
 	}
 
-	for i, rule := range rules {
+	for _, rule := range rules {
 
 		_, err := regexp.Compile(rule.Regex)
 
@@ -96,7 +96,7 @@ func ReadRegexRules(input []byte) ([]TypeRegex, error) {
 			return nil, fmt.Errorf("invalid regex input: %v", err)
 		}
 
-		rules[i].Type = strings.ToUpper(rule.Type)
+		rule.Type = strings.ToUpper(rule.Type)
 	}
 
 	return rules, nil
@@ -128,7 +128,7 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 
 		r := rune(source[i])
 
-		if unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) || r == '-' {
+		if unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) {
 
 			builder.WriteRune(r)
 
@@ -142,7 +142,7 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 				i++
 				r = rune(source[i])
 
-				if !(unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r)) || r == '-' {
+				if !(unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r)) {
 
 					builder.WriteRune(r)
 				}
@@ -390,6 +390,7 @@ func SimplifyRegex(regex string) []string {
 	}
 
 	return no_duplicates
+
 }
 
 // Name: convertTypeToRegex
@@ -642,19 +643,6 @@ func ConvertRegexToNFA(regexes map[string]string) (Automata, error) {
 
 	for state := range converter.states {
 		states_list = append(states_list, state)
-	}
-
-	i := 0
-	for i < len(converter.transitions)-1 {
-		current_transition := &converter.transitions[i]
-		next_transition := converter.transitions[i+1]
-
-		if next_transition.To == current_transition.To && next_transition.From == current_transition.From {
-			current_transition.Label += next_transition.Label
-			converter.transitions = append(converter.transitions[:i+1], converter.transitions[i+2:]...)
-		} else {
-			i++
-		}
 	}
 
 	nfa := Automata{}

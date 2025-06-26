@@ -42,7 +42,7 @@ func GetAllUsers(c *gin.Context) {
 	}
 	defer pointer.Close(ctx)
 
-	var all_users_public []UserPublic
+	var allUsersPublic []UserPublic
 	for pointer.Next(ctx) {
 		var raw bson.M
 		if err := pointer.Decode(&raw); err != nil {
@@ -54,7 +54,7 @@ func GetAllUsers(c *gin.Context) {
 		username := raw["username"].(string)
 		email := raw["email"].(string)
 
-		all_users_public = append(all_users_public, UserPublic{
+		allUsersPublic = append(allUsersPublic, UserPublic{
 			ID:       id,
 			Username: username,
 			Email:    email,
@@ -63,6 +63,6 @@ func GetAllUsers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Successfully fetched all users",
-		"users":   all_users_public,
+		"users":   allUsersPublic,
 	})
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { AddToast } from '$lib/stores/toast';
+
   export let source_code = '';
 
   // --- DATA STRUCTURE for CFG ---
@@ -21,10 +21,6 @@
   let grammar: Rule[] = [];
   let rule_id_counter = 0;
   let translation_id_counter = 0;
-
-  // NEW: State for variables and terminals
-  let variables_string = '';
-  let terminals_string = '';
 
   onMount(() => {
     addNewRule();
@@ -70,83 +66,10 @@
   // handleSubmitGrammar
   // Return type: void
   // Parameter type(s): none
-  // Validates and constructs the final JSON object for the backend.
+  // Logs the current grammar structure to the console for submission.
   function handleSubmitGrammar() {
-    // Process comma-separated strings into arrays
-    const variables = variables_string.split(',').map(v => v.trim()).filter(v => v);
-    const terminals = terminals_string.split(',').map(t => t.trim()).filter(t => t);
-    
-    //  VALIDATION LOGIC 
-
-    // Combine all defined variables and terminals into a single set for easy lookup.
-    const defined_symbols = new Set([...variables, ...terminals]);
-
-    // The start variable must be defined in the variables list.
-    const start_variable = grammar[0]?.nonTerminal.trim() || '';
-    if (!start_variable) {
-        AddToast("The 'Start' rule cannot be empty.", "error");
-        return;
-    }
-    if (!variables.includes(start_variable)) {
-        AddToast(`The start symbol '${start_variable}' must be included in the Variables list.`, "error");
-        return;
-    }
-    
-    // Check all rules for consistency.
-    for (const rule of grammar) {
-        const non_terminal = rule.nonTerminal.trim();
-        if (!non_terminal) {
-            AddToast("All rules must have a non-terminal (left-hand side).", "error");
-            return;
-        }
-        if (!variables.includes(non_terminal)) {
-            AddToast(`The symbol '${non_terminal}' used in a rule must be defined in the Variables list.`, "error");
-            return;
-        }
-
-        const output_array = rule.translations.flatMap(t => t.value.trim().split(' ')).filter(v => v);
-        
-        if (output_array.length === 0) {
-            AddToast(`Rule for '${non_terminal}' must have at least one production.`, "error");
-            return;
-        }
-
-        for (const symbol of output_array) {
-            // Check if each symbol in the production is a defined variable or terminal.
-            if (!defined_symbols.has(symbol)) {
-                AddToast(`Invalid symbol '${symbol}' in rule for '${non_terminal}'. It must be defined as a Variable or Terminal.`, "error");
-                return; 
-            }
-        }
-    }
-
-    // END OF VALIDATION
-
-    // If validation passes, construct the JSON object
-    const formatted_rules = grammar
-      .map(rule => {
-        const output_array = rule.translations
-          .map(t => t.value.trim())
-          .filter(v => v);
-        
-        const final_output = output_array.length > 0 ? output_array : [""];
-
-        return {
-          input: rule.nonTerminal,
-          output: final_output
-        };
-      })
-      .filter(rule => rule.input);
-
-    const final_json_output = {
-      variables: variables,
-      terminals: terminals,
-      start: start_variable,
-      rules: formatted_rules
-    };
-
-    console.log('Submitting Grammar as JSON:', JSON.stringify(final_json_output, null, 2));
-    // API call with 'final_json_output' would go here
+    console.log('Submitting Grammar:', grammar);
+    // API call would go here
   }
 </script>
 
@@ -162,19 +85,6 @@
 
   <div class="grammar-editor">
     <h3>Context-Free Grammar</h3>
-    
-   
-    <div class="top-inputs">
-      <div class="input-group">
-        <label for="variables">Variables </label>
-        <input id="variables" type="text" placeholder="S, Y, Z" bind:value={variables_string} />
-      </div>
-      <div class="input-group">
-        <label for="terminals">Terminals </label>
-        <input id="terminals" type="text" placeholder="a, b, c" bind:value={terminals_string} />
-      </div>
-    </div>
-
     <div class="rules-container">
       {#each grammar as rule, i (rule.id)}
         <div class="rule-row">
@@ -256,30 +166,6 @@
     margin-bottom: 1.5rem;
     color: #001A6E;
   }
-
-  .top-inputs {
-    display: flex;
-    gap: 1.5rem;
-    margin-bottom: 1.5rem;
-  }
-  .input-group {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-  .input-group label {
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #333;
-    font-size: 0.9rem;
-  }
-  .input-group input {
-    padding: 0.6rem;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-family: monospace;
-  }
-
   .rules-container {
     display: flex;
     flex-direction: column;
@@ -382,11 +268,10 @@
   }
 
   /* Dark Mode Styles */
-  :global(html.dark-mode) .parser-heading-h1,
-  :global(html.dark-mode) .source-code-header,
-  :global(html.dark-mode) .grammar-editor h3,
-  :global(html.dark-mode) .start-label,
-  :global(html.dark-mode) .input-group label {
+  :global(html.dark-mode) .parser-heading-h1 {
+    color: #ebeef1;
+  }
+  :global(html.dark-mode) .source-code-header {
     color: #ebeef1;
   }
   :global(html.dark-mode) .source-display {
@@ -395,7 +280,12 @@
   :global(html.dark-mode) .grammar-editor {
     background: #1f2937;
   }
-  :global(html.dark-mode) .input-group input,
+  :global(html.dark-mode) .grammar-editor h3 {
+    color: #ebeef1;
+  }
+  :global(html.dark-mode) .start-label {
+    color: #60a5fa;
+  }
   :global(html.dark-mode) .non-terminal-input,
   :global(html.dark-mode) .translation-input {
     background-color: #2d3748;

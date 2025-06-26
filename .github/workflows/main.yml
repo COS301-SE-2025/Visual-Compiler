@@ -29,15 +29,7 @@ jobs:
 
       - name: Tests for frontend
         working-directory: ./visual-compiler/frontend
-        run: npm test -- --coverage
-
-      - name: Upload coverage for frontend
-        uses: codecov/codecov-action@v4
-        with:
-          flags: frontend
-          name: coverage-frontend
-          directory: ./visual-compiler/frontend
-          files: ./visual-compiler/frontend/coverage/lcov.info
+        run: npm test
 
       - name: Go setup for Backend
         uses: actions/setup-go@v5
@@ -56,15 +48,7 @@ jobs:
 
       - name: Tests for Backend
         working-directory: ./visual-compiler/backend
-        run: go test -v ./... -coverprofile=coverage.out
-
-      - name: Upload coverage for backend
-        uses: codecov/codecov-action@v4
-        with:
-          flags: backend
-          name: coverage-backend
-          directory: ./visual-compiler/backend
-          files: coverage.out
+        run: go test ./...
 
       - name: Docker Compose Installation
         run: |

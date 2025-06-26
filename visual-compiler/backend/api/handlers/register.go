@@ -39,25 +39,25 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	mongo_client := db.ConnectClient()
-	users_collection := mongo_client.Database("visual-compiler").Collection("users")
+	mongoClient := db.ConnectClient()
+	usersCollection := mongoClient.Database("visual-compiler").Collection("users")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	normalised_username := strings.ToLower(req.Username)
+	normalisedUsername := strings.ToLower(req.Username)
 
-	filter_checks := bson.M{
+	filterChecks := bson.M{
 		"$or": []bson.M{
 			{"email": req.Email},
-			{"username": normalised_username},
+			{"username": normalisedUsername},
 		},
 	}
 
-	var user_exists bson.M
-	err := users_collection.FindOne(ctx, filter_checks).Decode(&user_exists)
+	var userExists bson.M
+	err := usersCollection.FindOne(ctx, filterChecks).Decode(&userExists)
 	if err == nil {
-		if user_exists["email"] == req.Email {
+		if userExists["email"] == req.Email {
 			c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
 		} else {
 			c.JSON(http.StatusConflict, gin.H{"error": "Username is already taken"})
@@ -68,16 +68,16 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	hashed_password, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in hashing password"})
 		return
 	}
 
-	_, err = users_collection.InsertOne(ctx, bson.M{
+	_, err = usersCollection.InsertOne(ctx, bson.M{
 		"email":    req.Email,
-		"password": string(hashed_password),
-		"username": normalised_username,
+		"password": string(hashedPassword),
+		"username": normalisedUsername,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in registering user"})

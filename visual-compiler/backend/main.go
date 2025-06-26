@@ -26,7 +26,7 @@ func main() {
 
 	// Attach CORS middleware
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"},
+		AllowOrigins:	  []string{"http://localhost:5173", "http://127.0.0.1:5173"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -35,23 +35,17 @@ func main() {
 	}))
 
 	// Attach your routes
-	api_user_routes := routers.SetupUserRouter()
-	api_lexing_routes := routers.SetupLexingRouter()
-	api_parsing_routes := routers.SetupParsingRouter()
+	apiUserRoutes := routers.SetupUserRouter()
+	apiLexingRoutes := routers.SetupLexingRouter()
 
 	router.Any("/api/users/*any", func(c *gin.Context) {
 		c.Request.URL.Path = c.Param("any")
-		api_user_routes.HandleContext(c)
+		apiUserRoutes.HandleContext(c)
 	})
 
 	router.Any("/api/lexing/*any", func(c *gin.Context) {
 		c.Request.URL.Path = c.Param("any")
-		api_lexing_routes.HandleContext(c)
-	})
-
-	router.Any("/api/parsing/*any", func(c *gin.Context) {
-		c.Request.URL.Path = c.Param("any")
-		api_parsing_routes.HandleContext(c)
+		apiLexingRoutes.HandleContext(c)
 	})
 
 	log.Println("Starting backend server on: http://localhost:8080/api")
