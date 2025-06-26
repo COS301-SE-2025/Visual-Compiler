@@ -6,11 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Sets up the router for the user specific endpoints
-// Sets up the following:
-//   - POST requests: register and login
-//   - GET request: get all users
-//   - DELETE request: delete user
+// Name: SetupUserRouter
+//
+// Parameters: None
+//
+// Return: Endpoints
+//
+// Creates the endpoints for user management, Links the endpoints to the respective function
 func SetupUserRouter() *gin.Engine {
 	r := gin.New()
 

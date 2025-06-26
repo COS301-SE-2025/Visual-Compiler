@@ -10,7 +10,13 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/readpref"
 )
 
-// Creates the initial connection to the MongoDB Database
+// Name: ConnectToMongo
+//
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Sets up the initial connection to the Mongo Database. Any subsequent calls to connect to Mongo will use this one and not create a new one each time
 func ConnectToMongo(c *gin.Context) {
 	client := db.ConnectClient()
 
