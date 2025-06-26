@@ -1,7 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, createEventDispatcher } from 'svelte';
 	import { AddToast } from '$lib/stores/toast';
-	export let source_code = '';
+
+
+	export let SourceCode = '';
+
+	const dispatch = createEventDispatcher();
 
 	// --- DATA STRUCTURE for CFG ---
 	interface Translation {
@@ -16,13 +20,14 @@
 	}
 
 	// --- STATE MANAGEMENT ---
-	let grammar: Rule[] = [];
+	// snake_case is used for all internal component variables.
+	let grammar_rules: Rule[] = [];
 	let rule_id_counter = 0;
 	let translation_id_counter = 0;
-
 	let variables_string = '';
 	let terminals_string = '';
-	let showDefaultGrammar = false;
+	let show_default_grammar = false;
+	let is_grammar_submitted = false;
 
 	// --- DEFAULT GRAMMAR DATA ---
 	const DEFAULT_GRAMMAR = {
@@ -37,15 +42,33 @@
 		]
 	};
 
+	// onMount
+	// Return type: void
+	// Parameter type(s): none
+	// Svelte lifecycle function that runs when the component is first created.
+	// It initializes the grammar editor with a single empty rule.
 	onMount(() => {
 		addNewRule();
 	});
 
+	// handleGrammarChange
+	// Return type: void
+	// Parameter type(s): none
+	// Resets the submission status whenever the grammar is modified.
+	function handleGrammarChange() {
+		is_grammar_submitted = false;
+	}
+
+	// addNewRule
+	// Return type: void
+	// Parameter type(s): none
+	// Adds a new, empty rule to the grammar editor.
 	function addNewRule() {
+		handleGrammarChange();
 		rule_id_counter++;
 		translation_id_counter++;
-		grammar = [
-			...grammar,
+		grammar_rules = [
+			...grammar_rules,
 			{
 				id: rule_id_counter,
 				nonTerminal: '',
@@ -54,10 +77,15 @@
 		];
 	}
 
-	function addTranslation(ruleId: number) {
+	// addTranslation
+	// Return type: void
+	// Parameter type(s): ruleId (number)
+	// Adds a new, empty translation field to a specific rule.
+	function addTranslation(rule_id: number) {
+		handleGrammarChange();
 		translation_id_counter++;
-		grammar = grammar.map((rule) => {
-			if (rule.id === ruleId) {
+		grammar_rules = grammar_rules.map((rule) => {
+			if (rule.id === rule_id) {
 				return {
 					...rule,
 					translations: [...rule.translations, { id: translation_id_counter, value: '' }]
@@ -67,15 +95,20 @@
 		});
 	}
 
+	// insertDefaultGrammar
+	// Return type: void
+	// Parameter type(s): none
+	// Populates the editor with a predefined default grammar.
 	function insertDefaultGrammar() {
-		showDefaultGrammar = true;
+		handleGrammarChange();
+		show_default_grammar = true;
 		variables_string = DEFAULT_GRAMMAR.variables;
 		terminals_string = DEFAULT_GRAMMAR.terminals;
 
 		let new_rule_id = 0;
 		let new_translation_id = 0;
 
-		grammar = DEFAULT_GRAMMAR.rules.map((r) => {
+		grammar_rules = DEFAULT_GRAMMAR.rules.map((r) => {
 			new_rule_id++;
 			return {
 				id: new_rule_id,
@@ -93,38 +126,53 @@
 		translation_id_counter = new_translation_id;
 	}
 
+	// removeDefaultGrammar
+	// Return type: void
+	// Parameter type(s): none
+	// Clears the grammar editor and resets it to a single empty rule.
 	function removeDefaultGrammar() {
-		showDefaultGrammar = false;
+		handleGrammarChange();
+		show_default_grammar = false;
 		variables_string = '';
 		terminals_string = '';
-		grammar = [];
+		grammar_rules = [];
 		rule_id_counter = 0;
 		translation_id_counter = 0;
 		addNewRule();
 	}
 
-	function handleSubmitGrammar() {
-		const variables = variables_string.split(',').map((v) => v.trim()).filter((v) => v);
-		const terminals = terminals_string.split(',').map((t) => t.trim()).filter((t) => t);
-		const defined_symbols = new Set([...variables, ...terminals]);
-		const start_variable = grammar[0]?.nonTerminal.trim() || '';
+	// handleSubmitGrammar
+	// Return type: Promise<void>
+	// Parameter type(s): none
+	// Validates the current grammar and submits it to the backend API.
+	async function handleSubmitGrammar() {
+		const user_id = localStorage.getItem('user_id');
+		if (!user_id) {
+			AddToast('User not logged in. Please log in to save your work.', 'error');
+			return;
+		}
+
+		const variable_list = variables_string.split(',').map((v) => v.trim()).filter((v) => v);
+		const terminal_list = terminals_string.split(',').map((t) => t.trim()).filter((t) => t);
+		const defined_symbols = new Set([...variable_list, ...terminal_list]);
+		const start_variable = grammar_rules[0]?.nonTerminal.trim() || '';
 
 		if (!start_variable) {
 			AddToast("The 'Start' rule cannot be empty.", 'error');
 			return;
 		}
-		if (!variables.includes(start_variable)) {
+		if (!variable_list.includes(start_variable)) {
 			AddToast(`The start symbol '${start_variable}' must be included in the Variables list.`, 'error');
 			return;
 		}
 
-		for (const rule of grammar) {
+		for (const rule of grammar_rules) {
 			const non_terminal = rule.nonTerminal.trim();
 			if (!non_terminal) {
 				AddToast('All rules must have a non-terminal (left-hand side).', 'error');
 				return;
 			}
-			if (!variables.includes(non_terminal)) {
+			if (!variable_list.includes(non_terminal)) {
 				AddToast(`The symbol '${non_terminal}' used in a rule must be defined in the Variables list.`, 'error');
 				return;
 			}
@@ -132,7 +180,6 @@
 			const output_array = rule.translations.flatMap((t) => t.value.trim().split(' ')).filter((v) => v);
 
 			if (output_array.length === 0 && rule.translations.some(t => t.value.trim() === '')) {
-                 // Allow empty productions if explicitly entered
             } else if (output_array.length === 0) {
 				AddToast(`Rule for '${non_terminal}' must have at least one production.`, 'error');
 				return;
@@ -140,7 +187,7 @@
 
 
 			for (const symbol of output_array) {
-				if (!defined_symbols.has(symbol)) {
+				if (symbol && !defined_symbols.has(symbol)) {
 					AddToast(
 						`Invalid symbol '${symbol}' in rule for '${non_terminal}'. It must be defined as a Variable or Terminal.`,
 						'error'
@@ -150,27 +197,81 @@
 			}
 		}
 
-		const formatted_rules = grammar
+		const formatted_rules = grammar_rules
 			.map((rule) => {
-				const output_array = rule.translations.map((t) => t.value.trim()).filter((v) => v);
-				const final_output = output_array.length > 0 ? output_array : [''];
+				const output_array = rule.translations
+					.flatMap((t) => t.value.trim().split(' '))
+					.filter((v) => v);
+
 				return {
-					input: rule.nonTerminal,
-					output: final_output
+					input: rule.nonTerminal.trim(),
+					output: output_array.length > 0 ? output_array : [''] 
 				};
 			})
 			.filter((rule) => rule.input);
 
 		const final_json_output = {
-			variables: variables,
-			terminals: terminals,
+			users_id: user_id,
+			variables: variable_list,
+			terminals: terminal_list,
 			start: start_variable,
 			rules: formatted_rules
 		};
 
-		console.log('Submitting Grammar as JSON:', JSON.stringify(final_json_output, null, 2));
-		AddToast('Grammar submitted successfully to console!', 'success');
-		// API call with 'final_json_output' would go here
+		try {
+			const response = await fetch('http://localhost:8080/api/parsing/grammar', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(final_json_output)
+			});
+
+			if (!response.ok) {
+				const error_data = await response.json();
+				throw new Error(error_data.details || 'Failed to submit grammar');
+			}
+			
+			const result = await response.json();
+			AddToast(result.message || 'Grammar submitted successfully!', 'success');
+			is_grammar_submitted = true;
+
+		} catch (error) {
+			console.error('Submit Grammar Error:', error);
+			AddToast(String(error), 'error');
+			is_grammar_submitted = false;
+		}
+	}
+
+	// generateSyntaxTree
+	// Return type: Promise<void>
+	// Parameter type(s): none
+	// Makes an API call to the backend to generate a syntax tree from the submitted grammar and tokens.
+	async function generateSyntaxTree() {
+		const user_id = localStorage.getItem('user_id');
+		if (!user_id) {
+			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		try {
+			const response = await fetch('http://localhost:8080/api/parsing/tree', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ users_id: user_id })
+			});
+
+			if(!response.ok) {
+				const error_data = await response.json();
+				throw new Error(error_data.details || 'Failed to generate syntax tree');
+			}
+
+			const result = await response.json();
+			AddToast('Syntax tree generated successfully!', 'success');
+			dispatch('treereceived', result.tree);
+			
+		} catch (error) {
+			console.error('Generate Syntax Tree Error:', error);
+			AddToast(String(error), 'error');
+		}
 	}
 </script>
 
@@ -181,7 +282,7 @@
 
 	<div class="source-code-section">
 		<h3 class="source-code-header">Source Code</h3>
-		<pre class="source-display">{source_code || 'No source code available'}</pre>
+		<pre class="source-display">{SourceCode || 'No source code available'}</pre>
 	</div>
 
 	<div class="grammar-editor">
@@ -189,29 +290,29 @@
 			<h3>Context-Free Grammar</h3>
 			<button
 				class="default-toggle-btn"
-				class:selected={showDefaultGrammar}
-				on:click={showDefaultGrammar ? removeDefaultGrammar : insertDefaultGrammar}
+				class:selected={show_default_grammar}
+				on:click={show_default_grammar ? removeDefaultGrammar : insertDefaultGrammar}
 				type="button"
-				aria-label={showDefaultGrammar ? 'Remove default grammar' : 'Insert default grammar'}
-				title={showDefaultGrammar ? 'Remove default grammar' : 'Insert default grammar'}
+				aria-label={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
+				title={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
 			>
-				<span class="icon">{showDefaultGrammar ? '🧹' : '🪄'}</span>
+				<span class="icon">{show_default_grammar ? '🧹' : '🪄'}</span>
 			</button>
 		</div>
 
 		<div class="top-inputs">
 			<div class="input-group">
 				<label for="variables">Variables</label>
-				<input id="variables" type="text" placeholder="S, Y, Z" bind:value={variables_string} />
+				<input id="variables" type="text" placeholder="S, Y, Z" bind:value={variables_string} on:input={handleGrammarChange}/>
 			</div>
 			<div class="input-group">
 				<label for="terminals">Terminals</label>
-				<input id="terminals" type="text" placeholder="a, b, c" bind:value={terminals_string} />
+				<input id="terminals" type="text" placeholder="a, b, c" bind:value={terminals_string} on:input={handleGrammarChange}/>
 			</div>
 		</div>
 
 		<div class="rules-container">
-			{#each grammar as rule, i (rule.id)}
+			{#each grammar_rules as rule, i (rule.id)}
 				<div class="rule-row">
 					<div class="rule-label">
 						{#if i === 0}
@@ -220,11 +321,11 @@
 					</div>
 
 					<div class="rule-inputs">
-						<input type="text" class="non-terminal-input" placeholder="LHS" bind:value={rule.nonTerminal} />
+						<input type="text" class="non-terminal-input" placeholder="LHS" bind:value={rule.nonTerminal} on:input={handleGrammarChange}/>
 						<span class="arrow">→</span>
 						<div class="translations-container">
 							{#each rule.translations as translation, j (translation.id)}
-								<input type="text" class="translation-input" placeholder="RHS" bind:value={translation.value} />
+								<input type="text" class="translation-input" placeholder="RHS" bind:value={translation.value} on:input={handleGrammarChange}/>
 							{/each}
 							<button class="add-translation-btn" on:click={() => addTranslation(rule.id)}> + </button>
 						</div>
@@ -237,6 +338,9 @@
 
 	<div class="button-container">
 		<button class="submit-button" on:click={handleSubmitGrammar}> Submit Grammar </button>
+		{#if is_grammar_submitted}
+			<button class="submit-button" on:click={generateSyntaxTree}> Generate Syntax Tree </button>
+		{/if}
 	</div>
 </div>
 
@@ -251,6 +355,7 @@
 		color: #001a6e;
 		text-align: center;
 		margin-top: 0;
+		font-family: 'Times New Roman';
 	}
 	.source-code-section {
 		margin-bottom: 1rem;
@@ -258,6 +363,7 @@
 	.source-code-header {
 		color: #444;
 		margin-bottom: 0.5rem;
+		font-family: 'Times New Roman';
 	}
 	.source-display {
 		background: #f5f5f5;
@@ -283,6 +389,7 @@
 	.grammar-editor h3 {
 		margin: 0;
 		color: #001a6e;
+		font-family: 'Times New Roman';
 	}
 	.default-toggle-btn {
 		background: white;
@@ -339,7 +446,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
-    
+		
 	}
 	.rule-row {
 		display: flex;
@@ -371,7 +478,7 @@
 		border-radius: 4px;
 		font-family: monospace;
 		text-align: center;
-    width: 2.8rem;
+		width: 2.8rem;
 	}
 	.arrow {
 		font-size: 1.2rem;
@@ -392,7 +499,6 @@
 		border-radius: 4px;
 		font-family: monospace;
 		min-width: 100px;
-    max-width: 2rem;
 	}
 	.add-translation-btn {
 		background: #e0e0e0;
@@ -424,7 +530,9 @@
 		font-weight: 500;
 	}
 	.button-container {
-		text-align: center;
+		display: flex;
+		justify-content: center;
+		gap: 1rem;
 		margin-top: 1rem;
 	}
 	.submit-button {
@@ -438,7 +546,7 @@
 		cursor: pointer;
 	}
 
-	/* Dark Mode Styles */
+	
 	:global(html.dark-mode) .parser-heading-h1,
 	:global(html.dark-mode) .source-code-header,
 	:global(html.dark-mode) .grammar-editor h3,
