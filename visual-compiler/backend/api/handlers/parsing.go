@@ -171,7 +171,7 @@ func TreeToString(c *gin.Context) {
 		return
 	}
 
-	tree_as_string := services.ConvertTreeToString(res.Tree.Root, "", "")
+	tree_as_string := services.ConvertTreeToString(res.Tree.Root, "", true)
 
 	filters := bson.M{"users_id": req.UsersID}
 	update_users_tree_string := bson.M{"$set": bson.M{
