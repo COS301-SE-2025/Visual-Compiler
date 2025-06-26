@@ -462,10 +462,63 @@
     });
   }
 
-  function showNfaDiagram() {
-    showNfaVis = true;
-    showDfaVis = false;
-    setTimeout(() => renderNfaVis(), 0);
+  async function showNfaDiagram() {
+    const user_id = localStorage.getItem('user_id');
+    if (!user_id) {
+      AddToast('User not logged in.', 'error');
+      return;
+    }
+
+    // 1. Save DFA (from automaton input) to backend as NFA (if not already saved)
+    const saved = await saveDfaToBackend(); // This saves the automaton as DFA, but you may want to save as NFA if your backend expects it
+    if (!saved) return;
+
+    try {
+      // 2. Convert NFA to DFA
+      const nfaToDfaRes = await fetch('http://localhost:8080/api/lexing/nfaToDFA', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users_id: user_id })
+      });
+      if (!nfaToDfaRes.ok) {
+        const errorText = await nfaToDfaRes.text();
+        AddToast('NFA→DFA failed: ' + errorText, 'error');
+        return;
+      }
+
+      // 3. Convert DFA to Regex
+      const dfaToRegexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users_id: user_id })
+      });
+      if (!dfaToRegexRes.ok) {
+        const errorText = await dfaToRegexRes.text();
+        AddToast('DFA→Regex failed: ' + errorText, 'error');
+        return;
+      }
+
+      // 4. Convert Regex to NFA
+      const regexToNfaRes = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users_id: user_id })
+      });
+      if (!regexToNfaRes.ok) {
+        const errorText = await regexToNfaRes.text();
+        AddToast('Regex→NFA failed: ' + errorText, 'error');
+        return;
+      }
+      const nfaData = await regexToNfaRes.json();
+      regexNfa = adaptAutomatonForVis(nfaData.nfa);
+      showNfaVis = true;
+      showDfaVis = false;
+      automataDisplay = 'NFA';
+      setTimeout(() => renderRegexAutomatonVis(nfaContainer, regexNfa, false), 0);
+      AddToast('NFA generated from Regex and displayed!', 'success');
+    } catch (error) {
+      AddToast('Failed to generate NFA from Regex: ' + error, 'error');
+    }
   }
 
   function resetInputs() {
@@ -479,6 +532,7 @@
   function selectType(type: 'AUTOMATA' | 'REGEX') {
     selectedType = type;
     resetInputs();
+    showRegexActionButtons = false; // <-- Add this line
     if (type === 'REGEX') {
       showDefault = false;
       userInputRows = [{ type: '', regex: '', error: '' }];
@@ -549,59 +603,44 @@
       return;
     }
 
-    // Build DFA object for backend
-    const dfa = {
-      states: states.split(',').map(s => s.trim()).filter(Boolean),
-      transitions: [],
-      start_state: startState.trim(),
-      accepting_states: parseAcceptedStates(acceptedStates),
-      users_id: user_id
-    };
-
-    // Parse transitions
-    const transitionLines = transitions.split('\n').map(line => line.trim()).filter(Boolean);
-    for (const line of transitionLines) {
-      const match = line.match(/^(.+),(.+)->(.+)$/);
-      if (match) {
-        const [_, from, label, to] = match;
-        dfa.transitions.push({ from: from.trim(), label: label.trim(), to: to.trim() });
-      }
-    }
+    // 1. Save DFA to backend (if not already saved)
+    const saved = await saveDfaToBackend();
+    if (!saved) return;
 
     try {
-      // Send DFA to backend and expect a DFA response
-      const response = await fetch('http://localhost:8080/api/lexing/dfa', {
+      // 2. Convert DFA to Regex
+      const regexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(dfa)
+        body: JSON.stringify({ users_id: user_id })
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        AddToast('Failed to save DFA: ' + errorText, 'error');
+      if (!regexRes.ok) {
+        const errorText = await regexRes.text();
+        AddToast('DFA→Regex failed: ' + errorText, 'error');
         return;
       }
-      const data = await response.json();
-    console.log("DFA from backend (Automata):", JSON.stringify(data, null, 2));
+      // Optionally, you can use the rules here if you want to display them
 
-      // If your backend returns the DFA, use it; otherwise, use the data you sent
-      let dfaData;
-      try {
-        const data = await response.json();
-        // If backend returns the DFA, use it; otherwise fallback to what we sent
-        dfaData = data.dfa || dfa;
-      } catch {
-        dfaData = dfa;
+      // 3. Convert Regex to DFA
+      const dfaRes = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ users_id: user_id })
+      });
+      if (!dfaRes.ok) {
+        const errorText = await dfaRes.text();
+        AddToast('Regex→DFA failed: ' + errorText, 'error');
+        return;
       }
-
-      // Adapt and visualize
+      const dfaData = await dfaRes.json();
+      regexDfa = adaptAutomatonForVis(dfaData.dfa);
       showDfaVis = true;
       showNfaVis = false;
-      const adapted = adaptAutomatonForVis(dfaData);
-      setTimeout(() => renderRegexAutomatonVis(dfaContainer, adapted, true), 0);
-      AddToast('DFA generated and displayed!', 'success');
+      automataDisplay = 'DFA';
+      setTimeout(() => renderRegexAutomatonVis(dfaContainer, regexDfa, true), 0);
+      AddToast('DFA generated from Regex and displayed!', 'success');
     } catch (error) {
-      AddToast('Failed to save DFA: ' + error, 'error');
+      AddToast('Failed to generate DFA from Regex: ' + error, 'error');
     }
   }
 
@@ -787,6 +826,8 @@
       physics: false
     });
   }
+
+  let automataDisplay: 'NFA' | 'DFA' | 'RE' | null = null;
 </script>
 
 <div class="phase-inspector">
@@ -800,19 +841,20 @@
 
   <div class="automaton-btn-row">
     <button
-      class="automaton-btn {selectedType === 'AUTOMATA' ? 'selected' : ''}"
-      on:click={() => selectType('AUTOMATA')}
-      type="button"
-    >
-      Automata
-    </button>
-    <button
       class="automaton-btn {selectedType === 'REGEX' ? 'selected' : ''}"
       on:click={() => selectType('REGEX')}
       type="button"
     >
       Regular Expression
     </button>
+    <button
+      class="automaton-btn {selectedType === 'AUTOMATA' ? 'selected' : ''}"
+      on:click={() => { selectType('AUTOMATA'); automataDisplay = null; }}
+      type="button"
+    >
+      Automata
+    </button>
+    
     {#if selectedType && !showDefault}
       <button
         class="default-toggle-btn"
@@ -909,6 +951,23 @@
           {submissionStatus.message}
         </div>
       {/if}
+
+      {#if showRegexNfaVis && regexNfa}
+        <div class="automata-container pretty-vis-box">
+          <div class="vis-heading">
+            <span class="vis-title">NFA Visualization (from REGEX)</span>
+          </div>
+          <div bind:this={regexNfaContainer} class="vis-graph-area" />
+        </div>
+      {/if}
+      {#if showRegexDfaVis && regexDfa}
+        <div class="automata-container pretty-vis-box">
+          <div class="vis-heading">
+            <span class="vis-title">DFA Visualization (from REGEX)</span>
+          </div>
+          <div bind:this={regexDfaContainer} class="vis-graph-area" />
+        </div>
+      {/if}
     </div>
   {:else if selectedType === 'AUTOMATA'}
     <div class="automaton-section">
@@ -937,60 +996,67 @@
         </label>
       </div>
       <div class="automata-action-row" style="grid-column: span 2;">
-        <button class="action-btn" type="button" on:click={showNfaDiagram}>Show NFA</button>
-        <button class="action-btn" type="button" on:click={handleShowDfa}>Show DFA</button>
-        <button class="action-btn" type="button" on:click={handleTokenisation}>Tokenisation</button>
-        <button class="action-btn" type="button" on:click={handleConvertToRegex} title="Convert to Regular Expression">RE</button>
+        <button class="action-btn" type="button" on:click={() => { showNfaDiagram(); automataDisplay = 'NFA'; }}>Show NFA</button>
+        <button class="action-btn" type="button" on:click={() => { handleShowDfa(); automataDisplay = 'DFA'; }}>Show DFA</button> 
+        <button class="action-btn" type="button" on:click={() => { handleTokenisation(); automataDisplay = null; }}>Tokenisation</button>
+        <button class="action-btn" type="button" on:click={() => { handleConvertToRegex(); automataDisplay = 'RE'; }} title="Convert to Regular Expression">RE</button>
       </div>
     </div>
 
-    {#if showNfaVis}
-      <div class="automata-container">
-        <h4 style="margin-bottom:0.5rem;">NFA Visualization</h4>
-        <div bind:this={nfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
+    {#if automataDisplay === 'NFA' && showNfaVis}
+      <div class="automata-container pretty-vis-box">
+        <div class="vis-heading">
+          <span class="vis-title">NFA Visualization</span>
+        </div>
+        <div bind:this={nfaContainer} class="vis-graph-area" />
       </div>
-    {/if}
-    {#if showDfaVis}
-      <div class="automata-container">
-        <h4 style="margin-bottom:0.5rem;">DFA Visualization</h4>
-        <div bind:this={dfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
+    {:else if automataDisplay === 'DFA' && showDfaVis}
+      <div class="automata-container pretty-vis-box">
+        <div class="vis-heading">
+          <span class="vis-title">DFA Visualization</span>
+        </div>
+        <div bind:this={dfaContainer} class="vis-graph-area" />
       </div>
-    {/if}
-  {/if}
-
-  {#if showRegexOutput && regexRules.length > 0}
-    <div class="regex-display-container">
-      <h4>Generated Regular Expressions</h4>
-      <table class="regex-table">
-        <thead>
-          <tr>
-            <th>Type</th>
-            <th>Regular Expression</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each regexRules as rule}
+    {:else if automataDisplay === 'RE' && showRegexOutput && regexRules.length > 0}
+      <div class="regex-display-container pretty-vis-box">
+        <div class="vis-heading">
+          <span class="vis-title">Generated Regular Expressions</span>
+        </div>
+        <table class="regex-table">
+          <thead>
             <tr>
-              <td class="regex-type">{rule.token_type || rule.Type || rule.type  || '-'}</td>
-              <td class="regex-pattern"><code>{rule.regex || rule.Regex || '-'}</code></td>
+              <th>Type</th>
+              <th>Regular Expression</th>
             </tr>
-          {/each}
-        </tbody>
-      </table>
-    </div>
-  {/if}
+          </thead>
+          <tbody>
+            {#each regexRules as rule}
+              <tr>
+                <td class="regex-type">{rule.token_type || rule.Type || rule.type  || '-'}</td>
+                <td class="regex-pattern"><code>{rule.regex || rule.Regex || '-'}</code></td>
+              </tr>
+            {/each}
+          </tbody>
+        </table>
+      </div>
+    {/if}
 
-  {#if showRegexNfaVis && regexNfa}
-    <div class="automata-container">
-      <h4 style="margin-bottom:0.5rem;">NFA Visualization (from REGEX)</h4>
-      <div bind:this={regexNfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
-    </div>
-  {/if}
-  {#if showRegexDfaVis && regexDfa}
-    <div class="automata-container">
-      <h4 style="margin-bottom:0.5rem;">DFA Visualization (from REGEX)</h4>
-      <div bind:this={regexDfaContainer} style="width: 500px; height: 400px; border: 1px solid #eee;" />
-    </div>
+    {#if showRegexNfaVis && regexNfa}
+      <div class="automata-container pretty-vis-box">
+        <div class="vis-heading">
+          <span class="vis-title">NFA Visualization (from REGEX)</span>
+        </div>
+        <div bind:this={regexNfaContainer} class="vis-graph-area" />
+      </div>
+    {/if}
+    {#if showRegexDfaVis && regexDfa}
+      <div class="automata-container pretty-vis-box">
+        <div class="vis-heading">
+          <span class="vis-title">DFA Visualization (from REGEX)</span>
+        </div>
+        <div bind:this={regexDfaContainer} class="vis-graph-area" />
+      </div>
+    {/if}
   {/if}
 </div>
 
@@ -1450,5 +1516,43 @@
     gap: 0.5rem;
     margin-top: 0.25rem; /* Minimal space below submit */
   }
-</style>
 
+  .pretty-vis-box {
+    background: #f8fafc;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(30,64,175,0.07), 0 1.5px 6px rgba(0,0,0,0.04);
+    padding: 1.5rem 1.5rem 1.2rem 1.5rem;
+    margin-top: 2.2rem;
+    margin-bottom: 1.5rem;
+    max-width: 750px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .vis-heading {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 1.1rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e40af;
+    letter-spacing: 0.01em;
+  }
+
+  .vis-title {
+    font-size: 1.18rem;
+    font-weight: 600;
+    color: #1e40af;
+  }
+  .vis-graph-area {
+    width: 450px;
+    height: 350px;
+    border: 1.5px solid #e0e7ef;
+    border-radius: 10px;
+    background: #fff;
+    margin: 0 auto;
+    box-shadow: 0 1px 4px rgba(30,64,175,0.04);
+  }
+</style>
