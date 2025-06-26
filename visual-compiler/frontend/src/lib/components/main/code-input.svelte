@@ -2,8 +2,21 @@
   import { AddToast } from '$lib/stores/toast';
 
   let code_text = '';
+  let isDefaultInput = false;
+  let previous_code_text = '';
 
-   export let onCodeSubmitted: (code: string) => void = () => {};
+  export let onCodeSubmitted: (code: string) => void = () => {};
+
+  function handleDefaultInput() {
+    if (!isDefaultInput) {
+      previous_code_text = code_text;
+      code_text = 'int blue = 13 + 22;';
+      isDefaultInput = true;
+    } else {
+      code_text = previous_code_text;
+      isDefaultInput = false;
+    }
+  }
 
   // handleFileChange
   // Return type: void
@@ -37,12 +50,45 @@
   // Dispatches the current code text to the parent component.
   function submitCode() {
     if (!code_text.trim()) return;
-    onCodeSubmitted(code_text);
-    AddToast('Code confirmed!', 'success');
+    const user_id = localStorage.getItem('user_id');
+    if (!user_id) {
+      AddToast('User not logged in.', 'error');
+      return;
+    }
+    fetch('http://localhost:8080/api/lexing/code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        users_id: user_id,
+        source_code: code_text
+      })
+    })
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to save source code');
+        AddToast('Code confirmed and saved!', 'success');
+        onCodeSubmitted(code_text);
+      })
+      .catch(() => AddToast('Failed to save source code', 'error'));
   }
 </script>
 
 <div class="code-input-container">
+  <div class="code-input-header-row">
+    <h2 class="code-input-header">Enter Source Code</h2>
+    <button
+      type="button"
+      class="default-source-btn"
+      title={isDefaultInput ? "Restore your input" : "Insert default source code"}
+      aria-label={isDefaultInput ? "Restore your input" : "Insert default source code"}
+      on:click={handleDefaultInput}
+    >
+      {#if isDefaultInput}
+        🧹
+      {:else}
+        🪄
+      {/if}
+    </button>
+  </div>
   <textarea
     bind:value={code_text}
     placeholder="Paste or type your source code here…"
@@ -90,12 +136,13 @@
     border: 1px solid #ccc;
     border-radius: 4px;
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
-    height: 86px;
+    height: 100px;
   }
 
   .controls {
     display: flex;
     gap: 0.5rem;
+    margin-top: 0.3rem;
     margin-bottom: 0.7rem;
     justify-content: center;
   }
@@ -141,5 +188,38 @@
   }
   .upload-btn:hover {
     background: #838386;
+  }
+
+  .default-source-btn {
+    background: #e0e7ff;
+    color: #1e40af;
+    border: none;
+    border-radius: 50%;
+    width: 2.2rem;
+    height: 2.2rem;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .default-source-btn:hover,
+  .default-source-btn:focus {
+    background: #d0d9ff;
+  }
+
+  .code-input-header-row {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 0.3rem;
+    justify-content: center;
+  }
+
+  .code-input-header {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
   }
 </style>

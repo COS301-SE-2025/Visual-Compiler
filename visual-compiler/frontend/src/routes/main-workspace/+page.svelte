@@ -176,7 +176,6 @@
   {#if show_code_input}
     <div class="code-input-overlay">
       <div class="code-input-modal">
-        <h2 class="modal-title">Enter Source Code</h2>
         <CodeInput onCodeSubmitted={handleCodeSubmit} />
         <button class="close-btn" on:click={() => (show_code_input = false)}>✕</button>
       </div>
