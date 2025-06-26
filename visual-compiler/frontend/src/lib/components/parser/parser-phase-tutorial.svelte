@@ -33,6 +33,7 @@
     margin-top: 0;
     margin-bottom: 1rem;
     font-size: 1.5rem;
+    font-family: 'Times New Roman';
   }
   .description {
     line-height: 1.6;
