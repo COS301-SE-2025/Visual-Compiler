@@ -429,7 +429,7 @@
   function selectType(type: 'AUTOMATA' | 'REGEX') {
     selectedType = type;
     resetInputs();
-    showRegexActionButtons = false; // <-- Add this line
+    showRegexActionButtons = false;
     if (type === 'REGEX') {
       showDefault = false;
       userInputRows = [{ type: '', regex: '', error: '' }];
@@ -604,6 +604,7 @@
       regexNfa = adaptAutomatonForVis(data.nfa);
       showRegexNfaVis = true;
       showRegexDfaVis = false;
+      showRegexVisOnly = true; 
       AddToast('Regex converted to NFA!', 'success');
       setTimeout(() => renderRegexAutomatonVis(regexNfaContainer, regexNfa, false), 0);
     } catch (error) {
@@ -633,6 +634,7 @@
       regexDfa = adaptAutomatonForVis(data.dfa);
       showRegexDfaVis = true;
       showRegexNfaVis = false;
+      showRegexVisOnly = true; 
       AddToast('Regex converted to DFA!', 'success');
       setTimeout(() => renderRegexAutomatonVis(regexDfaContainer, regexDfa, true), 0);
     } catch (error) {
@@ -725,6 +727,14 @@
   }
 
   let automataDisplay: 'NFA' | 'DFA' | 'RE' | null = null;
+
+  let showRegexVisOnly = false;
+
+  function handleBackFromRegexVis() {
+    showRegexVisOnly = false;
+    showRegexNfaVis = false;
+    showRegexDfaVis = false;
+  }
 </script>
 
 <div class="phase-inspector">
@@ -777,78 +787,8 @@
   </div>
 
   {#if selectedType === 'REGEX'}
-    <div>
-      <div class="shared-block">
-        <div class="block-headers">
-          <div class="header-section">
-            <h3>Type</h3>
-          </div>
-          <div class="header-section">
-            <h3>Regular Expression</h3>
-          </div>
-        </div>
-        <div class="input-rows">
-          {#each (showDefault ? editableDefaultRows : userInputRows) as row, i}
-            <div class="input-row">
-              <div class="input-block">
-                <input
-                  type="text"
-                  bind:value={row.type}
-                  on:input={handleInputChange}
-                  placeholder="Enter type..."
-                  class:error={row.error}
-                />
-              </div>
-              <div class="input-block">
-                <input
-                  type="text"
-                  bind:value={row.regex}
-                  on:input={handleInputChange}
-                  placeholder="Enter regex pattern..."
-                  class:error={row.error}
-                />
-              </div>
-              {#if row.error}
-                <div class="error-message">{row.error}</div>
-              {/if}
-            </div>
-          {/each}
-        </div>
-
-        {#if userInputRows[userInputRows.length - 1].type && userInputRows[userInputRows.length - 1].regex}
-          <button class="add-button" on:click={addNewRow}>
-            <span>+</span>
-          </button>
-        {/if}
-      </div>
-
-      {#if formError}
-        <div class="form-error">{formError}</div>
-      {/if}
-
-      <div class="button-stack">
-        <button class="submit-button" on:click={handleSubmit}>
-          Submit
-        </button>
-        {#if showRegexActionButtons}
-          <div class="regex-action-buttons">
-            <button class="generate-button" on:click={generateTokens}>Generate Tokens</button>
-            <button class="generate-button" on:click={handleRegexToNFA} title="Convert Regular Expression to a NFA">NFA</button>
-            <button class="generate-button" on:click={handleRegexToDFA} title="Convert Regular Expression to a DFA">DFA</button>
-          </div>
-        {/if}
-      </div>
-
-      {#if submissionStatus.show}
-        <div
-          class="status-message"
-          class:success={submissionStatus.success === true}
-          class:info={submissionStatus.message === 'info'}
-        >
-          {submissionStatus.message}
-        </div>
-      {/if}
-
+    {#if showRegexVisOnly}
+      <!-- Only show the NFA/DFA display and back button -->
       {#if showRegexNfaVis && regexNfa}
         <div class="automata-container pretty-vis-box">
           <div class="vis-heading">
@@ -856,6 +796,9 @@
           </div>
           <div bind:this={regexNfaContainer} class="vis-graph-area" />
         </div>
+        <button class="submit-button" style="align-self: flex-start; margin-top: 1.5rem;" on:click={handleBackFromRegexVis}>
+          ← Back
+        </button>
       {/if}
       {#if showRegexDfaVis && regexDfa}
         <div class="automata-container pretty-vis-box">
@@ -864,8 +807,81 @@
           </div>
           <div bind:this={regexDfaContainer} class="vis-graph-area" />
         </div>
+        <button class="submit-button" style="align-self: flex-start; margin-top: 1.5rem;" on:click={handleBackFromRegexVis}>
+          ← Back
+        </button>
       {/if}
-    </div>
+    {:else}
+      <!-- Show the regular expression input, submit, and action buttons as before -->
+      <div>
+        <div class="shared-block">
+          <div class="block-headers">
+            <div class="header-section">
+              <h3>Type</h3>
+            </div>
+            <div class="header-section">
+              <h3>Regular Expression</h3>
+            </div>
+          </div>
+          <div class="input-rows">
+            {#each (showDefault ? editableDefaultRows : userInputRows) as row, i}
+              <div class="input-row">
+                <div class="input-block">
+                  <input
+                    type="text"
+                    bind:value={row.type}
+                    on:input={handleInputChange}
+                    placeholder="Enter type..."
+                    class:error={row.error}
+                  />
+                </div>
+                <div class="input-block">
+                  <input
+                    type="text"
+                    bind:value={row.regex}
+                    on:input={handleInputChange}
+                    placeholder="Enter regex pattern..."
+                    class:error={row.error}
+                  />
+                </div>
+                {#if row.error}
+                  <div class="error-message">{row.error}</div>
+                {/if}
+              </div>
+            {/each}
+          </div>
+          {#if userInputRows[userInputRows.length - 1].type && userInputRows[userInputRows.length - 1].regex}
+            <button class="add-button" on:click={addNewRow}>
+              <span>+</span>
+            </button>
+          {/if}
+        </div>
+        {#if formError}
+          <div class="form-error">{formError}</div>
+        {/if}
+        <div class="button-stack">
+          <button class="submit-button" on:click={handleSubmit}>
+            Submit
+          </button>
+          {#if showRegexActionButtons}
+            <div class="regex-action-buttons">
+              <button class="generate-button" on:click={generateTokens}>Generate Tokens</button>
+              <button class="generate-button" on:click={handleRegexToNFA} title="Convert Regular Expression to a NFA">NFA</button>
+              <button class="generate-button" on:click={handleRegexToDFA} title="Convert Regular Expression to a DFA">DFA</button>
+            </div>
+          {/if}
+        </div>
+        {#if submissionStatus.show}
+          <div
+            class="status-message"
+            class:success={submissionStatus.success === true}
+            class:info={submissionStatus.message === 'info'}
+          >
+            {submissionStatus.message}
+          </div>
+        {/if}
+      </div>
+    {/if}
   {:else if selectedType === 'AUTOMATA'}
     <div class="automaton-section">
       <div class="automaton-left">
