@@ -53,9 +53,40 @@
             <div class="code-sample">
               <code>{@html sample_code}</code>
             </div>
-            <div class="token-sample">
-              <b>Tokens:</b>
-              <div class="token-list">{sample_tokens}</div>
+            <b><br />Tokens:</b>
+            <div class="token-table">
+              <div class="table-header">
+                <span class="header-type">Type</span>
+                <span class="header-tokens">Token</span>
+              </div>
+              <div class="table-row">
+                <span class="token-type">KEYWORD</span>
+                <span class="token-values">int</span>
+              </div>
+              <div class="table-row">
+                <span class="token-type">IDENTIFIER</span>
+                <span class="token-values">x</span>
+              </div>
+              <div class="table-row">
+                <span class="token-type">ASSIGNMENT</span>
+                <span class="token-values">=</span>
+              </div>
+              <div class="table-row">
+                <span class="token-type">INTEGER</span>
+                <span class="token-values">5</span>
+              </div>
+              <div class="table-row">
+                <span class="token-type">OPERATOR</span>
+                <span class="token-values">+</span>
+              </div>
+              <div class="table-row">
+                <span class="token-type">INTEGER</span>
+                <span class="token-values">3</span>
+              </div>
+              <div class="table-row">
+                <span class="token-type">SEPARATOR</span>
+                <span class="token-values">;</span>
+              </div>
             </div>
           </div>
         {:else if current_step === 2}
@@ -227,17 +258,26 @@ h3 {
   margin: 0.5rem 0;
   font-family: monospace;
 }
-.token-sample {
-  margin: 1rem 0 0.5rem 0;
+.token-table {
+  margin-top: 2rem;
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
 }
-.token-list {
-  background: #f8fafc;
-  border-radius: 4px;
-  padding: 0.5rem 0.8rem;
-  font-family: 'Fira Code', monospace;
-  font-size: 0.95rem;
-  color: #1e293b;
-  margin-top: 0.3rem;
+.table-header, .table-row {
+  display: table-row;
+}
+.header-type, .header-tokens, .token-type, .token-values {
+  display: table-cell;
+  border: 1px solid #e5e7eb;
+  padding: 0.6rem 0.8rem;
+  text-align: left;
+}
+.table-header {
+  background: #e6edfa;
+  color: #001a6e;
+  font-weight: 600;
 }
 .cfg-section {
   display: flex;
