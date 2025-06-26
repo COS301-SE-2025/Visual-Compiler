@@ -243,21 +243,32 @@ func TryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int,
 // Return: string
 //
 // Recursively build a string of the syntax tree and returns it
-func ConvertTreeToString(node *TreeNode, branch_indent string, is_tail bool) string {
+func ConvertTreeToString(node *TreeNode, branch_indent string, is_leaf bool) string {
+
 	if node == nil {
 		return branch_indent + "\n"
 	}
 
 	var final_tree string
+
 	branch_char := "├── "
-	tail_char := "└── "
+	leaf_char := "└── "
 
 	new_string := branch_indent
-	if is_tail {
-		final_tree += fmt.Sprintf("%s%sSymbol: %s, Value: %s\n", branch_indent, tail_char, node.Symbol, node.Value)
+
+	if is_leaf {
+		if node.Value == "" {
+			final_tree += fmt.Sprintf("%s%s %s\n", branch_indent, leaf_char, node.Symbol)
+		} else {
+			final_tree += fmt.Sprintf("%s%s %s: %s\n", branch_indent, leaf_char, node.Symbol, node.Value)
+		}
 		new_string += "    "
 	} else {
-		final_tree += fmt.Sprintf("%s%sSymbol: %s, Value: %s\n", branch_indent, branch_char, node.Symbol, node.Value)
+		if node.Value == "" {
+			final_tree += fmt.Sprintf("%s%s %s\n", branch_indent, branch_char, node.Symbol)
+		} else {
+			final_tree += fmt.Sprintf("%s%s %s: %s\n", branch_indent, branch_char, node.Symbol, node.Value)
+		}
 		new_string += "│   "
 	}
 
