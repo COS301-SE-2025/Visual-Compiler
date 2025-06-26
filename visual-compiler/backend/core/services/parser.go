@@ -117,7 +117,7 @@ func CreateSyntaxTree(tokens []TypeValue, grammar Grammar) (SyntaxTree, error) {
 	root, new_position, success := parseSymbol(state, grammar.Start, 0)
 
 	if !success || new_position != len(tokens) {
-		return SyntaxTree{}, fmt.Errorf("syntax error!")
+		return SyntaxTree{}, fmt.Errorf("syntax error")
 	}
 
 	return SyntaxTree{Root: root}, nil
@@ -132,7 +132,23 @@ func CreateSyntaxTree(tokens []TypeValue, grammar Grammar) (SyntaxTree, error) {
 // Attempts to parse a variable or a terminal starting at the given position
 func parseSymbol(state *ParseState, symbol string, position int) (*TreeNode, int, bool) {
 
-	return nil, 0, false
+	if position >= len(state.tokens) {
+		return nil, position, false
+	}
+
+	found := false
+
+	for _, terminal := range state.grammar.Terminals {
+		if terminal == symbol {
+			found = true
+		}
+	}
+
+	if found {
+		return parseTerminal(state, symbol, position)
+	} else {
+		return parseVariable(state, symbol, position)
+	}
 }
 
 // Name: parseTerminal
@@ -144,7 +160,24 @@ func parseSymbol(state *ParseState, symbol string, position int) (*TreeNode, int
 // Attempts to match a terminal symbol with the current token
 func parseTerminal(state *ParseState, terminal string, position int) (*TreeNode, int, bool) {
 
-	return nil, 0, false
+	if position >= len(state.tokens) {
+		return nil, position, false
+	}
+
+	token := state.tokens[position]
+
+	if token.Type == terminal {
+
+		node := &TreeNode{
+			Symbol:   terminal,
+			Value:    token.Value,
+			Children: nil,
+		}
+
+		return node, position + 1, true
+	}
+
+	return nil, position, false
 }
 
 // Name: parseVariable
@@ -156,7 +189,19 @@ func parseTerminal(state *ParseState, terminal string, position int) (*TreeNode,
 // Attempts to parse a variable using all applicable rules
 func parseVariable(state *ParseState, variable string, position int) (*TreeNode, int, bool) {
 
-	return nil, 0, false
+	for _, rule := range state.grammar.Rules {
+
+		if rule.Input == variable {
+
+			node, new_position, success := tryRule(state, rule, position)
+
+			if success {
+				return node, new_position, true
+			}
+		}
+	}
+
+	return nil, position, false
 }
 
 // Name: tryRule
@@ -168,5 +213,25 @@ func parseVariable(state *ParseState, variable string, position int) (*TreeNode,
 // Attempts to apply a specific parsing rule
 func tryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int, bool) {
 
-	return nil, 0, false
+	node := &TreeNode{
+		Symbol:   rule.Input,
+		Value:    "",
+		Children: make([]*TreeNode, 0),
+	}
+
+	current_position := position
+
+	for _, symbol := range rule.Output {
+
+		child_node, new_position, success := parseSymbol(state, symbol, current_position)
+
+		if !success {
+			return nil, position, false
+		}
+
+		node.Children = append(node.Children, child_node)
+		current_position = new_position
+	}
+
+	return node, current_position, true
 }
