@@ -1,186 +1,191 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import type { Writable } from 'svelte/store';
-  import { writable } from 'svelte/store';
-  import type { NodeType, Token } from '$lib/types';
-  import { AddToast } from '$lib/stores/toast';
-  import { theme } from '../../lib/stores/theme';
-  import NavBar from '$lib/components/main/nav-bar.svelte';
-  import Toolbox from '$lib/components/main/toolbox.svelte';
-  import CodeInput from '$lib/components/main/code-input.svelte';
-  import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
+	import { onMount } from 'svelte';
+	import type { Writable } from 'svelte/store';
+	import { writable } from 'svelte/store';
+	import type { NodeType, Token, SyntaxTree } from '$lib/types';
+	import { AddToast } from '$lib/stores/toast';
+	import { theme } from '../../lib/stores/theme';
+	import NavBar from '$lib/components/main/nav-bar.svelte';
+	import Toolbox from '$lib/components/main/toolbox.svelte';
+	import CodeInput from '$lib/components/main/code-input.svelte';
+	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 
-  let LexerPhaseTutorial: any;
-  let LexerPhaseInspector: any;
-  let LexerArtifactViewer: any;
-  let ParserPhaseTutorial: any;
-  let ParserPhaseInspector: any;
-  let ParserArtifactViewer: any;
+	let LexerPhaseTutorial: any;
+	let LexerPhaseInspector: any;
+	let LexerArtifactViewer: any;
+	let ParserPhaseTutorial: any;
+	let ParserPhaseInspector: any;
+	let ParserArtifactViewer: any;
 
-  let workspace_el: HTMLElement;
-  let show_drag_tip = false;
+	let workspace_el: HTMLElement;
+	let show_drag_tip = false;
 
-  onMount(async () => {
-    LexerPhaseTutorial = (await import('$lib/components/lexer/lexer-phase-tutorial.svelte')).default;
-    LexerPhaseInspector = (await import('$lib/components/lexer/phase-inspector.svelte')).default;
-    LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte')).default;
-    ParserPhaseTutorial = (await import('$lib/components/parser/parser-phase-tutorial.svelte')).default;
-    ParserPhaseInspector = (await import('$lib/components/parser/parsing-input.svelte')).default;
-    ParserArtifactViewer = (await import('$lib/components/parser/parser-artifact-viewer.svelte')).default;
+	onMount(async () => {
+		LexerPhaseTutorial = (await import('$lib/components/lexer/lexer-phase-tutorial.svelte')).default;
+		LexerPhaseInspector = (await import('$lib/components/lexer/phase-inspector.svelte')).default;
+		LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte')).default;
+		ParserPhaseTutorial = (await import('$lib/components/parser/parser-phase-tutorial.svelte')).default;
+		ParserPhaseInspector = (await import('$lib/components/parser/parsing-input.svelte')).default;
+		ParserArtifactViewer = (await import('$lib/components/parser/parser-artifact-viewer.svelte')).default;
 
-    document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
-    if (!localStorage.getItem('hasSeenDragTip')) {
-      show_drag_tip = true;
-    }
-  });
+		document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
+		if (!localStorage.getItem('hasSeenDragTip')) {
+			show_drag_tip = true;
+		}
+	});
 
-  // --- CANVAS STATE ---
-  interface CanvasNode {
-    id: string;
-    type: NodeType;
-    label: string;
-    position: { x: number; y: number };
-  }
-  const nodes = writable<CanvasNode[]>([]);
-  let node_counter = 0;
-  let selected_phase: NodeType | null = null;
-  let show_code_input = false;
-  let source_code = '';
-  let show_tokens = false;
+	// --- CANVAS STATE ---
+	interface CanvasNode {
+		id: string;
+		type: NodeType;
+		label: string;
+		position: { x: number; y: number };
+	}
+	const nodes = writable<CanvasNode[]>([]);
+	let node_counter = 0;
+	let selected_phase: NodeType | null = null;
+	let show_code_input = false;
+	let source_code = '';
+	let show_tokens = false;
+	let syntaxTreeData: SyntaxTree | null = null;
 
-  // --- TOOLTIPS AND LABELS ---
-  const tooltips: Record<NodeType, string> = {
-    source: 'Start here. Add source code to begin compilation.',
-    lexer: 'Converts source code into tokens for processing.',
-    parser: 'Analyzes the token stream to build a syntax tree.'
-  };
+	// --- TOOLTIPS AND LABELS ---
+	const tooltips: Record<NodeType, string> = {
+		source: 'Start here. Add source code to begin compilation.',
+		lexer: 'Converts source code into tokens for processing.',
+		parser: 'Analyzes the token stream to build a syntax tree.'
+	};
 
-  const node_labels: Record<NodeType, string> = {
-    source: 'Source Code',
-    lexer: 'Lexer',
-    parser: 'Parser'
-  };
+	const node_labels: Record<NodeType, string> = {
+		source: 'Source Code',
+		lexer: 'Lexer',
+		parser: 'Parser'
+	};
 
-  function handleCreateNode(type: NodeType) {
-    node_counter++;
-    nodes.update((curr) => {
-      const start_x = 100;
-      const start_y = 100;
-      const x_offset = 300;
-      const y_offset = 150;
-      const nodes_per_row = 3;
-      const new_node_index = curr.length;
-      const new_position = {
-        x: start_x + (new_node_index % nodes_per_row) * x_offset,
-        y: start_y + Math.floor(new_node_index / nodes_per_row) * y_offset
-      };
-      const new_node = {
-        id: `${type}-${node_counter}`,
-        type,
-        label: node_labels[type] || type[0].toUpperCase() + type.slice(1),
-        position: new_position
-      };
-      return [...curr, new_node];
-    });
-    workspace_el?.focus();
-  }
+	function handleCreateNode(type: NodeType) {
+		node_counter++;
+		nodes.update((curr) => {
+			const start_x = 100;
+			const start_y = 100;
+			const x_offset = 300;
+			const y_offset = 150;
+			const nodes_per_row = 3;
+			const new_node_index = curr.length;
+			const new_position = {
+				x: start_x + (new_node_index % nodes_per_row) * x_offset,
+				y: start_y + Math.floor(new_node_index / nodes_per_row) * y_offset
+			};
+			const new_node = {
+				id: `${type}-${node_counter}`,
+				type,
+				label: node_labels[type] || type[0].toUpperCase() + type.slice(1),
+				position: new_position
+			};
+			return [...curr, new_node];
+		});
+		workspace_el?.focus();
+	}
 
-  function dismissDragTip() {
-    localStorage.setItem('hasSeenDragTip', 'true');
-    show_drag_tip = false;
-  }
+	function dismissDragTip() {
+		localStorage.setItem('hasSeenDragTip', 'true');
+		show_drag_tip = false;
+	}
 
-  // UPDATED: This function now accepts the 'type' string directly
-  function handlePhaseSelect(type: NodeType) {
-    if (type === 'source') {
-      show_code_input = true;
-    } else {
-      selected_phase = type;
-      if (!source_code.trim()) {
-        AddToast('Please enter source code before proceeding', 'error');
-        selected_phase = null;
-        return;
-      }
-    }
-  }
+	function handlePhaseSelect(type: NodeType) {
+		syntaxTreeData = null; // Reset tree on new phase selection
+		if (type === 'source') {
+			show_code_input = true;
+		} else {
+			selected_phase = type;
+			if (!source_code.trim()) {
+				AddToast('Please enter source code before proceeding', 'error');
+				selected_phase = null;
+				return;
+			}
+		}
+	}
 
-  function returnToCanvas() {
-    selected_phase = null;
-    show_code_input = false;
-  }
+	function returnToCanvas() {
+		selected_phase = null;
+		show_code_input = false;
+	}
 
-  function handleCodeSubmit(code: string) {
-    show_tokens = false;
-    source_code = code;
-    show_code_input = false;
-  }
+	function handleCodeSubmit(code: string) {
+		show_tokens = false;
+		source_code = code;
+		show_code_input = false;
+	}
 
-  function handleTokenGeneration(data: { tokens: Token[]; unexpected_tokens: string[] }) {
-    show_tokens = true;
-    tokens = data.tokens;
-    unexpected_tokens = data.unexpected_tokens;
-  }
+	function handleTokenGeneration(data: { tokens: Token[]; unexpected_tokens: string[] }) {
+		show_tokens = true;
+		tokens = data.tokens;
+		unexpected_tokens = data.unexpected_tokens;
+	}
 
-  let tokens: Token[] = [];
-  let unexpected_tokens: string[] = [];
+	function handleTreeReceived(event: CustomEvent<SyntaxTree>) {
+		syntaxTreeData = event.detail;
+	}
+
+	let tokens: Token[] = [];
+	let unexpected_tokens: string[] = [];
 </script>
 
 <NavBar />
 
 <div class="main">
-  <Toolbox {handleCreateNode} {tooltips} />
-  <div class="workspace" bind:this={workspace_el} tabindex="-1">
-    <DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} />
+	<Toolbox {handleCreateNode} {tooltips} />
+	<div class="workspace" bind:this={workspace_el} tabindex="-1">
+		<DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} />
 
-    {#if show_drag_tip}
-      <div class="help-tip">
-        <span><b>Pro-Tip:</b> For the smoothest experience, click to select a node before dragging it.</span>
-        <button on:click={dismissDragTip} class="dismiss-tip-btn" aria-label="Dismiss tip">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-        </button>
-      </div>
-    {/if}
-  </div>
+		{#if show_drag_tip}
+			<div class="help-tip">
+				<span><b>Pro-Tip:</b> For the smoothest experience, click to select a node before dragging it.</span>
+				<button on:click={dismissDragTip} class="dismiss-tip-btn" aria-label="Dismiss tip">
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+				</button>
+			</div>
+		{/if}
+	</div>
 
-  {#if selected_phase}
-    <div class="analysis-overlay">
-      <div class="analysis-view">
-        <div class="three-column-layout">
-          {#if selected_phase === 'lexer' && LexerPhaseTutorial}
-            <svelte:component this={LexerPhaseTutorial} />
-            <svelte:component
-              this={LexerPhaseInspector}
-              {source_code}
-              onGenerateTokens={handleTokenGeneration}
-            />
-            <svelte:component
-              this={LexerArtifactViewer}
-              phase={selected_phase}
-              {tokens}
-              unexpected_tokens={unexpected_tokens}
-              {show_tokens}
-            />
-          {/if}
+	{#if selected_phase}
+		<div class="analysis-overlay">
+			<div class="analysis-view">
+				<div class="three-column-layout">
+					{#if selected_phase === 'lexer' && LexerPhaseTutorial}
+						<svelte:component this={LexerPhaseTutorial} />
+						<svelte:component
+							this={LexerPhaseInspector}
+							{source_code}
+							onGenerateTokens={handleTokenGeneration}
+						/>
+						<svelte:component
+							this={LexerArtifactViewer}
+							phase={selected_phase}
+							{tokens}
+							{unexpected_tokens}
+							{show_tokens}
+						/>
+					{/if}
 
-          {#if selected_phase === 'parser' && ParserPhaseTutorial}
-            <svelte:component this={ParserPhaseTutorial} />
-            <svelte:component this={ParserPhaseInspector} {source_code} />
-            <svelte:component this={ParserArtifactViewer} />
-          {/if}
-        </div>
-        <button on:click={returnToCanvas} class="return-button"> ← Return to Canvas </button>
-      </div>
-    </div>
-  {/if}
+					{#if selected_phase === 'parser' && ParserPhaseTutorial}
+						<svelte:component this={ParserPhaseTutorial} />
+						<svelte:component this={ParserPhaseInspector} {source_code} on:treereceived={handleTreeReceived} />
+						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData}/>
+					{/if}
+				</div>
+				<button on:click={returnToCanvas} class="return-button"> ← Return to Canvas </button>
+			</div>
+		</div>
+	{/if}
 
-  {#if show_code_input}
-    <div class="code-input-overlay">
-      <div class="code-input-modal">
-        <CodeInput onCodeSubmitted={handleCodeSubmit} />
-        <button class="close-btn" on:click={() => (show_code_input = false)}>✕</button>
-      </div>
-    </div>
-  {/if}
+	{#if show_code_input}
+		<div class="code-input-overlay">
+			<div class="code-input-modal">
+				<CodeInput onCodeSubmitted={handleCodeSubmit} />
+				<button class="close-btn" on:click={() => (show_code_input = false)}>✕</button>
+			</div>
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -296,70 +301,69 @@
     cursor: pointer;
   }
 
-  .help-tip {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(4, 26, 71, 0.95);
-    color: white;
-    padding: 10px 15px 10px 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    z-index: 50;
-    font-size: 0.9rem;
-  }
 
-  .dismiss-tip-btn {
-    background: none;
-    border: none;
-    color: white;
-    opacity: 0.7;
-    cursor: pointer;
-    padding: 5px;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: opacity 0.2s ease;
-  }
-  .dismiss-tip-btn:hover {
-    opacity: 1;
-  }
+	.help-tip {
+		position: absolute;
+		bottom: 20px;
+		left: 50%;
+		transform: translateX(-50%);
+		background-color: rgba(4, 26, 71, 0.95);
+		color: white;
+		padding: 10px 15px 10px 20px;
+		border-radius: 8px;
+		box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		z-index: 50;
+		font-size: 0.9rem;
+	}
 
-  :global(html.dark-mode) .main {
-    background-color: #161823;
-  }
-  :global(html.dark-mode) .analysis-overlay {
-    background: rgba(10, 26, 58, 0.95);
-  }
-  :global(html.dark-mode) .analysis-view {
-    background: #0a1a3a;
-  }
-  :global(html.dark-mode) .three-column-layout > :global(*) {
-    background: #1a2a4a;
-    color: #f0f0f0;
-  }
-  :global(html.dark-mode) .code-input-modal {
-    background: #1a2a4a;
-    color: #f0f0f0;
-  }
-  :global(html.dark-mode) .modal-title {
-    color: #f0f0f0;
-  }
-  :global(html.dark-mode) .close-btn {
-    color: #f0f0f0;
-  }
-  :global(html.dark-mode) .return-button {
-    background: #1a3a7a;
-    margin-right: 1rem;
-    color: #cccccc;
-  }
-  :global(html.dark-mode) .return-button:hover {
-    background: #2a4a8a;
-    margin-right: 1rem;
-  }
+	.dismiss-tip-btn {
+		background: none;
+		border: none;
+		color: white;
+		opacity: 0.7;
+		cursor: pointer;
+		padding: 5px;
+		line-height: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: opacity 0.2s ease;
+	}
+	.dismiss-tip-btn:hover {
+		opacity: 1;
+	}
+
+	:global(html.dark-mode) .main {
+		background-color: #161823;
+	}
+	:global(html.dark-mode) .analysis-overlay {
+		background: rgba(10, 26, 58, 0.95);
+	}
+	:global(html.dark-mode) .analysis-view {
+		background: #0a1a3a;
+	}
+	:global(html.dark-mode) .three-column-layout > :global(*) {
+		background: #1a2a4a;
+		color: #f0f0f0;
+	}
+	:global(html.dark-mode) .code-input-modal {
+		background: #1a2a4a;
+		color: #f0f0f0;
+	}
+	
+	:global(html.dark-mode) .close-btn {
+		color: #f0f0f0;
+	}
+	:global(html.dark-mode) .return-button {
+		background: #1a3a7a;
+		margin-right: 1rem;
+		color: #cccccc;
+	}
+	:global(html.dark-mode) .return-button:hover {
+		background: #2a4a8a;
+		margin-right: 1rem;
+	}
 </style>
