@@ -599,20 +599,19 @@ func TestTryRule_True(t *testing.T) {
 
 func TestConvertTreeToString_Valid(t *testing.T) {
 
-	expected_res := `
-└── Symbol: STATEMENT, Value: 
-    ├── Symbol: DECLARATION, Value: 
-    │   ├── Symbol: TYPE, Value: 
-    │   │   └── Symbol: KEYWORD, Value: int
-    │   ├── Symbol: IDENTIFIER, Value: blue
-    │   ├── Symbol: ASSIGNMENT, Value: =
-    │   └── Symbol: EXPRESSION, Value: 
-    │       ├── Symbol: TERM, Value: 
-    │       │   └── Symbol: INTEGER, Value: 13
-    │       ├── Symbol: OPERATOR, Value: +
-    │       └── Symbol: TERM, Value: 
-    │           └── Symbol: INTEGER, Value: 89
-    └── Symbol: SEPARATOR, Value: ;`
+	expected_res := `└──  STATEMENT
+    ├──  DECLARATION
+    │   ├──  TYPE
+    │   │   └──  KEYWORD: int
+    │   ├──  IDENTIFIER: blue
+    │   ├──  ASSIGNMENT: =
+    │   └──  EXPRESSION
+    │       ├──  TERM
+    │       │   └──  INTEGER: 13
+    │       ├──  OPERATOR: +
+    │       └──  TERM
+    │           └──  INTEGER: 89
+    └──  SEPARATOR: ;`
 
 	tokens := []services.TypeValue{
 		{Type: "KEYWORD", Value: "int"},
