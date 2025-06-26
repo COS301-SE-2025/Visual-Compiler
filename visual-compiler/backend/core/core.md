@@ -111,4 +111,50 @@ This document contains a short description of functions to be called in the API
 		},
 	}
 
+## Parser functions
+- Read grammar from user and ensure structure is correct
+  - `func ReadGrammar(input []byte) (Grammar, error)`
+  ```go
+  input := []byte(`{
+		"variables": ["STATEMENT", "DECLARATION", "EXPRESSION", "TYPE", "TERM"],
+		"terminals": ["KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "OPERATOR", "SEPARATOR"],
+		"start": "STATEMENT",
+		"rules": [
+			{ "input": "STATEMENT", "output": ["DECLARATION", "SEPARATOR"] },
+			{ "input": "DECLARATION", "output": ["TYPE", "IDENTIFIER", "ASSIGNMENT", "EXPRESSION"] },
+			{ "input": "EXPRESSION", "output": ["TERM", "OPERATOR", "TERM"] },
+			{ "input": "TERM", "output": ["INTEGER"] },
+			{ "input": "TYPE", "output": ["KEYWORD"] }
+		]
+	}`)
+- Create syntax tree using tokens and a grammar as input
+  - `func CreateSyntaxTree(tokens []TypeValue, grammar Grammar) (SyntaxTree, error)`
+  ```go
+  tokens := []services.TypeValue{
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "blue"},
+		{Type: "ASSIGNMENT", Value: "="},
+		{Type: "INTEGER", Value: "13"},
+		{Type: "OPERATOR", Value: "+"},
+		{Type: "INTEGER", Value: "89"},
+		{Type: "SEPARATOR", Value: ";"},
+	}
 
+	grammar := services.Grammar{
+		Variables: []string{"STATEMENT", "DECLARATION", "EXPRESSION", "TYPE", "TERM"},
+		Terminals: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "OPERATOR", "SEPARATOR"},
+		Start:     "STATEMENT",
+		Rules: []services.ParsingRule{
+			{Input: "STATEMENT", Output: []string{"DECLARATION", "SEPARATOR"}},
+			{Input: "DECLARATION", Output: []string{"TYPE", "IDENTIFIER", "ASSIGNMENT", "EXPRESSION"}},
+			{Input: "EXPRESSION", Output: []string{"TERM", "OPERATOR", "TERM"}},
+			{Input: "TERM", Output: []string{"INTEGER"}},
+			{Input: "TYPE", Output: []string{"KEYWORD"}},
+		},
+	}
+- Create a string representation fo the syntax tree
+  - `func ConvertTreeToString(node *TreeNode, indent string, current_string string) string`
+  ```go
+	node := syntax_tree.Root
+	indent := ""
+	current_string := ""
