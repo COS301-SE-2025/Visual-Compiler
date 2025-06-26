@@ -24,40 +24,41 @@
   const token_result = `[KEYWORD:if] [PUNCTUATION:(] [IDENTIFIER:count] [OPERATOR:>] [NUMBER:0] [PUNCTUATION:)] [PUNCTUATION:{] [KEYWORD:return] [BOOLEAN:true] [PUNCTUATION:;] [PUNCTUATION:}]`;
 
   const regex_basics = [
-    { type: 'Literal Match', pattern: 'hello', example: 'Matches "hello" in text' },
-    { type: 'Any Character', pattern: 'h.llo', example: 'Matches "hello", "hallo"' },
-    { type: 'Digits', pattern: '\\d+', example: 'Matches "42", "123"' },
-    { type: 'Letters', pattern: '[a-zA-Z]+', example: 'Matches "hello", "Test"' }
+    { type: 'Exact Match', pattern: 'hello', example: 'Matches "hello"' },
+    { type: 'Range', pattern: '[0-9]', example: 'Matches "1" and "3"' },
+    { type: 'Alternation', pattern: '(a|b)', example: 'Matches "a" or "b"' },
+    { type: 'Star (0 or More)', pattern: '2*', example: 'Matches "", "2", "22"' },
+    { type: 'Plus (1 or More)', pattern: '2+', example: 'Matches "2" and "22"' }
   ];
 
   const regex_examples = [
-    { type: 'Keyword', pattern: '(int|string|)', example: 'int, string' },
-    { type: 'Integer', pattern: '\\d+', example: '42, 123, 0' },
-    { type: 'Identifier', pattern: '[a-zA-Z_]+', example: 'count, total_sum' },
-    { type: 'Operator', pattern: '[+\\-*/]', example: '+, -, *, /' },
-    { type: 'Assignment', pattern: '=', example: '=' }
+    { type: 'Keyword', pattern: '(int|return)', example: 'int, return' },
+    { type: 'Identifier', pattern: '[a-zA-Z_]+', example: 'count, total' },
+    { type: 'Comparison', pattern: '(<|>|=)', example: '<, >, =' },
+    { type: 'Integer', pattern: '[0-9]+', example: '42, 123, 0' },
+    { type: 'Boolean', pattern: '(true|false)', example: 'true, false' }
   ];
 
   const tokens_by_type = [
     {
       type: 'Keyword',
-      tokens: ['if', 'return']
-    },
-    {
-      type: 'Punctuation',
-      tokens: ['(', ')', '{', '}', ';']
+      tokens: ['if']
     },
     {
       type: 'Identifier',
       tokens: ['count']
     },
     {
-      type: 'Operator',
+      type: 'Comparison',
       tokens: ['>']
     },
     {
-      type: 'Number',
+      type: 'Integer',
       tokens: ['0']
+    },
+    {
+      type: 'Keyword',
+      tokens: ['return']
     },
     {
       type: 'Boolean',
