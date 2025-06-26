@@ -238,21 +238,36 @@ func TryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int,
 
 // Name: ConvertTreeToString
 //
-// Parameters: *TreeNode, string, string
+// Parameters: *TreeNode, string, bool
 //
 // Return: string
 //
 // Recursively build a string of the syntax tree and returns it
-func ConvertTreeToString(node *TreeNode, indent string, current_string string) string {
+func ConvertTreeToString(node *TreeNode, branch_indent string, is_tail bool) string {
 	if node == nil {
-		current_string += indent + "nil\n"
-		return current_string
+		return branch_indent + "\n"
 	}
 
-	current_string += fmt.Sprintf("%sSymbol: %s, Value: %s\n", indent, node.Symbol, node.Value)
-	for _, child := range node.Children {
-		current_string = ConvertTreeToString(child, indent+"  ", current_string)
+	var final_tree string
+	branch_char := "├── "
+	tail_char := "└── "
+
+	new_string := branch_indent
+	if is_tail {
+		final_tree += fmt.Sprintf("%s%sSymbol: %s, Value: %s\n", branch_indent, tail_char, node.Symbol, node.Value)
+		new_string += "    "
+	} else {
+		final_tree += fmt.Sprintf("%s%sSymbol: %s, Value: %s\n", branch_indent, branch_char, node.Symbol, node.Value)
+		new_string += "│   "
 	}
 
-	return current_string
+	for i, child := range node.Children {
+		tail_node := false
+		if i == len(node.Children)-1 {
+			tail_node = true
+		}
+		final_tree += ConvertTreeToString(child, new_string, tail_node)
+	}
+
+	return final_tree
 }

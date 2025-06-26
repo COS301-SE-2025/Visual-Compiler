@@ -22,5 +22,6 @@ integration tests:
 _(requires .env file to run)_
 ```
     go test -v ./integration-tests/api-mongoDB-integration_test.go  
-    go test -v ./integration-tests/api-core-integration_test.go  
+    go test -v ./integration-tests/api-core-lexer-integration_test.go  
+    go test -v ./integration-tests/api-core-parser-integration_test.go  
 ```

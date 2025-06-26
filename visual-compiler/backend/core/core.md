@@ -153,8 +153,8 @@ This document contains a short description of functions to be called in the API
 		},
 	}
 - Create a string representation fo the syntax tree
-  - `func ConvertTreeToString(node *TreeNode, indent string, current_string string) string`
+  - `func ConvertTreeToString(node *TreeNode, branch_indent string, is_tail bool) string`
   ```go
 	node := syntax_tree.Root
-	indent := ""
-	current_string := ""
+	branch_indent := ""
+	is_tail := true
