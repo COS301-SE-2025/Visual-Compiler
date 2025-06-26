@@ -54,8 +54,19 @@ jobs:
           restore-keys: |
             ${{runner.os}}-go-
 
+      - name: Set environment variables for Mongo Connection
+        run: echo "Set env for MongoDB"
+        env:
+          Mongo_username: ${{ secrets.MONGODB_USERNAME }}
+          Mongo_password: ${{secrets.MONGODB_PASSWORD}}
+          Mongo_URI: ${{secrets.MONGODB_URI}}
+
       - name: Tests for Backend
         working-directory: ./visual-compiler/backend
+        env:
+          Mongo_username: ${{ secrets.MONGODB_USERNAME }}
+          Mongo_password: ${{secrets.MONGODB_PASSWORD}}
+          Mongo_URI: ${{secrets.MONGODB_URI}}
         run: go test -v ./... -coverprofile=coverage.out
 
       - name: Upload coverage for backend
@@ -72,8 +83,11 @@ jobs:
           sudo chmod +x /usr/local/bin/docker-compose
           docker-compose --version
 
-      - name: Docker compose setup
-        run: docker-compose build
+      - name: Temporary env file for Backend Dockerizing (is ignored)
+        run: |
+          echo "Mongo_username=${{secrets.MONGODB_USERNAME}}" >> backend.env
+          echo "Mongo_password=${{secrets.MONGODB_PASSWORD}}" >> backend.env
+          echo "Mongo_URI=${{secrets.MONGODB_URI}}" >> backend.env
 
-      - name: Services for integration testing
-        run: docker-compose up -d
+      - name: Docker Build and Compose for deployment
+        run: docker compose --env-file backend.env up -d --build
