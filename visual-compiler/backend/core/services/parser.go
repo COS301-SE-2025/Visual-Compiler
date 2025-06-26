@@ -262,11 +262,11 @@ func ConvertTreeToString(node *TreeNode, branch_indent string, is_tail bool) str
 	}
 
 	for i, child := range node.Children {
-		child_node := false
+		tail_node := false
 		if i == len(node.Children)-1 {
-			child_node = true
+			tail_node = true
 		}
-		final_tree += ConvertTreeToString(child, new_string, child_node)
+		final_tree += ConvertTreeToString(child, new_string, tail_node)
 	}
 
 	return final_tree
