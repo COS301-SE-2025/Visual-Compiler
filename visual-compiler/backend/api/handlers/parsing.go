@@ -69,7 +69,8 @@ func ReadGrammar(c *gin.Context) {
 	} else if err == nil {
 		update_existing := bson.D{
 			bson.E{Key: "$unset", Value: bson.M{
-				"tree": "",
+				"tree":        "",
+				"tree_string": "",
 			}},
 			bson.E{Key: "$set", Value: bson.M{
 				"grammar": grammar,
@@ -143,5 +144,48 @@ func CreateSyntaxTree(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Successfully created Syntax Tree",
 		"tree":    tree,
+	})
+}
+
+func TreeToString(c *gin.Context) {
+	var req IDRequest
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
+		return
+	}
+
+	mongo_cli := db.ConnectClient()
+	collection := mongo_cli.Database("visual-compiler").Collection("parsing")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var res struct {
+		Tree services.SyntaxTree `bson:"tree"`
+	}
+
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Syntax tree not found. Please create one"})
+		return
+	}
+
+	tree_as_string := services.ConvertTreeToString(res.Tree.Root, "", true)
+
+	filters := bson.M{"users_id": req.UsersID}
+	update_users_tree_string := bson.M{"$set": bson.M{
+		"tree_string": tree_as_string,
+	}}
+
+	_, err = collection.UpdateOne(ctx, filters, update_users_tree_string)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to insert tokens"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":     "Successfully generated Syntax Tree into a string",
+		"tree_string": tree_as_string,
 	})
 }
