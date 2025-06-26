@@ -597,22 +597,22 @@ func TestTryRule_True(t *testing.T) {
 	}
 }
 
-func TestPrintTree_Valid(t *testing.T) {
+func TestConvertTreeToString_Valid(t *testing.T) {
 
-	expected_res := `Symbol: STATEMENT, Value: 
-  Symbol: DECLARATION, Value: 
-    Symbol: TYPE, Value: 
-      Symbol: KEYWORD, Value: int
-    Symbol: IDENTIFIER, Value: blue
-    Symbol: ASSIGNMENT, Value: =
-    Symbol: EXPRESSION, Value: 
-      Symbol: TERM, Value: 
-        Symbol: INTEGER, Value: 13
-      Symbol: OPERATOR, Value: +
-      Symbol: TERM, Value: 
-        Symbol: INTEGER, Value: 89
-  Symbol: SEPARATOR, Value: ;
-  `
+	expected_res := `
+└── Symbol: STATEMENT, Value: 
+    ├── Symbol: DECLARATION, Value: 
+    │   ├── Symbol: TYPE, Value: 
+    │   │   └── Symbol: KEYWORD, Value: int
+    │   ├── Symbol: IDENTIFIER, Value: blue
+    │   ├── Symbol: ASSIGNMENT, Value: =
+    │   └── Symbol: EXPRESSION, Value: 
+    │       ├── Symbol: TERM, Value: 
+    │       │   └── Symbol: INTEGER, Value: 13
+    │       ├── Symbol: OPERATOR, Value: +
+    │       └── Symbol: TERM, Value: 
+    │           └── Symbol: INTEGER, Value: 89
+    └── Symbol: SEPARATOR, Value: ;`
 
 	tokens := []services.TypeValue{
 		{Type: "KEYWORD", Value: "int"},
@@ -641,9 +641,9 @@ func TestPrintTree_Valid(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error not supposed to occur for not tokens")
 	} else {
-		tree_string := services.ConvertTreeToString(syntax_tree.Root, "", "")
+		tree_string := services.ConvertTreeToString(syntax_tree.Root, "", true)
 		if strings.TrimSpace(tree_string) != strings.TrimSpace(expected_res) {
-			t.Errorf("Incorrect tree")
+			t.Errorf("Incorrect tree: \n%v", tree_string)
 		}
 	}
 }
