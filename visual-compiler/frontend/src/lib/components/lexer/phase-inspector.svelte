@@ -72,6 +72,32 @@
       return;
     }
 
+    if (selectedType === 'REGEX') {
+      const requestData = {
+        users_id: user_id,
+        pairs: nonEmptyRows.map((row) => ({
+          Type: row.type.toUpperCase(),
+          Regex: row.regex
+        }))
+      };
+      try {
+        const res = await fetch('http://localhost:8080/api/lexing/rules', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestData)
+        });
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText);
+        }
+        submissionStatus = { show: true, success: true, message: 'Rules stored successfully!' };
+        showRegexActionButtons = true;
+      } catch (error) {
+        AddToast('Failed to save rules', 'error');
+      }
+      return;
+    }
+
     const requestData = {
       users_id: user_id,
       source_code: showDefault ? DEFAULT_SOURCE_CODE : userSourceCode,
@@ -467,7 +493,6 @@
   function insertDefault() {
     showDefault = true;
     editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
-    source_code = DEFAULT_SOURCE_CODE;
     inputRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
     states = 'q0,q1,q2';
     startState = 'q0';
@@ -477,7 +502,6 @@
 
   function removeDefault() {
     showDefault = false;
-    source_code = userSourceCode;
     inputRows = [...userInputRows];
     resetInputs();
   }
@@ -519,12 +543,66 @@
 
   // Show DFA button handler
   async function handleShowDfa() {
-    const saved = await saveDfaToBackend();
-    if (!saved) return;
-    AddToast('DFA saved successfully!', 'success');
-    showDfaVis = true;
-    showNfaVis = false;
-    setTimeout(() => renderDfaVis(), 0);
+    const user_id = localStorage.getItem('user_id');
+    if (!user_id) {
+      AddToast('User not logged in.', 'error');
+      return;
+    }
+
+    // Build DFA object for backend
+    const dfa = {
+      states: states.split(',').map(s => s.trim()).filter(Boolean),
+      transitions: [],
+      start_state: startState.trim(),
+      accepting_states: parseAcceptedStates(acceptedStates),
+      users_id: user_id
+    };
+
+    // Parse transitions
+    const transitionLines = transitions.split('\n').map(line => line.trim()).filter(Boolean);
+    for (const line of transitionLines) {
+      const match = line.match(/^(.+),(.+)->(.+)$/);
+      if (match) {
+        const [_, from, label, to] = match;
+        dfa.transitions.push({ from: from.trim(), label: label.trim(), to: to.trim() });
+      }
+    }
+
+    try {
+      // Send DFA to backend and expect a DFA response
+      const response = await fetch('http://localhost:8080/api/lexing/dfa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dfa)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        AddToast('Failed to save DFA: ' + errorText, 'error');
+        return;
+      }
+      const data = await response.json();
+    console.log("DFA from backend (Automata):", JSON.stringify(data, null, 2));
+
+      // If your backend returns the DFA, use it; otherwise, use the data you sent
+      let dfaData;
+      try {
+        const data = await response.json();
+        // If backend returns the DFA, use it; otherwise fallback to what we sent
+        dfaData = data.dfa || dfa;
+      } catch {
+        dfaData = dfa;
+      }
+
+      // Adapt and visualize
+      showDfaVis = true;
+      showNfaVis = false;
+      const adapted = adaptAutomatonForVis(dfaData);
+      setTimeout(() => renderRegexAutomatonVis(dfaContainer, adapted, true), 0);
+      AddToast('DFA generated and displayed!', 'success');
+    } catch (error) {
+      AddToast('Failed to save DFA: ' + error, 'error');
+    }
   }
 
   let regexRules: { token_type?: string; Type?: string; Regex?: string; regex?: string }[] = [];
@@ -717,8 +795,7 @@
       <h1 class="lexor-heading-h1">LEXING</h1>
     </div>
     <h3 class="source-code-header">Source Code</h3>
-    <pre
-      class="source-display">{showDefault ? DEFAULT_SOURCE_CODE : source_code || 'no source code available'}</pre>
+    <pre class="source-display">{source_code || 'no source code available'}</pre>
   </div>
 
   <div class="automaton-btn-row">
