@@ -189,104 +189,118 @@
 </div>
 
 <style>
-	:global(html, body) {
-		margin: 0;
-		padding: 0;
-		height: 100%;
-		overflow: hidden;
-	}
-	:global(*) {
-		box-sizing: border-box;
-	}
-	.main {
-		display: flex;
-		height: calc(100vh - 3.5rem);
-		overflow: hidden;
-		background-color: #f0f2f5;
-		padding: 1rem;
-		gap: 1rem;
-		transition: background-color 0.3s ease;
-	}
-	.workspace {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		position: relative;
-		outline: none;
-	}
-	.analysis-overlay {
-		position: fixed;
-		top: 3.5rem;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		background: rgba(255, 255, 255, 0.95);
-		z-index: 100;
-	}
-	.analysis-view {
-		height: 100%;
-		padding: 1rem;
-		background: #f5f5f5;
-		display: flex;
-		flex-direction: column;
-	}
-	.three-column-layout {
-		display: flex;
-		flex: 1;
-		gap: 1rem;
-		height: calc(100vh - 6rem);
-	}
-	.three-column-layout > :global(*) {
-		flex: 1;
-		background: white;
-		border-radius: 8px;
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-		overflow-y: auto;
-	}
-	.return-button {
-		position: fixed;
-		bottom: 20px;
-		right: 20px;
-		padding: 0.5rem 1rem;
-		background: #001a6e;
-		color: white;
-		border: none;
-		border-radius: 4px;
-		cursor: pointer;
-		z-index: 1000;
-		margin-right: 1rem;
-	}
-	.return-button:hover {
-		background: #074799;
-	}
-	.code-input-overlay {
-		position: fixed;
-		inset: 0;
-		background: rgba(0, 0, 0, 0.5);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 2000;
-	}
-	.code-input-modal {
-		background: white;
-		padding: 2rem;
-		border-radius: 8px;
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-		max-width: 500px;
-		width: 100%;
-		position: relative;
-	}
-	
-	.close-btn {
-		position: absolute;
-		top: 1rem;
-		right: 1rem;
-		background: none;
-		border: none;
-		font-size: 1.5rem;
-		cursor: pointer;
-	}
+  :global(html, body) {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+  }
+  :global(*) {
+    box-sizing: border-box;
+  }
+  html {
+    transform: scale(0.8);
+    transform-origin: top left;
+    width: 125vw;
+    height: 125vh;
+    overflow-x: auto;
+  }
+  .main {
+    display: flex;
+    height: calc(100vh - 3.5rem);
+    overflow: hidden;
+    background-color: #f0f2f5;
+    padding: 1rem;
+    gap: 1rem;
+    transition: background-color 0.3s ease;
+  }
+  .workspace {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    outline: none;
+  }
+  .analysis-overlay {
+    position: fixed;
+    top: 3.5rem;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    z-index: 100;
+  }
+  .analysis-view {
+    height: 100%;
+    padding: 1rem;
+    background: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+  }
+  .three-column-layout {
+    display: flex;
+    flex: 1;
+    gap: 1rem;
+    height: calc(100vh - 6rem);
+  }
+  .three-column-layout > :global(*) {
+    flex: 1;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow-y: auto;
+  }
+  .return-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 0.5rem 1rem;
+    background: #001a6e;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 1000;
+    margin-right: 1rem;
+  }
+  .return-button:hover {
+    background: #074799;
+  }
+  .code-input-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+  }
+  .code-input-modal {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    max-width: 500px;
+    width: 100%;
+    position: relative;
+  }
+  .modal-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+    color: #333;
+    text-align: center;
+    width: 100%;
+  }
+  .close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+  }
+
 
 	.help-tip {
 		position: absolute;

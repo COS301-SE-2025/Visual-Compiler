@@ -2,7 +2,7 @@
   import type { NodeType } from '$lib/types';
 
   let current_step = 1;
-  const total_steps = 4;
+  const total_steps = 6;
 
   // nextStep
   // Return type: void
@@ -24,40 +24,41 @@
   const token_result = `[KEYWORD:if] [PUNCTUATION:(] [IDENTIFIER:count] [OPERATOR:>] [NUMBER:0] [PUNCTUATION:)] [PUNCTUATION:{] [KEYWORD:return] [BOOLEAN:true] [PUNCTUATION:;] [PUNCTUATION:}]`;
 
   const regex_basics = [
-    { type: 'Literal Match', pattern: 'hello', example: 'Matches "hello" in text' },
-    { type: 'Any Character', pattern: 'h.llo', example: 'Matches "hello", "hallo"' },
-    { type: 'Digits', pattern: '\\d+', example: 'Matches "42", "123"' },
-    { type: 'Letters', pattern: '[a-zA-Z]+', example: 'Matches "hello", "Test"' }
+    { type: 'Exact Match', pattern: 'hello', example: 'Matches "hello"' },
+    { type: 'Range', pattern: '[0-9]', example: 'Matches "1" and "3"' },
+    { type: 'Alternation', pattern: '(a|b)', example: 'Matches "a" or "b"' },
+    { type: 'Star (0 or More)', pattern: '2*', example: 'Matches "", "2", "22"' },
+    { type: 'Plus (1 or More)', pattern: '2+', example: 'Matches "2" and "22"' }
   ];
 
   const regex_examples = [
-    { type: 'Keyword', pattern: '(int|string|)', example: 'int, string' },
-    { type: 'Integer', pattern: '\\d+', example: '42, 123, 0' },
-    { type: 'Identifier', pattern: '[a-zA-Z_]+', example: 'count, total_sum' },
-    { type: 'Operator', pattern: '[+\\-*/]', example: '+, -, *, /' },
-    { type: 'Assignment', pattern: '=', example: '=' }
+    { type: 'Keyword', pattern: '(int|return)', example: 'int, return' },
+    { type: 'Identifier', pattern: '[a-zA-Z_]+', example: 'count, total' },
+    { type: 'Comparison', pattern: '(<|>|=)', example: '<, >, =' },
+    { type: 'Integer', pattern: '[0-9]+', example: '42, 123, 0' },
+    { type: 'Boolean', pattern: '(true|false)', example: 'true, false' }
   ];
 
   const tokens_by_type = [
     {
       type: 'Keyword',
-      tokens: ['if', 'return']
-    },
-    {
-      type: 'Punctuation',
-      tokens: ['(', ')', '{', '}', ';']
+      tokens: ['if']
     },
     {
       type: 'Identifier',
       tokens: ['count']
     },
     {
-      type: 'Operator',
+      type: 'Comparison',
       tokens: ['>']
     },
     {
-      type: 'Number',
+      type: 'Integer',
       tokens: ['0']
+    },
+    {
+      type: 'Keyword',
+      tokens: ['return']
     },
     {
       type: 'Boolean',
@@ -88,7 +89,7 @@
           </div>
         {:else if current_step === 2}
           <div class="tutorial-step">
-            <h3>2. Regular Expression Basics</h3>
+            <h3>2.1 Regular Expression Basics</h3>
             <p>Regular expressions use special characters to match patterns:</p>
             <div class="pattern-example">
               {#each regex_basics as { type, pattern, example }}
@@ -99,8 +100,129 @@
                 </div>
               {/each}
             </div>
+            <a
+              class="yt-link"
+              href="https://www.youtube.com/watch?v=nIp604p0M8M&ab_channel=lydia"
+              target="_blank"
+              rel="noopener"
+            >
+              📺 Watch: Regular Expressions explained (YouTube)
+            </a>
           </div>
         {:else if current_step === 3}
+          <div class="tutorial-step">
+            <h3>2.2 Deterministic Finite Automata (DFA)</h3>
+            <div class="automata-explainer">
+              <div class="automata-example">
+                <div class="automata-label">Example: DFA accepting strings ending with <code>1</code></div>
+                <div class="dfa-nfa-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>State</th>
+                        <th>Input 0</th>
+                        <th>Input 1</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><b>q0</b> <span class="state-badge start">start</span></td>
+                        <td>q0</td>
+                        <td>q1</td>
+                      </tr>
+                      <tr>
+                        <td><b>q1</b> <span class="state-badge accept">accept</span></td>
+                        <td>q0</td>
+                        <td>q1</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="automata-how">
+                  <b>How it works:</b>
+                  <ul>
+                    <li>Starts at <b>q0</b>.</li>
+                    <li>Every <code>0</code> keeps it in <b>q0</b>.</li>
+                    <li>Every <code>1</code> moves to <b>q1</b>.</li>
+                    <li>If the string ends in <b>q1</b>, it is accepted.</li>
+                  </ul>
+                </div>
+                <div class="test-cases">
+                  <b>Test Cases:</b>
+                  <ul>
+                    <li><code>0101</code> → Ends in 1 → <span class="accept">Accept</span></li>
+                    <li><code>1000</code> → Ends in 0 → <span class="reject">Reject</span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <a
+              class="yt-link"
+              href="https://www.youtube.com/watch?v=PK3wL7DXuuw&ab_channel=lydia"
+              target="_blank"
+              rel="noopener"
+            >
+              📺 Watch: DFA explained (YouTube)
+            </a>
+          </div>
+        {:else if current_step === 4}
+          <div class="tutorial-step">
+            <h3>2.3 Non-deterministic Finite Automata (NFA)</h3>
+            <div class="automata-explainer">
+              <div class="automata-example">
+                <div class="automata-label">Example: NFA accepting strings ending with <code>1</code></div>
+                <div class="dfa-nfa-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>State</th>
+                        <th>Input 0</th>
+                        <th>Input 1</th>
+                        <th>ε</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><b>q0</b> <span class="state-badge start">start</span></td>
+                        <td>q0</td>
+                        <td>q0, q1</td>
+                        <td>∅</td>
+                      </tr>
+                      <tr>
+                        <td><b>q1</b> <span class="state-badge accept">accept</span></td>
+                        <td>∅</td>
+                        <td>∅</td>
+                        <td>∅</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="automata-how">
+                  <b>How it works:</b>
+                  <ul>
+                    <li>At any <code>1</code>, the NFA can choose to stay in <b>q0</b> or move to <b>q1</b>.</li>
+                    <li>If any possible path ends in <b>q1</b>, the string is accepted.</li>
+                  </ul>
+                </div>
+                <div class="test-cases">
+                  <b>Test Cases:</b>
+                  <ul>
+                    <li><code>0101</code> → Possible path: q0→q0→q0→q1 → <span class="accept">Accept</span></li>
+                    <li><code>1000</code> → No path reaches q1 → <span class="reject">Reject</span></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+            <a
+              class="yt-link"
+              href="https://www.youtube.com/watch?v=W8Uu0inPmU8&ab_channel=lydia"
+              target="_blank"
+              rel="noopener"
+            >
+              📺 Watch: NFA explained (YouTube)
+            </a>
+          </div>
+        {:else if current_step === 5}
           <div class="tutorial-step">
             <h3>3. Common Token Patterns</h3>
             <p>Here are some common patterns used in lexical analysis:</p>
@@ -114,7 +236,7 @@
               {/each}
             </div>
           </div>
-        {:else if current_step === 4}
+        {:else if current_step === 6}
           <div class="tutorial-step">
             <h3>4. Tokenisation Result</h3>
             <div class="token-table">
@@ -129,6 +251,14 @@
                 </div>
               {/each}
             </div>
+              <a
+                class="yt-link"
+                href="https://www.youtube.com/watch?v=MZ9NZdZteG4&ab_channel=NesoAcademy"
+                target="_blank"
+                rel="noopener"
+              >
+                📺 Watch: Tokenisation in Lexical Analysis (YouTube)
+              </a>
           </div>
         {/if}
         <div class="separator"></div>
@@ -152,7 +282,7 @@
 <style>
   .phase-tutorial {
     padding: 1rem;
-    height: 100%;
+    height: 100%; /* or 100% if inside a fixed-height parent */
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -162,6 +292,7 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-height: 0;
   }
 
   h2 {
@@ -192,11 +323,13 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    min-height: 0;
     padding: 1rem;
   }
 
   .tutorial-content-area {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding-bottom: 2rem;
   }
@@ -238,11 +371,15 @@
   }
 
   .navigation-container {
-    margin-top: auto;
-    margin-bottom: 1rem;
-    padding: 1rem 0;
+    position: sticky;
+    margin-top: 1rem;
+    bottom: 0;
+    background: #fff;
+    z-index: 10;
+    padding: 0rem 0;
     display: flex;
     justify-content: center;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.03);
   }
 
   .navigation {
@@ -342,6 +479,119 @@
     font-weight: 500;
     font-family: 'Fira Code', monospace;
     font-size: 0.9rem;
+  }
+
+
+  .dfa-nfa-table {
+    margin: 0.7rem 0 0.7rem 0;
+  }
+
+  .dfa-nfa-table table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 400px;
+    background: #f1f3f5;
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 0.97rem;
+  }
+
+  .dfa-nfa-table th,
+  .dfa-nfa-table td {
+    border: 1px solid #e5e7eb;
+    padding: 0.4rem 0.7rem;
+    text-align: center;
+  }
+
+  .dfa-nfa-table th {
+    background: #e6edfa;
+    color: #001a6e;
+  }
+
+  .accept {
+    color: #16a34a;
+    font-weight: 600;
+  }
+
+  .reject {
+    color: #dc2626;
+    font-weight: 600;
+  }
+
+  .automata-explainer {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 0.7rem 1.5rem 0.7rem 1.5rem;
+    margin: 1.2rem 0 1.5rem 0;
+    box-shadow: 0 1px 4px rgba(30,64,175,0.04);
+    max-width: 650px;
+    margin-top: 0.5rem;
+  }
+
+  .automata-example {
+    margin-top: 1.2rem;
+  }
+
+  .automata-label {
+    font-weight: 600;
+    color: #1e40af;
+    margin-bottom: 0.5rem;
+    font-size: 1.08rem;
+    margin-top: 0;
+  }
+
+  .state-badge {
+    display: inline-block;
+    font-size: 0.75em;
+    font-weight: 600;
+    background: #e0e7ff;
+    color: #1e40af;
+    border-radius: 6px;
+    padding: 0.1em 0.6em;
+    margin-left: 0.4em;
+    vertical-align: middle;
+  }
+  .state-badge.accept {
+    background: #d1fae5;
+    color: #047857;
+  }
+  .state-badge.start {
+    background: #fef9c3;
+    color: #b45309;
+  }
+
+  .automata-how {
+    margin: 1rem 0 0.5rem 0;
+    font-size: 0.98rem;
+  }
+
+  .automata-how ul {
+    margin: 0.3rem 0 0 1.2rem;
+    padding: 0;
+  }
+
+  .test-cases {
+    margin-top: 0.7rem;
+    font-size: 0.97rem;
+  }
+
+  h3 {
+    color: #444;
+    margin: 0.3rem 0 0.0rem 0;
+  } 
+
+  .yt-link {
+    display: inline-block;
+    margin-top: 1rem;
+    color: #1e40af;
+    font-weight: 500;
+    text-decoration: none;
+    font-size: 0.98rem;
+    transition: color 0.2s;
+  }
+  .yt-link:hover {
+    color: #0a2540;
+    text-decoration: underline;
   }
 
   /* Dark Mode Styles */
