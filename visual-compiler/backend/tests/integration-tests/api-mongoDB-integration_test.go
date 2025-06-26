@@ -2,16 +2,17 @@ package tests
 
 import (
 	"testing"
+
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/routers"
-	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 
 	"bytes"
-	"encoding/json"
-	"net/http"
-	"io"
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
 	"time"
 )
 
@@ -23,7 +24,7 @@ func startServer(t *testing.T) *http.Server {
 
 	// Attach CORS middleware
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:	  []string{"http://localhost:5173", "http://127.0.0.1:5173"},
+		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -62,7 +63,7 @@ func TestRegisterExistingUser(t *testing.T) {
 	server := startServer(t)
 	defer closeServer(t, server)
 
-	user_data :=map[string]string{
+	user_data := map[string]string{
 		"username": "tiaharripersad",
 		"email":    "t@gmail.com",
 		"password": "tia1234$$",
@@ -78,6 +79,10 @@ func TestRegisterExistingUser(t *testing.T) {
 		"http://localhost:8080/api/users/register", "application/json",
 		bytes.NewBuffer(req),
 	)
+
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 
 	defer res.Body.Close()
 
@@ -111,7 +116,7 @@ func TestRegisterNewUser(t *testing.T) {
 		"http://localhost:8080/api/users/register", "application/json",
 		bytes.NewBuffer(req),
 	)
-	if err!=nil {
+	if err != nil {
 		t.Errorf("registration failed: %v", err)
 	}
 
@@ -121,9 +126,13 @@ func TestRegisterNewUser(t *testing.T) {
 		t.Errorf("registration failed: %s", string(bodyBytes))
 	}
 
-	bodyBytes, err := io.ReadAll(res.Body)
+	bodyBytes, _ := io.ReadAll(res.Body)
 	var respMap map[string]string
 	err = json.Unmarshal(bodyBytes, &respMap)
+
+	if err != nil {
+		t.Errorf("registration failed: %v", err)
+	}
 
 	t.Logf("Register working: %s", respMap["message"])
 
@@ -134,7 +143,7 @@ func TestLoginExistingUser(t *testing.T) {
 	defer closeServer(t, server)
 
 	user_data := map[string]string{
-		"login": "jasmine1",
+		"login":    "jasmine1",
 		"password": "jazzy1234$$",
 	}
 	req, err := json.Marshal(user_data)
@@ -146,7 +155,7 @@ func TestLoginExistingUser(t *testing.T) {
 		"http://localhost:8080/api/users/login", "application/json",
 		bytes.NewBuffer(req),
 	)
-	if err!=nil {
+	if err != nil {
 		t.Errorf("Login failed: %v", err)
 	}
 
@@ -157,8 +166,14 @@ func TestLoginExistingUser(t *testing.T) {
 	}
 
 	bodyBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 	var respMap map[string]string
 	err = json.Unmarshal(bodyBytes, &respMap)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 
 	t.Logf("Login working: %s", respMap["message"])
 	user_id = respMap["id"]
@@ -169,7 +184,7 @@ func TestLoginInvalidUser(t *testing.T) {
 	defer closeServer(t, server)
 
 	user_data := map[string]string{
-		"login": "rando",
+		"login":    "rando",
 		"password": "jazzy1234$$",
 	}
 	req, err := json.Marshal(user_data)
@@ -181,7 +196,7 @@ func TestLoginInvalidUser(t *testing.T) {
 		"http://localhost:8080/api/users/login", "application/json",
 		bytes.NewBuffer(req),
 	)
-	if err!=nil {
+	if err != nil {
 		t.Errorf("Login failed: %v", err)
 	}
 
@@ -201,7 +216,7 @@ func TestDeleteExistingUser(t *testing.T) {
 	server := startServer(t)
 	defer closeServer(t, server)
 
-	user_data :=  map[string]string{
+	user_data := map[string]string{
 		"id": user_id,
 	}
 	req, err := json.Marshal(user_data)
@@ -213,13 +228,16 @@ func TestDeleteExistingUser(t *testing.T) {
 		"http://localhost:8080/api/users/delete",
 		bytes.NewBuffer(req),
 	)
-	if err!=nil {
+	if err != nil {
 		t.Errorf("User deletion failed")
 	}
 	res.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 
-	response,err := client.Do(res)
+	response, err := client.Do(res)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
@@ -228,8 +246,14 @@ func TestDeleteExistingUser(t *testing.T) {
 	}
 
 	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 	var respMap map[string]string
 	err = json.Unmarshal(bodyBytes, &respMap)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 
 	t.Logf("Deletion working: %s", respMap["message"])
 }
@@ -238,7 +262,7 @@ func TestDeleteInvalidUser(t *testing.T) {
 	server := startServer(t)
 	defer closeServer(t, server)
 
-	user_data :=  map[string]string{
+	user_data := map[string]string{
 		"id": user_id,
 	}
 	req, err := json.Marshal(user_data)
@@ -250,13 +274,16 @@ func TestDeleteInvalidUser(t *testing.T) {
 		"http://localhost:8080/api/users/delete",
 		bytes.NewBuffer(req),
 	)
-	if err!=nil {
+	if err != nil {
 		t.Errorf("User deletion failed")
 	}
 	res.Header.Set("Content-Type", "application/json")
 	client := &http.Client{}
 
-	response,err := client.Do(res)
+	response, err := client.Do(res)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
@@ -266,9 +293,12 @@ func TestDeleteInvalidUser(t *testing.T) {
 
 	if response.StatusCode == http.StatusOK {
 		bodyBytes, err := io.ReadAll(response.Body)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
 		var respMap map[string]string
 		err = json.Unmarshal(bodyBytes, &respMap)
-		if err!=nil {
+		if err != nil {
 			t.Errorf("Deletion error")
 		}
 
@@ -276,14 +306,14 @@ func TestDeleteInvalidUser(t *testing.T) {
 	}
 }
 
-func TestGetAllUsers(t *testing.T){
+func TestGetAllUsers(t *testing.T) {
 	server := startServer(t)
 	defer closeServer(t, server)
 
 	res, err := http.Get(
 		"http://localhost:8080/api/users/getUsers",
 	)
-	if err!=nil {
+	if err != nil {
 		t.Errorf("Get all users failed: %v", err)
 	}
 
@@ -294,8 +324,11 @@ func TestGetAllUsers(t *testing.T){
 	}
 
 	bodyBytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
 	var respMap map[string]string
-	err = json.Unmarshal(bodyBytes, &respMap)
+	_ = json.Unmarshal(bodyBytes, &respMap)
 
 	t.Logf("Get all users working: %s", respMap["message"])
 }

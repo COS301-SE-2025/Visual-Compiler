@@ -10,10 +10,6 @@ import (
 	"unicode"
 )
 
-// ============ //
-// TOKENISATION //
-// ============ //
-
 // Struct for the type and regex pairs
 type TypeRegex struct {
 	Type  string `json:"type"`
@@ -24,6 +20,51 @@ type TypeRegex struct {
 type TypeValue struct {
 	Type  string `json:"type"`
 	Value string `json:"value"`
+}
+
+// Struct for the nfa and dfa data
+type Automata struct {
+	States      []string         `json:"states"`
+	Transitions []Transition     `json:"transitions"`
+	Start       string           `json:"start_state"`
+	Accepting   []AcceptingState `json:"accepting_states"`
+}
+
+type Transition struct {
+	From  string `json:"from"`
+	To    string `json:"to"`
+	Label string `json:"label"`
+}
+
+type AcceptingState struct {
+	State string `json:"state"`
+	Type  string `json:"token_type"`
+}
+
+// Struct for the possible tokens from dfa
+type Candidate struct {
+	value string
+	token string
+}
+
+// Struct for the possible solutions considered when converting dfa to regex
+type CandidateSol struct {
+	state        string
+	source_index int
+	sol          string
+}
+
+// Struct for the fragments of the regex
+type Fragment struct {
+	start string
+	end   string
+}
+
+// Struct for the regular expression to automata converter
+type Converter struct {
+	states      map[string]bool
+	transitions []Transition
+	count       int
 }
 
 // Name: ReadRegexRules
@@ -47,7 +88,7 @@ func ReadRegexRules(input []byte) ([]TypeRegex, error) {
 		return nil, fmt.Errorf("invalid JSON for rules: %v", err)
 	}
 
-	for _, rule := range rules {
+	for i, rule := range rules {
 
 		_, err := regexp.Compile(rule.Regex)
 
@@ -55,7 +96,7 @@ func ReadRegexRules(input []byte) ([]TypeRegex, error) {
 			return nil, fmt.Errorf("invalid regex input: %v", err)
 		}
 
-		rule.Type = strings.ToUpper(rule.Type)
+		rules[i].Type = strings.ToUpper(rule.Type)
 	}
 
 	return rules, nil
@@ -76,6 +117,7 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 	if source == "" {
 		return nil, nil, fmt.Errorf("source code is empty")
 	}
+
 	if len(rules) == 0 {
 		return nil, nil, fmt.Errorf("no rules specified")
 	}
@@ -86,7 +128,7 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 
 		r := rune(source[i])
 
-		if unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsSpace(r) || r == '_' {
+		if unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) || r == '-' {
 
 			builder.WriteRune(r)
 
@@ -100,7 +142,7 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 				i++
 				r = rune(source[i])
 
-				if !(unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsSpace(r) || r == '_') {
+				if !(unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r)) || r == '-' {
 
 					builder.WriteRune(r)
 				}
@@ -135,42 +177,6 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 	return tokens, tokens_unidentified, nil
 }
 
-// ================== //
-// REGEX AND AUTOMATA //
-// ================== //
-
-// struct to store nfa and dfa data
-type Automata struct {
-	States      []string         `json:"states"`
-	Transitions []Transition     `json:"transitions"`
-	Start       string           `json:"start_state"`
-	Accepting   []AcceptingState `json:"accepting_states"`
-}
-
-type Transition struct {
-	From  string `json:"from"`
-	To    string `json:"to"`
-	Label string `json:"label"`
-}
-
-type AcceptingState struct {
-	State string `json:"state"`
-	Type  string `json:"token_type"`
-}
-
-// struct to store possible tokens
-type Candidate struct {
-	value string
-	token string
-}
-
-// struct to store possible solutions considered when converting dfa to regex
-type CandidateSol struct {
-	state        string
-	source_index int
-	sol          string
-}
-
 // Name: CreateTokensFromDFA
 //
 // Parameters: string, Automata
@@ -180,15 +186,19 @@ type CandidateSol struct {
 // Convert the source code, using DFA received from the ReadDFA function, to a set of tokens.
 // Returns tokens,identified tokens, and an error if tokenisation not possible.
 func CreateTokensFromDFA(source_code string, dfa Automata) ([]TypeValue, []string, error) {
+
 	if source_code == "" {
 		return nil, nil, fmt.Errorf("source code is empty")
 	}
+
 	if len(dfa.Transitions) == 0 {
 		return nil, nil, fmt.Errorf("no transitions identified in dfa")
 	}
+
 	if dfa.Start == "" {
 		return nil, nil, fmt.Errorf("no start state identified in dfa")
 	}
+
 	if len(dfa.Accepting) == 0 {
 		return nil, nil, fmt.Errorf("no accepting states identified in dfa")
 	}
@@ -238,7 +248,15 @@ func CreateTokensFromDFA(source_code string, dfa Automata) ([]TypeValue, []strin
 				for _, current_transition := range dfa.Transitions { //add children of current_state to queue
 
 					if current_transition.From == current_state.state {
-						if strings.Contains(current_transition.Label, current_char) {
+
+						var match_found bool
+						if strings.Contains(current_transition.Label, "[") && strings.Contains(current_transition.Label, "]") {
+							match_found, _ = regexp.MatchString("^"+current_transition.Label+"$", current_char)
+						} else {
+							match_found = strings.Contains(current_transition.Label, current_char)
+						}
+
+						if match_found {
 
 							next_state := CandidateSol{
 								state:        current_transition.To,
@@ -283,48 +301,122 @@ func CreateTokensFromDFA(source_code string, dfa Automata) ([]TypeValue, []strin
 func ConvertDFAToRegex(dfa Automata) ([]TypeRegex, error) {
 
 	if len(dfa.States) == 0 {
-		return nil, fmt.Errorf("no states identified")
-	}
-	if len(dfa.Transitions) == 0 {
-		return nil, fmt.Errorf("no transitions identified")
-	}
-	if len(dfa.Accepting) == 0 {
-		return nil, fmt.Errorf("no accepting states identified")
-	}
-	if dfa.Start == "" {
-		return nil, fmt.Errorf("no start state identified")
+		return nil, fmt.Errorf("no states identified in dfa")
 	}
 
-	paths := make(map[string]string)
+	if len(dfa.Transitions) == 0 {
+		return nil, fmt.Errorf("no transitions identified in dfa")
+	}
+
+	if len(dfa.Accepting) == 0 {
+		return nil, fmt.Errorf("no accepting states identified in dfa")
+	}
+
+	if dfa.Start == "" {
+		return nil, fmt.Errorf("no start state identified in dfa")
+	}
+
+	paths := make(map[string][]string)
 
 	for _, accepting := range dfa.Accepting {
-		regex := buildRegexForPath(dfa.Start, accepting.State, dfa)
-		if paths[accepting.Type] != "" {
-			paths[accepting.Type] = paths[accepting.Type] + "|" + regex
-		} else {
-			paths[accepting.Type] = regex
+		regex_paths := buildRegexForPath(dfa.Start, accepting.State, dfa)
+		if len(regex_paths) > 0 {
+			for _, path := range regex_paths {
+				paths[accepting.Type] = append(paths[accepting.Type], string(path))
+			}
 		}
 	}
 
-	rules := []TypeRegex{}
+	var rules []TypeRegex
 	for token_type, regex := range paths {
-		convertRawRegexToRegexRules(&regex)
+		raw := strings.Join(regex, "|")
+		ConvertRawRegexToRegexRules(&raw)
 		switch token_type {
 		case "KEYWORD":
-			convertKeywordToRegex(&regex)
-		case "IDENTIFIER":
-			convertIdentifierToRegex(&regex)
-		case "NUMBER":
-			convertNumberToRegex(&regex)
+			ConvertKeywordToRegex(&raw)
+		case "IDENTIFIER", "ID":
+			ConvertIdentifierToRegex(&raw)
+		case "NUMBER", "NUM":
+			ConvertNumberToRegex(&raw)
+		case "FLOAT":
+			ConvertFloatToRegex(&raw)
+		default:
+			ConvertTypeToRegex(&raw)
 		}
-		new_rule := TypeRegex{
-			Type:  token_type,
-			Regex: regex,
+		multiple_rules := SimplifyRegex(raw)
+		if len(multiple_rules) > 1 {
+			for _, rule := range multiple_rules {
+				new_rule := TypeRegex{
+					Type:  token_type,
+					Regex: rule,
+				}
+				rules = append(rules, new_rule)
+			}
+		} else {
+			new_rule := TypeRegex{
+				Type:  token_type,
+				Regex: raw,
+			}
+			rules = append(rules, new_rule)
 		}
-		rules = append(rules, new_rule)
 	}
 
 	return rules, nil
+}
+
+// Name: simplifyRegex
+//
+// Parameters: string
+//
+// Return: string
+//
+// Helper function to simplify regex
+func SimplifyRegex(regex string) []string {
+
+	if strings.Contains(regex, "\\b") {
+		return nil
+	}
+
+	parts := strings.Split(regex, "|")
+	unique_parts := make(map[string]bool)
+	no_duplicates := []string{}
+
+	for _, part := range parts {
+		_, match_found := unique_parts[part]
+		if !match_found {
+			unique_parts[part] = true
+			no_duplicates = append(no_duplicates, part)
+		}
+	}
+
+	return no_duplicates
+}
+
+// Name: convertTypeToRegex
+//
+// Parameters: *string
+//
+// Return: None
+//
+// Helper function to convert Keyword to proper regex
+func ConvertTypeToRegex(regex *string) {
+
+	var valid bool
+	valid = true
+	for _, letter := range *regex {
+		if !unicode.IsLetter(letter) && letter != '|' && letter != '(' && letter != ')' {
+			valid = false
+		}
+	}
+
+	if valid {
+		if strings.Contains(*regex, "|") {
+			*regex = "\\b(" + *regex + ")\\b"
+		} else {
+			*regex = "\\b" + *regex + "\\b"
+		}
+	}
+
 }
 
 // Name: convertKeywordToRegex
@@ -334,12 +426,12 @@ func ConvertDFAToRegex(dfa Automata) ([]TypeRegex, error) {
 // Return: None
 //
 // Helper function to convert Keyword to proper regex
-func convertKeywordToRegex(regex *string) {
+func ConvertKeywordToRegex(regex *string) {
 
 	if strings.Contains(*regex, "|") {
-		*regex = `\\b(` + *regex + `)\\b`
+		*regex = "\\b(" + *regex + ")\\b"
 	} else {
-		*regex = `\\b` + *regex + `\\b`
+		*regex = "\\b" + *regex + "\\b"
 	}
 
 }
@@ -351,13 +443,13 @@ func convertKeywordToRegex(regex *string) {
 // Return: None
 //
 // Helper function to convert Identifiers to proper regex
-func convertIdentifierToRegex(regex *string) {
+func ConvertIdentifierToRegex(regex *string) {
 
 	if matched, _ := regexp.MatchString(`^\[a-z\]\(\[a-z0-9\]\)\*$`, *regex); matched {
-		*regex = `[a-zA-Z_]\\w*`
+		*regex = "[a-zA-Z_]\\w*"
 	}
 
-	*regex = strings.ReplaceAll(*regex, "[a-z0-9]", `\\w`)
+	*regex = strings.ReplaceAll(*regex, "[a-z0-9]", "\\w")
 	*regex = strings.ReplaceAll(*regex, "[a-z]", "[a-zA-Z_]")
 
 }
@@ -369,8 +461,38 @@ func convertIdentifierToRegex(regex *string) {
 // Return: None
 //
 // Helper function to convert Numbers to proper regex
-func convertNumberToRegex(regex *string) {
-	*regex = `\\d+(\\.\\d+)?`
+func ConvertNumberToRegex(regex *string) {
+
+	*regex = strings.ReplaceAll(*regex, "([0-9])*", `\d+`)
+	*regex = strings.ReplaceAll(*regex, "[0-9]", `\d`)
+	*regex = strings.ReplaceAll(*regex, `\d(\d)*`, `\d+`)
+	*regex = strings.ReplaceAll(*regex, `\d\d+`, `\d+`)
+	*regex = strings.ReplaceAll(*regex, "\\d+|[+-]\\d+", "[+-]?\\d+")
+
+}
+
+// Name: convertFloatToRegex
+//
+// Parameters: *string
+//
+// Return: None
+//
+// Helper function to convert Numbers to proper regex
+func ConvertFloatToRegex(regex *string) {
+
+	*regex = strings.ReplaceAll(*regex, "([0-9])*", `\d+`)
+	*regex = strings.ReplaceAll(*regex, "[0-9]", `\d`)
+	*regex = strings.ReplaceAll(*regex, `\d(\d)*`, `\d+`)
+	*regex = strings.ReplaceAll(*regex, `\d\d+`, `\d+`)
+	*regex = strings.ReplaceAll(*regex, "\\d+|[+-]\\d+", "[+-]?\\d+")
+
+	if strings.Contains(*regex, "[eE]") {
+		*regex = "\\d+\\.\\d+|\\d+[eE][+-]?\\d+"
+	} else {
+
+		*regex = "\\d+(\\.\\d+)?"
+	}
+
 }
 
 // Name: convertRawRegexToRegexRules
@@ -380,12 +502,13 @@ func convertNumberToRegex(regex *string) {
 // Return: None
 //
 // Helper function to replace grammar with regex rules
-func convertRawRegexToRegexRules(regex *string) {
+func ConvertRawRegexToRegexRules(regex *string) {
+
 	*regex = strings.ReplaceAll(*regex, "abcdefghijklmnopqrstuvwxyz0123456789", "[a-z0-9]")
 	*regex = strings.ReplaceAll(*regex, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", "[A-Z0-9]")
 	*regex = strings.ReplaceAll(*regex, "abcdefghijklmnopqrstuvwxyz", "[a-z]")
 	*regex = strings.ReplaceAll(*regex, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "[A-Z]")
-	*regex = strings.ReplaceAll(*regex, "0123456789", `\d`)
+	*regex = strings.ReplaceAll(*regex, "0123456789", "[0-9]")
 }
 
 // Name: buildRegexForPath
@@ -396,56 +519,70 @@ func convertRawRegexToRegexRules(regex *string) {
 //
 // Helper function to convert DFA to regex, which builds the regex string.
 // Uses BFS to traverse the states till it reaches accepting saves, for which it saves the current path.
-func buildRegexForPath(start, accept string, dfa Automata) string {
+func buildRegexForPath(start, accept string, dfa Automata) []string {
+
 	type state_regex struct {
-		state string
-		regex string
+		state   string
+		regex   string
+		visited map[string]bool
 	}
 
-	initial_candidate := state_regex{state: start, regex: ""}
+	initial_candidate := state_regex{
+		state:   start,
+		regex:   "",
+		visited: map[string]bool{start: true},
+	}
 	queue := []state_regex{initial_candidate}
-	visited_states := map[string]bool{start: true}
 
-	path := ""
-	found := false
+	var final_path []string
 
-	for len(queue) > 0 && !found {
+	for len(queue) > 0 {
 		current_candidate := queue[0]
 		queue = queue[1:]
 
 		for _, transition := range dfa.Transitions {
 			if transition.From == current_candidate.state {
-				next_state := transition.To
-				if !visited_states[next_state] {
-					new_regex := current_candidate.regex + regexStructure(transition.Label)
-					if next_state == accept {
-						path = new_regex
-						found = true
-						break
-					}
-					new_candidate := state_regex{
-						state: next_state,
-						regex: new_regex,
-					}
-					queue = append(queue, new_candidate)
-					visited_states[next_state] = true
+
+				if current_candidate.visited[transition.To] {
+					continue
 				}
+
+				new_regex := current_candidate.regex + regexStructure(transition.Label)
+				new_visited := make(map[string]bool)
+				for i, visit := range current_candidate.visited {
+					new_visited[i] = visit
+				}
+				new_visited[transition.To] = true
+
+				if transition.To == accept {
+					final_path = append(final_path, new_regex)
+				} else {
+					new_sol := state_regex{
+						state:   transition.To,
+						regex:   new_regex,
+						visited: new_visited,
+					}
+					queue = append(queue, new_sol)
+				}
+
 			}
 		}
 	}
 
-	if path == "" {
-		return ""
+	if len(final_path) == 0 {
+		return final_path
 	}
 
 	for _, transition := range dfa.Transitions {
 		if transition.From == accept && transition.To == accept {
-			multiple_occurrences := "(" + regexStructure(transition.Label) + ")*"
-			return path + multiple_occurrences
+			for i, path := range final_path {
+				final_path[i] = path + "(" + regexStructure(transition.Label) + ")*"
+			}
+			break
 		}
 	}
 
-	return path
+	return final_path
 }
 
 // Name: regexStructure
@@ -456,6 +593,10 @@ func buildRegexForPath(start, accept string, dfa Automata) string {
 //
 // Helper function escape special regex characters
 func regexStructure(label string) string {
+
+	if strings.HasPrefix(label, "[") && strings.HasSuffix(label, "]") {
+		return label
+	}
 
 	special_characters := []string{"\\", "(", ")", "{", "}", "[", "]", ".", "^", "$", "*", "+", "?", "|"}
 
@@ -503,6 +644,19 @@ func ConvertRegexToNFA(regexes map[string]string) (Automata, error) {
 		states_list = append(states_list, state)
 	}
 
+	i := 0
+	for i < len(converter.transitions)-1 {
+		current_transition := &converter.transitions[i]
+		next_transition := converter.transitions[i+1]
+
+		if next_transition.To == current_transition.To && next_transition.From == current_transition.From {
+			current_transition.Label += next_transition.Label
+			converter.transitions = append(converter.transitions[:i+1], converter.transitions[i+2:]...)
+		} else {
+			i++
+		}
+	}
+
 	nfa := Automata{}
 	nfa.States = states_list
 	nfa.Transitions = converter.transitions
@@ -532,7 +686,6 @@ func ConvertRegexToDFA(regexes map[string]string) (Automata, error) {
 	}
 
 	return dfa, nil
-
 }
 
 // Name: ConvertNFAToDFA
@@ -547,12 +700,15 @@ func ConvertNFAToDFA(nfa Automata) (Automata, error) {
 	if len(nfa.States) == 0 {
 		return Automata{}, fmt.Errorf("no states identified")
 	}
+
 	if len(nfa.Transitions) == 0 {
 		return Automata{}, fmt.Errorf("no transitions identified")
 	}
+
 	if len(nfa.Accepting) == 0 {
 		return Automata{}, fmt.Errorf("no accepting states identified")
 	}
+
 	if nfa.Start == "" {
 		return Automata{}, fmt.Errorf("no start state identified")
 	}
@@ -682,17 +838,6 @@ func ConvertNFAToDFA(nfa Automata) (Automata, error) {
 	dfa.Accepting = accepting_states
 
 	return dfa, nil
-}
-
-type Fragment struct {
-	start string
-	end   string
-}
-
-type Converter struct {
-	states      map[string]bool
-	transitions []Transition
-	count       int
 }
 
 // Name: newConverter
@@ -979,9 +1124,9 @@ func closureEpsilon(states []string, transition_map map[string]map[string][]stri
 		current := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
 
-		if epsilonTransition, exists := transition_map[current]["ε"]; exists {
+		if epsilon_transition, exists := transition_map[current]["ε"]; exists {
 
-			for _, next := range epsilonTransition {
+			for _, next := range epsilon_transition {
 
 				if !closure[next] {
 					stack = append(stack, next)

@@ -1,5 +1,8 @@
 import '@testing-library/jest-dom/vitest';
-import { vi } from 'vitest';
+import { vi , expect } from 'vitest';
+import * as matchers from '@testing-library/jest-dom/matchers';
+
+expect.extend(matchers);
 
 // required for svelte5 + jsdom as jsdom does not support matchMedia
 Object.defineProperty(window, 'matchMedia', {
@@ -15,4 +18,4 @@ Object.defineProperty(window, 'matchMedia', {
 	}))
 });
 
-// add more mocks here if you need them
+

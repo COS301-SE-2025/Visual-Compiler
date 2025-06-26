@@ -13,18 +13,54 @@
 
 <br>
 
+<h2 align="center">Project Boards</h2>
+
 <div align="center">
-    <h2>Project Boards</h2>
-        <a href="https://github.com/orgs/COS301-SE-2025/projects/162">Frontend</a> &nbsp;|&nbsp;
-        <a href="https://github.com/orgs/COS301-SE-2025/projects/171">Backend</a> &nbsp;|&nbsp;
-        <a href="https://github.com/orgs/COS301-SE-2025/projects/173">Administration</a>
+    <a href="https://github.com/orgs/COS301-SE-2025/projects/162">Frontend</a> &nbsp;|&nbsp;
+    <a href="https://github.com/orgs/COS301-SE-2025/projects/171">Backend</a> &nbsp;|&nbsp;
+    <a href="https://github.com/orgs/COS301-SE-2025/projects/173">Administration</a></div>
+<br>
+
+<h2 align="center">Documentation and Resources</h2>
+
+<div align="center">
+    <table style="border-width: 1px; width: 50%;">
+    <tr>
+        <td rowspan="3" style="border: 0;">Demo 1</td>
+        <td style="border: 0;"><a href="https://www.canva.com/design/DAGomTEXSj8/9jhGyLXxfua14zX0YsJ99g/edit?utm_content=DAGomTEXSj8&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton">Presentation</a></td>
+    </tr>
+    <tr>
+        <td style="border: 0;"><a href="https://docs.google.com/document/d/1G9_tmRu2ey8_tjJHxUbkpXQod9UxfRC2dE9HBTdta10/edit?usp=sharing">Software Requirements Specification</a></td>
+    </tr>
+    <tr>
+        <td style="border: 0;"><a href="https://docs.google.com/document/d/1Bmq9UWzTkuA_br6hin0YsK9cVgnVuuH0H0tTJB66qKY/edit?usp=sharing">Architectural Specification</a></td>
+    </tr>
+    </table>
+</div>
+
+<br>
+
+<h2 align="center">Technology Stack</h2>
+
+<div align="center">
+    <img src="https://img.shields.io/badge/Svelte-FF3E00?style=for-the-badge&logo=svelte&logoColor=white"> &nbsp;&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white"> &nbsp;&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white"> &nbsp;&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white"> &nbsp;&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/Amazon-FF9900?style=for-the-badge&logo=amazon&logoColor=white">
 </div>
 
 <br>
 
 <div align="center">
-    <h2>Repository Structure</h2>
+    <img src="https://img.shields.io/github/issues/COS301-SE-2025/Visual-Compiler?label=Issues">
+    <img src="https://img.shields.io/github/issues-pr/COS301-SE-2025/Visual-Compiler?label=Pull%20Requests">
+    <img src="https://github.com/COS301-SE-2025/Visual-Compiler/actions/workflows/main.yml/badge.svg">
 </div>
+
+<br>
+
+<h2 align="center">Repository Structure</h2>
 
 ```
     ├───📁.github
@@ -37,12 +73,13 @@
         ├───📁backend
         │   ├───📁api
         │   │   ├───📁handlers
-        │   │   ├───📁routers
-        │   │   └───📁tests
-        │   └───📁core
-        │       ├───📁db
-        │       ├───📁services
-        │       └───📁tests
+        │   │   └───📁routers
+        │   ├───📁core
+        │   │   ├───📁db
+        │   │   └───📁services
+        │   └───📁tests
+        │       ├───📁integration-tests
+        │       └───📁unit-tests
         ├───📁frontend
         │   └───📁ui
         │       ├───📁.svelte-kit
@@ -56,6 +93,7 @@
 <br>
 
 <h2 align="center">Half Stack Members</h2>
+
 <table style="border-width: 1px; width: 100%;">
     <tr>
         <td style="vertical-align: middle; width: auto; border: 0; padding: 10px;">
