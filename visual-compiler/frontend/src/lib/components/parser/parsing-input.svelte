@@ -2,7 +2,7 @@
   import { onMount, createEventDispatcher } from 'svelte';
   import { AddToast } from '$lib/stores/toast';
 
-  export let SourceCode = '';
+  export let source_code = '';
 
   const dispatch = createEventDispatcher();
 
@@ -260,7 +260,7 @@
 
   <div class="source-code-section">
     <h3 class="source-code-header">Source Code</h3>
-    <pre class="source-display">{SourceCode || 'No source code available'}</pre>
+    <pre class="source-display">{source_code || 'No source code available'}</pre>
   </div>
 
   <div class="grammar-editor">
