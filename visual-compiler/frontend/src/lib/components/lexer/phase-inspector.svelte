@@ -445,10 +445,10 @@
     showDefault = true;
     editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
     inputRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
-    states = 'q0,q1,q2';
-    startState = 'q0';
-    acceptedStates = 'q2->int';
-    transitions = 'q0,0->q0\nq0,0->q1\nq1,0->q2\nq1,1->q0\nq2,0->q1\nq2,1->q2';
+    states = 'S0, S1, S2, S3, S4, S5, S6, S7, S8';
+    startState = 'S0';
+    acceptedStates = 'S3->KEYWORD, S4->IDENTIFIER, S5->ASSIGNMENT, S6->OPERATOR, S7->INTEGER, S8->SEPARATOR';
+    transitions = 'S0,i->S1\nS1,n->S2\nS2,t->S3\nS0,[a-zA-Z_]->S4\nS4,[a-zA-Z_]->S4\nS0,=->S5\nS0,[+-*/%]->S6\nS0,[0-9]->S7\nS7,[0-9]->S7\nS0,;->S8';
   }
 
   function removeDefault() {
