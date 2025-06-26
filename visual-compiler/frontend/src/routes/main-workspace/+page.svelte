@@ -193,6 +193,13 @@
   :global(*) {
     box-sizing: border-box;
   }
+  html {
+    transform: scale(0.8);
+    transform-origin: top left;
+    width: 125vw;
+    height: 125vh;
+    overflow-x: auto;
+  }
   .main {
     display: flex;
     height: calc(100vh - 3.5rem);
