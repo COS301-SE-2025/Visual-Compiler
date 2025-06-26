@@ -753,7 +753,7 @@ func TestTokensFromDFA_CoreError(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error: %v\n", err)
 		}
-		if body_array["error"] == "Tokenization failed" {
+		if body_array["error"] == "Tokenization from DFA failed" {
 			t.Logf("ReadDFAFromUser: success")
 		} else {
 			t.Errorf("Error: %v", string(body_bytes))
@@ -897,8 +897,8 @@ func TestConvertDFAToRG_CoreError(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error: %v\n", err)
 		}
-		if body_array["error"] == "Tokenization failed" {
-			t.Logf("ConvertRGToNFA: success")
+		if body_array["error"] == "Conversion from DFA to Regex failed" {
+			t.Logf("ConverDFAToRG error: success")
 		} else {
 			t.Errorf("Error: %v", string(body_bytes))
 		}
@@ -1041,7 +1041,7 @@ func TestConvertRGToNFA_CoreError(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error: %v\n", err)
 		}
-		if body_array["error"] == "Conversion failed" {
+		if body_array["error"] == "Conversion from Regex to NFA failed" {
 			t.Logf("ConvertRGToNFA Error: success")
 		} else {
 			t.Errorf("Error: %v", string(body_bytes))
@@ -1186,7 +1186,7 @@ func TestConvertRGToDFA_CoreError(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error: %v\n", err)
 		}
-		if body_array["error"] == "Conversion failed" {
+		if body_array["error"] == "Conversion from Regex to DFA failed" {
 			t.Logf("ConvertRGToDFA Error: success")
 		} else {
 			t.Errorf("Error: %v", string(body_bytes))
@@ -1331,7 +1331,7 @@ func TestConvertNFAToDFA_CoreError(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Error: %v\n", err)
 		}
-		if body_array["error"] == "Conversion failed" {
+		if body_array["error"] == "Conversion from NFA to DFA failed" {
 			t.Logf("ConvertNFAToDFA: success")
 		} else {
 			t.Errorf("Error: %v", string(body_bytes))

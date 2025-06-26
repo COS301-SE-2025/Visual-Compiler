@@ -32,7 +32,7 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	objectID, err := bson.ObjectIDFromHex(req.ID)
+	object_id, err := bson.ObjectIDFromHex(req.ID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
 		return
@@ -44,7 +44,7 @@ func DeleteUser(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	res, err := collection.DeleteOne(ctx, bson.M{"_id": objectID})
+	res, err := collection.DeleteOne(ctx, bson.M{"_id": object_id})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user: " + err.Error()})
 		return
