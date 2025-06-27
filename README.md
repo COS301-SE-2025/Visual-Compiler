@@ -48,7 +48,11 @@
 <div align="center">
     <table style="border-width: 1px;">
     <tr>
-        <td><a href="https://www.canva.com/design/DAGrSSVK-QU/i083d2b_sUAxhoaNYEf4iQ/view?utm_content=DAGrSSVK-QU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h6a916b7fee">Presentation</a></td>
+        <td><a href="https://www.canva.com/design/DAGrSSVK-QU/i083d2b_sUAxhoaNYEf4iQ/view?utm_content=DAGrSSVK-QU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h6a916b7fee">Demo 2 Slides</a></td>
+        <td>Current presentation for the project</td>
+    </tr>
+    <tr>
+        <td><a href="https://drive.google.com/file/d/1fS6YWn5QtnTmdgO1mV9lTeiBdilVLFUY/view?usp=sharing">Demo 2 Video</a></td>
         <td>Current presentation for the project</td>
     </tr>
     <tr>
