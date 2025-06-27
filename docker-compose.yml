@@ -21,7 +21,7 @@ services:
     volumes:
       - ./visual-compiler/backend:/visual-compiler-backend
     environment:
-      - Mongo_username=username
-      - Mongo_password=password
-      - Mongo_URL=mongodb+srv://%s:%s@visualcompiler.ip4jaot.mongodb.net/?retryWrites=true&w=majority&appName=VisualCompiler
+      - Mongo_username
+      - Mongo_password
+      - Mongo_URI
     command: go run main.go
