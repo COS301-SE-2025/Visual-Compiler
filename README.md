@@ -34,15 +34,6 @@
 
 <br>
 
-<div align="center">
-    <h2>Project Boards</h2>
-        <a href="https://github.com/orgs/COS301-SE-2025/projects/162">Frontend</a> &nbsp;|&nbsp;
-        <a href="https://github.com/orgs/COS301-SE-2025/projects/171">Backend</a> &nbsp;|&nbsp;
-        <a href="https://github.com/orgs/COS301-SE-2025/projects/173">Administration</a>
-</div>
-
-<br>
-
 <h2 align="center">Documentation and Resources</h2>
 
 <div align="center">
