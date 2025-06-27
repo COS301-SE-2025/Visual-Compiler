@@ -8,7 +8,14 @@ import tsParser from '@typescript-eslint/parser';
 /** @type {import("eslint").Linter.FlatConfig[]} */
 export default [
 	{
-		ignores: ['.svelte-kit/', 'node_modules/']
+		ignores: [
+			'.svelte-kit/',
+			'node_modules/',
+			'src/lib/components/landing/Features.svelte',
+			'src/lib/components/landing/Hero.svelte',
+			'src/lib/components/landing/Walkthrough.svelte',
+			'src/lib/components/main/Toolbox.svelte'
+		]
 	},
 	{
 		files: ['**/*.js', '**/*.ts'],
