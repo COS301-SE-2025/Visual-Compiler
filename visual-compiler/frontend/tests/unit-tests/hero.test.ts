@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi } from 'vitest';
-import Hero from '../../src/lib/components/landing/hero.svelte';
+import Hero from '../../src/lib/components/landing/Hero.svelte';
 
 // Mock SvelteKit's navigation module
 const mockedGoto = vi.fn();
@@ -8,7 +8,7 @@ vi.mock('$app/navigation', () => ({
 	goto: (path: string) => mockedGoto(path)
 }));
 
-describe('Hero Component', () => {
+describe('hero Component', () => {
 	it('TestInitialRender_Success: Renders the main headline and button', () => {
 		render(Hero);
 		expect(screen.getByText('Demystifying Compilers, One Block at a Time.')).toBeInTheDocument();
