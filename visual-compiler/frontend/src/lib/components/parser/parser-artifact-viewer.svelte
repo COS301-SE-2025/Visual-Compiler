@@ -134,7 +134,7 @@
 
 <div class="artifact-viewer">
 	<div class="artifact-header">
-		<h3>Artifacts: Syntax Tree</h3>
+		<h3>Syntax Tree</h3>
 	</div>
 
 	{#if syntaxTree && syntaxTree.root}
