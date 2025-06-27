@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi } from 'vitest';
-import Toolbox from '../../src/lib/components/main/toolbox.svelte';
+import toolbox from '../../src/lib/components/main/toolbox.svelte';
 
 // Mock tooltips to simplify the test
 const mockTooltips = {
@@ -12,7 +12,7 @@ const mockTooltips = {
 describe('Toolbox Component', () => {
 	it('TestInitialRender_Success: Renders the heading and all phase buttons', () => {
 		// FIX D: Add the required 'handleCreateNode' prop
-		render(Toolbox, {
+		render(toolbox, {
 			props: {
 				handleCreateNode: vi.fn(), // Provide a mock function
 				tooltips: mockTooltips
@@ -27,7 +27,7 @@ describe('Toolbox Component', () => {
 
 	it('TestNodeCreation_Success: Calls the handler function with the correct type on click', async () => {
 		const mockHandler = vi.fn();
-		render(Toolbox, {
+		render(toolbox, {
 			props: {
 				handleCreateNode: mockHandler,
 				tooltips: mockTooltips
