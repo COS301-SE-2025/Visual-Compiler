@@ -1,7 +1,5 @@
 <script>
-  import ToastContainer from '$lib/components/ToastContainer.svelte';
-
-  
+	import ToastContainer from '$lib/components/toast-conatiner.svelte';
 </script>
 
 <ToastContainer />

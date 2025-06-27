@@ -11,13 +11,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Entry point of the API.
+// Name: GetAllUsers
 //
-// Initializes the necessary services, sets up the routes and the GIN framework
-// and starts the http server. Responsibile for bootstrapping the backend infrastructure
-// required
+// Parameters: Gin Context
 //
-// If any setup fails, the application will log the error and exit the application
+// Return: None
+//
+// Entry point of the API. Initializes the necessary services, sets up the routes and the GIN framework and starts the http server. Responsibile for bootstrapping the backend infrastructure required. If any setup fails, the application will log the error and exit the application
 func main() {
 	db.ConnectClient()
 
@@ -26,7 +26,7 @@ func main() {
 
 	// Attach CORS middleware
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:	  []string{"http://localhost:5173", "http://127.0.0.1:5173"},
+		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -35,17 +35,23 @@ func main() {
 	}))
 
 	// Attach your routes
-	apiUserRoutes := routers.SetupUserRouter()
-	apiLexingRoutes := routers.SetupLexingRouter()
+	api_user_routes := routers.SetupUserRouter()
+	api_lexing_routes := routers.SetupLexingRouter()
+	api_parsing_routes := routers.SetupParsingRouter()
 
 	router.Any("/api/users/*any", func(c *gin.Context) {
 		c.Request.URL.Path = c.Param("any")
-		apiUserRoutes.HandleContext(c)
+		api_user_routes.HandleContext(c)
 	})
 
 	router.Any("/api/lexing/*any", func(c *gin.Context) {
 		c.Request.URL.Path = c.Param("any")
-		apiLexingRoutes.HandleContext(c)
+		api_lexing_routes.HandleContext(c)
+	})
+
+	router.Any("/api/parsing/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		api_parsing_routes.HandleContext(c)
 	})
 
 	log.Println("Starting backend server on: http://localhost:8080/api")

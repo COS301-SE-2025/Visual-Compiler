@@ -20,7 +20,8 @@ services:
       - "8080:8080"
     volumes:
       - ./visual-compiler/backend:/visual-compiler-backend
-      - ./visual-compiler/backend/.env:/visual-compiler-backend/.env
-    env_file:
-      - ./visual-compiler/backend/.env
+    environment:
+      - Mongo_username
+      - Mongo_password
+      - Mongo_URI
     command: go run main.go

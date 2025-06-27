@@ -5,8 +5,8 @@ import { defineConfig } from 'vite';
 export default defineConfig({
 	plugins: [sveltekit()],
 	test: {
-		globals:true,
-		clearMocks:true,
+		globals: true,
+		clearMocks: true,
 		workspace: [
 			{
 				extends: './vite.config.ts',
@@ -16,7 +16,11 @@ export default defineConfig({
 					environment: 'jsdom',
 					clearMocks: true,
 					include: ['tests/**/*.{test,spec}.{js,ts}'],
-					exclude: ['src/lib/server/**', 'node_modules/**', 'tests/**/*.server.{test,spec}.{js,ts}'],
+					exclude: [
+						'src/lib/server/**',
+						'node_modules/**',
+						'tests/**/*.server.{test,spec}.{js,ts}'
+					],
 					setupFiles: ['./vitest-setup-client.ts']
 				}
 			},

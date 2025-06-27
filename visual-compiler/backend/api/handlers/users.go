@@ -20,14 +20,13 @@ type UserPublic struct {
 	Email string `json:"email"`
 }
 
-// Returns all users currently in the Database as an array.
-// It fetches the users from the "users" collection.
-// Formats the response as JSON
+// Name: GetAllUsers
 //
-// Returns:
-//   - An array of UserPublic structs containing each user's details.
-//   - A 200 OK response if successful
-//   - A 500 Internal Server Error if any errors are caught for fetching or parsing
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Returns a JSON object with all the users currently in the system.
 func GetAllUsers(c *gin.Context) {
 	client := db.ConnectClient()
 	collection := client.Database("visual-compiler").Collection("users")
@@ -42,7 +41,7 @@ func GetAllUsers(c *gin.Context) {
 	}
 	defer pointer.Close(ctx)
 
-	var allUsersPublic []UserPublic
+	var all_users_public []UserPublic
 	for pointer.Next(ctx) {
 		var raw bson.M
 		if err := pointer.Decode(&raw); err != nil {
@@ -54,7 +53,7 @@ func GetAllUsers(c *gin.Context) {
 		username := raw["username"].(string)
 		email := raw["email"].(string)
 
-		allUsersPublic = append(allUsersPublic, UserPublic{
+		all_users_public = append(all_users_public, UserPublic{
 			ID:       id,
 			Username: username,
 			Email:    email,
@@ -63,6 +62,6 @@ func GetAllUsers(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Successfully fetched all users",
-		"users":   allUsersPublic,
+		"users":   all_users_public,
 	})
 }

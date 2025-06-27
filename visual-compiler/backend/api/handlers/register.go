@@ -23,14 +23,13 @@ type Request struct {
 	Username string `json:"username" binding:"required,min=6"`
 }
 
-// Registers a user on the Database
-// Gets the user's details from a JSON request.
-// Formats the response as a JSON Body
+// Name: Register
 //
-// Returns:
-//   - A JSON response body.
-//   - A 200 OK response if successful
-//   - A 500 Internal Server Error if any errors are caught for registering/inserting or parsing
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Registers a user into the database. If any inputs are missing, an error is displayed
 func Register(c *gin.Context) {
 	var req Request
 
@@ -39,25 +38,25 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	mongoClient := db.ConnectClient()
-	usersCollection := mongoClient.Database("visual-compiler").Collection("users")
+	mongo_client := db.ConnectClient()
+	users_collection := mongo_client.Database("visual-compiler").Collection("users")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	normalisedUsername := strings.ToLower(req.Username)
+	normalised_username := strings.ToLower(req.Username)
 
-	filterChecks := bson.M{
+	filter_checks := bson.M{
 		"$or": []bson.M{
 			{"email": req.Email},
-			{"username": normalisedUsername},
+			{"username": normalised_username},
 		},
 	}
 
-	var userExists bson.M
-	err := usersCollection.FindOne(ctx, filterChecks).Decode(&userExists)
+	var user_exists bson.M
+	err := users_collection.FindOne(ctx, filter_checks).Decode(&user_exists)
 	if err == nil {
-		if userExists["email"] == req.Email {
+		if user_exists["email"] == req.Email {
 			c.JSON(http.StatusConflict, gin.H{"error": "Email already exists"})
 		} else {
 			c.JSON(http.StatusConflict, gin.H{"error": "Username is already taken"})
@@ -68,16 +67,16 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashed_password, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in hashing password"})
 		return
 	}
 
-	_, err = usersCollection.InsertOne(ctx, bson.M{
+	_, err = users_collection.InsertOne(ctx, bson.M{
 		"email":    req.Email,
-		"password": string(hashedPassword),
-		"username": normalisedUsername,
+		"password": string(hashed_password),
+		"username": normalised_username,
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in registering user"})

@@ -13,8 +13,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-var UsersID bson.ObjectID
-
 // Specifies the JSON body request for logging in
 type LoginReq struct {
 	// Either the user's email or username
@@ -23,14 +21,13 @@ type LoginReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// Logs a user in.
-// Gets the inputs(Email/Username & Password) from a JSON request from the user.
-// Formats the response as a JSON Body
+// Name: Login
 //
-// Returns:
-//   - A JSON response body.
-//   - A 200 OK response if successful
-//   - A 500 Internal Server Error if any errors are caught for fetching or parsing
+// Parameters: Gin Context
+//
+// Return: None
+//
+// Logs in a valid user into the system. Any issues (incorrect email/password) will be notfied to the user. If successful login, the user's ID is returned and will be used for authentication and storage purposes for many of the functions.
 func Login(c *gin.Context) {
 	var req LoginReq
 
@@ -39,29 +36,29 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	normaliseInput := strings.ToLower(req.Login)
+	normalise_input := strings.ToLower(req.Login)
 
-	mongoClient := db.ConnectClient()
-	usersCollection := mongoClient.Database("visual-compiler").Collection("users")
+	mongo_client := db.ConnectClient()
+	users_collection := mongo_client.Database("visual-compiler").Collection("users")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	filterLogin := bson.M{
+	filter_login := bson.M{
 		"$or": []bson.M{
-			{"email": normaliseInput},
-			{"username": normaliseInput},
+			{"email": normalise_input},
+			{"username": normalise_input},
 		},
 	}
 
-	var dbUser struct {
+	var db_user struct {
 		Username string        `bson:"username"`
 		Email    string        `bson:"email"`
 		Password string        `bson:"password"`
 		ID       bson.ObjectID `bson:"_id"`
 	}
 
-	err := usersCollection.FindOne(ctx, filterLogin).Decode(&dbUser)
+	err := users_collection.FindOne(ctx, filter_login).Decode(&db_user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
@@ -71,13 +68,13 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(dbUser.Password), []byte(req.Password)) != nil {
+	if bcrypt.CompareHashAndPassword([]byte(db_user.Password), []byte(req.Password)) != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Password is incorrect"})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Login Successful. Welcome " + dbUser.Username,
+		"message": "Login Successful. Welcome " + db_user.Username,
+		"id":      db_user.ID,
 	})
-	UsersID = dbUser.ID
 }

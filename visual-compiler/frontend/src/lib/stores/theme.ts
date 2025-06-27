@@ -1,24 +1,28 @@
 import { writable } from 'svelte/store';
 
-const storedTheme = typeof localStorage !== 'undefined' ? localStorage.getItem('vc-theme') : null;
-const initialTheme = storedTheme === 'dark' ? 'dark' : 'light';
+const stored_theme = typeof localStorage !== 'undefined' ? localStorage.getItem('vc-theme') : null;
+const initial_theme = stored_theme === 'dark' ? 'dark' : 'light';
 
-export const theme = writable<'light' | 'dark'>(initialTheme);
+export const theme = writable<'light' | 'dark'>(initial_theme);
 
-export function toggleTheme() {
-  theme.update(current => {
-    const newTheme = current === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('svelvet-theme', newTheme);
-    document.documentElement.classList.toggle('dark-mode', newTheme === 'dark');
-    localStorage.setItem('vc-theme', newTheme);
-    return newTheme;
-  });
+// ToggleTheme
+// Return type: void
+// Parameter type(s): none
+// Toggles the application theme between 'light' and 'dark' and persists the choice.
+export function ToggleTheme() {
+	theme.update((current) => {
+		const new_theme = current === 'light' ? 'dark' : 'light';
+		// This toggles the class that our custom CSS will use.
+		document.documentElement.classList.toggle('dark-mode', new_theme === 'dark');
+		localStorage.setItem('vc-theme', new_theme);
+		return new_theme;
+	});
 }
 
 // Initialize on load
 if (typeof document !== 'undefined') {
-  document.documentElement.setAttribute('svelvet-theme', initialTheme);
-  if (initialTheme === 'dark') {
-    document.documentElement.classList.add('dark-mode');
-  }
+	// We just make sure the correct class is present on page load.
+	if (initial_theme === 'dark') {
+		document.documentElement.classList.add('dark-mode');
+	}
 }
