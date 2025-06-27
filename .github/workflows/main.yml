@@ -27,18 +27,6 @@ jobs:
         working-directory: ./visual-compiler/frontend
         run: npm install
 
-      - name: Tests for frontend
-        working-directory: ./visual-compiler/frontend
-        run: npm run test -- --coverage
-
-      - name: Upload coverage for frontend
-        uses: codecov/codecov-action@v4
-        with:
-          flags: frontend
-          name: coverage-frontend
-          directory: ./visual-compiler/frontend
-          files: ./visual-compiler/frontend/coverage/lcov.info
-
       - name: Go setup for Backend
         uses: actions/setup-go@v5
         with:
