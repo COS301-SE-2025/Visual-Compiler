@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { vi , expect } from 'vitest';
+import { vi, expect } from 'vitest';
 import * as matchers from '@testing-library/jest-dom/matchers';
 
 expect.extend(matchers);
@@ -17,5 +17,3 @@ Object.defineProperty(window, 'matchMedia', {
 		dispatchEvent: vi.fn()
 	}))
 });
-
-

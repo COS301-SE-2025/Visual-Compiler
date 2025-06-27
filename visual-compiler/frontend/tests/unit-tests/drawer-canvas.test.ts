@@ -11,26 +11,26 @@ import type { NodeType } from '../../src/lib/types';
 // Vitest will automatically use the file in /tests/__mocks__/svelvet.ts
 
 describe('DrawerCanvas Component', () => {
-  let fakeTime = 0;
+	let fakeTime = 0;
 
-  beforeEach(() => {
-    fakeTime = 0;
-    vi.spyOn(performance, 'now').mockImplementation(() => fakeTime);
-  });
+	beforeEach(() => {
+		fakeTime = 0;
+		vi.spyOn(performance, 'now').mockImplementation(() => fakeTime);
+	});
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
 
-  it('TestNodeRendering_Success: Renders nodes based on the store', () => {
-    const mockNodes = writable([
-      { id: 'source-1', type: 'source' as NodeType, label: 'Source Code', position: { x: 1, y: 1 } }
-    ]);
-    render(DrawerCanvas, { nodes: mockNodes, onPhaseSelect: vi.fn() });
-    expect(screen.getByRole('button', { name: 'Source Code' })).toBeInTheDocument();
-  });
+	it('TestNodeRendering_Success: Renders nodes based on the store', () => {
+		const mockNodes = writable([
+			{ id: 'source-1', type: 'source' as NodeType, label: 'Source Code', position: { x: 1, y: 1 } }
+		]);
+		render(DrawerCanvas, { nodes: mockNodes, onPhaseSelect: vi.fn() });
+		expect(screen.getByRole('button', { name: 'Source Code' })).toBeInTheDocument();
+	});
 
-  /*
+	/*
   // NOTE: This test is commented out due to a persistent, 
   // hard-to-debug timing issue in the test environment (Vitest + JSDOM). 
   // The single-click  test proves the event chain works, but this specific double-click case  fails unpredictably.
@@ -60,27 +60,27 @@ describe('DrawerCanvas Component', () => {
   });
   */
 
-  it('TestSingleClick_Failure: Does NOT fire event if clicks are too far apart', async () => {
-    const mockSelectHandler = vi.fn();
-    const mockNodes = writable([
-      { id: 'parser-1', type: 'parser' as NodeType, label: 'Parser', position: { x: 1, y: 1 } }
-    ]);
-    render(DrawerCanvas, {
-      nodes: mockNodes,
-      onPhaseSelect: mockSelectHandler
-    });
-    const nodeElement = screen.getByRole('button', { name: 'Parser' });
+	it('TestSingleClick_Failure: Does NOT fire event if clicks are too far apart', async () => {
+		const mockSelectHandler = vi.fn();
+		const mockNodes = writable([
+			{ id: 'parser-1', type: 'parser' as NodeType, label: 'Parser', position: { x: 1, y: 1 } }
+		]);
+		render(DrawerCanvas, {
+			nodes: mockNodes,
+			onPhaseSelect: mockSelectHandler
+		});
+		const nodeElement = screen.getByRole('button', { name: 'Parser' });
 
-    // First click
-    await fireEvent.click(nodeElement);
-    await tick();
+		// First click
+		await fireEvent.click(nodeElement);
+		await tick();
 
-    fakeTime += 500;
+		fakeTime += 500;
 
-    // Second click
-    await fireEvent.click(nodeElement);
-    await tick();
-    
-    expect(mockSelectHandler).not.toHaveBeenCalled();
-  });
+		// Second click
+		await fireEvent.click(nodeElement);
+		await tick();
+
+		expect(mockSelectHandler).not.toHaveBeenCalled();
+	});
 });
