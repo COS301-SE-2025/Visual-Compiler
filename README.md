@@ -15,9 +15,9 @@
 <br>
 
 <div align="center">
-    <img src="https://app.codecov.io/github/COS301-SE-2025/Visual-Compiler">
+    <img src="https://github.com/COS301-SE-2025/Visual-Compiler/actions/workflows/main.yml/badge.svg"> &nbsp;
+    <img src="https://codecov.io/gh/COS301-SE-2025/Visual-Compiler/branch/main/graph/badge.svg"> &nbsp;
     <img src="https://img.shields.io/github/issues/COS301-SE-2025/Visual-Compiler?label=Issues">
-    <img src="https://github.com/COS301-SE-2025/Visual-Compiler/actions/workflows/main.yml/badge.svg">
 </div>
 
 <br>
