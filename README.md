@@ -12,6 +12,17 @@
 </div>
 
 <br>
+<br>
+
+<div align="center">
+    <img src="https://app.codecov.io/github/COS301-SE-2025/Visual-Compiler">
+    <img src="https://img.shields.io/github/issues/COS301-SE-2025/Visual-Compiler?label=Issues">
+    <img src="https://github.com/COS301-SE-2025/Visual-Compiler/actions/workflows/main.yml/badge.svg">
+</div>
+
+<br>
+
+<h2 align="center">Technology Stack</h2>
 
 <div align="center">
     <h2>Project Boards</h2>
@@ -22,36 +33,77 @@
 
 <br>
 
+<h2 align="center">Documentation and Resources</h2>
+
 <div align="center">
-    <h2>Repository Structure</h2>
+    <table style="border-width: 1px;">
+    <tr>
+        <td><a href="https://www.canva.com/design/DAGrSSVK-QU/i083d2b_sUAxhoaNYEf4iQ/view?utm_content=DAGrSSVK-QU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h6a916b7fee">Presentation</a></td>
+        <td>Current presentation for the project</td>
+    </tr>
+    <tr>
+        <td><a href="https://docs.google.com/document/d/15WX0FavQEsOjaEiZ4pd0sGyy4147BWMH-JopldpOnLw/edit?usp=sharing">Software Requirements Specification</a></td>
+        <td>Overview of the system requirements</td>
+    </tr>
+    <tr>
+        <td><a href="https://docs.google.com/document/d/1ugqZaQD_qwDpzRkGnGatt2gd14xrCfl0PoQ1vLvogyE/edit?usp=sharing">Architectural Specification</a></td>
+        <td>Overview of the system design</td>
+    </tr>
+    <tr>
+        <td><a href="https://docs.google.com/document/d/1tVrhizcXNHjNbVq2HFYUWBuxHDrg89t30klhHsdpqTg/edit?usp=sharing">User Manual</a></td>
+        <td>Guidelines for navigating the web pages</td>
+    </tr>
+    <tr>
+        <td><a href="https://docs.google.com/document/d/1bI4XpA5oFn2Oc82GLs6eqSYKCDG_QYiBoueZU-l5xY8/edit?usp=sharing">Coding Standards</a></td>
+        <td>Guidelines for coding, testing and git</td>
+    </tr>
+    </table>
 </div>
 
-```
-    ├───📁.github
-    │   └───📁workflows
-    ├───📁assets
-    ├───📄docker-compose.yml
-    ├───📁docs
-    ├───📁logs
-    └───📁visual-compiler
-        ├───📁backend
-        │   ├───📁api
-        │   │   ├───📁handlers
-        │   │   ├───📁routers
-        │   │   └───📁tests
-        │   └───📁core
-        │       ├───📁db
-        │       ├───📁services
-        │       └───📁tests
-        ├───📁frontend
-        │   └───📁ui
-        │       ├───📁.svelte-kit
-        │       ├───📁src
-        │       │   ├───📁lib
-        │       │   └───📁routes
-        │       └───📁tests
-        └───📁tests
-```
+<div align="center">
+    <table style="border-width: 1px;">
+    <tr>
+        <td>Archive</td>
+        <td><a href="https://drive.google.com/drive/folders/1gZxrNcvqcn7gJSiDE_-Copuitz8FpEkN?usp=sharing">Demo 1</a></td>
+        <td><a href="https://drive.google.com/drive/folders/1Z_4HXzXW3FuWxgdJLlHaWxEYyhD6IC9B?usp=sharing">Demo 2</a></td>
+    </tr>
+    </table>
+</div>
+
+<br>
+
+<h2 align="center">Project Management</h2>
+
+<div align="center">
+    <table style="border-width: 1px;">
+    <tr>
+        <td>Project Boards</td>
+        <td><a href="https://github.com/orgs/COS301-SE-2025/projects/162">Frontend</a></td>
+        <td><a href="https://github.com/orgs/COS301-SE-2025/projects/171">Backend</a></td>
+        <td><a href="https://github.com/orgs/COS301-SE-2025/projects/173">Administration</a></td>
+    </tr>
+    </table>
+</div>
+
+<div align="center">
+    <table style="border-width: 1px;">
+        <tr>
+            <td rowspan="2" style="border: 0; text-align: center;">Branching Strategy</td>
+            <td>main</td>
+            <td>dev</td>
+            <td>feature/</td>
+            <td>fix/</td>
+            <td>enhance/</td>
+        </tr>
+        <tr>
+            <td>Production Ready</td>
+            <td>Latest Integration</td>
+            <td>In Progress</td>
+            <td>Minor Fixes</td>
+            <td>Improvements</td>
+        </tr>
+    </table>
+</div>
 
 <br>
 
@@ -143,3 +195,34 @@
         </td>
     </tr>
 </table>
+
+<br>
+
+<h2 align="center">Repository Structure</h2>
+
+```
+    ├───📁.github
+    │   └───📁workflows
+    ├───📁assets
+    ├───📄docker-compose.yml
+    └───📁visual-compiler
+        ├───📁backend
+        │   ├───📁api
+        │   │   ├───📁handlers
+        │   │   ├───📁routers
+        │   │   └───📁unit-tests
+        │   ├───📁core
+        │   │   ├───📁db
+        │   │   ├───📁services
+        │   │   └───📁unit-tests
+        │   └───📁tests
+        │       └───📁integration-tests
+        ├───📁frontend
+        │   ├───📁src
+        │   │   ├───📁lib
+        │   │   └───📁routes
+        │   └───📁tests
+        │       ├───📁integration-tests
+        │       └───📁unit-tests
+        └───📁tests
+```
