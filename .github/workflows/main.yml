@@ -29,7 +29,7 @@ jobs:
 
       - name: Tests for frontend
         working-directory: ./visual-compiler/frontend
-        run: npm test -- --coverage
+        run: npm run test -- --coverage
 
       - name: Upload coverage for frontend
         uses: codecov/codecov-action@v4
@@ -47,11 +47,6 @@ jobs:
       - name: Linting for Frontend using ESLint
         working-directory: ./visual-compiler/frontend
         run: npm run lint -- --fix
-
-      - name: Linting for Backend using Semgrep
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: ./visual-compiler/backend/.semgrep-go.yml
 
       - name: Go Modules Cache
         uses: actions/cache@v4
@@ -85,6 +80,11 @@ jobs:
           name: coverage-backend
           directory: ./visual-compiler/backend
           files: coverage.out
+
+      - name: Linting for Backend using Semgrep
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: ./visual-compiler/backend/.semgrep-go.yml
 
       - name: Docker Compose Installation
         run: |
