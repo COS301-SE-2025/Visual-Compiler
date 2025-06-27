@@ -6,7 +6,7 @@
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
 	import NavBar from '$lib/components/main/nav-bar.svelte';
-	import toolbox from '$lib/components/main/toolbox.svelte';
+	import Toolbox from '$lib/components/main/Toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 
@@ -139,7 +139,7 @@
 <div class="main">
 	<!-- svelte-ignore component_name_lowercase -->
 	<!-- svelte-ignore element_invalid_self_closing_tag -->
-	<toolbox {handleCreateNode} {tooltips} />
+	<Toolbox {handleCreateNode} {tooltips} />
 	<div class="workspace" bind:this={workspace_el} tabindex="-1">
 		<DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} />
 
