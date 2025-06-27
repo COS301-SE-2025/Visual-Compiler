@@ -44,7 +44,7 @@ describe('ParserArtifactViewer Component', () => {
 				'The generated Abstract Syntax Tree (AST) will be visualized here once it is generated.'
 			)
 		).toBeNull();
-		expect(screen.getByText('Artifacts: Syntax Tree')).toBeInTheDocument();
+		expect(screen.getByText('Syntax Tree')).toBeInTheDocument();
 
 		expect(screen.getByTestId('tree-display-container')).toBeInTheDocument();
 	});
