@@ -23,7 +23,10 @@ export default defineConfig(({ mode }) => ({
 						'tests/**/*.server.{test,spec}.{js,ts}'
 					],
 					setupFiles: ['./vitest-setup-client.ts']
-				}
+				},
+				resolve: {
+					conditions: ['browser'] 
+					},
 			},
 			{
 				extends: './vite.config.ts',
@@ -37,7 +40,4 @@ export default defineConfig(({ mode }) => ({
 			}
 		]
 	},
-	resolve: {
-		conditions: mode === 'test' ? ['browser'] : []
-	}
 }));
