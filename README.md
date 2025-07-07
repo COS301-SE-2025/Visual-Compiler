@@ -15,9 +15,9 @@
 <br>
 
 <div align="center">
-    <img src="https://app.codecov.io/github/COS301-SE-2025/Visual-Compiler">
+    <img src="https://github.com/COS301-SE-2025/Visual-Compiler/actions/workflows/main.yml/badge.svg"> &nbsp;
+    <img src="https://codecov.io/gh/COS301-SE-2025/Visual-Compiler/branch/main/graph/badge.svg"> &nbsp;
     <img src="https://img.shields.io/github/issues/COS301-SE-2025/Visual-Compiler?label=Issues">
-    <img src="https://github.com/COS301-SE-2025/Visual-Compiler/actions/workflows/main.yml/badge.svg">
 </div>
 
 <br>
@@ -25,10 +25,11 @@
 <h2 align="center">Technology Stack</h2>
 
 <div align="center">
-    <h2>Project Boards</h2>
-        <a href="https://github.com/orgs/COS301-SE-2025/projects/162">Frontend</a> &nbsp;|&nbsp;
-        <a href="https://github.com/orgs/COS301-SE-2025/projects/171">Backend</a> &nbsp;|&nbsp;
-        <a href="https://github.com/orgs/COS301-SE-2025/projects/173">Administration</a>
+    <img src="https://img.shields.io/badge/Svelte-FF3E00?style=for-the-badge&logo=svelte&logoColor=white"> &nbsp;&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white"> &nbsp;&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white"> &nbsp;&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white"> &nbsp;&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/Amazon-FF9900?style=for-the-badge&logo=amazon&logoColor=white">
 </div>
 
 <br>
@@ -38,7 +39,11 @@
 <div align="center">
     <table style="border-width: 1px;">
     <tr>
-        <td><a href="https://www.canva.com/design/DAGrSSVK-QU/i083d2b_sUAxhoaNYEf4iQ/view?utm_content=DAGrSSVK-QU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h6a916b7fee">Presentation</a></td>
+        <td><a href="https://www.canva.com/design/DAGrSSVK-QU/i083d2b_sUAxhoaNYEf4iQ/view?utm_content=DAGrSSVK-QU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h6a916b7fee">Demo 2 Slides</a></td>
+        <td>Current presentation for the project</td>
+    </tr>
+    <tr>
+        <td><a href="https://drive.google.com/file/d/1fS6YWn5QtnTmdgO1mV9lTeiBdilVLFUY/view?usp=sharing">Demo 2 Video</a></td>
         <td>Current presentation for the project</td>
     </tr>
     <tr>
