@@ -105,14 +105,14 @@ func ExitScope(symbol_table *SymbolTable) error {
 	return nil
 }
 
-// Name: CreateSymbolTable
+// Name: PerfromScopeCheck
 //
 // Parameters: []ScopeRule
 //
 // Return: SymbolTable, error
 //
-// Receive a syntax tree and scope rules, and create and return a symbol table
-func CreateSymbolTable(scope_rules []*ScopeRule, syntax_tree SyntaxTree) (SymbolTable, error) {
+// Receive a syntax tree and scope rules, and create and return a symbol table or error
+func PerfromScopeCheck(scope_rules []*ScopeRule, syntax_tree SyntaxTree) (SymbolTable, error) {
 
 	if syntax_tree.Root == nil {
 		return SymbolTable{}, fmt.Errorf("syntax tree is empty")
@@ -148,58 +148,65 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 		}
 	}
 
-	if current_tree_node.Symbol == "DECLARATION" {
+	//if current_tree_node.Symbol == "DECLARATION" {
 
-		new_symbol := Symbol{}
-		for _, child := range current_tree_node.Children {
-			if child.Symbol == "TYPE" {
-				if child.Value == "" && len(child.Children) > 0 {
+	new_symbol := Symbol{}
+	for _, child := range current_tree_node.Children {
+		if child.Symbol == "TYPE" {
+			if child.Value == "" && len(child.Children) > 0 {
+				current_child := child.Children[0]
+				for current_child.Value == "" {
+					if len(current_child.Children) > 0 {
+						current_child = current_child.Children[0]
+					}
+				}
+				new_symbol.Type = current_child.Value
+			} else {
+				new_symbol.Type = child.Value
+			}
+
+			//account for system must determine type of IDENTIFIER on its own
+			/*if new_symbol.Type == "" {
+
+			}*/
+		}
+
+		if child.Symbol == "IDENTIFIER" {
+			if child.Value == "" {
+				if len(child.Children) > 0 {
 					current_child := child.Children[0]
 					for current_child.Value == "" {
 						if len(current_child.Children) > 0 {
 							current_child = current_child.Children[0]
 						}
 					}
-					new_symbol.Type = current_child.Value
+					new_symbol.Name = current_child.Value
 				} else {
-					new_symbol.Type = child.Value
+					return fmt.Errorf("declaration has no name defined")
 				}
-
-				//account for system must determine type of IDENTIFIER on its own
-				/*if new_symbol.Type == "" {
-
-				}*/
+			} else {
+				new_symbol.Name = child.Value
 			}
-
-			if child.Symbol == "IDENTIFIER" {
-				if child.Value == "" {
-					if len(child.Children) > 0 {
-						current_child := child.Children[0]
-						for current_child.Value == "" {
-							if len(current_child.Children) > 0 {
-								current_child = current_child.Children[0]
-							}
-						}
-						new_symbol.Name = current_child.Value
-					} else {
-						return fmt.Errorf("declaration has no name defined")
-					}
-				} else {
-					new_symbol.Name = child.Value
-				}
-			}
-		}
-
-		if new_symbol.Name != "" && new_symbol.Type != "" {
-			new_symbol.Scope = len(symbol_table.SymbolScopes) - 1
-
-			err := BindSymbol(symbol_table, new_symbol)
-			if err != nil {
-				return err
-			}
-
 		}
 	}
+
+	if new_symbol.Name != "" && new_symbol.Type != "" {
+		new_symbol.Scope = len(symbol_table.SymbolScopes) - 1
+
+		err := BindSymbol(symbol_table, new_symbol)
+		if err != nil {
+			return err
+		}
+
+	}
+
+	if new_symbol.Type == "" && new_symbol.Name != "" {
+		_, err := LookupName(symbol_table, new_symbol.Name)
+		if err != nil {
+			return fmt.Errorf("variable not declared within it's scope: %v", new_symbol.Name)
+		}
+	}
+	//}
 
 	for _, child := range current_tree_node.Children {
 		err := TraverseSyntaxTree(scope_rules, child, symbol_table)

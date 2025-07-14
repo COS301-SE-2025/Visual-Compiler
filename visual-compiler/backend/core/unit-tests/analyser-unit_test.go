@@ -1,12 +1,13 @@
 package unit_tests
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/services"
 )
 
-func TestCreateSymbolTable_Valid(t *testing.T) {
+func TestPerformScopeCheck_Valid(t *testing.T) {
 
 	scope_rules := []*services.ScopeRule{
 		{Start: "{", End: "}"},
@@ -79,7 +80,7 @@ func TestCreateSymbolTable_Valid(t *testing.T) {
 		},
 	}
 
-	symbol_table, err := services.CreateSymbolTable(scope_rules, syntax_tree)
+	symbol_table, err := services.PerfromScopeCheck(scope_rules, syntax_tree)
 
 	if err != nil {
 		t.Errorf("Error: %v", err)
@@ -99,7 +100,7 @@ func TestCreateSymbolTable_Valid(t *testing.T) {
 
 }
 
-func TestCreateSymbolTable_SameSymbolNames(t *testing.T) {
+func TestPerformScopeCheck_SameSymbolNames_DifferentScope(t *testing.T) {
 
 	scope_rules := []*services.ScopeRule{
 		{Start: "{", End: "}"},
@@ -248,7 +249,7 @@ func TestCreateSymbolTable_SameSymbolNames(t *testing.T) {
 		},
 	}
 
-	symbol_table, err := services.CreateSymbolTable(scope_rules, syntax_tree)
+	symbol_table, err := services.PerfromScopeCheck(scope_rules, syntax_tree)
 
 	if err != nil {
 		t.Errorf("Error: %v", err)
@@ -264,6 +265,81 @@ func TestCreateSymbolTable_SameSymbolNames(t *testing.T) {
 			}
 		}
 
+	}
+
+}
+
+func TestPerformScopeCheck_UndeclaredSymbol(t *testing.T) {
+
+	scope_rules := []*services.ScopeRule{
+		{Start: "{", End: "}"},
+	}
+
+	syntax_tree := services.SyntaxTree{
+		Root: &services.TreeNode{
+			Symbol: "STATEMENT",
+			Value:  "",
+			Children: []*services.TreeNode{
+				{
+					Symbol: "DEFINE",
+					Value:  "",
+					Children: []*services.TreeNode{
+						{
+							Symbol: "IDENTIFIER",
+							Value:  "blue",
+						},
+						{
+							Symbol: "ASSIGNMENT",
+							Value:  "=",
+						},
+						{
+							Symbol: "EXPRESSION",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "13",
+										},
+									},
+								},
+								{
+									Symbol: "OPERATOR",
+									Value:  "+",
+								},
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "89",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Symbol: "SEPARATOR",
+					Value:  ";",
+				},
+			},
+		},
+	}
+
+	_, err := services.PerfromScopeCheck(scope_rules, syntax_tree)
+
+	if err == nil {
+		t.Errorf("Error expected for undeclared variable")
+	} else {
+		if err.Error() != fmt.Errorf("variable not declared within it's scope: blue").Error() {
+			t.Errorf("Incorrect error: %v", err)
+		}
 	}
 
 }
