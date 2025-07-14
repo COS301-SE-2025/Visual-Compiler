@@ -1,0 +1,829 @@
+basePath: /api
+definitions:
+  handlers.DeleteRequest:
+    properties:
+      id:
+        example: 685df259c1294de5546b045f
+        type: string
+    required:
+    - id
+    type: object
+  handlers.IDRequest:
+    properties:
+      users_id:
+        description: Represents the User's ID from frontend
+        type: string
+    required:
+    - users_id
+    type: object
+  handlers.LoginReq:
+    properties:
+      login:
+        description: Either the user's email or username
+        type: string
+      password:
+        description: User's password
+        type: string
+    required:
+    - login
+    - password
+    type: object
+  handlers.ReadGrammerFromUser:
+    properties:
+      rules:
+        description: User's defined rules
+        items:
+          $ref: '#/definitions/services.ParsingRule'
+        type: array
+      start:
+        description: User's defined start variable
+        example: S
+        type: string
+      terminals:
+        description: User's defined terminal variables
+        example:
+        - KEYWORD
+        - ' IDENTIFIER'
+        - ' OPERATOR'
+        - ' NUMBER'
+        - ' PUNCTUATION'
+        items:
+          type: string
+        type: array
+      users_id:
+        description: User's ID for storing purposes
+        example: 685df259c1294de5546b045f
+        type: string
+      variables:
+        description: User's defined variables
+        example:
+        - S
+        - ' Decl'
+        items:
+          type: string
+        type: array
+    required:
+    - rules
+    - start
+    - terminals
+    - users_id
+    - variables
+    type: object
+  handlers.Request:
+    properties:
+      email:
+        description: User's Email address
+        type: string
+      password:
+        description: User's password
+        minLength: 8
+        type: string
+      username:
+        description: User's username
+        minLength: 6
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
+  handlers.RulesRequest:
+    properties:
+      pairs:
+        description: Represents the pairs of Type and Regex
+        items:
+          $ref: '#/definitions/services.TypeRegex'
+        type: array
+      users_id:
+        description: Represents the User's ID from frontend
+        type: string
+    required:
+    - pairs
+    - users_id
+    type: object
+  handlers.SourceCodeOnlyRequest:
+    properties:
+      source_code:
+        description: Represents the User's source code
+        type: string
+      users_id:
+        description: Represents the User's ID from frontend
+        type: string
+    required:
+    - source_code
+    - users_id
+    type: object
+  handlers.readDFARequest:
+    properties:
+      accepting_states:
+        description: Represents the accepting states of the automata
+        items:
+          $ref: '#/definitions/services.AcceptingState'
+        type: array
+      start_state:
+        description: Represents the start state of the automata
+        type: string
+      states:
+        description: Represents the states of the automata
+        items:
+          type: string
+        type: array
+      transitions:
+        description: Represents the transitions of the automata
+        items:
+          $ref: '#/definitions/services.Transition'
+        type: array
+      users_id:
+        description: Represents the User's ID from frontend
+        type: string
+    required:
+    - users_id
+    type: object
+  services.AcceptingState:
+    properties:
+      state:
+        type: string
+      token_type:
+        type: string
+    type: object
+  services.ParsingRule:
+    properties:
+      input:
+        example: S
+        type: string
+      output:
+        example:
+        - Decl
+        items:
+          type: string
+        type: array
+    type: object
+  services.Transition:
+    properties:
+      from:
+        type: string
+      label:
+        type: string
+      to:
+        type: string
+    type: object
+  services.TypeRegex:
+    properties:
+      regex:
+        type: string
+      type:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Documentation for Visual Compiler API endpoints
+  title: Visual Compiler API
+  version: "1.0"
+paths:
+  /lexing/code:
+    post:
+      consumes:
+      - application/json
+      description: Takes the user's source code and stores it with the user's ID.
+        If a source code already exists, it overwrites that code and removes any other
+        created fields (tokens, dfa, nfa, rules)
+      parameters:
+      - description: Read Source Code From User
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SourceCodeOnlyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Source code successfully stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Store the user's source code
+      tags:
+      - Lexing
+  /lexing/dfa:
+    post:
+      consumes:
+      - application/json
+      description: Takes the user's DFA and stores it with the user's ID. If a DFA
+        already exists, it overwrites that DFA and removes any other created fields
+        (tokens, rules)
+      parameters:
+      - description: Read DFA from User
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.readDFARequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: DFA successfully and stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Reads DFA from user
+      tags:
+      - Lexing
+  /lexing/dfaToRegex:
+    post:
+      consumes:
+      - application/json
+      description: Searches the database for the user's DFA. If found, the DFA is
+        used to create the Regular Expressions (Rules). The Rules are either created
+        or ,if already existing, updated. If the DFA is not found, returns an error
+      parameters:
+      - description: Create Regex from Stored DFA
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.IDRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Rules successfully created and stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Conversion failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: DFA not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Converts stored DFA to Regular Expressions (Rules)
+      tags:
+      - Lexing
+  /lexing/dfaToTokens:
+    post:
+      consumes:
+      - application/json
+      description: Searches the database for the user's DFA. If found, the DFA and
+        code are used to create the tokens and/or unidentified tokens. The tokens
+        are either created or ,if already existing, updated. If the DFA and/or source
+        code is not found, returns an error
+      parameters:
+      - description: Create Tokens from Stored DFA
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.IDRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tokens successfully created and stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Tokenization failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: DFA/source code not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Creates tokens from a stored DFA and source code
+      tags:
+      - Lexing
+  /lexing/lexer:
+    post:
+      consumes:
+      - application/json
+      description: Searches the database for the user's rules. If found, the source
+        code and rules are used in the lexer to create the tokens and/or unidentified
+        tokens. The tokens are either created or ,if already existing, updated. If
+        the source code or rules are not found, returns an error
+      parameters:
+      - description: Create Tokens from Stored Code and Rules
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.IDRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tokens successfully created and stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Lexing failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Source code and/or rules not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Lexes the user's stored rules
+      tags:
+      - Lexing
+  /lexing/nfaToDFA:
+    post:
+      consumes:
+      - application/json
+      description: Searches the database for the user's NFA. If found, the NFA is
+        used to create the DFA. The DFA is either created or ,if already existing,
+        updated. If the NFA is not found, returns an error
+      parameters:
+      - description: Create DFA from NFA
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.IDRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: DFA successfully created and stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Conversion failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Rules not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Converts stored NFA to an DFA
+      tags:
+      - Lexing
+  /lexing/regexToDFA:
+    post:
+      consumes:
+      - application/json
+      description: Searches the database for the user's Rules. If found, the Rules
+        are used to create the DFA. The DFA is either created or ,if already existing,
+        updated. If the Rules are not found, returns an error
+      parameters:
+      - description: Create DFA from Stored Rules
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.IDRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: DFA successfully created and stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Conversion failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Rules not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Converts stored Rules to an DFA
+      tags:
+      - Lexing
+  /lexing/regexToNFA:
+    post:
+      consumes:
+      - application/json
+      description: Searches the database for the user's Rules. If found, the Rules
+        are used to create the NFA. The NFA is either created or ,if already existing,
+        updated. If the Rules are not found, returns an error
+      parameters:
+      - description: Create NFA from Stored Rules
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.IDRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: NFA successfully created and stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Conversion failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Rules not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Converts stored Rules to an NFA
+      tags:
+      - Lexing
+  /lexing/rules:
+    post:
+      consumes:
+      - application/json
+      description: Searches the database for the user's source code. If found, the
+        pairs defined by the user are used to create the rules. The rules are either
+        created or ,if already existing, updated. If the source code is not found,
+        returns an error
+      parameters:
+      - description: Read Pairs and From User to Create Rules
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RulesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Rules successfully created and stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Regex rules creation failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Source code not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create rules from stored source code
+      tags:
+      - Lexing
+  /parsing/grammar:
+    post:
+      consumes:
+      - application/json
+      description: Accepts grammar variables, terminals, start variable, and rules
+        from the user and stores them in the database. If it already exists, it updates
+        the current grammar
+      parameters:
+      - description: Read Grammer From User
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ReadGrammerFromUser'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Grammar successfully read and stored/updated
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input or Grammar failed to insert
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Processs and store user-defined grammer
+      tags:
+      - Parsing
+  /parsing/tree:
+    post:
+      consumes:
+      - application/json
+      description: Searches database for Grammar and Tokens. If found, and creates
+        and stores the tree.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Syntax tree successfully created and stored/updated
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input or Syntax Tree failed to insert
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Tokens or Grammer not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create and store syntax tree from stored grammar and tokens
+      tags:
+      - Parsing
+  /parsing/treeString:
+    post:
+      consumes:
+      - application/json
+      description: Searches database for an existing syntax tree. If found, and creates
+        and stores the tree as a string.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Syntax tree String successfully created and stored/updated
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input or Syntax Tree String failed to insert
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Syntax Tree not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create and store syntax tree as a string from stored tree
+      tags:
+      - Parsing
+  /users/delete:
+    delete:
+      consumes:
+      - application/json
+      description: Delete user by ID
+      parameters:
+      - description: Delete user by ID
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.DeleteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User deleted successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input or ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete User
+      tags:
+      - Users
+  /users/getUsers:
+    get:
+      consumes:
+      - application/json
+      description: Gets all users currently in the database
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Users successfully found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all users
+      tags:
+      - Users
+  /users/login:
+    post:
+      consumes:
+      - application/json
+      description: Login user with correct credentials
+      parameters:
+      - description: Login User
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginReq'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User login successful
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input or ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: User not found/Invalid credentials
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login User
+      tags:
+      - Users
+  /users/register:
+    post:
+      consumes:
+      - application/json
+      description: Register user with credentials
+      parameters:
+      - description: Register User
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.Request'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User registration successful
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input or ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Username taken
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register User
+      tags:
+      - Users
+swagger: "2.0"

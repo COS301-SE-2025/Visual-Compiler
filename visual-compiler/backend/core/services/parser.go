@@ -15,8 +15,8 @@ type Grammar struct {
 }
 
 type ParsingRule struct {
-	Input  string   `json:"input"`
-	Output []string `json:"output"`
+	Input  string   `json:"input" example:"S"`
+	Output []string `json:"output" example:"Decl"`
 }
 
 // Struct for the syntax tree
