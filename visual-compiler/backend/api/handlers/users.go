@@ -20,13 +20,14 @@ type UserPublic struct {
 	Email string `json:"email"`
 }
 
-// Name: GetAllUsers
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Returns a JSON object with all the users currently in the system.
+// @Summary Get all users
+// @Description Gets all users currently in the database
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Users successfully found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /users/getUsers [get]
 func GetAllUsers(c *gin.Context) {
 	client := db.ConnectClient()
 	collection := client.Database("visual-compiler").Collection("users")

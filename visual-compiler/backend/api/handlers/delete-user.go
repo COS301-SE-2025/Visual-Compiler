@@ -13,16 +13,20 @@ import (
 
 // Specifies what is required from the user as a JSON body DELETE request
 type DeleteRequest struct {
-	ID string `json:"id" binding:"required"`
+	ID string `json:"id" binding:"required" example:"685df259c1294de5546b045f"`
 }
 
-// Name: DeleteUser
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Deletes the specified user from the database. If the user doesnt exist, an error is returned
+// @Summary Delete User
+// @Description Delete user by ID
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param request body DeleteRequest true "Delete user by ID"
+// @Success 200 {object} map[string]string "User deleted successfully"
+// @Failure 400 {object} map[string]string "Invalid input or ID format"
+// @Failure 404 {object} map[string]string "User not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /users/delete [delete]
 func DeleteUser(c *gin.Context) {
 	var req DeleteRequest
 

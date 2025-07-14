@@ -13,6 +13,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
+// Specifies the JSON body request for storing source code
 type SourceCodeOnlyRequest struct {
 	// Represents the User's ID from frontend
 	UsersID bson.ObjectID `json:"users_id" binding:"required"`
@@ -34,13 +35,16 @@ type IDRequest struct {
 	UsersID bson.ObjectID `json:"users_id" binding:"required"`
 }
 
-// Name: StoreSourceCode
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Stores the user's source code in the database. If any rules, tokens, unidentified tokens, NFA or DFA already exist at this point, they will be cleared
+// @Summary Store the user's source code
+// @Description Takes the user's source code and stores it with the user's ID. If a source code already exists, it overwrites that code and removes any other created fields (tokens, dfa, nfa, rules)
+// @Tags Lexing
+// @Accept json
+// @Produce json
+// @Param request body SourceCodeOnlyRequest true "Read Source Code From User"
+// @Success 200 {object} map[string]string "Source code successfully stored"
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /lexing/code [post]
 func StoreSourceCode(c *gin.Context) {
 	var req SourceCodeOnlyRequest
 
@@ -95,13 +99,17 @@ func StoreSourceCode(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Code is ready for further processing"})
 }
 
-// Name: CreateRulesFromCode
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Stores the user's rules in the database. If any rules exist at this point, they will be cleared
+// @Summary Create rules from stored source code
+// @Description Searches the database for the user's source code. If found, the pairs defined by the user are used to create the rules. The rules are either created or ,if already existing, updated. If the source code is not found, returns an error
+// @Tags Lexing
+// @Accept json
+// @Produce json
+// @Param request body RulesRequest true "Read Pairs and From User to Create Rules"
+// @Success 200 {object} map[string]string "Rules successfully created and stored"
+// @Failure 400 {object} map[string]string "Invalid input/Regex rules creation failed"
+// @Failure 404 {object} map[string]string "Source code not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /lexing/rules [post]
 func CreateRulesFromCode(c *gin.Context) {
 	var req RulesRequest
 
@@ -154,13 +162,17 @@ func CreateRulesFromCode(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Rules successfully created."})
 }
 
-// Name: Lexing
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Lexes the user's stored code and rules to create tokens. If source code or rules dont exist, you have to create one
+// @Summary Lexes the user's stored rules
+// @Description Searches the database for the user's rules. If found, the source code and rules are used in the lexer to create the tokens and/or unidentified tokens. The tokens are either created or ,if already existing, updated. If the source code or rules are not found, returns an error
+// @Tags Lexing
+// @Accept json
+// @Produce json
+// @Param request body IDRequest true "Create Tokens from Stored Code and Rules"
+// @Success 200 {object} map[string]string "Tokens successfully created and stored"
+// @Failure 400 {object} map[string]string "Invalid input/Lexing failed"
+// @Failure 404 {object} map[string]string "Source code and/or rules not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /lexing/lexer [post]
 func Lexing(c *gin.Context) {
 	var req IDRequest
 
@@ -212,22 +224,30 @@ func Lexing(c *gin.Context) {
 	})
 }
 
+// Private struct for the DFA Request
 type readDFARequest struct {
-	States      []string                  `json:"states"`
-	Transitions []services.Transition     `json:"transitions"`
-	Start       string                    `json:"start_state"`
-	Accepting   []services.AcceptingState `json:"accepting_states"`
+	// Represents the states of the automata
+	States []string `json:"states"`
+	// Represents the transitions of the automata
+	Transitions []services.Transition `json:"transitions"`
+	// Represents the start state of the automata
+	Start string `json:"start_state"`
+	// Represents the accepting states of the automata
+	Accepting []services.AcceptingState `json:"accepting_states"`
 	// Represents the User's ID from frontend
 	UsersID bson.ObjectID `json:"users_id" binding:"required"`
 }
 
-// Name: ReadDFAFromUser
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Creates a DFA from the users entered DFA request parameters and stores it in the database. If there is already tokens, unidentified tokens or rules, they will be cleared
+// @Summary Reads DFA from user
+// @Description Takes the user's DFA and stores it with the user's ID. If a DFA already exists, it overwrites that DFA and removes any other created fields (tokens, rules)
+// @Tags Lexing
+// @Accept json
+// @Produce json
+// @Param request body readDFARequest true "Read DFA from User"
+// @Success 200 {object} map[string]string "DFA successfully and stored"
+// @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /lexing/dfa [post]
 func ReadDFAFromUser(c *gin.Context) {
 	var req readDFARequest
 
@@ -298,13 +318,17 @@ func ReadDFAFromUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "DFA successfuly created. Ready to create tokens"})
 }
 
-// Name: TokensFromDFA
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Creates tokens from the users stored DFA. If there is no code or DFA, an error is returned
+// @Summary Creates tokens from a stored DFA and source code
+// @Description Searches the database for the user's DFA. If found, the DFA and code are used to create the tokens and/or unidentified tokens. The tokens are either created or ,if already existing, updated. If the DFA and/or source code is not found, returns an error
+// @Tags Lexing
+// @Accept json
+// @Produce json
+// @Param request body IDRequest true "Create Tokens from Stored DFA"
+// @Success 200 {object} map[string]string "Tokens successfully created and stored"
+// @Failure 400 {object} map[string]string "Invalid input/Tokenization failed"
+// @Failure 404 {object} map[string]string "DFA/source code not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /lexing/dfaToTokens [post]
 func TokensFromDFA(c *gin.Context) {
 	var req IDRequest
 
@@ -358,13 +382,17 @@ func TokensFromDFA(c *gin.Context) {
 	})
 }
 
-// Name: ConvertDFAtoRG
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Converts user's stored DFA to regular expressions. If there is no stored DFA for that user, an error is showed
+// @Summary Converts stored DFA to Regular Expressions (Rules)
+// @Description Searches the database for the user's DFA. If found, the DFA is used to create the Regular Expressions (Rules). The Rules are either created or ,if already existing, updated. If the DFA is not found, returns an error
+// @Tags Lexing
+// @Accept json
+// @Produce json
+// @Param request body IDRequest true "Create Regex from Stored DFA"
+// @Success 200 {object} map[string]string "Rules successfully created and stored"
+// @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
+// @Failure 404 {object} map[string]string "DFA not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /lexing/dfaToRegex [post]
 func ConvertDFAToRG(c *gin.Context) {
 	var req IDRequest
 
@@ -412,13 +440,17 @@ func ConvertDFAToRG(c *gin.Context) {
 	})
 }
 
-// Name: ConvertRGToNFA
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Converts regular expressions to NFA. If no regular expression is stored, an error is returned
+// @Summary Converts stored Rules to an NFA
+// @Description Searches the database for the user's Rules. If found, the Rules are used to create the NFA. The NFA is either created or ,if already existing, updated. If the Rules are not found, returns an error
+// @Tags Lexing
+// @Accept json
+// @Produce json
+// @Param request body IDRequest true "Create NFA from Stored Rules"
+// @Success 200 {object} map[string]string "NFA successfully created and stored"
+// @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
+// @Failure 404 {object} map[string]string "Rules not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /lexing/regexToNFA [post]
 func ConvertRGToNFA(c *gin.Context) {
 	var req IDRequest
 
@@ -471,13 +503,17 @@ func ConvertRGToNFA(c *gin.Context) {
 	})
 }
 
-// Name: ConvertRGToDFA
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Converts regular expressions to DFA. If no regular expression is stored, an error is returned
+// @Summary Converts stored Rules to an DFA
+// @Description Searches the database for the user's Rules. If found, the Rules are used to create the DFA. The DFA is either created or ,if already existing, updated. If the Rules are not found, returns an error
+// @Tags Lexing
+// @Accept json
+// @Produce json
+// @Param request body IDRequest true "Create DFA from Stored Rules"
+// @Success 200 {object} map[string]string "DFA successfully created and stored"
+// @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
+// @Failure 404 {object} map[string]string "Rules not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /lexing/regexToDFA [post]
 func ConvertRGToDFA(c *gin.Context) {
 	var req IDRequest
 
@@ -530,13 +566,17 @@ func ConvertRGToDFA(c *gin.Context) {
 	})
 }
 
-// Name: ConvertNFAToDFA
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Converts NFA to DFA. If no NFA is stored, an error is returned
+// @Summary Converts stored NFA to an DFA
+// @Description Searches the database for the user's NFA. If found, the NFA is used to create the DFA. The DFA is either created or ,if already existing, updated. If the NFA is not found, returns an error
+// @Tags Lexing
+// @Accept json
+// @Produce json
+// @Param request body IDRequest true "Create DFA from NFA"
+// @Success 200 {object} map[string]string "DFA successfully created and stored"
+// @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
+// @Failure 404 {object} map[string]string "Rules not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /lexing/nfaToDFA [post]
 func ConvertNFAToDFA(c *gin.Context) {
 	var req IDRequest
 
