@@ -7,11 +7,17 @@ import (
 type Symbol struct {
 	Name  string
 	Type  string
-	Scope string
+	Scope int
 }
 
 type SymbolTable struct {
 	SymbolScopes []map[string]Symbol
+}
+
+type ScopeRule struct {
+	Start   string `json:"start"`
+	End     string `json:"end"`
+	Entered bool
 }
 
 // Name: CreateEmptySymbolTable
@@ -101,16 +107,141 @@ func ExitScope(symbol_table *SymbolTable) error {
 
 // Name: CreateSymbolTable
 //
-// Parameters: SyntaxTree
+// Parameters: []ScopeRule
 //
-// Return: SyntaxTree, error
+// Return: SymbolTable, error
 //
-// Receive a syntax tree and perform type checking and scope checking to return a symbol table
-func CreateSymbolTable(syntax_tree SyntaxTree) (SyntaxTree, error) {
+// Receive a syntax tree and scope rules, and create and return a symbol table
+func CreateSymbolTable(scope_rules []*ScopeRule, syntax_tree SyntaxTree) (SymbolTable, error) {
 
 	if syntax_tree.Root == nil {
-		return syntax_tree, fmt.Errorf("syntax tree is empty")
+		return SymbolTable{}, fmt.Errorf("syntax tree is empty")
 	}
 
-	return syntax_tree, fmt.Errorf("error")
+	symbol_table := CreateEmptySymbolTable()
+
+	err := TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table)
+	if err != nil {
+		return *symbol_table, err
+	}
+
+	return *symbol_table, nil
+}
+
+// Name: TraverseSyntaxTree
+//
+// Parameters: []ScopeRule,*TreeNode,*SymbolTable
+//
+// Return: error
+//
+// Function used to recursively traverse the syntax tree and build the symbol table
+func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, symbol_table *SymbolTable) error {
+
+	if current_tree_node == nil {
+		return nil
+	}
+
+	for _, rule := range scope_rules {
+		if current_tree_node.Value == rule.Start {
+			EnterNewScope(symbol_table)
+			rule.Entered = true
+		}
+	}
+
+	if current_tree_node.Symbol == "DECLARATION" {
+
+		new_symbol := Symbol{}
+		for _, child := range current_tree_node.Children {
+			if child.Symbol == "TYPE" {
+				if child.Value == "" && len(child.Children) > 0 {
+					current_child := child.Children[0]
+					for current_child.Value == "" {
+						if len(current_child.Children) > 0 {
+							current_child = current_child.Children[0]
+						}
+					}
+					new_symbol.Type = current_child.Value
+				} else {
+					new_symbol.Type = child.Value
+				}
+
+				//account for system must determine type of IDENTIFIER on its own
+				/*if new_symbol.Type == "" {
+
+				}*/
+			}
+
+			if child.Symbol == "IDENTIFIER" {
+				if child.Value == "" {
+					if len(child.Children) > 0 {
+						current_child := child.Children[0]
+						for current_child.Value == "" {
+							if len(current_child.Children) > 0 {
+								current_child = current_child.Children[0]
+							}
+						}
+						new_symbol.Name = current_child.Value
+					} else {
+						return fmt.Errorf("declaration has no name defined")
+					}
+				} else {
+					new_symbol.Name = child.Value
+				}
+			}
+		}
+
+		if new_symbol.Name != "" && new_symbol.Type != "" {
+			new_symbol.Scope = len(symbol_table.SymbolScopes) - 1
+
+			err := BindSymbol(symbol_table, new_symbol)
+			if err != nil {
+				return err
+			}
+
+		}
+	}
+
+	for _, child := range current_tree_node.Children {
+		err := TraverseSyntaxTree(scope_rules, child, symbol_table)
+		if err != nil {
+			return err
+		}
+	}
+
+	for _, rule := range scope_rules {
+		if current_tree_node.Value == rule.End {
+			if rule.Entered {
+
+				ExitScope(symbol_table)
+				rule.Entered = false
+
+			} else {
+				return fmt.Errorf("end scope symbol found without starting scope, please recheck source code")
+			}
+		}
+	}
+
+	return nil
+}
+
+// Name: StringifySymbolTable
+//
+// Parameters: SymbolTable
+//
+// Return: string
+//
+// Returns a string that converts the symbol table to a string
+func StringifySymbolTable(symbol_table SymbolTable) string {
+
+	output := "-------------------------------------------------------------------------- \nSYMBOL TABLE\n"
+
+	for _, scope := range symbol_table.SymbolScopes {
+		for _, symbol := range scope {
+			output += fmt.Sprintf("  Name: %v  Type: %v  Scope: %v\n", symbol.Name, symbol.Type, symbol.Scope)
+		}
+	}
+	output += "--------------------------------------------------------------------------\n"
+
+	return output
+
 }
