@@ -23,13 +23,17 @@ type Request struct {
 	Username string `json:"username" binding:"required,min=6"`
 }
 
-// Name: Register
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Registers a user into the database. If any inputs are missing, an error is displayed
+// @Summary Register User
+// @Description Register user with credentials
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param request body Request true "Register User"
+// @Success 201 {object} map[string]string "User registration successful"
+// @Failure 400 {object} map[string]string "Invalid input or ID format"
+// @Failure 409 {object} map[string]string "Username taken"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /users/register [post]
 func Register(c *gin.Context) {
 	var req Request
 

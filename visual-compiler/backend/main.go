@@ -7,17 +7,18 @@ import (
 
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/routers"
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/db"
+	_ "github.com/COS301-SE-2025/Visual-Compiler/backend/docs"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
-// Name: GetAllUsers
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Entry point of the API. Initializes the necessary services, sets up the routes and the GIN framework and starts the http server. Responsibile for bootstrapping the backend infrastructure required. If any setup fails, the application will log the error and exit the application
+// @title Visual Compiler API
+// @version 1.0
+// @description Documentation for Visual Compiler API endpoints
+// @host localhost:8080
+// @BasePath /api
 func main() {
 	db.ConnectClient()
 
@@ -53,6 +54,10 @@ func main() {
 		c.Request.URL.Path = c.Param("any")
 		api_parsing_routes.HandleContext(c)
 	})
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+
+	log.Println("Swagger available at: http://localhost:8080/swagger/index.html")
 
 	log.Println("Starting backend server on: http://localhost:8080/api")
 	if err := router.Run(":8080"); err != nil {
