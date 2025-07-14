@@ -7,7 +7,340 @@ import (
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/services"
 )
 
+func TestCreateEmptySymbolTable(t *testing.T) {
+
+	symbol_table := services.CreateEmptySymbolTable()
+
+	if symbol_table == nil {
+		t.Errorf("empty symbol table creation failed")
+	} else {
+		if symbol_table.SymbolScopes != nil {
+			if len(symbol_table.SymbolScopes) != 1 {
+				t.Errorf("empty symbol table creation failed")
+			} else {
+				if symbol_table.SymbolScopes[0] == nil {
+					t.Errorf("empty symbol table creation failed")
+				}
+			}
+		} else {
+			t.Errorf("empty symbol table creation failed")
+		}
+	}
+
+}
+
+func TestCreateEmptySymbolTableArtefact(t *testing.T) {
+
+	symbol_table_artefact := services.CreateEmptySymbolTableArtefact()
+
+	if symbol_table_artefact == nil {
+		t.Errorf("empty symbol table creation artefact failed")
+	} else {
+		if symbol_table_artefact.SymbolScopes == nil {
+			t.Errorf("empty symbol table artefact creation failed")
+		}
+	}
+
+}
+
+func TestBindSymbol_SymbolExists(t *testing.T) {
+
+	symbol := services.Symbol{
+		Name: "blue", Type: "int", Scope: 0,
+	}
+
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
+	}
+
+	err := services.BindSymbol(symbol_table, symbol)
+
+	if err == nil {
+		t.Errorf("error expected")
+	} else {
+		if err.Error() != fmt.Errorf("symbol already declared in scope: blue").Error() {
+			t.Errorf("incorrect error returned: %v", err)
+		}
+	}
+}
+
+func TestBindSymbol_NoSymbolExists(t *testing.T) {
+	symbol := services.Symbol{
+		Name: "red", Type: "int", Scope: 0,
+	}
+
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
+	}
+
+	err := services.BindSymbol(symbol_table, symbol)
+
+	if err != nil {
+		t.Errorf("error: %v", err)
+	}
+}
+
+func TestLookUpName_NameFound(t *testing.T) {
+
+	expected_res := services.Symbol{
+		Name: "blue", Type: "int", Scope: 0,
+	}
+
+	symbol_name := "blue"
+
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
+	}
+
+	symbol, err := services.LookupName(symbol_table, symbol_name)
+
+	if err != nil {
+		t.Errorf("error: %v", err)
+	} else {
+		if symbol.Name != expected_res.Name && symbol.Type != expected_res.Type && symbol.Scope != expected_res.Scope {
+			t.Errorf("Incorrect symbol found: %v %v %v", symbol.Name, symbol.Type, symbol.Scope)
+		}
+	}
+}
+
+func TestLookUpName_NameNotFound(t *testing.T) {
+
+	symbol_name := "red"
+
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
+	}
+
+	_, err := services.LookupName(symbol_table, symbol_name)
+
+	if err == nil {
+		t.Errorf("error expected")
+	} else {
+		if err.Error() != fmt.Errorf("symbol not found").Error() {
+			t.Errorf("incorrect error: %v", err)
+		}
+	}
+}
+
+func TestEnterNewScope(t *testing.T) {
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
+	}
+
+	services.EnterNewScope(symbol_table)
+
+	if len(symbol_table.SymbolScopes) != 2 {
+		t.Errorf("Incorrect table length")
+	}
+}
+
+func TestExitScope_Valid(t *testing.T) {
+
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+				"red": {
+					Name:  "red",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+			{
+				"red": {
+					Name:  "red",
+					Type:  "int",
+					Scope: 1,
+				},
+			},
+		},
+	}
+
+	err := services.ExitScope(symbol_table)
+
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	if len(symbol_table.SymbolScopes) != 1 {
+		t.Errorf("Incorrect table length")
+	}
+}
+
+func TestExitScope_GlobalScope(t *testing.T) {
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{},
+		},
+	}
+
+	err := services.ExitScope(symbol_table)
+
+	if err == nil {
+		t.Errorf("error expected")
+	}
+	if len(symbol_table.SymbolScopes) != 1 {
+		t.Errorf("Incorrect table length")
+	}
+}
+
+func TestPerformScopeCheck_EmptySyntaxTree(t *testing.T) {
+
+	scope_rules := []*services.ScopeRule{
+		{Start: "{", End: "}"},
+	}
+
+	syntax_tree := services.SyntaxTree{}
+
+	_, err := services.PerformScopeCheck(scope_rules, syntax_tree)
+
+	if err == nil {
+		t.Errorf("Error expected")
+	} else {
+
+		if err.Error() != fmt.Errorf("syntax tree is empty").Error() {
+			t.Errorf("incorrect error: %v", err)
+		}
+
+	}
+
+}
+
+func TestPerformScopeCheck_Error(t *testing.T) {
+
+	scope_rules := []*services.ScopeRule{
+		{Start: "{", End: "}"},
+	}
+
+	syntax_tree := services.SyntaxTree{
+		Root: &services.TreeNode{
+			Symbol: "STATEMENT",
+			Value:  "",
+			Children: []*services.TreeNode{
+				{
+					Symbol: "DECLARATION",
+					Value:  "",
+					Children: []*services.TreeNode{
+						{
+							Symbol: "TYPE",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "KEYWORD",
+									Value:  "int",
+								},
+							},
+						},
+						{
+							Symbol: "IDENTIFIER",
+							Value:  "",
+						},
+						{
+							Symbol: "ASSIGNMENT",
+							Value:  "=",
+						},
+						{
+							Symbol: "EXPRESSION",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "13",
+										},
+									},
+								},
+								{
+									Symbol: "OPERATOR",
+									Value:  "+",
+								},
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "89",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Symbol: "SEPARATOR",
+					Value:  ";",
+				},
+			},
+		},
+	}
+
+	_, err := services.PerformScopeCheck(scope_rules, syntax_tree)
+
+	if err == nil {
+		t.Errorf("Error expected")
+	} else {
+
+		if err.Error() != fmt.Errorf("declaration has no name defined").Error() {
+			t.Errorf("incorrect error: %v", err)
+		}
+
+	}
+
+}
+
 func TestPerformScopeCheck_Valid(t *testing.T) {
+
+	expected_res := []services.Symbol{
+		{Type: "int", Name: "blue", Scope: 0},
+	}
 
 	scope_rules := []*services.ScopeRule{
 		{Start: "{", End: "}"},
@@ -80,19 +413,19 @@ func TestPerformScopeCheck_Valid(t *testing.T) {
 		},
 	}
 
-	symbol_table, err := services.PerfromScopeCheck(scope_rules, syntax_tree)
+	symbol_table_artefact, err := services.PerformScopeCheck(scope_rules, syntax_tree)
 
 	if err != nil {
 		t.Errorf("Error: %v", err)
 	} else {
 
-		for _, scope := range symbol_table.SymbolScopes {
-			symbol, err := scope["blue"]
-			if err != true {
-				t.Errorf("Error: Blue not found")
-			}
-			if symbol.Name != "blue" && symbol.Scope != 0 && symbol.Type != "int" {
-				t.Errorf("Symbol is incorrect: %v %v %v", symbol.Name, symbol.Scope, symbol.Type)
+		if len(symbol_table_artefact.SymbolScopes) != len(expected_res) {
+			t.Errorf("not enough symbols identified")
+		} else {
+			for i, symbol := range symbol_table_artefact.SymbolScopes {
+				if symbol.Name != expected_res[i].Name && symbol.Type != expected_res[i].Type && symbol.Scope != expected_res[i].Scope {
+					t.Errorf("Symbol is incorrect: %v %v %v", symbol.Name, symbol.Scope, symbol.Type)
+				}
 			}
 		}
 
@@ -101,6 +434,11 @@ func TestPerformScopeCheck_Valid(t *testing.T) {
 }
 
 func TestPerformScopeCheck_SameSymbolNames_DifferentScope(t *testing.T) {
+
+	expected_res := []services.Symbol{
+		{Type: "int", Name: "blue", Scope: 0},
+		{Type: "int", Name: "blue", Scope: 1},
+	}
 
 	scope_rules := []*services.ScopeRule{
 		{Start: "{", End: "}"},
@@ -249,19 +587,19 @@ func TestPerformScopeCheck_SameSymbolNames_DifferentScope(t *testing.T) {
 		},
 	}
 
-	symbol_table, err := services.PerfromScopeCheck(scope_rules, syntax_tree)
+	symbol_table_artefact, err := services.PerformScopeCheck(scope_rules, syntax_tree)
 
 	if err != nil {
 		t.Errorf("Error: %v", err)
 	} else {
 
-		for _, scope := range symbol_table.SymbolScopes {
-			symbol, err := scope["blue"]
-			if err != true {
-				t.Errorf("Error: blue not found")
-			}
-			if symbol.Name != "blue" && symbol.Scope != 0 && symbol.Type != "int" {
-				t.Errorf("Symbol is incorrect: %v %v %v", symbol.Name, symbol.Scope, symbol.Type)
+		if len(symbol_table_artefact.SymbolScopes) != len(expected_res) {
+			t.Errorf("not enough symbols identified")
+		} else {
+			for i, symbol := range symbol_table_artefact.SymbolScopes {
+				if symbol.Name != expected_res[i].Name && symbol.Type != expected_res[i].Type && symbol.Scope != expected_res[i].Scope {
+					t.Errorf("Symbol is incorrect: %v %v %v", symbol.Name, symbol.Scope, symbol.Type)
+				}
 			}
 		}
 
@@ -332,7 +670,7 @@ func TestPerformScopeCheck_UndeclaredSymbol(t *testing.T) {
 		},
 	}
 
-	_, err := services.PerfromScopeCheck(scope_rules, syntax_tree)
+	_, err := services.PerformScopeCheck(scope_rules, syntax_tree)
 
 	if err == nil {
 		t.Errorf("Error expected for undeclared variable")
@@ -342,4 +680,501 @@ func TestPerformScopeCheck_UndeclaredSymbol(t *testing.T) {
 		}
 	}
 
+}
+
+func TestPerformScopeCheck_NoEndScope(t *testing.T) {
+	scope_rules := []*services.ScopeRule{
+		{Start: "{", End: "}"},
+	}
+
+	syntax_tree := services.SyntaxTree{
+		Root: &services.TreeNode{
+			Symbol: "STATEMENT",
+			Value:  "{",
+			Children: []*services.TreeNode{
+				{
+					Symbol: "DECLARATION",
+					Value:  "",
+					Children: []*services.TreeNode{
+						{
+							Symbol: "TYPE",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "KEYWORD",
+									Value:  "int",
+								},
+							},
+						},
+						{
+							Symbol: "IDENTIFIER",
+							Value:  "blue",
+						},
+						{
+							Symbol: "ASSIGNMENT",
+							Value:  "=",
+						},
+						{
+							Symbol: "EXPRESSION",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "13",
+										},
+									},
+								},
+								{
+									Symbol: "OPERATOR",
+									Value:  "+",
+								},
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "89",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Symbol: "SEPARATOR",
+					Value:  ";",
+				},
+			},
+		},
+	}
+
+	_, err := services.PerformScopeCheck(scope_rules, syntax_tree)
+
+	if err == nil {
+		t.Errorf("Error expected")
+	} else {
+
+		if err.Error() != fmt.Errorf("end scope symbol not found for start scope, please recheck source code").Error() {
+			t.Errorf("incorrect error: %v", err)
+		}
+
+	}
+}
+
+func TestTraverseSyntaxTree_NilNode(t *testing.T) {
+	scope_rules := []*services.ScopeRule{
+		{Start: "{", End: "}"},
+	}
+
+	syntax_tree := services.SyntaxTree{
+		Root: &services.TreeNode{},
+	}
+
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
+	}
+
+	symbol_table_artefact := &services.SymbolTableArtefact{
+		SymbolScopes: []services.Symbol{
+			{Name: "blue", Type: "int", Scope: 0},
+		},
+	}
+
+	err := services.TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table, symbol_table_artefact)
+
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+}
+
+func TestTraverseSyntaxTree_NoName(t *testing.T) {
+	scope_rules := []*services.ScopeRule{
+		{Start: "{", End: "}"},
+	}
+
+	syntax_tree := services.SyntaxTree{
+		Root: &services.TreeNode{
+			Symbol: "STATEMENT",
+			Value:  "",
+			Children: []*services.TreeNode{
+				{
+					Symbol: "DECLARATION",
+					Value:  "",
+					Children: []*services.TreeNode{
+						{
+							Symbol: "TYPE",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "KEYWORD",
+									Value:  "int",
+								},
+							},
+						},
+						{
+							Symbol: "IDENTIFIER",
+							Value:  "",
+						},
+						{
+							Symbol: "ASSIGNMENT",
+							Value:  "=",
+						},
+						{
+							Symbol: "EXPRESSION",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "13",
+										},
+									},
+								},
+								{
+									Symbol: "OPERATOR",
+									Value:  "+",
+								},
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "89",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Symbol: "SEPARATOR",
+					Value:  ";",
+				},
+			},
+		},
+	}
+
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
+	}
+
+	symbol_table_artefact := &services.SymbolTableArtefact{
+		SymbolScopes: []services.Symbol{
+			{Name: "blue", Type: "int", Scope: 0},
+		},
+	}
+
+	err := services.TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table, symbol_table_artefact)
+
+	if err == nil {
+		t.Errorf("Error expected")
+	} else {
+
+		if err.Error() != fmt.Errorf("declaration has no name defined").Error() {
+			t.Errorf("incorrect error: %v", err)
+		}
+
+	}
+}
+
+func TestTraverseSyntaxTree_VariableNotDeclared(t *testing.T) {
+	scope_rules := []*services.ScopeRule{
+		{Start: "{", End: "}"},
+	}
+
+	syntax_tree := services.SyntaxTree{
+		Root: &services.TreeNode{
+			Symbol: "STATEMENT",
+			Value:  "",
+			Children: []*services.TreeNode{
+				{
+					Symbol: "DECLARATION",
+					Value:  "",
+					Children: []*services.TreeNode{
+						{
+							Symbol: "IDENTIFIER",
+							Value:  "blue",
+						},
+						{
+							Symbol: "ASSIGNMENT",
+							Value:  "=",
+						},
+						{
+							Symbol: "EXPRESSION",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "13",
+										},
+									},
+								},
+								{
+									Symbol: "OPERATOR",
+									Value:  "+",
+								},
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "89",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Symbol: "SEPARATOR",
+					Value:  ";",
+				},
+			},
+		},
+	}
+
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{},
+		},
+	}
+
+	symbol_table_artefact := &services.SymbolTableArtefact{
+		SymbolScopes: []services.Symbol{
+			{Name: "blue", Type: "int", Scope: 0},
+		},
+	}
+
+	err := services.TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table, symbol_table_artefact)
+
+	if err == nil {
+		t.Errorf("Error expected")
+	} else {
+
+		if err.Error() != fmt.Errorf("variable not declared within it's scope: blue").Error() {
+			t.Errorf("incorrect error: %v", err)
+		}
+
+	}
+}
+
+func TestTraverseSyntaxTree_NoStartScope(t *testing.T) {
+	scope_rules := []*services.ScopeRule{
+		{Start: "{", End: "}"},
+	}
+
+	syntax_tree := services.SyntaxTree{
+		Root: &services.TreeNode{
+			Symbol: "STATEMENT",
+			Value:  "}",
+			Children: []*services.TreeNode{
+				{
+					Symbol: "DECLARATION",
+					Value:  "",
+					Children: []*services.TreeNode{
+						{
+							Symbol: "TYPE",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "KEYWORD",
+									Value:  "int",
+								},
+							},
+						},
+						{
+							Symbol: "IDENTIFIER",
+							Value:  "blue",
+						},
+						{
+							Symbol: "ASSIGNMENT",
+							Value:  "=",
+						},
+						{
+							Symbol: "EXPRESSION",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "13",
+										},
+									},
+								},
+								{
+									Symbol: "OPERATOR",
+									Value:  "+",
+								},
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "89",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Symbol: "SEPARATOR",
+					Value:  ";",
+				},
+			},
+		},
+	}
+
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{},
+		},
+	}
+
+	symbol_table_artefact := &services.SymbolTableArtefact{
+		SymbolScopes: []services.Symbol{
+			{Name: "blue", Type: "int", Scope: 0},
+		},
+	}
+
+	err := services.TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table, symbol_table_artefact)
+
+	if err == nil {
+		t.Errorf("Error expected")
+	} else {
+
+		if err.Error() != fmt.Errorf("end scope symbol found without starting scope, please recheck source code").Error() {
+			t.Errorf("incorrect error: %v", err)
+		}
+
+	}
+}
+
+func TestTraverseSyntaxTree_Valid(t *testing.T) {
+	scope_rules := []*services.ScopeRule{
+		{Start: "{", End: "}"},
+	}
+
+	syntax_tree := services.SyntaxTree{
+		Root: &services.TreeNode{
+			Symbol: "STATEMENT",
+			Value:  "",
+			Children: []*services.TreeNode{
+				{
+					Symbol: "DECLARATION",
+					Value:  "",
+					Children: []*services.TreeNode{
+						{
+							Symbol: "TYPE",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "KEYWORD",
+									Value:  "int",
+								},
+							},
+						},
+						{
+							Symbol: "IDENTIFIER",
+							Value:  "blue",
+						},
+						{
+							Symbol: "ASSIGNMENT",
+							Value:  "=",
+						},
+						{
+							Symbol: "EXPRESSION",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "13",
+										},
+									},
+								},
+								{
+									Symbol: "OPERATOR",
+									Value:  "+",
+								},
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "89",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Symbol: "SEPARATOR",
+					Value:  ";",
+				},
+			},
+		},
+	}
+
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{},
+		},
+	}
+
+	symbol_table_artefact := &services.SymbolTableArtefact{
+		SymbolScopes: []services.Symbol{
+			{Name: "blue", Type: "int", Scope: 0},
+		},
+	}
+
+	err := services.TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table, symbol_table_artefact)
+
+	if err != nil {
+		t.Errorf("%v", err)
+	}
 }

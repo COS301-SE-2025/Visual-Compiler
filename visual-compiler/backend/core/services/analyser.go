@@ -14,6 +14,10 @@ type SymbolTable struct {
 	SymbolScopes []map[string]Symbol
 }
 
+type SymbolTableArtefact struct {
+	SymbolScopes []Symbol
+}
+
 type ScopeRule struct {
 	Start   string `json:"start"`
 	End     string `json:"end"`
@@ -33,6 +37,20 @@ func CreateEmptySymbolTable() *SymbolTable {
 		SymbolScopes: []map[string]Symbol{
 			make(map[string]Symbol),
 		},
+	}
+}
+
+// Name: CreateEmptySymbolTableArtefact
+//
+// Parameters: none
+//
+// Return: *SymbolTableArtefact
+//
+// Create an empty symbol table artefact with an empty scope data and return the memory address to it
+func CreateEmptySymbolTableArtefact() *SymbolTableArtefact {
+
+	return &SymbolTableArtefact{
+		SymbolScopes: []Symbol{},
 	}
 
 }
@@ -105,27 +123,36 @@ func ExitScope(symbol_table *SymbolTable) error {
 	return nil
 }
 
-// Name: PerfromScopeCheck
+// Name: PerformScopeCheck
 //
-// Parameters: []ScopeRule
+// Parameters: []ScopeRule,SyntaxTree
 //
 // Return: SymbolTable, error
 //
-// Receive a syntax tree and scope rules, and create and return a symbol table or error
-func PerfromScopeCheck(scope_rules []*ScopeRule, syntax_tree SyntaxTree) (SymbolTable, error) {
+// Receive a syntax tree and scope rules to scope check the parse tree, and create and return a symbol table or error
+func PerformScopeCheck(scope_rules []*ScopeRule, syntax_tree SyntaxTree) (SymbolTableArtefact, error) {
 
 	if syntax_tree.Root == nil {
-		return SymbolTable{}, fmt.Errorf("syntax tree is empty")
+		return SymbolTableArtefact{}, fmt.Errorf("syntax tree is empty")
 	}
 
 	symbol_table := CreateEmptySymbolTable()
 
-	err := TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table)
+	symbol_table_artefact := CreateEmptySymbolTableArtefact()
+
+	err := TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table, symbol_table_artefact)
 	if err != nil {
-		return *symbol_table, err
+		return *symbol_table_artefact, err
 	}
 
-	return *symbol_table, nil
+	for _, rule := range scope_rules {
+		if rule.Entered {
+			return *symbol_table_artefact, fmt.Errorf("end scope symbol not found for start scope, please recheck source code")
+		}
+
+	}
+
+	return *symbol_table_artefact, nil
 }
 
 // Name: TraverseSyntaxTree
@@ -135,7 +162,7 @@ func PerfromScopeCheck(scope_rules []*ScopeRule, syntax_tree SyntaxTree) (Symbol
 // Return: error
 //
 // Function used to recursively traverse the syntax tree and build the symbol table
-func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, symbol_table *SymbolTable) error {
+func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, symbol_table *SymbolTable, symbol_table_artefact *SymbolTableArtefact) error {
 
 	if current_tree_node == nil {
 		return nil
@@ -197,6 +224,7 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 		if err != nil {
 			return err
 		}
+		symbol_table_artefact.SymbolScopes = append(symbol_table_artefact.SymbolScopes, new_symbol)
 
 	}
 
@@ -209,7 +237,7 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 	//}
 
 	for _, child := range current_tree_node.Children {
-		err := TraverseSyntaxTree(scope_rules, child, symbol_table)
+		err := TraverseSyntaxTree(scope_rules, child, symbol_table, symbol_table_artefact)
 		if err != nil {
 			return err
 		}
@@ -233,19 +261,17 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 
 // Name: StringifySymbolTable
 //
-// Parameters: SymbolTable
+// Parameters: SymbolTableArtefact
 //
 // Return: string
 //
 // Returns a string that converts the symbol table to a string
-func StringifySymbolTable(symbol_table SymbolTable) string {
+func StringifySymbolTable(symbol_table SymbolTableArtefact) string {
 
 	output := "-------------------------------------------------------------------------- \nSYMBOL TABLE\n"
 
-	for _, scope := range symbol_table.SymbolScopes {
-		for _, symbol := range scope {
-			output += fmt.Sprintf("  Name: %v  Type: %v  Scope: %v\n", symbol.Name, symbol.Type, symbol.Scope)
-		}
+	for _, symbol := range symbol_table.SymbolScopes {
+		output += fmt.Sprintf("  Name: %v  Type: %v  Scope: %v\n", symbol.Name, symbol.Type, symbol.Scope)
 	}
 	output += "--------------------------------------------------------------------------\n"
 
