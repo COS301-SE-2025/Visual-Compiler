@@ -1178,3 +1178,91 @@ func TestTraverseSyntaxTree_Valid(t *testing.T) {
 		t.Errorf("%v", err)
 	}
 }
+
+func TestStringifySymbolTable(t *testing.T) {
+	expected_res := "-------------------------------------------------------------------------- \nSYMBOL TABLE\n"
+	expected_res += "  Name: blue  Type: int  Scope: 0\n"
+	expected_res += "--------------------------------------------------------------------------\n"
+
+	scope_rules := []*services.ScopeRule{
+		{Start: "{", End: "}"},
+	}
+
+	syntax_tree := services.SyntaxTree{
+		Root: &services.TreeNode{
+			Symbol: "STATEMENT",
+			Value:  "",
+			Children: []*services.TreeNode{
+				{
+					Symbol: "DECLARATION",
+					Value:  "",
+					Children: []*services.TreeNode{
+						{
+							Symbol: "TYPE",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "KEYWORD",
+									Value:  "int",
+								},
+							},
+						},
+						{
+							Symbol: "IDENTIFIER",
+							Value:  "blue",
+						},
+						{
+							Symbol: "ASSIGNMENT",
+							Value:  "=",
+						},
+						{
+							Symbol: "EXPRESSION",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "13",
+										},
+									},
+								},
+								{
+									Symbol: "OPERATOR",
+									Value:  "+",
+								},
+								{
+									Symbol: "TERM",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "89",
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				{
+					Symbol: "SEPARATOR",
+					Value:  ";",
+				},
+			},
+		},
+	}
+
+	symbol_table_artefact, err := services.PerformScopeCheck(scope_rules, syntax_tree)
+
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+	string_artefact := services.StringifySymbolTable(symbol_table_artefact)
+	if string_artefact != expected_res {
+		t.Errorf("Incorrect string generated")
+	}
+}
