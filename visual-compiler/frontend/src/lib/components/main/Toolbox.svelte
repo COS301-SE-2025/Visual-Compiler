@@ -8,7 +8,9 @@
 	const node_types: { id: NodeType; label: string }[] = [
 		{ id: 'source', label: 'Source Code' },
 		{ id: 'lexer', label: 'Lexer' },
-		{ id: 'parser', label: 'Parser' }
+		{ id: 'parser', label: 'Parser' },
+		{ id: 'analyser', label: 'Analyser' },
+		{ id: 'translator', label: 'Translator' }
 	];
 
 	// createNode

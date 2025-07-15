@@ -57,13 +57,17 @@
 	const tooltips: Record<NodeType, string> = {
 		source: 'Start here. Add source code to begin compilation.',
 		lexer: 'Converts source code into tokens for processing.',
-		parser: 'Analyzes the token stream to build a syntax tree.'
+		parser: 'Analyzes the token stream to build a syntax tree.',
+		analyser: 'Performs semantic analysis on the syntax tree.',
+		translator: 'Translates the syntax tree into target code.'
 	};
 
 	const node_labels: Record<NodeType, string> = {
 		source: 'Source Code',
 		lexer: 'Lexer',
-		parser: 'Parser'
+		parser: 'Parser',
+		analyser: 'Analyser',
+		translator: 'Translator'
 	};
 
 	function handleCreateNode(type: NodeType) {
