@@ -6,7 +6,7 @@
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
 	import NavBar from '$lib/components/main/nav-bar.svelte';
-	import Toolbox from '$lib/components/main/toolbox.svelte';
+	import Toolbox from '$lib/components/main/Toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 
@@ -21,12 +21,16 @@
 	let show_drag_tip = false;
 
 	onMount(async () => {
-		LexerPhaseTutorial = (await import('$lib/components/lexer/lexer-phase-tutorial.svelte')).default;
+		LexerPhaseTutorial = (await import('$lib/components/lexer/lexer-phase-tutorial.svelte'))
+			.default;
 		LexerPhaseInspector = (await import('$lib/components/lexer/phase-inspector.svelte')).default;
-		LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte')).default;
-		ParserPhaseTutorial = (await import('$lib/components/parser/parser-phase-tutorial.svelte')).default;
+		LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte'))
+			.default;
+		ParserPhaseTutorial = (await import('$lib/components/parser/parser-phase-tutorial.svelte'))
+			.default;
 		ParserPhaseInspector = (await import('$lib/components/parser/parsing-input.svelte')).default;
-		ParserArtifactViewer = (await import('$lib/components/parser/parser-artifact-viewer.svelte')).default;
+		ParserArtifactViewer = (await import('$lib/components/parser/parser-artifact-viewer.svelte'))
+			.default;
 
 		document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
 		if (!localStorage.getItem('hasSeenDragTip')) {
@@ -53,13 +57,17 @@
 	const tooltips: Record<NodeType, string> = {
 		source: 'Start here. Add source code to begin compilation.',
 		lexer: 'Converts source code into tokens for processing.',
-		parser: 'Analyzes the token stream to build a syntax tree.'
+		parser: 'Analyzes the token stream to build a syntax tree.',
+		analyser: 'Performs semantic analysis on the syntax tree.',
+		translator: 'Translates the syntax tree into target code.'
 	};
 
 	const node_labels: Record<NodeType, string> = {
 		source: 'Source Code',
 		lexer: 'Lexer',
-		parser: 'Parser'
+		parser: 'Parser',
+		analyser: 'Analyser',
+		translator: 'Translator'
 	};
 
 	function handleCreateNode(type: NodeType) {
@@ -133,15 +141,31 @@
 <NavBar />
 
 <div class="main">
+	<!-- svelte-ignore component_name_lowercase -->
+	<!-- svelte-ignore element_invalid_self_closing_tag -->
 	<Toolbox {handleCreateNode} {tooltips} />
 	<div class="workspace" bind:this={workspace_el} tabindex="-1">
 		<DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} />
 
 		{#if show_drag_tip}
 			<div class="help-tip">
-				<span><b>Pro-Tip:</b> For the smoothest experience, click to select a node before dragging it.</span>
+				<span
+					><b>Pro-Tip:</b> For the smoothest experience, click to select a node before dragging it.</span
+				>
 				<button on:click={dismissDragTip} class="dismiss-tip-btn" aria-label="Dismiss tip">
-					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"
+						></line></svg
+					>
 				</button>
 			</div>
 		{/if}
@@ -169,8 +193,12 @@
 
 					{#if selected_phase === 'parser' && ParserPhaseTutorial}
 						<svelte:component this={ParserPhaseTutorial} />
-						<svelte:component this={ParserPhaseInspector} {source_code} on:treereceived={handleTreeReceived} />
-						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData}/>
+						<svelte:component
+							this={ParserPhaseInspector}
+							{source_code}
+							on:treereceived={handleTreeReceived}
+						/>
+						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} />
 					{/if}
 				</div>
 				<button on:click={returnToCanvas} class="return-button"> ← Return to Canvas </button>
@@ -189,118 +217,117 @@
 </div>
 
 <style>
-  :global(html, body) {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    overflow: hidden;
-  }
-  :global(*) {
-    box-sizing: border-box;
-  }
-  html {
-    transform: scale(0.8);
-    transform-origin: top left;
-    width: 125vw;
-    height: 125vh;
-    overflow-x: auto;
-  }
-  .main {
-    display: flex;
-    height: calc(100vh - 3.5rem);
-    overflow: hidden;
-    background-color: #f0f2f5;
-    padding: 1rem;
-    gap: 1rem;
-    transition: background-color 0.3s ease;
-  }
-  .workspace {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    outline: none;
-  }
-  .analysis-overlay {
-    position: fixed;
-    top: 3.5rem;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.95);
-    z-index: 100;
-  }
-  .analysis-view {
-    height: 100%;
-    padding: 1rem;
-    background: #f5f5f5;
-    display: flex;
-    flex-direction: column;
-  }
-  .three-column-layout {
-    display: flex;
-    flex: 1;
-    gap: 1rem;
-    height: calc(100vh - 6rem);
-  }
-  .three-column-layout > :global(*) {
-    flex: 1;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    overflow-y: auto;
-  }
-  .return-button {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    padding: 0.5rem 1rem;
-    background: #001a6e;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    z-index: 1000;
-    margin-right: 1rem;
-  }
-  .return-button:hover {
-    background: #074799;
-  }
-  .code-input-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 2000;
-  }
-  .code-input-modal {
-    background: white;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    max-width: 500px;
-    width: 100%;
-    position: relative;
-  }
-  .modal-title {
-    margin: 0 0 1rem 0;
-    font-size: 1.5rem;
-    color: #333;
-    text-align: center;
-    width: 100%;
-  }
-  .close-btn {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-  }
-
+	:global(html, body) {
+		margin: 0;
+		padding: 0;
+		height: 100%;
+		overflow: hidden;
+	}
+	:global(*) {
+		box-sizing: border-box;
+	}
+	html {
+		transform: scale(0.8);
+		transform-origin: top left;
+		width: 125vw;
+		height: 125vh;
+		overflow-x: auto;
+	}
+	.main {
+		display: flex;
+		height: calc(100vh - 3.5rem);
+		overflow: hidden;
+		background-color: #f0f2f5;
+		padding: 1rem;
+		gap: 1rem;
+		transition: background-color 0.3s ease;
+	}
+	.workspace {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		position: relative;
+		outline: none;
+	}
+	.analysis-overlay {
+		position: fixed;
+		top: 3.5rem;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(255, 255, 255, 0.95);
+		z-index: 100;
+	}
+	.analysis-view {
+		height: 100%;
+		padding: 1rem;
+		background: #f5f5f5;
+		display: flex;
+		flex-direction: column;
+	}
+	.three-column-layout {
+		display: flex;
+		flex: 1;
+		gap: 1rem;
+		height: calc(100vh - 6rem);
+	}
+	.three-column-layout > :global(*) {
+		flex: 1;
+		background: white;
+		border-radius: 8px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+		overflow-y: auto;
+	}
+	.return-button {
+		position: fixed;
+		bottom: 20px;
+		right: 20px;
+		padding: 0.5rem 1rem;
+		background: #001a6e;
+		color: white;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		z-index: 1000;
+		margin-right: 1rem;
+	}
+	.return-button:hover {
+		background: #074799;
+	}
+	.code-input-overlay {
+		position: fixed;
+		inset: 0;
+		background: rgba(0, 0, 0, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 2000;
+	}
+	.code-input-modal {
+		background: white;
+		padding: 2rem;
+		border-radius: 8px;
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		max-width: 500px;
+		width: 100%;
+		position: relative;
+	}
+	.modal-title {
+		margin: 0 0 1rem 0;
+		font-size: 1.5rem;
+		color: #333;
+		text-align: center;
+		width: 100%;
+	}
+	.close-btn {
+		position: absolute;
+		top: 1rem;
+		right: 1rem;
+		background: none;
+		border: none;
+		font-size: 1.5rem;
+		cursor: pointer;
+	}
 
 	.help-tip {
 		position: absolute;
@@ -311,7 +338,7 @@
 		color: white;
 		padding: 10px 15px 10px 20px;
 		border-radius: 8px;
-		box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 		display: flex;
 		align-items: center;
 		gap: 1rem;
@@ -353,7 +380,7 @@
 		background: #1a2a4a;
 		color: #f0f0f0;
 	}
-	
+
 	:global(html.dark-mode) .close-btn {
 		color: #f0f0f0;
 	}

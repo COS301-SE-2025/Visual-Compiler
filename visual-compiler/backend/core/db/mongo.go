@@ -19,17 +19,32 @@ var (
 	client_once sync.Once
 )
 
-// This function creates the MongoDB connection as a Singleton.
-// Decouples the connection logic from the CRUD operations
+// Name: ConnectClient
+//
+// Parameters: None
+//
+// Return: Client instance
+//
+// This function creates the MongoDB connection as a Singleton. Decouples the connection logic from the CRUD operations
 func ConnectClient() *mongo.Client {
 	client_once.Do(func() {
-		if errENV := godotenv.Load(); errENV != nil {
-			log.Fatal("Error in loading .env file")
+		if _, err := os.Stat(".env"); err == nil {
+			if err_env := godotenv.Load(); err_env != nil {
+				log.Println("Warning. Failed to load .env file")
+			} else {
+				fmt.Println(".env file was successfully loaded")
+			}
+		} else {
+			fmt.Println(".env file not found. Assuming environmental variables")
 		}
 
 		db_username := os.Getenv("Mongo_username")
 		db_password := os.Getenv("Mongo_password")
 		db_template := os.Getenv("Mongo_URI")
+
+		if db_username == "" || db_password == "" || db_template == "" {
+			log.Fatal("Missing variables")
+		}
 
 		mongo_db_uri := fmt.Sprintf(db_template, db_username, db_password)
 

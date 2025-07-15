@@ -14,13 +14,28 @@ import (
 )
 
 type ReadGrammerFromUser struct {
-	UsersID   bson.ObjectID          `json:"users_id" binding:"required"`
-	Vars      []string               `json:"variables" binding:"required"`
-	Terminals []string               `json:"terminals" binding:"required"`
-	StartVar  string                 `json:"start" binding:"required"`
-	Rules     []services.ParsingRule `json:"rules" binding:"required"`
+	// User's ID for storing purposes
+	UsersID bson.ObjectID `json:"users_id" binding:"required" example:"685df259c1294de5546b045f"`
+	// User's defined variables
+	Vars []string `json:"variables" binding:"required" example:"S, Decl"`
+	// User's defined terminal variables
+	Terminals []string `json:"terminals" binding:"required" example:"KEYWORD, IDENTIFIER, OPERATOR, NUMBER, PUNCTUATION"`
+	// User's defined start variable
+	StartVar string `json:"start" binding:"required" example:"S"`
+	// User's defined rules
+	Rules []services.ParsingRule `json:"rules" binding:"required"`
 }
 
+// @Summary Processs and store user-defined grammer
+// @Description Accepts grammar variables, terminals, start variable, and rules from the user and stores them in the database. If it already exists, it updates the current grammar
+// @Tags Parsing
+// @Accept json
+// @Produce json
+// @Param request body ReadGrammerFromUser true "Read Grammer From User"
+// @Success 200 {object} map[string]string "Grammar successfully read and stored/updated"
+// @Failure 400 {object} map[string]string "Invalid input or Grammar failed to insert"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /parsing/grammar [post]
 func ReadGrammar(c *gin.Context) {
 	var req ReadGrammerFromUser
 
@@ -89,6 +104,16 @@ func ReadGrammar(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Grammar successfully inserted. Ready to create Syntax Tree"})
 }
 
+// @Summary Create and store syntax tree from stored grammar and tokens
+// @Description Searches database for Grammar and Tokens. If found, and creates and stores the tree.
+// @Tags Parsing
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]string "Syntax tree successfully created and stored/updated"
+// @Failure 400 {object} map[string]string "Invalid input or Syntax Tree failed to insert"
+// @Failure 404 {object} map[string]string "Tokens or Grammer not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /parsing/tree [post]
 func CreateSyntaxTree(c *gin.Context) {
 	var req IDRequest
 
@@ -147,6 +172,16 @@ func CreateSyntaxTree(c *gin.Context) {
 	})
 }
 
+// @Summary Create and store syntax tree as a string from stored tree
+// @Description Searches database for an existing syntax tree. If found, and creates and stores the tree as a string.
+// @Tags Parsing
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]string "Syntax tree String successfully created and stored/updated"
+// @Failure 400 {object} map[string]string "Invalid input or Syntax Tree String failed to insert"
+// @Failure 404 {object} map[string]string "Syntax Tree not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /parsing/treeString [post]
 func TreeToString(c *gin.Context) {
 	var req IDRequest
 

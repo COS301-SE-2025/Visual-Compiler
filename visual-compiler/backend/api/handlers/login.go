@@ -21,14 +21,17 @@ type LoginReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// Logs a user in.
-// Gets the inputs(Email/Username & Password) from a JSON request from the user.
-// Formats the response as a JSON Body
-//
-// Returns:
-//   - A JSON response body.
-//   - A 200 OK response if successful
-//   - A 500 Internal Server Error if any errors are caught for fetching or parsing
+// @Summary Login User
+// @Description Login user with correct credentials
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param request body LoginReq true "Login User"
+// @Success 200 {object} map[string]string "User login successful"
+// @Failure 400 {object} map[string]string "Invalid input or ID format"
+// @Failure 404 {object} map[string]string "User not found/Invalid credentials"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /users/login [post]
 func Login(c *gin.Context) {
 	var req LoginReq
 
@@ -57,6 +60,7 @@ func Login(c *gin.Context) {
 		Email    string        `bson:"email"`
 		Password string        `bson:"password"`
 		ID       bson.ObjectID `bson:"_id"`
+		Is_Admin bool          `bson:"is_admin"`
 	}
 
 	err := users_collection.FindOne(ctx, filter_login).Decode(&db_user)
@@ -75,7 +79,8 @@ func Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Login Successful. Welcome " + db_user.Username,
-		"id":      db_user.ID,
+		"message":  "Login Successful. Welcome " + db_user.Username,
+		"id":       db_user.ID,
+		"is_admin": db_user.Is_Admin,
 	})
 }

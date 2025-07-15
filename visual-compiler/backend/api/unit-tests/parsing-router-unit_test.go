@@ -20,7 +20,7 @@ func TestParsingRouterRoutes(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := routers.SetupParsingRouter()
 	endpoints := router.Routes()
-	if len(endpoints) != 2 {
+	if len(endpoints) != 3 {
 		t.Errorf("Amount of routes does not match")
 	}
 }
