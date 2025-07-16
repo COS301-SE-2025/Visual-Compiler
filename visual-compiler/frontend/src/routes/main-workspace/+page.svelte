@@ -16,21 +16,29 @@
 	let ParserPhaseTutorial: any;
 	let ParserPhaseInspector: any;
 	let ParserArtifactViewer: any;
+	let AnalyserPhaseTutorial: any;
+	let AnalyserPhaseInspector: any;
+	let AnalyserArtifactViewer: any;
+	let TranslatorPhaseTutorial: any;
+	let TranslatorPhaseInspector: any;
+	let TranslatorArtifactViewer: any;
 
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
 
 	onMount(async () => {
-		LexerPhaseTutorial = (await import('$lib/components/lexer/lexer-phase-tutorial.svelte'))
-			.default;
+		LexerPhaseTutorial = (await import('$lib/components/lexer/lexer-phase-tutorial.svelte')).default;
 		LexerPhaseInspector = (await import('$lib/components/lexer/phase-inspector.svelte')).default;
-		LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte'))
-			.default;
-		ParserPhaseTutorial = (await import('$lib/components/parser/parser-phase-tutorial.svelte'))
-			.default;
+		LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte')).default;
+		ParserPhaseTutorial = (await import('$lib/components/parser/parser-phase-tutorial.svelte')).default;
 		ParserPhaseInspector = (await import('$lib/components/parser/parsing-input.svelte')).default;
-		ParserArtifactViewer = (await import('$lib/components/parser/parser-artifact-viewer.svelte'))
-			.default;
+		ParserArtifactViewer = (await import('$lib/components/parser/parser-artifact-viewer.svelte')).default;
+		AnalyserPhaseTutorial = (await import('$lib/components/analyser/analyser-phase-tutorial.svelte')).default;
+		AnalyserPhaseInspector = (await import('$lib/components/analyser/analyser-phase-inspector.svelte')).default;
+		AnalyserArtifactViewer = (await import('$lib/components/analyser/analyser-artifact-viewer.svelte')).default;
+		TranslatorPhaseTutorial = (await import('$lib/components/translator/translator-phase-tutorial.svelte')).default;
+		TranslatorPhaseInspector = (await import('$lib/components/translator/translator-phase-inspector.svelte')).default;
+		TranslatorArtifactViewer = (await import('$lib/components/translator/translator-artifact-viewer.svelte')).default;
 
 		document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
 		if (!localStorage.getItem('hasSeenDragTip')) {
@@ -172,39 +180,52 @@
 	</div>
 
 	{#if selected_phase}
-		<div class="analysis-overlay">
-			<div class="analysis-view">
-				<div class="three-column-layout">
-					{#if selected_phase === 'lexer' && LexerPhaseTutorial}
-						<svelte:component this={LexerPhaseTutorial} />
-						<svelte:component
-							this={LexerPhaseInspector}
-							{source_code}
-							onGenerateTokens={handleTokenGeneration}
-						/>
-						<svelte:component
-							this={LexerArtifactViewer}
-							phase={selected_phase}
-							{tokens}
-							{unexpected_tokens}
-							{show_tokens}
-						/>
-					{/if}
+	<div class="analysis-overlay">
+		<div class="analysis-view">
+			<div class="three-column-layout">
+				{#if selected_phase === 'lexer' && LexerPhaseTutorial}
+					<svelte:component this={LexerPhaseTutorial} />
+					<svelte:component
+						this={LexerPhaseInspector}
+						{source_code}
+						onGenerateTokens={handleTokenGeneration}
+					/>
+					<svelte:component
+						this={LexerArtifactViewer}
+						phase={selected_phase}
+						{tokens}
+						{unexpected_tokens}
+						{show_tokens}
+					/>
+				{/if}
 
-					{#if selected_phase === 'parser' && ParserPhaseTutorial}
-						<svelte:component this={ParserPhaseTutorial} />
-						<svelte:component
-							this={ParserPhaseInspector}
-							{source_code}
-							on:treereceived={handleTreeReceived}
-						/>
-						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} />
-					{/if}
-				</div>
-				<button on:click={returnToCanvas} class="return-button"> ← Return to Canvas </button>
+				{#if selected_phase === 'parser' && ParserPhaseTutorial}
+					<svelte:component this={ParserPhaseTutorial} />
+					<svelte:component
+						this={ParserPhaseInspector}
+						{source_code}
+						on:treereceived={handleTreeReceived}
+					/>
+					<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} />
+				{/if}
+
+				{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}
+					<svelte:component this={AnalyserPhaseTutorial} />
+					<svelte:component this={AnalyserPhaseInspector} />
+					<svelte:component this={AnalyserArtifactViewer} />
+				{/if}
+
+				{#if selected_phase === 'translator' && TranslatorPhaseTutorial}
+					<svelte:component this={TranslatorPhaseTutorial} />
+					<svelte:component this={TranslatorPhaseInspector} />
+					<svelte:component this={TranslatorArtifactViewer} />
+				{/if}
+
 			</div>
+			<button on:click={returnToCanvas} class="return-button"> ← Return to Canvas </button>
 		</div>
-	{/if}
+	</div>
+{/if}
 
 	{#if show_code_input}
 		<div class="code-input-overlay">
