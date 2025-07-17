@@ -5,9 +5,10 @@ import (
 )
 
 type Symbol struct {
-	Name  string
-	Type  string
-	Scope int
+	Name       string
+	Type       string
+	Scope      int
+	Parameters []Symbol
 }
 
 type SymbolTable struct {
@@ -123,14 +124,14 @@ func ExitScope(symbol_table *SymbolTable) error {
 	return nil
 }
 
-// Name: PerformScopeCheck
+// Name: Analyse
 //
-// Parameters: []ScopeRule,SyntaxTree
+// Parameters: []ScopeRule,SyntaxTree,string,string,string,string
 //
 // Return: SymbolTable, error
 //
 // Receive a syntax tree and scope rules to scope check the parse tree, and create and return a symbol table or error
-func PerformScopeCheck(scope_rules []*ScopeRule, syntax_tree SyntaxTree) (SymbolTableArtefact, error) {
+func Analyse(scope_rules []*ScopeRule, syntax_tree SyntaxTree, type_rule string, variable_rule string, function_rule string, parameter_rule string) (SymbolTableArtefact, error) {
 
 	if syntax_tree.Root == nil {
 		return SymbolTableArtefact{}, fmt.Errorf("syntax tree is empty")
@@ -140,7 +141,7 @@ func PerformScopeCheck(scope_rules []*ScopeRule, syntax_tree SyntaxTree) (Symbol
 
 	symbol_table_artefact := CreateEmptySymbolTableArtefact()
 
-	err := TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table, symbol_table_artefact)
+	err := TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table, symbol_table_artefact, type_rule, variable_rule, function_rule, parameter_rule)
 	if err != nil {
 		return *symbol_table_artefact, err
 	}
@@ -155,14 +156,173 @@ func PerformScopeCheck(scope_rules []*ScopeRule, syntax_tree SyntaxTree) (Symbol
 	return *symbol_table_artefact, nil
 }
 
+// Name: HandleFunctionScope
+//
+// Parameters: *Symbol,*TreeNode,*SymbolTable,*SymbolTableArtefact,string,string,string,string
+//
+// Return: error
+//
+// Determine name,type and scope of variables in a function declaration
+func HandleFunctionScope(new_symbol *Symbol, child *TreeNode, symbol_table *SymbolTable, symbol_table_artefact *SymbolTableArtefact, type_rule string, variable_rule string, function_rule string, parameter_rule string) error {
+	for _, function_child := range child.Children {
+		if function_child.Symbol == variable_rule {
+			if function_child.Value == "" {
+				if len(function_child.Children) > 0 {
+					current_child := function_child.Children[0]
+					for current_child.Value == "" {
+						if len(current_child.Children) > 0 {
+							current_child = current_child.Children[0]
+						}
+					}
+					new_symbol.Name = current_child.Value
+				} else {
+					return fmt.Errorf("function has no name defined")
+				}
+			} else {
+				new_symbol.Name = function_child.Value
+			}
+		}
+
+		if function_child.Symbol == type_rule {
+			if function_child.Value == "" {
+				if len(function_child.Children) > 0 {
+					current_child := function_child.Children[0]
+					for current_child.Value == "" {
+						if len(current_child.Children) > 0 {
+							current_child = current_child.Children[0]
+						}
+					}
+					new_symbol.Type = current_child.Value
+				} else {
+					new_symbol.Type = function_child.Value
+				}
+			} else {
+				new_symbol.Type = function_child.Value
+			}
+		}
+
+		if function_child.Symbol == parameter_rule {
+
+			parameter_symbol := Symbol{}
+
+			if len(function_child.Children) > 0 {
+
+				for _, current_child := range function_child.Children {
+
+					if current_child.Symbol == type_rule {
+						if current_child.Value == "" && len(current_child.Children) > 0 {
+							parameter_child := current_child.Children[0]
+							for parameter_child.Value == "" {
+								if len(parameter_child.Children) > 0 {
+									parameter_child = parameter_child.Children[0]
+								}
+							}
+							parameter_symbol.Type = parameter_child.Value
+						} else {
+							parameter_symbol.Type = current_child.Value
+						}
+
+					}
+
+					if current_child.Symbol == variable_rule {
+
+						if current_child.Value == "" {
+							if len(current_child.Children) > 0 {
+								parameter_child := current_child.Children[0]
+								for parameter_child.Value == "" {
+									if len(parameter_child.Children) > 0 {
+										parameter_child = parameter_child.Children[0]
+									}
+								}
+								parameter_symbol.Name = parameter_child.Value
+							} else {
+								return fmt.Errorf("declaration has no name defined")
+							}
+						} else {
+							parameter_symbol.Name = current_child.Value
+						}
+
+					}
+				}
+
+			}
+
+			if parameter_symbol.Name != "" && parameter_symbol.Type != "" {
+				parameter_symbol.Scope = len(symbol_table.SymbolScopes)
+
+				err := BindSymbol(symbol_table, parameter_symbol)
+				if err != nil {
+					return err
+				}
+				symbol_table_artefact.SymbolScopes = append(symbol_table_artefact.SymbolScopes, parameter_symbol)
+				new_symbol.Parameters = append(new_symbol.Parameters, parameter_symbol)
+			}
+		}
+	}
+
+	return nil
+}
+
+// Name: HandleFunctionScope
+//
+// Parameters: *Symbol,*TreeNode,string,string
+//
+// Return: error
+//
+// Determines type,name and scope of variables
+func HandleDeclarationScope(new_symbol *Symbol, child *TreeNode, type_rule string, variable_rule string) error {
+	if child.Symbol == variable_rule {
+		if child.Value == "" {
+			if len(child.Children) > 0 {
+				current_child := child.Children[0]
+				for current_child.Value == "" {
+					if len(current_child.Children) > 0 {
+						current_child = current_child.Children[0]
+					}
+				}
+				new_symbol.Name = current_child.Value
+			} else {
+				return fmt.Errorf("declaration has no name defined")
+			}
+		} else {
+			new_symbol.Name = child.Value
+		}
+	}
+
+	if child.Symbol == type_rule {
+		if child.Value == "" {
+			if len(child.Children) > 0 {
+				current_child := child.Children[0]
+				for current_child.Value == "" {
+					if len(current_child.Children) > 0 {
+						current_child = current_child.Children[0]
+					}
+				}
+				new_symbol.Type = current_child.Value
+			} else {
+				new_symbol.Type = child.Value
+			}
+		} else {
+			new_symbol.Type = child.Value
+		}
+
+		//account for system must determine type of IDENTIFIER on its own -> type inference
+		/*if new_symbol.Type == "" {
+
+		}*/
+	}
+
+	return nil
+}
+
 // Name: TraverseSyntaxTree
 //
-// Parameters: []ScopeRule,*TreeNode,*SymbolTable
+// Parameters: []ScopeRule,*TreeNode,*SymbolTable,string,string,string,string
 //
 // Return: error
 //
 // Function used to recursively traverse the syntax tree and build the symbol table
-func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, symbol_table *SymbolTable, symbol_table_artefact *SymbolTableArtefact) error {
+func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, symbol_table *SymbolTable, symbol_table_artefact *SymbolTableArtefact, type_rule string, variable_rule string, function_rule string, parameter_rule string) error {
 
 	if current_tree_node == nil {
 		return nil
@@ -175,46 +335,25 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 		}
 	}
 
-	//if current_tree_node.Symbol == "DECLARATION" {
-
 	new_symbol := Symbol{}
 	for _, child := range current_tree_node.Children {
-		if child.Symbol == "TYPE" {
-			if child.Value == "" && len(child.Children) > 0 {
-				current_child := child.Children[0]
-				for current_child.Value == "" {
-					if len(current_child.Children) > 0 {
-						current_child = current_child.Children[0]
-					}
-				}
-				new_symbol.Type = current_child.Value
-			} else {
-				new_symbol.Type = child.Value
+
+		if child.Symbol == function_rule {
+
+			err := HandleFunctionScope(&new_symbol, child, symbol_table, symbol_table_artefact, type_rule, variable_rule, function_rule, parameter_rule)
+
+			if err != nil {
+				return err
 			}
 
-			//account for system must determine type of IDENTIFIER on its own
-			/*if new_symbol.Type == "" {
+		} else {
+			err := HandleDeclarationScope(&new_symbol, child, type_rule, variable_rule)
 
-			}*/
-		}
-
-		if child.Symbol == "IDENTIFIER" {
-			if child.Value == "" {
-				if len(child.Children) > 0 {
-					current_child := child.Children[0]
-					for current_child.Value == "" {
-						if len(current_child.Children) > 0 {
-							current_child = current_child.Children[0]
-						}
-					}
-					new_symbol.Name = current_child.Value
-				} else {
-					return fmt.Errorf("declaration has no name defined")
-				}
-			} else {
-				new_symbol.Name = child.Value
+			if err != nil {
+				return err
 			}
 		}
+
 	}
 
 	if new_symbol.Name != "" && new_symbol.Type != "" {
@@ -234,13 +373,15 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 			return fmt.Errorf("variable not declared within it's scope: %v", new_symbol.Name)
 		}
 	}
-	//}
 
 	for _, child := range current_tree_node.Children {
-		err := TraverseSyntaxTree(scope_rules, child, symbol_table, symbol_table_artefact)
-		if err != nil {
-			return err
+		if child.Symbol != function_rule {
+			err := TraverseSyntaxTree(scope_rules, child, symbol_table, symbol_table_artefact, type_rule, variable_rule, function_rule, parameter_rule)
+			if err != nil {
+				return err
+			}
 		}
+
 	}
 
 	for _, rule := range scope_rules {
