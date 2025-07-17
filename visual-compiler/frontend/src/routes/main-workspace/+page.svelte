@@ -121,6 +121,12 @@
 		}
 	}
 
+	let showSymbolTable = false;
+
+	 function handleReset() {
+    showSymbolTable = false;
+  }
+
 	function returnToCanvas() {
 		selected_phase = null;
 		show_code_input = false;
@@ -211,8 +217,12 @@
 
 				{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}
 					<svelte:component this={AnalyserPhaseTutorial} />
-					<svelte:component this={AnalyserPhaseInspector} />
-					<svelte:component this={AnalyserArtifactViewer} />
+					 <AnalyserPhaseInspector
+						bind:showSymbolTable
+						on:generate={() => showSymbolTable = true}
+						on:reset={handleReset}
+					/>
+					<svelte:component this={AnalyserArtifactViewer} {showSymbolTable} on:close={() => showSymbolTable = false} />
 				{/if}
 
 				{#if selected_phase === 'translator' && TranslatorPhaseTutorial}
@@ -247,13 +257,7 @@
 	:global(*) {
 		box-sizing: border-box;
 	}
-	html {
-		transform: scale(0.8);
-		transform-origin: top left;
-		width: 125vw;
-		height: 125vh;
-		overflow-x: auto;
-	}
+	
 	.main {
 		display: flex;
 		height: calc(100vh - 3.5rem);
@@ -333,13 +337,7 @@
 		width: 100%;
 		position: relative;
 	}
-	.modal-title {
-		margin: 0 0 1rem 0;
-		font-size: 1.5rem;
-		color: #333;
-		text-align: center;
-		width: 100%;
-	}
+	
 	.close-btn {
 		position: absolute;
 		top: 1rem;
