@@ -383,6 +383,7 @@
 		text-align: center;
 		margin-top: 0;
 		font-family: 'Times New Roman';
+		margin-bottom: 0;
 	}
 	.source-code-section {
 		margin-bottom: 1rem;
