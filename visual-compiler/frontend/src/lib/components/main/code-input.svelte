@@ -1,11 +1,27 @@
 <script lang="ts">
 	import { AddToast } from '$lib/stores/toast';
+	import { confirmedSourceCode } from '$lib/stores/sourceCode';
+	import { tick } from 'svelte';
+	import { onMount } from 'svelte';
 
 	let code_text = '';
-	let isDefaultInput = false;
+	
 	let previous_code_text = '';
-
+	let isDefaultInput = false;
+	let isConfirmed = false;
+	let textareaEl: HTMLTextAreaElement;
 	export let onCodeSubmitted: (code: string) => void = () => {};
+
+	// Sync with global store
+	let confirmed_code = '';
+	const unsubscribe = confirmedSourceCode.subscribe(value => {
+		confirmed_code = value;
+		if (!code_text) code_text = value; // Auto fill input if empty
+	});
+
+	onMount(() => {
+		return () => unsubscribe(); // clean up store subscription
+	});
 
 	function handleDefaultInput() {
 		if (!isDefaultInput) {
@@ -18,10 +34,6 @@
 		}
 	}
 
-	// handleFileChange
-	// Return type: void
-	// Parameter type(s): Event
-	// Handles the file upload event, validates the file type, and reads its content.
 	function handleFileChange(event: Event) {
 		const input = event.target as HTMLInputElement;
 		const file = input.files?.[0];
@@ -29,7 +41,7 @@
 
 		if (!file.name.toLowerCase().endsWith('.txt')) {
 			AddToast('Only .txt files are allowed. Please upload a valid plain text file.', 'error');
-			input.value = ''; // Reset the input
+			input.value = '';
 			return;
 		}
 
@@ -44,37 +56,43 @@
 		reader.readAsText(file);
 	}
 
-	// submitCode
-	// Return type: void
-	// Parameter type(s): none
-	// Dispatches the current code text to the parent component.
-	function submitCode() {
+	async function submitCode() {
 		if (!code_text.trim()) return;
 		const user_id = localStorage.getItem('user_id');
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
 			return;
 		}
-		fetch('http://localhost:8080/api/lexing/code', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				users_id: user_id,
-				source_code: code_text
-			})
-		})
-			.then((res) => {
-				if (!res.ok) throw new Error('Failed to save source code');
-				AddToast('Code confirmed and saved!', 'success');
-				onCodeSubmitted(code_text);
-			})
-			.catch(() => AddToast('Failed to save source code', 'error'));
+
+		try {
+			const res = await fetch('http://localhost:8080/api/lexing/code', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					users_id: user_id,
+					source_code: code_text
+				})
+			});
+			if (!res.ok) throw new Error();
+
+			AddToast('Code confirmed and saved!', 'success');
+			confirmedSourceCode.set(code_text);
+			isConfirmed = true;
+			onCodeSubmitted(code_text);
+			await tick();
+		} catch {
+			AddToast('Failed to save source code', 'error');
+		}
 	}
+
+	// Reset confirmation flag if user changes the text
+	$: isConfirmed = code_text === confirmed_code && !!code_text;
+	$: displayed_text = isConfirmed ? `Current source code: ${code_text}` : code_text;
 </script>
 
 <div class="code-input-container">
 	<div class="code-input-header-row">
-		<h2 class="code-input-header">Enter Source Code</h2>
+		<h2 class="code-input-header">Source Code Input</h2>
 		<button
 			type="button"
 			class="default-source-btn"
@@ -82,44 +100,58 @@
 			aria-label={isDefaultInput ? 'Restore your input' : 'Insert default source code'}
 			on:click={handleDefaultInput}
 		>
-			{#if isDefaultInput}
-				🧹
+			{#if isDefaultInput} 🧹 {:else} 🪄 {/if}
+		</button>
+	</div>
+
+	{#if isConfirmed}
+		<p class="current"><strong>Current source code:</strong></p>
+	{/if}
+
+	<textarea
+		bind:value={code_text}
+		rows="10"
+		placeholder="Paste or type your source code here…"
+	></textarea>
+
+
+
+	<div class="controls">
+		<label class="upload-btn">
+			Upload File
+			<input type="file" accept=".txt" on:change={handleFileChange} />
+		</label>
+
+		<button
+			type="button"
+			class="confirm-btn"
+			on:click={submitCode}
+			disabled={!code_text.trim()}
+		>
+			
+			{#if isConfirmed}
+				Code Confirmed
+				<span class="tick">✔</span>
 			{:else}
-				🪄
+				Confirm Code
 			{/if}
 		</button>
 	</div>
-	<textarea bind:value={code_text} placeholder="Paste or type your source code here…" rows="10"
-	></textarea>
 
-	<div class="controls">
-		<label
-			class="upload-btn"
-			title="📝 Hi there! Please make sure to upload a .txt file. Other file types won't work here!"
-		>
-			Upload File
-			<input
-				type="file"
-				accept=".txt"
-				on:change={handleFileChange}
-				title="📝 Please upload a '.txt' file"
-			/>
-		</label>
-
-		<button type="button" class="confirm-btn" on:click={submitCode} disabled={!code_text.trim()}>
-			Confirm Code
-		</button>
-	</div>
+	
 </div>
 
 <style>
+
+	.current{
+		margin-top: 0;
+		margin-bottom: 0.25rem;
+	}
 	.code-input-container {
 		display: flex;
 		flex-direction: column;
 		gap: 0.6rem;
-		margin-top: 1rem;
-		margin-left: 1rem;
-		margin-right: 1rem;
+		margin: 1rem;
 	}
 
 	textarea {
@@ -132,13 +164,13 @@
 		border-radius: 4px;
 		box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
 		height: 100px;
+		margin-bottom: 0.5rem;
 	}
 
 	.controls {
 		display: flex;
 		gap: 0.5rem;
-		margin-top: 0.3rem;
-		margin-bottom: 0.7rem;
+		margin: 0.3rem 0 0.7rem;
 		justify-content: center;
 	}
 
@@ -152,7 +184,6 @@
 		border-radius: 4px;
 		font-size: 0.95rem;
 		cursor: pointer;
-		font: inherit;
 	}
 	.upload-btn input[type='file'] {
 		position: absolute;
@@ -162,6 +193,9 @@
 		height: 100%;
 		opacity: 0;
 		cursor: pointer;
+	}
+	.upload-btn:hover {
+		background: #838386;
 	}
 
 	.confirm-btn {
@@ -173,6 +207,9 @@
 		font-size: 0.95rem;
 		cursor: pointer;
 		transition: background 0.2s ease;
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
 	}
 	.confirm-btn:disabled {
 		background: #ccc;
@@ -181,8 +218,11 @@
 	.confirm-btn:not(:disabled):hover {
 		background: #074799;
 	}
-	.upload-btn:hover {
-		background: #838386;
+	.tick {
+		font-size: 1.2rem;
+		line-height: 1;
+		margin-right: -0.45rem;
+		margin-left: 0.25rem;
 	}
 
 	.default-source-btn {
@@ -216,5 +256,22 @@
 		margin: 0;
 		font-size: 1.5rem;
 		font-weight: 700;
+	}
+
+	.confirmed-display {
+
+		border: 1px solid #ccc;
+		border-radius: 6px;
+		background: #f5f5f5;
+		padding: 0.8rem;
+		white-space: pre-wrap;
+		word-wrap: break-word;
+	}
+	.confirmed-display p {
+		margin-top: 0;
+		font-size: 1.1rem;
+		color: #001a6e;
+		margin-bottom: 0 ;
+		font-weight: 600;
 	}
 </style>
