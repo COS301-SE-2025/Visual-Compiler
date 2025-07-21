@@ -263,4 +263,20 @@
 		color: #ccc;
 		border-color: #4a5568;
 	}
+
+	 :global(html.dark-mode) .default-source-btn  {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #d1d5db;
+    }
+
+	 :global(html.dark-mode) .default-source-btn.selected {
+        background-color: #001a6e;
+        border-color: #60a5fa;
+        color: #e0e7ff;
+    }
+    :global(html.dark-mode) .default-source-btn:not(.selected):hover {
+        background-color: #374151;
+        border-color: #6b7280;
+    }
 </style>

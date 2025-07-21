@@ -516,7 +516,6 @@
         font-family: monospace;
         text-align: center;
         width: 2.8rem;
-        /* Added for cohesive styling */
         transition: border-color 0.2s, box-shadow 0.2s;
     }
     .non-terminal-input:focus {
@@ -547,7 +546,6 @@
         border-radius: 4px;
         font-family: monospace;
         min-width: 100px;
-        /* Added for cohesive styling */
         transition: border-color 0.2s, box-shadow 0.2s;
     }
     .translation-input:focus {
