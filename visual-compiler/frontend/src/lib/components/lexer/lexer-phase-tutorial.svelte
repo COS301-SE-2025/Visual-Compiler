@@ -646,7 +646,6 @@
 
     :global(html.dark-mode) .navigation-container {
         background: #1a2a4a;
-        box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.2); /* Adjusted for dark mode visibility */
     }
 
     :global(html.dark-mode) .nav-button {

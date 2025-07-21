@@ -214,199 +214,294 @@ STATEMENT
 </div>
 
 <style>
-	.phase-tutorial {
-		padding: 1rem;
-		height: 100%;
-		display: flex;
-		flex-direction: column;
-		overflow: hidden;
-	}
-	.tutorial-content {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		min-height: 0;
-	}
-	h2 {
-		color: #001a6e;
-		margin-bottom: 1rem;
-		font-size: 1.5rem;
-	}
-	h3 {
-		color: #444;
-		margin: 0.7rem 0 0.3rem 0;
-	}
-	.description {
-		line-height: 1.6;
-		color: #333;
-		margin: 1rem 0;
-		font-size: 0.95rem;
-	}
-	.separator {
-		border-bottom: 1px solid #e5e7eb;
-		margin: 1rem 0;
-		width: 100%;
-	}
-	.tutorial-container {
-		display: flex;
-		flex-direction: column;
-		height: 100%;
-		min-height: 0;
-		padding: 1rem;
-	}
-	.tutorial-content-area {
-		flex: 1;
-		min-height: 0;
-		overflow-y: auto;
-		padding-bottom: 2rem;
-	}
-	.tutorial-step {
-		margin-bottom: 2rem;
-	}
-	.code-sample {
-		background: #f1f3f5;
-		padding: 0.75rem;
-		border-radius: 4px;
-		margin: 0.5rem 0;
-		font-family: monospace;
-	}
-	.token-table {
-		margin-top: 2rem;
-		display: table;
-		width: 100%;
-		border-collapse: collapse;
-		margin: 0.5rem 0;
-	}
-	.table-header,
-	.table-row {
-		display: table-row;
-	}
-	.header-type,
-	.header-tokens,
-	.token-type,
-	.token-values {
-		display: table-cell;
-		border: 1px solid #e5e7eb;
-		padding: 0.6rem 0.8rem;
-		text-align: left;
-	}
-	.table-header {
-		background: #e6edfa;
-		color: #001a6e;
-		font-weight: 600;
-	}
-	.cfg-section {
-		display: flex;
-		gap: 2.5rem;
-		flex-wrap: wrap;
-		margin: 1rem 0;
-	}
-	.cfg-block {
-		background: #f8f9fa;
-		border-radius: 8px;
-		padding: 1rem 1.2rem;
-		max-width: 450px;
-		font-size: 0.97rem;
-		box-shadow: 0 1px 4px rgba(30, 64, 175, 0.04);
-	}
-	.cfg-nt {
-		color: #1e40af;
-		font-weight: 600;
-		font-family: 'Fira Code', monospace;
-	}
-	.cfg-t {
-		color: #047857;
-		font-weight: 600;
-		font-family: 'Fira Code', monospace;
-	}
-	.cfg-rules {
-		margin: 1rem 0;
-	}
-	.cfg-rules table {
-		border-collapse: collapse;
-		width: 100%;
-		max-width: 600px;
-		background: #f1f3f5;
-		border-radius: 6px;
-		overflow: hidden;
-		font-size: 0.97rem;
-	}
-	.cfg-rules th,
-	.cfg-rules td {
-		border: 1px solid #e5e7eb;
-		padding: 0.4rem 0.7rem;
-		text-align: left;
-	}
-	.cfg-rules th {
-		background: #e6edfa;
-		color: #001a6e;
-		font-size: 1.05rem;
-	}
-	.cfg-rule {
-		font-family: 'Fira Code', monospace;
-		color: #001a6e;
-	}
-	.cfg-example {
-		color: #666;
-		font-size: 0.95rem;
-	}
-	.syntax-tree {
-		background: #f8fafc;
-		border-radius: 8px;
-		padding: 1rem 1.2rem;
-		font-family: 'Fira Code', monospace;
-		font-size: 0.97rem;
-		margin: 1rem 0;
-		color: #1e293b;
-		overflow-x: auto;
-	}
-	.step-breakdown {
-		margin: 1rem 0 0 1.2rem;
-		font-size: 0.97rem;
-	}
-	.navigation-container {
-		position: sticky;
-		margin-top: 1rem;
-		bottom: 0;
-		background: #fff;
-		z-index: 10;
-		padding: 0rem 0;
-		display: flex;
-		justify-content: center;
-		box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.03);
-	}
-	.navigation {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		width: 100%;
-		max-width: 500px;
-	}
-	.nav-button {
-		padding: 0.5rem 1rem;
-		background: #001a6e;
-		color: white;
-		border: none;
-		border-radius: 4px;
-		cursor: pointer;
-		min-width: 100px;
-		font-size: 0.9rem;
-	}
-	.nav-button:disabled {
-		background: #cccccc;
-		cursor: not-allowed;
-	}
-	.step-counter {
-		color: #666;
-		font-size: 0.9rem;
-	}
-	@media (max-width: 700px) {
-		.cfg-section {
-			flex-direction: column;
-			gap: 1rem;
-		}
-		.cfg-block {
-			max-width: 100%;
-		}
-	}
+.phase-tutorial {
+    padding: 1rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.tutorial-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+h2 {
+    color: #001a6e;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+h3 {
+    color: #444;
+    margin: 0.7rem 0 0.3rem 0;
+}
+.description {
+    line-height: 1.6;
+    color: #333;
+    margin: 1rem 0;
+    font-size: 0.95rem;
+}
+.separator {
+    border-bottom: 1px solid #e5e7eb;
+    margin: 1rem 0;
+    width: 100%;
+}
+.tutorial-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding: 1rem;
+}
+.tutorial-content-area {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 2rem;
+}
+.tutorial-step {
+    margin-bottom: 2rem;
+}
+.code-sample {
+    background: #f1f3f5;
+    padding: 0.75rem;
+    border-radius: 4px;
+    margin: 0.5rem 0;
+    font-family: monospace;
+}
+.token-table {
+    margin-top: 2rem;
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0.5rem 0;
+}
+.table-header,
+.table-row {
+    display: table-row;
+}
+.header-type,
+.header-tokens,
+.token-type,
+.token-values {
+    display: table-cell;
+    border: 1px solid #e5e7eb;
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+}
+.table-header {
+    background: #e6edfa;
+    color: #001a6e;
+    font-weight: 600;
+}
+.cfg-section {
+    display: flex;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+}
+.cfg-block {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    max-width: 450px;
+    font-size: 0.97rem;
+    box-shadow: 0 1px 4px rgba(30, 64, 175, 0.04);
+}
+.cfg-nt {
+    color: #1e40af;
+    font-weight: 600;
+    font-family: 'Fira Code', monospace;
+}
+.cfg-t {
+    color: #047857;
+    font-weight: 600;
+    font-family: 'Fira Code', monospace;
+}
+.cfg-rules {
+    margin: 1rem 0;
+}
+.cfg-rules table {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 600px;
+    background: #f1f3f5;
+    border-radius: 6px;
+    overflow: hidden;
+    font-size: 0.97rem;
+}
+.cfg-rules th,
+.cfg-rules td {
+    border: 1px solid #e5e7eb;
+    padding: 0.4rem 0.7rem;
+    text-align: left;
+}
+.cfg-rules th {
+    background: #e6edfa;
+    color: #001a6e;
+    font-size: 1.05rem;
+}
+.cfg-rule {
+    font-family: 'Fira Code', monospace;
+    color: #001a6e;
+}
+.cfg-example {
+    color: #666;
+    font-size: 0.95rem;
+}
+.syntax-tree {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.97rem;
+    margin: 1rem 0;
+    color: #1e293b;
+    overflow-x: auto;
+}
+.step-breakdown {
+    margin: 1rem 0 0 1.2rem;
+    font-size: 0.97rem;
+}
+.navigation-container {
+    position: sticky;
+    margin-top: 1rem;
+    bottom: 0;
+    background: #fff;
+    z-index: 10;
+    padding: 0rem 0;
+    display: flex;
+    justify-content: center;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.03);
+}
+.navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 500px;
+}
+.nav-button {
+    padding: 0.5rem 1rem;
+    background: #001a6e;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    min-width: 100px;
+    font-size: 0.9rem;
+}
+.nav-button:disabled {
+    background: #cccccc;
+    cursor: not-allowed;
+}
+.step-counter {
+    color: #666;
+    font-size: 0.9rem;
+}
+@media (max-width: 700px) {
+    .cfg-section {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .cfg-block {
+        max-width: 100%;
+    }
+}
+
+/* Dark Mode Styles */
+:global(html.dark-mode) h2 {
+    color: #ebeef1;
+}
+
+:global(html.dark-mode) h3 {
+    color: #ebeef1;
+}
+
+:global(html.dark-mode) .description {
+    color: #ebeef1;
+}
+
+:global(html.dark-mode) .code-sample {
+    background: #2d3748;
+    color: #ebeef1; /* Added for text color */
+}
+
+:global(html.dark-mode) .token-table .table-header {
+    background: #4a5568; /* Darker header for token table */
+    color: #ebeef1;
+}
+
+:global(html.dark-mode) .token-table .header-type,
+:global(html.dark-mode) .token-table .header-tokens,
+:global(html.dark-mode) .token-table .token-type,
+:global(html.dark-mode) .token-table .token-values {
+    border-color: #4a5568; /* Darker borders */
+    background: #2d3748; /* Darker background for cells */
+    color: #ebeef1;
+}
+
+:global(html.dark-mode) .cfg-block {
+    background: #2d3748;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    color: #ebeef1;
+}
+
+:global(html.dark-mode) .cfg-nt {
+    color: #90cdf4; /* Lighter blue for non-terminals */
+}
+
+:global(html.dark-mode) .cfg-t {
+    color: #68d391; /* Lighter green for terminals */
+}
+
+:global(html.dark-mode) .cfg-rules table {
+    background: #2d3748;
+}
+
+:global(html.dark-mode) .cfg-rules th {
+    background: #4a5568;
+    color: #ebeef1;
+}
+
+:global(html.dark-mode) .cfg-rules th,
+:global(html.dark-mode) .cfg-rules td {
+    border-color: #4a5568;
+    color: #ebeef1;
+}
+
+:global(html.dark-mode) .cfg-rule {
+    color: #90cdf4;
+}
+
+:global(html.dark-mode) .cfg-example {
+    color: #a0aec0; /* Lighter grey for examples */
+}
+
+:global(html.dark-mode) .syntax-tree {
+    background: #2d3748;
+    color: #ebeef1;
+}
+
+:global(html.dark-mode) .step-breakdown {
+    color: #ebeef1;
+}
+
+:global(html.dark-mode) .navigation-container {
+    background: #1a2a4a; /* Darker background for navigation */
+}
+
+:global(html.dark-mode) .nav-button {
+    background: #003366; /* Darker button background */
+    color: #ebeef1;
+}
+
+:global(html.dark-mode) .nav-button:disabled {
+    background: #718096; /* Darker disabled button */
+}
+
+:global(html.dark-mode) .step-counter {
+    color: #a0aec0;
+}
 </style>

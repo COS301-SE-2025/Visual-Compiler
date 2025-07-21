@@ -1557,7 +1557,7 @@
 
     :global(html.dark-mode) .input-block input:focus,
     :global(html.dark-mode) .automaton-input:focus {
-        border-color: #63b3ed;
+        border-color: #60a5fa;
         background-color: #2d3748;
         box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.2);
     }
