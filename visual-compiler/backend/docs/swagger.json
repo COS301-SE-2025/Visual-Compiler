@@ -9,6 +9,70 @@
     "host": "localhost:8080",
     "basePath": "/api",
     "paths": {
+        "/analysing/analyse": {
+            "post": {
+                "description": "Accepts scope rules, grammar rules and type rules from the user. Searches the database for the syntax tree created from the user. If it exists, the analysing process is performed and the artefacts are stored in the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Analysing"
+                ],
+                "summary": "Analysing phase",
+                "parameters": [
+                    {
+                        "description": "Read Analysing Inputs From User",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.AnalyseUserInputs"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Artefacts Successfully stored",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input or artefacts failed to insert",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Syntax Tree not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/lexing/code": {
             "post": {
                 "description": "Takes the user's source code and stores it with the user's ID. If a source code already exists, it overwrites that code and removes any other created fields (tokens, dfa, nfa, rules)",
@@ -955,6 +1019,44 @@
         }
     },
     "definitions": {
+        "handlers.AnalyseUserInputs": {
+            "type": "object",
+            "required": [
+                "grammar_rules",
+                "scope_rules",
+                "type_rules",
+                "users_id"
+            ],
+            "properties": {
+                "grammar_rules": {
+                    "description": "Grammar rules to be analysed",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/services.GrammarRules"
+                        }
+                    ]
+                },
+                "scope_rules": {
+                    "description": "Scope rules for the variables/functions scopes",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.ScopeRule"
+                    }
+                },
+                "type_rules": {
+                    "description": "Type rules for Type Checking",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.TypeRule"
+                    }
+                },
+                "users_id": {
+                    "description": "User's ID for storing purposes",
+                    "type": "string",
+                    "example": "685df259c1294de5546b045f"
+                }
+            }
+        },
         "handlers.DeleteRequest": {
             "type": "object",
             "required": [
@@ -1159,6 +1261,32 @@
                 }
             }
         },
+        "services.GrammarRules": {
+            "type": "object",
+            "properties": {
+                "assignmentRule": {
+                    "type": "string"
+                },
+                "functionRule": {
+                    "type": "string"
+                },
+                "operatorRule": {
+                    "type": "string"
+                },
+                "parameterRule": {
+                    "type": "string"
+                },
+                "termRule": {
+                    "type": "string"
+                },
+                "typeRule": {
+                    "type": "string"
+                },
+                "variableRule": {
+                    "type": "string"
+                }
+            }
+        },
         "services.ParsingRule": {
             "type": "object",
             "properties": {
@@ -1174,6 +1302,20 @@
                     "example": [
                         "Decl"
                     ]
+                }
+            }
+        },
+        "services.ScopeRule": {
+            "type": "object",
+            "properties": {
+                "end": {
+                    "type": "string"
+                },
+                "entered": {
+                    "type": "boolean"
+                },
+                "start": {
+                    "type": "string"
                 }
             }
         },
@@ -1198,6 +1340,29 @@
                     "type": "string"
                 },
                 "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "services.TypeRule": {
+            "type": "object",
+            "properties": {
+                "assignment": {
+                    "type": "string"
+                },
+                "lhsdata": {
+                    "type": "string"
+                },
+                "operator": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "resultData": {
+                    "type": "string"
+                },
+                "rhsdata": {
                     "type": "string"
                 }
             }
