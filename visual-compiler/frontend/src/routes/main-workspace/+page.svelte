@@ -315,6 +315,7 @@
 		cursor: pointer;
 		z-index: 1000;
 		margin-right: 1rem;
+		margin-bottom: 1rem;
 	}
 	.return-button:hover {
 		background: #074799;
