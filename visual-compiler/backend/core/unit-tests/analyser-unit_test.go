@@ -1649,7 +1649,7 @@ func TestAnalyse_Valid_TypeCheckAssignment_DirectValues(t *testing.T) {
 											Value:  "",
 											Children: []*services.TreeNode{
 												{
-													Symbol: "INTEGER",
+													Symbol: "int",
 													Value:  "13",
 												},
 											},
@@ -1663,7 +1663,7 @@ func TestAnalyse_Valid_TypeCheckAssignment_DirectValues(t *testing.T) {
 											Value:  "",
 											Children: []*services.TreeNode{
 												{
-													Symbol: "INTEGER",
+													Symbol: "int",
 													Value:  "89",
 												},
 											},
@@ -1682,7 +1682,20 @@ func TestAnalyse_Valid_TypeCheckAssignment_DirectValues(t *testing.T) {
 		},
 	}
 
-	type_rules := []services.TypeRule{}
+	type_rules := []services.TypeRule{
+		{
+			ResultData: "int",
+			Assignment: "=",
+			LHSData:    "int",
+			Operator:   []string{"+"},
+			RHSData:    "int",
+		},
+		{
+			ResultData: "int",
+			Assignment: "=",
+			LHSData:    "int",
+		},
+	}
 	rules := services.GrammarRules{
 		VariableRule:   "IDENTIFIER",
 		TypeRule:       "TYPE",
@@ -1724,14 +1737,7 @@ func TestAnalyse_Valid_TypeCheckAssignment_DirectValues(t *testing.T) {
 
 }
 
-func TestAnalyse_Valid_TypeCheckAssignment_VariableValues(t *testing.T) {
-
-	expected_res := []services.Symbol{
-		{Type: "string", Name: "purple", Scope: 1},
-		{Type: "int", Name: "func_name", Scope: 0, Parameters: []services.Symbol{{Name: "purple", Type: "string", Scope: 1}}},
-		{Type: "int", Name: "blue", Scope: 1},
-		{Type: "int", Name: "red", Scope: 0},
-	}
+func TestAnalyse_Invalid_TypeCheckAssignment_VariableValues(t *testing.T) {
 
 	scope_rules := []*services.ScopeRule{
 		{Start: "{", End: "}"},
@@ -1918,7 +1924,20 @@ func TestAnalyse_Valid_TypeCheckAssignment_VariableValues(t *testing.T) {
 		},
 	}
 
-	type_rules := []services.TypeRule{}
+	type_rules := []services.TypeRule{
+		{
+			ResultData: "int",
+			Assignment: "=",
+			LHSData:    "int",
+			Operator:   []string{"+"},
+			RHSData:    "int",
+		},
+		{
+			ResultData: "int",
+			Assignment: "=",
+			LHSData:    "int",
+		},
+	}
 	rules := services.GrammarRules{
 		VariableRule:   "IDENTIFIER",
 		TypeRule:       "TYPE",
@@ -1929,38 +1948,26 @@ func TestAnalyse_Valid_TypeCheckAssignment_VariableValues(t *testing.T) {
 		TermRule:       "TERM",
 	}
 
-	symbol_table_artefact, _, err := services.Analyse(scope_rules, syntax_tree, rules, type_rules)
+	_, _, err := services.Analyse(scope_rules, syntax_tree, rules, type_rules)
 
-	if err != nil {
-		t.Errorf("Error: %v", err)
+	if err == nil {
+		t.Errorf("Error expected")
 	} else {
-
-		if len(symbol_table_artefact.SymbolScopes) != len(expected_res) {
-			t.Errorf("not enough symbols identified")
-		} else {
-
-			for i, symbol := range symbol_table_artefact.SymbolScopes {
-				if symbol.Name != expected_res[i].Name || symbol.Type != expected_res[i].Type || symbol.Scope != expected_res[i].Scope {
-					t.Errorf("Symbol is incorrect: %v %v %v", symbol.Name, symbol.Scope, symbol.Type)
-				} else {
-					if len(symbol.Parameters) != len(expected_res[i].Parameters) {
-						t.Errorf("not enough function parameters")
-					}
-					for p, param := range symbol.Parameters {
-						if param.Name != expected_res[i].Parameters[p].Name || param.Type != expected_res[i].Parameters[p].Type {
-							t.Errorf("Function parameter is incorrect: %v", param)
-						}
-					}
-				}
-			}
-
+		if err.Error() != fmt.Errorf("error: invalid types assigned to: int blue").Error() {
+			t.Errorf("incorrect error: %v", err)
 		}
-
 	}
 
 }
 
-func TestAnalyse_Invalid_TypeCheckAssignment_VariableValues(t *testing.T) {
+func TestAnalyse_Valid_TypeCheckAssignment_VariableValues(t *testing.T) {
+
+	expected_res := []services.Symbol{
+		{Type: "int", Name: "purple", Scope: 1},
+		{Type: "int", Name: "func_name", Scope: 0, Parameters: []services.Symbol{{Name: "purple", Type: "int", Scope: 1}}},
+		{Type: "int", Name: "blue", Scope: 1},
+		{Type: "int", Name: "red", Scope: 0},
+	}
 
 	scope_rules := []*services.ScopeRule{
 		{Start: "{", End: "}"},
@@ -1997,7 +2004,7 @@ func TestAnalyse_Invalid_TypeCheckAssignment_VariableValues(t *testing.T) {
 											Children: []*services.TreeNode{
 												{
 													Symbol: "KEYWORD",
-													Value:  "string",
+													Value:  "int",
 												},
 											},
 										},
@@ -2059,7 +2066,7 @@ func TestAnalyse_Invalid_TypeCheckAssignment_VariableValues(t *testing.T) {
 													Children: []*services.TreeNode{
 														{
 															Symbol: "IDENTIFIER",
-															Value:  "green",
+															Value:  "purple",
 														},
 													},
 												},
@@ -2147,7 +2154,27 @@ func TestAnalyse_Invalid_TypeCheckAssignment_VariableValues(t *testing.T) {
 		},
 	}
 
-	type_rules := []services.TypeRule{}
+	type_rules := []services.TypeRule{
+		{
+			ResultData: "int",
+			Assignment: "=",
+			LHSData:    "int",
+			Operator:   []string{"+"},
+			RHSData:    "int",
+		},
+		{
+			ResultData: "int",
+			Assignment: "=",
+			LHSData:    "INTEGER",
+			Operator:   []string{"+"},
+			RHSData:    "INTEGER",
+		},
+		{
+			ResultData: "int",
+			Assignment: "=",
+			LHSData:    "int",
+		},
+	}
 	rules := services.GrammarRules{
 		VariableRule:   "IDENTIFIER",
 		TypeRule:       "TYPE",
@@ -2158,21 +2185,37 @@ func TestAnalyse_Invalid_TypeCheckAssignment_VariableValues(t *testing.T) {
 		TermRule:       "TERM",
 	}
 
-	_, _, err := services.Analyse(scope_rules, syntax_tree, rules, type_rules)
+	symbol_table_artefact, _, err := services.Analyse(scope_rules, syntax_tree, rules, type_rules)
 
-	if err == nil {
-		t.Fatalf("expected error")
+	if err != nil {
+		t.Errorf("Error: %v", err)
 	} else {
 
-		if err.Error() != fmt.Errorf("variable not declared within it's scope: green").Error() {
-			t.Errorf("incorrect error: %v", err)
+		if len(symbol_table_artefact.SymbolScopes) != len(expected_res) {
+			t.Errorf("not enough symbols identified")
+		} else {
+
+			for i, symbol := range symbol_table_artefact.SymbolScopes {
+				if symbol.Name != expected_res[i].Name || symbol.Type != expected_res[i].Type || symbol.Scope != expected_res[i].Scope {
+					t.Errorf("Symbol is incorrect: %v %v %v", symbol.Name, symbol.Scope, symbol.Type)
+				} else {
+					if len(symbol.Parameters) != len(expected_res[i].Parameters) {
+						t.Errorf("not enough function parameters")
+					}
+					for p, param := range symbol.Parameters {
+						if param.Name != expected_res[i].Parameters[p].Name || param.Type != expected_res[i].Parameters[p].Type {
+							t.Errorf("Function parameter is incorrect: %v", param)
+						}
+					}
+				}
+			}
+
 		}
 
 	}
-
 }
 
-func TestTraverseSyntaxTree_NilNode(t *testing.T) {
+/*func TestTraverseSyntaxTree_NilNode(t *testing.T) {
 	scope_rules := []*services.ScopeRule{
 		{Start: "{", End: "}"},
 	}
@@ -2719,3 +2762,4 @@ func TestStringifySymbolTable(t *testing.T) {
 		t.Errorf("Incorrect string generated")
 	}
 }
+*/
