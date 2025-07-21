@@ -34,7 +34,8 @@ type ScopeRule struct {
 //
 // type rules define the valid result types when using an expression
 type TypeRule struct {
-	ResultData []string
+	ResultData string
+	Assignment string
 	LHSData    string
 	Operator   []string
 	RHSData    string
@@ -374,7 +375,7 @@ func CreateTermSymbol(last_symbol *Symbol, term_node TreeNode, operator_symbol s
 // Return: error
 //
 // Perform scope and type check for assignment statements
-func HandleAssignment(assignment_data AssignmentData, symbol_table SymbolTable) error {
+func HandleAssignment(assignment_data AssignmentData, symbol_table SymbolTable, type_rules []TypeRule) error {
 
 	if assignment_data.ResultData.Type == "" {
 		return fmt.Errorf("error: no result data specified")
@@ -392,18 +393,50 @@ func HandleAssignment(assignment_data AssignmentData, symbol_table SymbolTable) 
 		return fmt.Errorf("error: not enough terms identified for operator in assignment")
 	}
 
+	valid_assignment := false
+
+	for _, rule := range type_rules {
+		if assignment_data.ResultData.Type == rule.ResultData {
+
+			for _, operator := range rule.Operator {
+				if assignment_data.Operator.Type == operator {
+
+					rhs_term_found := false
+					lhs_term_found := false
+					for _, term := range assignment_data.Terms {
+						if term.Type == rule.LHSData {
+							lhs_term_found = true
+						}
+						if term.Type == rule.RHSData {
+							rhs_term_found = true
+						}
+					}
+
+					if rhs_term_found && lhs_term_found {
+						valid_assignment = true
+					}
+
+				}
+			}
+		}
+	}
+
+	if !valid_assignment {
+		return fmt.Errorf("error: invalid types assigned to: %v %v", assignment_data.ResultData.Type, assignment_data.ResultData.Type)
+	}
+
 	return nil
 }
 
 // Name: TraverseSyntaxTree
 //
-// Parameters: []ScopeRule,*TreeNode,*SymbolTable,string,string,string,string,ExpressionRule,[]TypeRule
+// Parameters: []ScopeRule,*TreeNode,*SymbolTable,GrammarRules,[]TypeRule
 //
 // Return: error
 //
 // Function used to recursively traverse the syntax tree and build the symbol table.
 // Performs the scope check and type check.
-func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, symbol_table *SymbolTable, symbol_table_artefact *SymbolTableArtefact, rules GrammarRules, type_rules []TypeRule) error {
+func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, symbol_table *SymbolTable, symbol_table_artefact *SymbolTableArtefact, rules GrammarRules, type_rules []TypeRule, prev_node_data AssignmentData) error {
 
 	if current_tree_node == nil {
 		return nil
@@ -417,7 +450,14 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 	}
 
 	new_symbol := Symbol{}
-	assignment_data := AssignmentData{}
+
+	var assignment_data AssignmentData
+	if prev_node_data.ResultData.Type != "" {
+		assignment_data = prev_node_data
+	} else {
+		assignment_data = AssignmentData{}
+	}
+
 	for _, child := range current_tree_node.Children {
 
 		switch child.Symbol {
@@ -471,8 +511,8 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 		}
 	}
 
-	if new_symbol.Assign {
-		err := HandleAssignment(assignment_data, *symbol_table)
+	if new_symbol.Assign && len(current_tree_node.Children) == 0 {
+		err := HandleAssignment(assignment_data, *symbol_table, type_rules)
 		if err != nil {
 			return fmt.Errorf("%v", err)
 		}
@@ -480,7 +520,7 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 
 	for _, child := range current_tree_node.Children {
 		if child.Symbol != rules.FunctionRule {
-			err := TraverseSyntaxTree(scope_rules, child, symbol_table, symbol_table_artefact, rules, type_rules)
+			err := TraverseSyntaxTree(scope_rules, child, symbol_table, symbol_table_artefact, rules, type_rules, assignment_data)
 			if err != nil {
 				return err
 			}
@@ -506,34 +546,34 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 
 // Name: Analyse
 //
-// Parameters: []ScopeRule,SyntaxTree,GrammarRules,ExpressionRule,[]TypeRule
+// Parameters: []ScopeRule,SyntaxTree,GrammarRules,[]TypeRule
 //
 // Return: SymbolTable, error
 //
-// Receive a syntax tree and scope rules to scope check the parse tree, and create and return a symbol table or error
-func Analyse(scope_rules []*ScopeRule, syntax_tree SyntaxTree, rules GrammarRules, type_rules []TypeRule) (SymbolTableArtefact, error) {
+// Receive a syntax tree and scope rules to scope check the parse tree, and create and return a symbol table and semantically verified syntax tree or error
+func Analyse(scope_rules []*ScopeRule, syntax_tree SyntaxTree, rules GrammarRules, type_rules []TypeRule) (SymbolTableArtefact, SyntaxTree, error) {
 
 	if syntax_tree.Root == nil {
-		return SymbolTableArtefact{}, fmt.Errorf("syntax tree is empty")
+		return SymbolTableArtefact{}, SyntaxTree{}, fmt.Errorf("syntax tree is empty")
 	}
 
 	symbol_table := CreateEmptySymbolTable()
 
 	symbol_table_artefact := CreateEmptySymbolTableArtefact()
 
-	err := TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table, symbol_table_artefact, rules, type_rules)
+	err := TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table, symbol_table_artefact, rules, type_rules, AssignmentData{})
 	if err != nil {
-		return *symbol_table_artefact, err
+		return *symbol_table_artefact, SyntaxTree{}, err
 	}
 
 	for _, rule := range scope_rules {
 		if rule.Entered {
-			return *symbol_table_artefact, fmt.Errorf("end scope symbol not found for start scope, please recheck source code")
+			return *symbol_table_artefact, SyntaxTree{}, fmt.Errorf("end scope symbol not found for start scope, please recheck source code")
 		}
 
 	}
 
-	return *symbol_table_artefact, nil
+	return *symbol_table_artefact, syntax_tree, nil
 }
 
 // Name: StringifySymbolTable
