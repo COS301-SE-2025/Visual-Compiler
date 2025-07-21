@@ -604,7 +604,6 @@
         text-decoration: underline;
     }
 
-    /* Dark Mode Styles */
     :global(html.dark-mode) .phase-tutorial {
         background: #1a2a4a;
     }
@@ -649,13 +648,13 @@
     }
 
     :global(html.dark-mode) .nav-button {
-        background: #003366; /* Darker blue for dark mode buttons */
+        background: #003366;
         color: white;
     }
 
     :global(html.dark-mode) .nav-button:disabled {
         background: #4b5563;
-        color: #9ca3af; /* Lighter gray for disabled text in dark mode */
+        color: #9ca3af; 
     }
 
     :global(html.dark-mode) .step-counter {
@@ -665,11 +664,11 @@
     :global(html.dark-mode) .token-table {
         background: #2d3748;
         border-color: #4a5568;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Adjusted for dark mode visibility */
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); 
     }
 
     :global(html.dark-mode) .table-header {
-        background: #003366; /* Darker blue for table header in dark mode */
+        background: #003366;
         border-bottom-color: #4a5568;
     }
 
@@ -705,21 +704,21 @@
     }
 
     :global(html.dark-mode) .dfa-nfa-table th {
-        background: #003366; /* Darker blue for table header in dark mode */
+        background: #003366; 
         color: #f0f0f0;
     }
 
     :global(html.dark-mode) .accept {
-        color: #34d399; /* Lighter green for dark mode */
+        color: #34d399; 
     }
 
     :global(html.dark-mode) .reject {
-        color: #f87171; /* Lighter red for dark mode */
+        color: #f87171;
     }
 
     :global(html.dark-mode) .automata-explainer {
         background: #2d3748;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); /* Adjusted for dark mode visibility */
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); 
     }
 
     :global(html.dark-mode) .automata-label {

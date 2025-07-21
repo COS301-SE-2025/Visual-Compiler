@@ -52,7 +52,6 @@
 </div>
 
 <style>
-    /* --- Base & Light Mode Styles --- */
     .artifact-viewer {
         padding: 2rem 1.5rem 1.5rem;
         transition: background-color 0.3s ease;
@@ -73,9 +72,9 @@
         border-collapse: collapse;
         margin: 1.5rem 0 2rem 0;
         background: white;
-        border-radius: 10px; /* Updated border-radius */
+        border-radius: 10px; 
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        overflow: hidden; /* Ensures child corners are clipped */
+        overflow: hidden;
         transition: background-color 0.3s ease, box-shadow 0.3s ease;
     }
 
@@ -89,7 +88,7 @@
     }
     
     .token-table tr:last-child td {
-        border-bottom: none; /* Removes border from last row for cleaner look */
+        border-bottom: none; 
     }
 
     .token-table th {

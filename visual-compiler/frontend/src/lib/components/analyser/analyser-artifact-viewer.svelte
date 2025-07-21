@@ -81,27 +81,22 @@
         border-bottom: none;
     }
     
-    .symbol-table tr:nth-child(even) {
-        background-color: #f8fafc;
-    }
-    
     .symbol-table tr:hover {
         background-color: #eef2f7;
     }
     
     /* Dark mode styles */
     :global(html.dark-mode) .symbol-table th {
-        background-color: #3a7bd5;
+        background-color: #1a202c;
     }
     
     :global(html.dark-mode) .symbol-table td {
-        border-bottom-color: #2a3a5a;
+        border-bottom-color: #4a5568;
         color: #e0e8f0;
+        background: #2d3748;
     }
     
-    :global(html.dark-mode) .symbol-table tr:nth-child(even) {
-        background-color: #253352;
-    }
+
     
     :global(html.dark-mode) .symbol-table tr:hover {
         background-color: #2a4a8a;

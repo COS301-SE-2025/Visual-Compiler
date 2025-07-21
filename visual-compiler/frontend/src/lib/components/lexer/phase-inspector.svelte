@@ -841,7 +841,6 @@
 
     {#if selectedType === 'REGEX'}
         {#if showRegexVisOnly}
-            <!-- Only show the NFA/DFA display and back button -->
             {#if showRegexNfaVis && regexNfa}
                 <div class="automata-container pretty-vis-box">
                     <div class="vis-heading">
@@ -873,7 +872,6 @@
                 </button>
             {/if}
         {:else}
-            <!-- Show the regular expression input, submit, and action buttons as before -->
             <div>
                 <div class="shared-block">
                     <div class="block-headers">
@@ -1074,7 +1072,6 @@
 </div>
 
 <style>
-    /* --- Base & Light Mode Styles --- */
     .phase-inspector {
         flex: 1.2;
         padding: 0.2rem 2rem 2rem 2rem;

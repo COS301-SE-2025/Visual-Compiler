@@ -470,13 +470,12 @@
         border: 1px solid #ddd;
         border-radius: 4px;
         font-family: monospace;
-        /* Added for cohesive styling */
         transition: border-color 0.2s, box-shadow 0.2s;
     }
     .input-group input:focus {
         outline: none;
-        border-color: #007bff; /* A common focus color */
-        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Subtle glow */
+        border-color: #007bff; 
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
     }
 
 
@@ -626,12 +625,11 @@
         border-color: #4b5563;
         color: #f0f0f0;
     }
-    /* Dark mode input focus styles */
     :global(html.dark-mode) .input-group input:focus,
     :global(html.dark-mode) .non-terminal-input:focus,
     :global(html.dark-mode) .translation-input:focus {
-        border-color: #60a5fa; /* A vibrant blue for dark mode focus */
-        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4); /* Matching glow */
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4); 
     }
 
     :global(html.dark-mode) .arrow {

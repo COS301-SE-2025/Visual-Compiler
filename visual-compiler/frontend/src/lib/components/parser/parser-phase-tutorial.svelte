@@ -425,11 +425,11 @@ h3 {
 
 :global(html.dark-mode) .code-sample {
     background: #2d3748;
-    color: #ebeef1; /* Added for text color */
+    color: #ebeef1; 
 }
 
 :global(html.dark-mode) .token-table .table-header {
-    background: #4a5568; /* Darker header for token table */
+    background: #4a5568;
     color: #ebeef1;
 }
 
@@ -437,8 +437,8 @@ h3 {
 :global(html.dark-mode) .token-table .header-tokens,
 :global(html.dark-mode) .token-table .token-type,
 :global(html.dark-mode) .token-table .token-values {
-    border-color: #4a5568; /* Darker borders */
-    background: #2d3748; /* Darker background for cells */
+    border-color: #4a5568; 
+    background: #2d3748; 
     color: #ebeef1;
 }
 
@@ -449,11 +449,11 @@ h3 {
 }
 
 :global(html.dark-mode) .cfg-nt {
-    color: #90cdf4; /* Lighter blue for non-terminals */
+    color: #90cdf4; 
 }
 
 :global(html.dark-mode) .cfg-t {
-    color: #68d391; /* Lighter green for terminals */
+    color: #68d391; 
 }
 
 :global(html.dark-mode) .cfg-rules table {
@@ -476,7 +476,7 @@ h3 {
 }
 
 :global(html.dark-mode) .cfg-example {
-    color: #a0aec0; /* Lighter grey for examples */
+    color: #a0aec0; 
 }
 
 :global(html.dark-mode) .syntax-tree {
@@ -489,16 +489,16 @@ h3 {
 }
 
 :global(html.dark-mode) .navigation-container {
-    background: #1a2a4a; /* Darker background for navigation */
+    background: #1a2a4a;
 }
 
 :global(html.dark-mode) .nav-button {
-    background: #003366; /* Darker button background */
+    background: #003366; 
     color: #ebeef1;
 }
 
 :global(html.dark-mode) .nav-button:disabled {
-    background: #718096; /* Darker disabled button */
+    background: #718096; 
 }
 
 :global(html.dark-mode) .step-counter {
