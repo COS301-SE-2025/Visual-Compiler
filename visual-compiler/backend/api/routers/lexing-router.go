@@ -11,7 +11,7 @@ import (
 //
 // Return: Endpoints
 //
-// Creates the endpoints for lexing, Links the endpoints to the respective function
+// Creates the endpoints for lexing. Links the endpoints to the respective function
 func SetupLexingRouter() *gin.Engine {
 	r := gin.New()
 

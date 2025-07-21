@@ -1,5 +1,31 @@
 basePath: /api
 definitions:
+  handlers.AnalyseUserInputs:
+    properties:
+      grammar_rules:
+        allOf:
+        - $ref: '#/definitions/services.GrammarRules'
+        description: Grammar rules to be analysed
+      scope_rules:
+        description: Scope rules for the variables/functions scopes
+        items:
+          $ref: '#/definitions/services.ScopeRule'
+        type: array
+      type_rules:
+        description: Type rules for Type Checking
+        items:
+          $ref: '#/definitions/services.TypeRule'
+        type: array
+      users_id:
+        description: User's ID for storing purposes
+        example: 685df259c1294de5546b045f
+        type: string
+    required:
+    - grammar_rules
+    - scope_rules
+    - type_rules
+    - users_id
+    type: object
   handlers.DeleteRequest:
     properties:
       id:
@@ -146,6 +172,23 @@ definitions:
       token_type:
         type: string
     type: object
+  services.GrammarRules:
+    properties:
+      assignmentRule:
+        type: string
+      functionRule:
+        type: string
+      operatorRule:
+        type: string
+      parameterRule:
+        type: string
+      termRule:
+        type: string
+      typeRule:
+        type: string
+      variableRule:
+        type: string
+    type: object
   services.ParsingRule:
     properties:
       input:
@@ -157,6 +200,15 @@ definitions:
         items:
           type: string
         type: array
+    type: object
+  services.ScopeRule:
+    properties:
+      end:
+        type: string
+      entered:
+        type: boolean
+      start:
+        type: string
     type: object
   services.Transition:
     properties:
@@ -174,6 +226,21 @@ definitions:
       type:
         type: string
     type: object
+  services.TypeRule:
+    properties:
+      assignment:
+        type: string
+      lhsdata:
+        type: string
+      operator:
+        items:
+          type: string
+        type: array
+      resultData:
+        type: string
+      rhsdata:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -181,6 +248,50 @@ info:
   title: Visual Compiler API
   version: "1.0"
 paths:
+  /analysing/analyse:
+    post:
+      consumes:
+      - application/json
+      description: Accepts scope rules, grammar rules and type rules from the user.
+        Searches the database for the syntax tree created from the user. If it exists,
+        the analysing process is performed and the artefacts are stored in the database
+      parameters:
+      - description: Read Analysing Inputs From User
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AnalyseUserInputs'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Artefacts Successfully stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input or artefacts failed to insert
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Syntax Tree not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Analysing phase
+      tags:
+      - Analysing
   /lexing/code:
     post:
       consumes:
