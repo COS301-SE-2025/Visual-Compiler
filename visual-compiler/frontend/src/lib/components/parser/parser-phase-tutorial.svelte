@@ -504,4 +504,32 @@ h3 {
 :global(html.dark-mode) .step-counter {
     color: #a0aec0;
 }
+
+
+    ::-webkit-scrollbar {
+        width: 11px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    ::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 10px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    :global(html.dark-mode) ::-webkit-scrollbar-track {
+        background: #2d3748;
+    }
+
+    :global(html.dark-mode) ::-webkit-scrollbar-thumb {
+        background-color: #4a5568; 
+        border-color: #2d3748; 
+    }
+
+    :global(html.dark-mode) ::-webkit-scrollbar-thumb:hover {
+        background: #616e80;
+    }
 </style>

@@ -258,20 +258,9 @@
 		font-weight: 700;
 	}
 
-	.confirmed-display {
-
-		border: 1px solid #ccc;
-		border-radius: 6px;
-		background: #f5f5f5;
-		padding: 0.8rem;
-		white-space: pre-wrap;
-		word-wrap: break-word;
-	}
-	.confirmed-display p {
-		margin-top: 0;
-		font-size: 1.1rem;
-		color: #001a6e;
-		margin-bottom: 0 ;
-		font-weight: 600;
+	:global(html.dark-mode) textarea {
+		background: #2d3748;
+		color: #ccc;
+		border-color: #4a5568;
 	}
 </style>
