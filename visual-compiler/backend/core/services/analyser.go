@@ -354,7 +354,7 @@ func CreateOperatorSymbol(last_symbol *Symbol, operator_value string) Symbol {
 // Return: Symbol
 //
 // Creates a symbol for terms to be used during assignment
-func CreateTermSymbol(last_symbol *Symbol, term_node TreeNode, operator_symbol string) Symbol {
+func CreateTermSymbol(last_symbol *Symbol, term_node TreeNode, variable_rule string) Symbol {
 
 	term_symbol := Symbol{}
 	term_symbol.Name = "TERM"
@@ -363,9 +363,39 @@ func CreateTermSymbol(last_symbol *Symbol, term_node TreeNode, operator_symbol s
 		term_node = *term_node.Children[0]
 	}
 
-	term_symbol.Type = term_node.Symbol
+	if term_node.Symbol == variable_rule {
+		term_symbol.Type = term_node.Value
+	} else {
+		term_symbol.Type = term_node.Symbol
+	}
 
 	return term_symbol
+}
+
+// Name: HandleTerms
+//
+// Parameters: *Symbol,TreeNode,string
+//
+// Return: Symbol
+//
+// Creates a symbol for terms to be used during assignment
+func FindTerms(last_symbol *Symbol, term_node TreeNode, operator_symbol string, term_symbol string, variable_rule string) ([]Symbol, Symbol) {
+
+	term_symbols := []Symbol{}
+	operator := Symbol{}
+
+	if term_node.Value == "" && len(term_node.Children) > 0 {
+		for _, child := range term_node.Children {
+			if child.Symbol == term_symbol {
+				new_symbol := CreateTermSymbol(last_symbol, *child, variable_rule)
+				term_symbols = append(term_symbols, new_symbol)
+			} else if child.Symbol == operator_symbol {
+				operator = CreateOperatorSymbol(last_symbol, child.Value)
+			}
+		}
+	}
+
+	return term_symbols, operator
 }
 
 // Name: HandleAssignment
@@ -381,16 +411,16 @@ func HandleAssignment(assignment_data AssignmentData, symbol_table SymbolTable, 
 		return fmt.Errorf("error: no result data specified")
 	}
 	if assignment_data.Assignment.Type == "" {
-		return fmt.Errorf("error: no assignment symbol used")
+		return fmt.Errorf("error: no assignment symbol used: %v", assignment_data.ResultData.Name)
 	}
 	if assignment_data.Operator.Type == "" && len(assignment_data.Terms) > 1 {
-		return fmt.Errorf("error: No operator indicated for multiple terms in assignment")
+		return fmt.Errorf("error: No operator indicated for multiple terms in assignment: %v", assignment_data.ResultData.Name)
 	}
 	if len(assignment_data.Terms) == 0 {
 		return fmt.Errorf("error: no terms identified for assignment: %v", assignment_data.ResultData.Name)
 	}
 	if assignment_data.Operator.Type != "" && len(assignment_data.Terms) < 2 {
-		return fmt.Errorf("error: not enough terms identified for operator in assignment")
+		return fmt.Errorf("error: not enough terms identified for operator in assignment: %v", assignment_data.ResultData.Name)
 	}
 
 	valid_assignment := false
@@ -398,31 +428,70 @@ func HandleAssignment(assignment_data AssignmentData, symbol_table SymbolTable, 
 	for _, rule := range type_rules {
 		if assignment_data.ResultData.Type == rule.ResultData {
 
-			for _, operator := range rule.Operator {
-				if assignment_data.Operator.Type == operator {
+			if assignment_data.Operator.Type != "" {
 
-					rhs_term_found := false
-					lhs_term_found := false
-					for _, term := range assignment_data.Terms {
-						if term.Type == rule.LHSData {
+				for _, operator := range rule.Operator {
+					if assignment_data.Operator.Type == operator {
+
+						rhs_term_found := false
+						lhs_term_found := false
+						for _, term := range assignment_data.Terms {
+
+							if term.Type == rule.LHSData {
+								lhs_term_found = true
+							}
+							if term.Type == rule.RHSData {
+								rhs_term_found = true
+							}
+
+							symbol, err := LookupName(&symbol_table, term.Type)
+							if err == nil {
+								if symbol.Type == rule.LHSData {
+									lhs_term_found = true
+								}
+								if symbol.Type == rule.RHSData {
+									rhs_term_found = true
+								}
+							}
+
+						}
+
+						if rhs_term_found && lhs_term_found {
+							valid_assignment = true
+						}
+
+					}
+				}
+			} else {
+				lhs_term_found := false
+
+				for _, term := range assignment_data.Terms {
+
+					if term.Type == rule.LHSData {
+						lhs_term_found = true
+					}
+
+					/*current_scope := symbol_table.SymbolScopes[len(symbol_table.SymbolScopes)-1]
+					symbol, term_found := current_scope[term.Type]
+					fmt.Printf("%v", current_scope)*/
+					symbol, err := LookupName(&symbol_table, term.Type)
+					if err == nil {
+						if symbol.Type == rule.LHSData {
 							lhs_term_found = true
 						}
-						if term.Type == rule.RHSData {
-							rhs_term_found = true
-						}
 					}
+				}
 
-					if rhs_term_found && lhs_term_found {
-						valid_assignment = true
-					}
-
+				if lhs_term_found {
+					valid_assignment = true
 				}
 			}
 		}
 	}
 
 	if !valid_assignment {
-		return fmt.Errorf("error: invalid types assigned to: %v %v", assignment_data.ResultData.Type, assignment_data.ResultData.Type)
+
+		return fmt.Errorf("error: invalid types assigned to: %v %v", assignment_data.ResultData.Type, assignment_data.ResultData.Name)
 	}
 
 	return nil
@@ -436,7 +505,7 @@ func HandleAssignment(assignment_data AssignmentData, symbol_table SymbolTable, 
 //
 // Function used to recursively traverse the syntax tree and build the symbol table.
 // Performs the scope check and type check.
-func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, symbol_table *SymbolTable, symbol_table_artefact *SymbolTableArtefact, rules GrammarRules, type_rules []TypeRule, prev_node_data AssignmentData) error {
+func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, symbol_table *SymbolTable, symbol_table_artefact *SymbolTableArtefact, rules GrammarRules, type_rules []TypeRule) error {
 
 	if current_tree_node == nil {
 		return nil
@@ -451,15 +520,9 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 
 	new_symbol := Symbol{}
 
-	var assignment_data AssignmentData
-	if prev_node_data.ResultData.Type != "" {
-		assignment_data = prev_node_data
-	} else {
-		assignment_data = AssignmentData{}
-	}
+	assignment_data := AssignmentData{}
 
 	for _, child := range current_tree_node.Children {
-
 		switch child.Symbol {
 
 		case rules.FunctionRule:
@@ -485,8 +548,16 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 			assignment_data.Operator = operator_symbol
 
 		case rules.TermRule:
-			term_symbol := CreateTermSymbol(&new_symbol, *child, rules.OperatorRule)
+			term_symbol := CreateTermSymbol(&new_symbol, *child, rules.VariableRule)
 			assignment_data.Terms = append(assignment_data.Terms, term_symbol)
+
+		default:
+
+			term_symbols, operator_symbol := FindTerms(&new_symbol, *child, rules.OperatorRule, rules.TermRule, rules.VariableRule)
+			if len(term_symbols) > 0 {
+				assignment_data.Terms = term_symbols
+			}
+			assignment_data.Operator = operator_symbol
 		}
 
 	}
@@ -511,7 +582,7 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 		}
 	}
 
-	if new_symbol.Assign && len(current_tree_node.Children) == 0 {
+	if new_symbol.Assign {
 		err := HandleAssignment(assignment_data, *symbol_table, type_rules)
 		if err != nil {
 			return fmt.Errorf("%v", err)
@@ -520,7 +591,7 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 
 	for _, child := range current_tree_node.Children {
 		if child.Symbol != rules.FunctionRule {
-			err := TraverseSyntaxTree(scope_rules, child, symbol_table, symbol_table_artefact, rules, type_rules, assignment_data)
+			err := TraverseSyntaxTree(scope_rules, child, symbol_table, symbol_table_artefact, rules, type_rules)
 			if err != nil {
 				return err
 			}
@@ -561,7 +632,7 @@ func Analyse(scope_rules []*ScopeRule, syntax_tree SyntaxTree, rules GrammarRule
 
 	symbol_table_artefact := CreateEmptySymbolTableArtefact()
 
-	err := TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table, symbol_table_artefact, rules, type_rules, AssignmentData{})
+	err := TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table, symbol_table_artefact, rules, type_rules)
 	if err != nil {
 		return *symbol_table_artefact, SyntaxTree{}, err
 	}
