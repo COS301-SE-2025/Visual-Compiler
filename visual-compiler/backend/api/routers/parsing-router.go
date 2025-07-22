@@ -12,7 +12,7 @@ import (
 //
 // Return: Endpoints
 //
-// Creates the endpoints for parsing, Links the endpoints to the respective function
+// Creates the endpoints for parsing. Links the endpoints to the respective function
 func SetupParsingRouter() *gin.Engine {
 	r := gin.New()
 

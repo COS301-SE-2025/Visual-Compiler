@@ -12,7 +12,7 @@ import (
 //
 // Return: Endpoints
 //
-// Creates the endpoints for user management, Links the endpoints to the respective function
+// Creates the endpoints for user management. Links the endpoints to the respective function
 func SetupUserRouter() *gin.Engine {
 	r := gin.New()
 
