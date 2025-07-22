@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Writable } from 'svelte/store';
 	import { writable } from 'svelte/store';
 	import type { NodeType, Token, SyntaxTree } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
 	import NavBar from '$lib/components/main/nav-bar.svelte';
-	import Toolbox from '$lib/components/main/Toolbox.svelte';
+	import Toolbox from '$lib/components/main/toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 
@@ -315,6 +314,7 @@
 		cursor: pointer;
 		z-index: 1000;
 		margin-right: 1rem;
+		margin-bottom: 1rem;
 	}
 	.return-button:hover {
 		background: #074799;

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { AddToast } from '$lib/stores/toast';
-	import { confirmedSourceCode } from '$lib/stores/sourceCode';
+	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import { tick } from 'svelte';
 	import { onMount } from 'svelte';
 
@@ -258,20 +258,25 @@
 		font-weight: 700;
 	}
 
-	.confirmed-display {
+	:global(html.dark-mode) textarea {
+		background: #2d3748;
+		color: #ccc;
+		border-color: #4a5568;
+	}
 
-		border: 1px solid #ccc;
-		border-radius: 6px;
-		background: #f5f5f5;
-		padding: 0.8rem;
-		white-space: pre-wrap;
-		word-wrap: break-word;
-	}
-	.confirmed-display p {
-		margin-top: 0;
-		font-size: 1.1rem;
-		color: #001a6e;
-		margin-bottom: 0 ;
-		font-weight: 600;
-	}
+	 :global(html.dark-mode) .default-source-btn  {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #d1d5db;
+    }
+
+	 :global(html.dark-mode) .default-source-btn.selected {
+        background-color: #001a6e;
+        border-color: #60a5fa;
+        color: #e0e7ff;
+    }
+    :global(html.dark-mode) .default-source-btn:not(.selected):hover {
+        background-color: #374151;
+        border-color: #6b7280;
+    }
 </style>

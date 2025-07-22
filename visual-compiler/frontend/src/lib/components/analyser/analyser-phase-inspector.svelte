@@ -469,10 +469,10 @@
 		background-color: #4a8ce5;
 	}
 	:global(html.dark-mode) .generate-button {
-		background-color: #10b981;
+		background-color: #4a5568;
 	}
 	:global(html.dark-mode) .generate-button:hover {
-		background-color: #059669;
+		background-color: #3b4453;
 	}
 	:global(html.dark-mode) .reset-button:hover:not(:disabled) {
 		color: #4a8ce5;
