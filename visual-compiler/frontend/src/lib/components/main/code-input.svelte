@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { AddToast } from '$lib/stores/toast';
-	import { confirmedSourceCode } from '$lib/stores/sourceCode';
+	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import { tick } from 'svelte';
 	import { onMount } from 'svelte';
 

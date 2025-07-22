@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi } from 'vitest';
-import Hero from '../../src/lib/components/landing/Hero.svelte';
+import Hero from '../../src/lib/components/landing/hero.svelte';
 
 // Mock SvelteKit's navigation module
 const mockedGoto = vi.fn();
