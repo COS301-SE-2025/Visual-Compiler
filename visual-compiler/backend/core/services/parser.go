@@ -247,6 +247,20 @@ func TryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int,
 // Convert left-recursive rules to right-recursive rules to prevent infinite recursion
 func EliminateLeftRecursion(grammar Grammar) Grammar {
 
+	has_left := false
+
+	for _, rule := range grammar.Rules {
+
+		if len(rule.Output) > 0 && rule.Output[0] == rule.Input {
+			has_left = true
+			break
+		}
+	}
+
+	if !has_left {
+		return grammar
+	}
+
 	new_grammar := grammar
 	processed_rules := make(map[string]bool)
 	final_rules := make([]ParsingRule, 0)
