@@ -80,3 +80,30 @@ func ReadTranslationRules(input []byte) ([]TranslationRule, error) {
 
 	return translator, nil
 }
+
+// Name: LeafNodes
+//
+// Parameters: *TreeNode
+//
+// Return: []*TreeNode
+//
+// Combines all the leaf nodes into an array in left-to-right order
+func LeafNodes(node *TreeNode) []*TreeNode {
+
+	if node == nil {
+		return nil
+	}
+
+	if len(node.Children) == 0 {
+		return []*TreeNode{node}
+	}
+
+	var leaf_nodes []*TreeNode
+
+	for _, child := range node.Children {
+		branch := LeafNodes(child)
+		leaf_nodes = append(leaf_nodes, branch...)
+	}
+
+	return leaf_nodes
+}
