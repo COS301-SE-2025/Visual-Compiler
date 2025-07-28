@@ -88,6 +88,8 @@ func ReadGrammar(input []byte) (Grammar, error) {
 		grammar.Rules[i].Output = filtered
 	}
 
+	grammar = EliminateLeftRecursion(grammar)
+
 	return grammar, nil
 }
 
