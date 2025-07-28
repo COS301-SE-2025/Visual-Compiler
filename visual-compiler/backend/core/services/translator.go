@@ -166,3 +166,99 @@ func LeafNodes(node *TreeNode) []*TreeNode {
 
 	return leaf_nodes
 }
+
+// Name: MatchesSequence
+//
+// Parameters: []*TreeNode, []string, int
+//
+// Return: bool
+//
+// Checks if a sequence of leaf nodes matches a translation rule
+func MatchesSequence(leaves []*TreeNode, sequence []string, start int) bool {
+
+	if start+len(sequence) > len(leaves) {
+		return false
+	}
+
+	for i, symbol := range sequence {
+
+		if leaves[start+i].Symbol != symbol {
+			return false
+		}
+	}
+
+	return true
+}
+
+// Name: UseRule
+//
+// Parameters: []*TreeNode, []string, []string
+//
+// Return: []string
+//
+// Applies the translation rule template to the token sequence
+func UseRule(leaves []*TreeNode, sequence []string, translation []string) []string {
+
+	token_map := make(map[string][]*TokenTracker)
+
+	for i, symbol := range sequence {
+		if i < len(sequence) {
+			token_map[symbol] = append(token_map[symbol], &TokenTracker{
+				Value: leaves[i].Value,
+				Usage: false,
+			})
+		}
+	}
+
+	var result []string
+
+	for _, template := range translation {
+		translated := SubstituteTemplate(template, token_map)
+		result = append(result, translated)
+	}
+
+	return result
+}
+
+// Name: SubstituteTemplate
+//
+// Parameters: string, map[string][]*TokenTracker
+//
+// Return: string
+//
+// Replaces the placeholders in the template with their actual values
+func SubstituteTemplate(template string, token_map map[string][]*TokenTracker) string {
+
+	result := template
+
+	for symbol, value_usage := range token_map {
+
+		placeholder := "{" + symbol + "}"
+
+		for strings.Contains(result, placeholder) {
+
+			var unused string
+			found := false
+
+			for _, tracker := range value_usage {
+
+				if !tracker.Usage {
+					unused = tracker.Value
+					if len(value_usage) > 1 {
+						tracker.Usage = true
+					}
+					found = true
+					break
+				}
+			}
+
+			if found {
+				result = strings.Replace(result, placeholder, unused, 1)
+			} else {
+				break
+			}
+		}
+	}
+
+	return result
+}
