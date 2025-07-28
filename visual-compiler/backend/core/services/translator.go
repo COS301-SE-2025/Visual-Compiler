@@ -16,7 +16,7 @@ type TranslationRule struct {
 // Struct to track whether the syntax tree leaves are translated
 type TokenTracker struct {
 	Value string
-	Usage bool
+	Avail bool
 }
 
 // Name: ReadTranslationRules
@@ -205,7 +205,7 @@ func UseRule(leaves []*TreeNode, sequence []string, translation []string) []stri
 		if i < len(sequence) {
 			token_map[symbol] = append(token_map[symbol], &TokenTracker{
 				Value: leaves[i].Value,
-				Usage: false,
+				Avail: false,
 			})
 		}
 	}
@@ -231,7 +231,7 @@ func SubstituteTemplate(template string, token_map map[string][]*TokenTracker) s
 
 	result := template
 
-	for symbol, value_usage := range token_map {
+	for symbol, value := range token_map {
 
 		placeholder := "{" + symbol + "}"
 
@@ -240,12 +240,12 @@ func SubstituteTemplate(template string, token_map map[string][]*TokenTracker) s
 			var unused string
 			found := false
 
-			for _, tracker := range value_usage {
+			for _, tracker := range value {
 
-				if !tracker.Usage {
+				if !tracker.Avail {
 					unused = tracker.Value
-					if len(value_usage) > 1 {
-						tracker.Usage = true
+					if len(value) > 1 {
+						tracker.Avail = true
 					}
 					found = true
 					break
