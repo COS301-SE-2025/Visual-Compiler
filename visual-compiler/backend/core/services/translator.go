@@ -81,6 +81,65 @@ func ReadTranslationRules(input []byte) ([]TranslationRule, error) {
 	return translator, nil
 }
 
+// Name: Translate
+//
+// Parameters: SyntaxTree, []TranslationRule
+//
+// Return: []string, error
+//
+// Converts the syntax tree to the target code using the translation rules
+func Translate(tree SyntaxTree, rules []TranslationRule) ([]string, error) {
+
+	if tree.Root == nil {
+		return []string{}, fmt.Errorf("empty syntax tree")
+	}
+
+	leaf_nodes := LeafNodes(tree.Root)
+
+	if len(leaf_nodes) == 0 {
+		return []string{}, fmt.Errorf("empty syntax tree")
+	}
+
+	var result []string
+	translated := make([]bool, len(leaf_nodes))
+
+	i := 0
+	for i < len(leaf_nodes) {
+
+		matched := false
+
+		for _, rule := range rules {
+
+			if MatchesSequence(leaf_nodes, rule.Sequence, i) {
+
+				line := leaf_nodes[i : i+len(rule.Sequence)]
+				translation := UseRule(line, rule.Sequence, rule.Translation)
+				result = append(result, translation...)
+
+				for j := i; j < i+len(rule.Sequence); j++ {
+					translated[j] = true
+				}
+
+				matched = true
+				i += len(rule.Sequence)
+				break
+			}
+		}
+
+		if !matched {
+			i++
+		}
+	}
+
+	for i, processed := range translated {
+		if !processed {
+			return nil, fmt.Errorf("the token (%s: %s) was not part of any translation", leaf_nodes[i].Symbol, leaf_nodes[i].Value)
+		}
+	}
+
+	return result, nil
+}
+
 // Name: LeafNodes
 //
 // Parameters: *TreeNode
