@@ -13,7 +13,7 @@ import (
 // Specifies the JSON body response after successful fetching
 type UserPublic struct {
 	// User's auto-generated ID
-	ID bson.ObjectID `json:"users_id"`
+	ID string `json:"id"`
 	// User's Username
 	Username string `json:"username"`
 	// User's Email
@@ -50,7 +50,7 @@ func GetAllUsers(c *gin.Context) {
 			return
 		}
 
-		id := raw["_id"].(bson.ObjectID)
+		id := raw["_id"].(bson.ObjectID).Hex()
 		username := raw["username"].(string)
 		email := raw["email"].(string)
 
