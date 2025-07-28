@@ -5,6 +5,8 @@
 
     const dispatch = createEventDispatcher();
 
+    export let source_code: string = '';
+
     // --- INTERFACES ---
     interface ScopeRule {
         id: number;
@@ -59,6 +61,25 @@
 
     // Overall Submission State
     let rulesSubmitted = false; // This flag now controls the overall submission state
+
+    const DEFAULT_SCOPE_RULES = [
+        { id: 0, start: '{', end: '}' }
+    ];
+
+    const DEFAULT_TYPE_RULES = [
+        { id: 0, resultType: 'int', assignment: '=', lhs: 'INTEGER', operators: '', rhs: '' }
+    ];
+
+    const DEFAULT_GRAMMAR_RULES: GrammarRule = {
+        variable: 'Identifier',
+        type: 'TYPE',
+        functionDeclaration: 'FUNCTION',
+        parameter: 'PARAMETER',
+        assignment: 'ASSIGNMENT',
+        operator: 'OPERATOR',
+        term: 'TERM'
+    };
+    let show_default_rules = false;
 
     // --- LOGIC ---
 
@@ -169,6 +190,34 @@
         AddToast('Symbol table generated', 'success');
     }
 
+    function insertDefaultRules() {
+        scopeRules = DEFAULT_SCOPE_RULES.map(r => ({ ...r }));
+        nextScopeId = 1;
+        typeRules = DEFAULT_TYPE_RULES.map(r => ({ ...r }));
+        nextTypeId = 1;
+        grammarRules = { ...DEFAULT_GRAMMAR_RULES };
+        show_default_rules = true;
+        rulesSubmitted = false;
+    }
+
+    function removeDefaultRules() {
+        scopeRules = [{ id: 0, start: '', end: '' }];
+        nextScopeId = 1;
+        typeRules = [{ id: 0, resultType: '', assignment: '', lhs: '', operators: '', rhs: '' }];
+        nextTypeId = 1;
+        grammarRules = {
+            variable: '',
+            type: '',
+            functionDeclaration: '',
+            parameter: '',
+            assignment: '',
+            operator: '',
+            term: ''
+        };
+        show_default_rules = false;
+        rulesSubmitted = false;
+    }
+
     // --- REACTIVE STATEMENTS ---
 
     // Scope Rules Completeness
@@ -209,6 +258,18 @@
 </script>
 
 <div class="panel-container">
+    <div class="default-toggle-wrapper">
+        <button
+            class="default-toggle-btn"
+            class:selected={show_default_rules}
+            on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
+            type="button"
+            aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+            title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+        >
+            <span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
+        </button>
+    </div>
     <div class="header">
         {#if rulesSubmitted}
             <div class="reset-wrapper" transition:fade={{ duration: 150 }}>
@@ -230,75 +291,79 @@
                 </button>
             </div>
         {/if}
+        <h1 class="analyser-heading">ANALYSING</h1>
+    </div>
 
-        <h1 class="heading">ANALYSING</h1>
+    <!-- Source Code Section -->
+    <div class="source-code-section">
+        <h3 class="source-code-header">Source Code</h3>
+        <pre class="source-display">{source_code || 'No source code available'}</pre>
     </div>
 
     <div class="scrollable-content">
-        <h2 class="heading2">Scope Rules</h2>
-        <div class="rules-list">
-            {#each scopeRules as rule, i (rule.id)}
-                <div class="rule-row" in:slide={{ duration: 250 }}>
-                    <div class="input-tooltip-wrapper">
-                        <input
-                            type="text"
-                            bind:value={rule.start}
-                            placeholder="Start Delimiter"
-                            aria-label="Start Delimiter"
-                            class="scope-input"
-                            on:focus={() => i === 0 && (showStartTooltip = true)}
-                            on:blur={() => i === 0 && (showStartTooltip = false)}
-                            on:input={handleScopeRuleInput}
-                        />
-                        {#if i === 0 && showStartTooltip}
-                            <div class="tooltip">Examples include <code>{'{'}</code></div>
-                        {/if}
-                    </div>
-
-                    <span class="arrow-separator">→</span>
-
-                    <div class="input-tooltip-wrapper">
-                        <input
-                            type="text"
-                            bind:value={rule.end}
-                            placeholder="End Delimiter"
-                            aria-label="End Delimiter"
-                            class="scope-input"
-                            on:focus={() => i === 0 && (showEndTooltip = true)}
-                            on:blur={() => i === 0 && (showEndTooltip = false)}
-                            on:input={handleScopeRuleInput}
-                        />
-                        {#if i === 0 && showEndTooltip}
-                            <div class="tooltip">Examples include <code>{'}'}</code></div>
-                        {/if}
-                    </div>
-
-                    <button
-                        class="icon-button delete-button"
-                        on:click={() => removeScopeRow(i)}
-                        aria-label="Remove scope rule row"
-                        disabled={scopeRules.length === 1}
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="18"
-                            height="18"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            ><polyline points="3 6 5 6 21 6" /><path
-                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                            /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg
+        <!-- Scope Rules Box -->
+        <div class="analyser-box">
+            <div class="analyser-box-header">
+                <h2 class="heading2">Scope Rules</h2>
+            </div>
+            <div class="rules-list">
+                {#each scopeRules as rule, i (rule.id)}
+                    <div class="rule-row" in:slide={{ duration: 250 }}>
+                        <div class="input-tooltip-wrapper">
+                            <input
+                                type="text"
+                                bind:value={rule.start}
+                                placeholder="Start Delimiter"
+                                aria-label="Start Delimiter"
+                                class="scope-input"
+                                on:focus={() => i === 0 && (showStartTooltip = true)}
+                                on:blur={() => i === 0 && (showStartTooltip = false)}
+                                on:input={handleScopeRuleInput}
+                            />
+                            {#if i === 0 && showStartTooltip}
+                                <div class="tooltip">Examples include <code>{'{'}</code></div>
+                            {/if}
+                        </div>
+                        <span class="arrow-separator">→</span>
+                        <div class="input-tooltip-wrapper">
+                            <input
+                                type="text"
+                                bind:value={rule.end}
+                                placeholder="End Delimiter"
+                                aria-label="End Delimiter"
+                                class="scope-input"
+                                on:focus={() => i === 0 && (showEndTooltip = true)}
+                                on:blur={() => i === 0 && (showEndTooltip = false)}
+                                on:input={handleScopeRuleInput}
+                            />
+                            {#if i === 0 && showEndTooltip}
+                                <div class="tooltip">Examples include <code>{'}'}</code></div>
+                            {/if}
+                        </div>
+                        <button
+                            class="icon-button delete-button"
+                            on:click={() => removeScopeRow(i)}
+                            aria-label="Remove scope rule row"
+                            disabled={scopeRules.length === 1}
                         >
-                    </button>
-                </div>
-            {/each}
-        </div>
-        {#if !rulesSubmitted}
-            {#if lastScopeRowComplete}
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                            ><polyline points="3 6 5 6 21 6" /><path
+                                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                                /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg
+                        >
+                    </div>
+                {/each}
+            </div>
+            {#if !rulesSubmitted && lastScopeRowComplete}
                 <div class="add-button-wrapper" transition:slide={{ duration: 150 }}>
                     <button class="add-button" on:click={addScopeRow} aria-label="Add new scope delimiter row">
                         <svg
@@ -311,38 +376,41 @@
                             stroke-width="2.5"
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            ><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg
+                        ><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg
                         >
                         <span>Add Scope Rule</span>
                     </button>
                 </div>
             {/if}
-        {/if}
-
-        <h2 class="heading2 new-section-heading">Type Rules</h2>
-        <div class="rules-list type-rules-list">
-            {#each typeRules as rule, i (rule.id)}
-                <div class="rule-row" in:slide={{ duration: 250 }}>
-                    <div class="type-rule-inputs">
-                        <input type="text" bind:value={rule.resultType} placeholder="Result Type" aria-label="Result type" class="scope-input" on:input={handleTypeRuleInput} />
-                        <input type="text" bind:value={rule.assignment} placeholder="Assignment" aria-label="Assignment" class="scope-input" on:input={handleTypeRuleInput} />
-                        <input type="text" bind:value={rule.lhs} placeholder="LHS" aria-label="LHS" class="scope-input" on:input={handleTypeRuleInput} />
-                        <input type="text" bind:value={rule.operators} placeholder="Operators" aria-label="Operators" class="scope-input" on:input={handleTypeRuleInput} />
-                        <input type="text" bind:value={rule.rhs} placeholder="RHS" aria-label="RHS" class="scope-input" on:input={handleTypeRuleInput} />
-                    </div>
-                    <button
-                        class="icon-button delete-button"
-                        on:click={() => removeTypeRow(i)}
-                        aria-label="Remove type rule row"
-                        disabled={typeRules.length === 1}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
-                    </button>
-                </div>
-            {/each}
         </div>
-        {#if !rulesSubmitted}
-            {#if lastTypeRowComplete}
+
+        <!-- Type Rules Box -->
+        <div class="analyser-box">
+            <div class="analyser-box-header">
+                <h2 class="heading2">Type Rules</h2>
+            </div>
+            <div class="rules-list type-rules-list">
+                {#each typeRules as rule, i (rule.id)}
+                    <div class="rule-row" in:slide={{ duration: 250 }}>
+                        <div class="type-rule-inputs">
+                            <input type="text" bind:value={rule.resultType} placeholder="Result Type" aria-label="Result type" class="scope-input" on:input={handleTypeRuleInput} />
+                            <input type="text" bind:value={rule.assignment} placeholder="Assignment" aria-label="Assignment" class="scope-input" on:input={handleTypeRuleInput} />
+                            <input type="text" bind:value={rule.lhs} placeholder="LHS" aria-label="LHS" class="scope-input" on:input={handleTypeRuleInput} />
+                            <input type="text" bind:value={rule.operators} placeholder="Operators" aria-label="Operators" class="scope-input" on:input={handleTypeRuleInput} />
+                            <input type="text" bind:value={rule.rhs} placeholder="RHS" aria-label="RHS" class="scope-input" on:input={handleTypeRuleInput} />
+                        </div>
+                        <button
+                            class="icon-button delete-button"
+                            on:click={() => removeTypeRow(i)}
+                            aria-label="Remove type rule row"
+                            disabled={typeRules.length === 1}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+                        </button>
+                    </div>
+                {/each}
+            </div>
+            {#if !rulesSubmitted && lastTypeRowComplete}
                 <div class="add-button-wrapper" transition:slide={{ duration: 150 }}>
                     <button class="add-button" on:click={addTypeRow} aria-label="Add new type rule row">
                         <svg
@@ -355,46 +423,52 @@
                             stroke-width="2.5"
                             stroke-linecap="round"
                             stroke-linejoin="round"
-                            ><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg
+                        ><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg
                         >
                         <span>Add Type Rule</span>
                     </button>
                 </div>
             {/if}
-        {/if}
+        </div>
 
-        <h2 class="heading2 new-section-heading">Grammar Rules</h2>
-        <div class="grammar-rules-grid">
-            <div class="grammar-rule-item">
-                <label for="grammar-variable" class="grammar-label">Variable</label>
-                <input id="grammar-variable" type="text" bind:value={grammarRules.variable} class="scope-input" on:input={handleGrammarRuleInput} />
+        <!-- Linking Grammar Rules Box -->
+        <div class="analyser-box">
+            <div class="analyser-box-header">
+                <h2 class="heading2">Linking Grammar Rules</h2>
             </div>
-            <div class="grammar-rule-item">
-                <label for="grammar-type" class="grammar-label">Type</label>
-                <input id="grammar-type" type="text" bind:value={grammarRules.type} class="scope-input" on:input={handleGrammarRuleInput} />
-            </div>
-            <div class="grammar-rule-item">
-                <label for="grammar-function-declaration" class="grammar-label">Function Declaration</label>
-                <input id="grammar-function-declaration" type="text" bind:value={grammarRules.functionDeclaration} class="scope-input" on:input={handleGrammarRuleInput} />
-            </div>
-            <div class="grammar-rule-item">
-                <label for="grammar-parameter" class="grammar-label">Parameter</label>
-                <input id="grammar-parameter" type="text" bind:value={grammarRules.parameter} class="scope-input" on:input={handleGrammarRuleInput} />
-            </div>
-            <div class="grammar-rule-item">
-                <label for="grammar-assignment" class="grammar-label">Assignment</label>
-                <input id="grammar-assignment" type="text" bind:value={grammarRules.assignment} class="scope-input" on:input={handleGrammarRuleInput} />
-            </div>
-            <div class="grammar-rule-item">
-                <label for="grammar-operator" class="grammar-label">Operator</label>
-                <input id="grammar-operator" type="text" bind:value={grammarRules.operator} class="scope-input" on:input={handleGrammarRuleInput} />
-            </div>
-            <div class="grammar-rule-item">
-                <label for="grammar-term" class="grammar-label">Term</label>
-                <input id="grammar-term" type="text" bind:value={grammarRules.term} class="scope-input" on:input={handleGrammarRuleInput} />
+            <div class="grammar-rules-grid">
+                <div class="grammar-rule-item">
+                    <label for="grammar-variable" class="grammar-label">Variable</label>
+                    <input id="grammar-variable" type="text" bind:value={grammarRules.variable} class="scope-input" on:input={handleGrammarRuleInput} />
+                </div>
+                <div class="grammar-rule-item">
+                    <label for="grammar-type" class="grammar-label">Type</label>
+                    <input id="grammar-type" type="text" bind:value={grammarRules.type} class="scope-input" on:input={handleGrammarRuleInput} />
+                </div>
+                <div class="grammar-rule-item">
+                    <label for="grammar-function-declaration" class="grammar-label">Function Declaration</label>
+                    <input id="grammar-function-declaration" type="text" bind:value={grammarRules.functionDeclaration} class="scope-input" on:input={handleGrammarRuleInput} />
+                </div>
+                <div class="grammar-rule-item">
+                    <label for="grammar-parameter" class="grammar-label">Parameter</label>
+                    <input id="grammar-parameter" type="text" bind:value={grammarRules.parameter} class="scope-input" on:input={handleGrammarRuleInput} />
+                </div>
+                <div class="grammar-rule-item">
+                    <label for="grammar-assignment" class="grammar-label">Assignment</label>
+                    <input id="grammar-assignment" type="text" bind:value={grammarRules.assignment} class="scope-input" on:input={handleGrammarRuleInput} />
+                </div>
+                <div class="grammar-rule-item">
+                    <label for="grammar-operator" class="grammar-label">Operator</label>
+                    <input id="grammar-operator" type="text" bind:value={grammarRules.operator} class="scope-input" on:input={handleGrammarRuleInput} />
+                </div>
+                <div class="grammar-rule-item">
+                    <label for="grammar-term" class="grammar-label">Term</label>
+                    <input id="grammar-term" type="text" bind:value={grammarRules.term} class="scope-input" on:input={handleGrammarRuleInput} />
+                </div>
             </div>
         </div>
-    </div> <div class="actions-container">
+    </div>
+    <div class="actions-container">
         {#if !rulesSubmitted}
             <button class="submit-button" on:click={handleSubmit} disabled={!overallAllRowsComplete}>
                 Submit All Rules
@@ -760,4 +834,99 @@
         background: #616e80;
     }
 
+    .default-toggle-wrapper {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        z-index: 20;
+        margin-bottom: 0;
+    }
+    .panel-container {
+        position: relative;
+    }
+    .default-toggle-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #001a6e;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.2rem;
+        width: 2.2rem;
+        border-radius: 50%;
+    }
+    .default-toggle-btn.selected {
+        background: #d0e2ff;
+        border-color: #003399;
+    }
+    .default-toggle-btn:hover {
+        background: #f5f8fd;
+        border-color: #7da2e3;
+    }
+    .icon {
+        font-size: 1.3rem;
+        line-height: 1;
+        pointer-events: none;
+    }
+
+    .analyser-heading {
+        color: #001a6e;
+        text-align: center;
+        margin-top: 0;
+        font-family: 'Times New Roman';
+        margin-bottom: 0;
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    .source-code-section {
+        margin-bottom: 1rem;
+    }
+    .source-code-header {
+        color: #444;
+        margin-bottom: 0.5rem;
+        font-family: 'Times New Roman';
+    }
+    .source-display {
+        background: #f5f5f5;
+        padding: 1rem;
+        border-radius: 4px;
+        overflow-x: auto;
+        font-family: monospace;
+        white-space: pre-wrap;
+        margin: 0;
+    }
+    .analyser-box {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
+    }
+    .analyser-box-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+    .analyser-box .heading2 {
+        margin: 0;
+        color: #001a6e;
+        font-family: 'Times New Roman';
+    }
+    @media (max-width: 700px) {
+        .analyser-box {
+            padding: 1rem;
+        }
+    }
+    :global(html.dark-mode) .analyser-heading,
+    :global(html.dark-mode) .analyser-box .heading2,
+    :global(html.dark-mode) .source-code-header {
+        color: #ebeef1;
+    }
+    :global(html.dark-mode) .analyser-box,
+    :global(html.dark-mode) .source-display {
+        background: #2d3748;
+    }
 </style>

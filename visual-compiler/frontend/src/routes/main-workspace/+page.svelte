@@ -217,6 +217,7 @@
 				{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}
 					<svelte:component this={AnalyserPhaseTutorial} />
 					 <AnalyserPhaseInspector
+						source_code={source_code}
 						bind:showSymbolTable
 						on:generate={() => showSymbolTable = true}
 						on:reset={handleReset}
