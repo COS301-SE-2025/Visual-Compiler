@@ -99,6 +99,7 @@
 </script>
 
 <div class="inspector-container">
+    <h1 class="heading">TRANSLATING </h1>
   <div class="section">
     <h3 class="section-heading">Source Code</h3>
     <div class="code-block-wrapper">
@@ -136,13 +137,13 @@
     
           {#each rule.lines as line, lineIndex}
             <div class="line-group">
-              <label for="line-{ruleIndex}-{lineIndex}">Line {lineIndex + 1}</label>
+              
               <input
                 type="text"
                 class="input-field"
                 id="line-{ruleIndex}-{lineIndex}"
                 bind:value={rules[ruleIndex].lines[lineIndex]}
-                placeholder="e.g., let {1} = {3};"
+                placeholder="Line {lineIndex + 1}"
               />
               <button
                 class="remove-line-btn"
@@ -151,19 +152,26 @@
                 title="Remove Line"
               >−</button>
             </div>
+              
           {/each}
-    
-          <button class="add-btn" on:click={() => addLine(ruleIndex)}>+ Add Line</button>
+         <button class="add-btn" on:click={() => addLine(ruleIndex)}>+ Add Line</button>
         </div>
+        
       {/each}
+       <div>
+                <button class="add-rule-btn" on:click={addRule}>+ Add New Rule</button>
+              
+                <button class="action-btn submit" on:click={handleSubmit} disabled={isSubmitted}>
+                {#if isSubmitted}✓ Submitted{:else}Submit Rules{/if}</button>
+                 
+          </div>
+       
     </div>
-    <button class="add-btn add-rule" on:click={addRule}>+ Add New Translation Rule</button>
+  
   </div>
   
   <div class="actions">
-    <button class="action-btn submit" on:click={handleSubmit} disabled={isSubmitted}>
-      {#if isSubmitted}✓ Submitted{:else}Submit Rules{/if}
-    </button>
+ 
 
     {#if isSubmitted}
       <button class="action-btn translate" on:click={handleTranslate}>
@@ -210,13 +218,20 @@
   }
 
   .section-heading {
-    font-size: 1.25rem;
-    font-weight: 600;
-    
-    padding-bottom: 0.5rem;
-    margin: 0;
+    color: #444;
+    margin-bottom: 0;
+    margin-top: 0;
+    font-family: 'Times New Roman';
   }
 
+  .heading{
+    color: black;
+    margin-bottom: 0;
+    margin-top: 0;
+    font-family: 'Times New Roman';
+    text-align: center;
+  }
+  
   .code-block-wrapper {
     background-color: #eee;
     border-radius: 0.375rem;
@@ -302,6 +317,7 @@
     font-size: 0.9rem;
     font-weight: 600;
     transition: background-color 0.2s, transform 0.1s;
+     width: 45%;
   }
   
   .add-btn {
@@ -310,7 +326,23 @@
     align-self: flex-start;
   }
 
-  .add-btn:hover { background-color: #2f855a; }
+   .add-rule-btn {
+    justify-content: center;
+    gap: 0.5rem;
+    background-color: #eef2f7;
+    color: #001a6e;
+    border: 1px dashed #c0c7d3;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 45%;
+    margin-right: 1rem;
+    margin-left: 0.8rem;
+  }
+
+  .add-btn:hover, .action-btn:hover, .submit:hover { background-color: #1a317d; }
   .add-btn:active { transform: scale(0.98); }
 
   .add-rule {
@@ -355,16 +387,12 @@
     padding-top: 1rem;
   }
   
-  .action-btn {
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-  }
 
   .submit {
-    background-color: var(--accent-purple);
+    background-color: #001a6e;
     color: white;
   }
-  .submit:hover { background-color: #6b46c1; }
+ 
 
   .submit:disabled {
     background-color: var(--accent-green);
