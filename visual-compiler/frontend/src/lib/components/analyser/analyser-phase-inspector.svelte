@@ -67,7 +67,7 @@
     ];
 
     const DEFAULT_TYPE_RULES = [
-        { id: 0, resultType: 'int', assignment: '=', lhs: 'INTEGER', operators: '', rhs: '' }
+        { id: 0, resultType: 'int', assignment: '=', lhs: 'INTEGER', operators: '+', rhs: 'INTEGER' }
     ];
 
     const DEFAULT_GRAMMAR_RULES: GrammarRule = {
