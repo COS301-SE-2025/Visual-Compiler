@@ -226,7 +226,7 @@
 
 				{#if selected_phase === 'translator' && TranslatorPhaseTutorial}
 					<svelte:component this={TranslatorPhaseTutorial} />
-					<svelte:component this={TranslatorPhaseInspector} />
+					<svelte:component this={TranslatorPhaseInspector} {source_code} />
 					<svelte:component this={TranslatorArtifactViewer} />
 				{/if}
 
