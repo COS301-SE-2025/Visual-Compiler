@@ -55,8 +55,10 @@
 		<div class="actions">
 			{#if is_admin}
 				<button class="action-btn admin-btn" aria-label="Admin Panel" on:click={() => show_admin_panel = !show_admin_panel}>
-					<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--admin-icon-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/>
+					<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--admin-icon-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg">
+						<path d="M20.71 16.09L15.8 21H13v-2.8l4.91-4.91a1 1 0 0 1 1.4 0l1.4 1.4a1 1 0 0 1 0 1.4z"/>
+						<circle cx="11" cy="7" r="4"/>
+						<path d="M11 11a7 7 0 0 0-7 7v1a1 1 0 0 0 1 1h8"/>
 					</svg>
 				</button>
 			{/if}
