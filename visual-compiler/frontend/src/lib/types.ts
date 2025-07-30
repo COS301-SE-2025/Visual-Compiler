@@ -14,3 +14,13 @@ export interface SyntaxTreeNode {
 export interface SyntaxTree {
 	root: SyntaxTreeNode;
 }
+
+export interface Symbol {
+    name: string;
+    type: string;
+    scope: number; 
+}
+
+export interface SymbolTable {
+    symbols: Symbol[];
+}

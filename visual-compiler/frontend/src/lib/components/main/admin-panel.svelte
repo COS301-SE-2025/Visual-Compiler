@@ -17,7 +17,11 @@
         loading = true;
         const res = await fetch('http://localhost:8080/api/users/getUsers');
         const data = await res.json();
-        users = data.users || [];
+        users = (data.users || []).map(u => ({
+            ...u,
+            ID: u.id 
+        }));
+        console.log('All user IDs:', users.map(u => u.ID));
         loading = false;
     }
 
@@ -33,6 +37,7 @@
         editEmail = users[idx].email;
         editError = '';
         editSuccess = '';
+        console.log('Selected user ID:', users[idx].ID); 
     }
 
     $: filteredUsers = users.filter(u =>
@@ -73,10 +78,11 @@
         editError = '';
         editSuccess = '';
         const user = users[selectedUserIdx];
+        console.log('Deleting user with ID:', user.ID); // Add this line
         const res = await fetch(`http://localhost:8080/api/users/delete`, {
-            method: 'POST',
+            method: 'DELETE',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ID: user.ID })
+            body: JSON.stringify({ id: user.ID })
         });
         let data = {};
         try {
