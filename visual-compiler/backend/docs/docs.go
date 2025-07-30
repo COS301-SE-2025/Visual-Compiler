@@ -798,6 +798,125 @@ const docTemplate = `{
                 }
             }
         },
+        "/translating/rules": {
+            "post": {
+                "description": "Takes the user's rules, reads it, verifies it and stores it with the user's ID. If translation rules already exist, it overwrites those rules and removes any other created fields (translation)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Translating"
+                ],
+                "summary": "Create translation rules",
+                "parameters": [
+                    {
+                        "description": "Read Translation Rules From User",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.TranslatorRules"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Translation Rules successfully stored",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input/Translation rules failed to insert",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/translating/translate": {
+            "post": {
+                "description": "Searches the database for the user's Syntax tree and Translation Rules. If found, both are used to translate the tree into code. The code is either created or ,if already existing, updated. If the syntax tree and translation rules are not found, returns an error",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Translating"
+                ],
+                "summary": "Translates syntax tree using the translation rules into code",
+                "parameters": [
+                    {
+                        "description": "Create Code from Syntax Tree and Translation Rules",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.IDRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Code successfully created and stored",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input/Conversion failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Tree not found/Rules not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/users/delete": {
             "delete": {
                 "description": "Delete user by ID",
@@ -1219,6 +1338,27 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.TranslatorRules": {
+            "type": "object",
+            "required": [
+                "translation_rules",
+                "users_id"
+            ],
+            "properties": {
+                "translation_rules": {
+                    "description": "Translation Rules",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/services.TranslationRule"
+                    }
+                },
+                "users_id": {
+                    "description": "User's ID for searching and storing purposes",
+                    "type": "string",
+                    "example": "685df259c1294de5546b045f"
+                }
+            }
+        },
         "handlers.readDFARequest": {
             "type": "object",
             "required": [
@@ -1297,17 +1437,13 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "input": {
-                    "type": "string",
-                    "example": "S"
+                    "type": "string"
                 },
                 "output": {
                     "type": "array",
                     "items": {
                         "type": "string"
-                    },
-                    "example": [
-                        "Decl"
-                    ]
+                    }
                 }
             }
         },
@@ -1336,6 +1472,23 @@ const docTemplate = `{
                 },
                 "to": {
                     "type": "string"
+                }
+            }
+        },
+        "services.TranslationRule": {
+            "type": "object",
+            "properties": {
+                "sequence": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "translation": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },

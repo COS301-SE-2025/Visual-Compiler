@@ -13,7 +13,7 @@ import (
 // Specifies the JSON body response after successful fetching
 type UserPublic struct {
 	// User's auto-generated ID
-	ID bson.ObjectID `json:"id"`
+	ID bson.ObjectID `json:"users_id"`
 	// User's Username
 	Username string `json:"username"`
 	// User's Email
