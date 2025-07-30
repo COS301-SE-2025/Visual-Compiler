@@ -100,6 +100,7 @@
 			if (data.id) {
 				console.log('user_id from backend:', data.id);
 				localStorage.setItem('user_id', data.id);
+				localStorage.setItem('is_admin', data.is_admin ? 'true' : 'false');
 			}
 
 			AddToast('Login successful!', 'success');
