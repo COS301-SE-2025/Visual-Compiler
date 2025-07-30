@@ -2,10 +2,15 @@
     import { slide, fade } from 'svelte/transition';
     import { AddToast } from '$lib/stores/toast';
     import { createEventDispatcher } from 'svelte';
+    import type { SymbolTable } from '$lib/types';
+    
 
     const dispatch = createEventDispatcher();
 
     export let source_code: string = '';
+    let showSymbolTable = false;
+    let symbolTable: SymbolTable = { symbols: [] };
+    let isLoading = false;
 
     // --- INTERFACES ---
     interface ScopeRule {
@@ -185,11 +190,6 @@
         AddToast('All rules have been reset.', 'info');
     }
 
-    function handleGenerate() {
-        dispatch('generate');
-        AddToast('Symbol table generated', 'success');
-    }
-
     function insertDefaultRules() {
         scopeRules = DEFAULT_SCOPE_RULES.map(r => ({ ...r }));
         nextScopeId = 1;
@@ -217,6 +217,64 @@
         show_default_rules = false;
         rulesSubmitted = false;
     }
+
+    async function handleGenerate() {
+    try {
+        const user_id = localStorage.getItem('user_id');
+        if (!user_id) {
+            AddToast('User not logged in. Please log in to save your work.', 'error');
+            return;
+        }
+        isLoading = true;
+        
+        const requestData = {
+            users_id: user_id,
+            scope_rules: submittedScopeRules,
+            grammar_rules: submittedGrammarRules,
+            type_rules: submittedTypeRules
+        };
+
+        const response = await fetch('http://localhost:8080/api/analysing/analyse', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        console.log("Raw Response:", response); // Check response status
+        
+        const result = await response.json();
+        console.log("Full API Response:", result); // Inspect complete response
+        
+        // Debug the symbol table artefact structure
+        console.log("SymbolTableArtefact:", result.symbol_table_artefact);
+        console.log("SymbolScopes:", result.symbol_table_artefact?.SymbolScopes);
+        
+        // Transform the data with proper null checks
+        const symbols = result.symbol_table_artefact?.SymbolScopes?.map((s: any) => ({
+            name: s.Name || s.name || 'unknown',
+            type: s.Type || s.type || 'unknown',
+            scope: s.Scope || s.scope || 0
+        })) || [];
+
+        
+        symbolTable = { symbols };
+        showSymbolTable = true;
+        AddToast('Symbol table generated successfully!', 'success');
+        dispatch('generate');
+    } catch (error) {
+        console.error('Error details:', {
+            error,
+            response: error.response?.data,
+            status: error.response?.status
+        });
+        console.error('Error generating symbol table:', error);
+        AddToast(error.message || 'Failed to generate symbol table', 'error');
+    } finally {
+        isLoading = false;
+    }
+}
 
     // --- REACTIVE STATEMENTS ---
 
@@ -475,7 +533,17 @@
             </button>
         {:else}
             <div class="generate-wrapper" transition:slide|local={{ duration: 250 }}>
-                <button class="generate-button" on:click={handleGenerate}> Generate Symbol Table </button>
+                <button 
+                    class="generate-button" 
+                    on:click={handleGenerate} 
+                    disabled={isLoading}
+                >
+                    {#if isLoading}
+                        Generating...
+                    {:else}
+                        Generate Symbol Table
+                    {/if}
+                </button>
             </div>
         {/if}
     </div>
@@ -483,24 +551,12 @@
 
 <style>
     /* General Heading Styles (existing) */
-    .heading {
-        font-weight: 600;
-        margin-bottom: 2rem;
-        text-align: center;
-        margin-top: 0;
-    }
     .heading2 {
         font-size: 1.25rem;
         font-weight: 600;
         margin: 0 0 0.25rem 0;
         color: #1a2a4a; /* Adjusted for consistency */
     }
-    /* New style for spacing between sections */
-    .new-section-heading {
-        margin-top: 1.5rem;
-        margin-bottom: 0.75rem; /* Adjusted for better spacing with inputs */
-    }
-
     /* Panel Layout */
     .panel-container {
         display: flex;
@@ -735,7 +791,6 @@
     }
 
     /* --- DARK MODE STYLES --- */
-    :global(html.dark-mode) .heading,
     :global(html.dark-mode) .heading2,
     :global(html.dark-mode) .grammar-label {
         color: #e0e8f0;

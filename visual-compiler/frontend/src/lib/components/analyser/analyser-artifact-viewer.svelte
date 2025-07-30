@@ -1,45 +1,45 @@
 <script lang="ts">
     import { fade } from 'svelte/transition';
-   // Show/hide symbol table
-   export  let showSymbolTable = true;
+    import type { SymbolTable, Symbol } from '$lib/types';
     
-    // Mock symbol table data
-    const symbolTable = [
-        { type: "int", name: "count", scope: "global" },
-        { type: "string", name: "message", scope: "main" },
-        { type: "float", name: "price", scope: "calculate" },
-        { type: "bool", name: "isValid", scope: "validate" },
-        { type: "char", name: "initial", scope: "main" }
-    ];
+    export let symbolTable: SymbolTable | null = null;
+    export let showSymbolTable = false;
 
- 
+    // Helper function to format scope level for display
+    function formatScope(scope: number): string {
+        return scope === 0 ? 'Global' : `Level ${scope}`;
+    }
 
-
+    // Debug log to check received props
+    $: console.log("Display Component Props:", { symbolTable, showSymbolTable });
 </script>
 
 <div class="panel-container">
-    <h2>Symbol Table</h2>
-    
-    {#if showSymbolTable}
+    {#if showSymbolTable && symbolTable}
         <div class="symbol-table-container" transition:fade={{ duration: 200 }}>
-            <table class="symbol-table">
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Name</th>
-                        <th>Scope</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each symbolTable as item}
+            <h2>Symbol Table</h2>
+            {#if symbolTable.symbols.length === 0}
+                <p>No symbols found in the analysis</p>
+            {:else}
+                <table class="symbol-table">
+                    <thead>
                         <tr>
-                            <td>{item.type}</td>
-                            <td>{item.name}</td>
-                            <td>{item.scope}</td>
+                            <th>Type</th>
+                            <th>Name</th>
+                            <th>Scope</th>
                         </tr>
-                    {/each}
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        {#each symbolTable.symbols as symbol}
+                            <tr>
+                                <td>{symbol.type}</td>
+                                <td>{symbol.name}</td>
+                                <td>{formatScope(symbol.scope)}</td>
+                            </tr>
+                        {/each}
+                    </tbody>
+                </table>
+            {/if}
         </div>
     {/if}
 </div>
