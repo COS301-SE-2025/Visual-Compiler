@@ -145,6 +145,8 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 				if !(unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r)) || r == '-' {
 
 					builder.WriteRune(r)
+				} else {
+					i--
 				}
 			}
 
