@@ -1,62 +1,55 @@
 <script lang="ts">
-  // Prop to receive the source code from the main page
   export let source_code: string;
+    import { AddToast } from '$lib/stores/toast';
 
-  // --- Reactive State ---
-  // Holds all the translation rules. Starts with one empty rule.
   let rules = [{ tokenSequence: '', lines: [''] }];
-  // Flags to control UI state
+
   let isSubmitted = false;
   let translationSuccessful = false;
 
-  // --- Functions ---
 
-  /**
-   * Adds a new, empty translation rule block.
-   */
+
   function addRule() {
     rules = [...rules, { tokenSequence: '', lines: [''] }];
   }
 
-  /**
-   * Removes a translation rule block by its index.
-   */
+ 
   function removeRule(ruleIndex: number) {
-    // Prevent removing the very last rule block
+
     if (rules.length > 1) {
       rules = rules.filter((_, i) => i !== ruleIndex);
     }
   }
 
-  /**
-   * Adds a new line to a specific rule.
-   */
+
   function addLine(ruleIndex: number) {
     rules[ruleIndex].lines = [...rules[ruleIndex].lines, ''];
-    rules = rules; // Trigger reactivity
+    rules = rules; 
   }
 
-  /**
-   * Removes a specific line from a rule.
-   */
   function removeLine(ruleIndex: number, lineIndex: number) {
-    // Prevent removing the last line
+
     if (rules[ruleIndex].lines.length > 1) {
       rules[ruleIndex].lines = rules[ruleIndex].lines.filter((_, i) => i !== lineIndex);
-      rules = rules; // Trigger reactivity
+      rules = rules;
     }
   }
 
-  /**
-   * Handles the submission of the translation rules.
-   */
+  
   async function handleSubmit() {
+
+    const user_id = localStorage.getItem('user_id');
+        if (!user_id) {
+            AddToast('User not logged in.', 'error');
+            return;
+        }
+
     const isValid = rules.every(
       (rule) => rule.tokenSequence.trim() !== '' && rule.lines.every((line) => line.trim() !== '')
     );
 
     if (!isValid) {
-      alert('Please fill out all token sequences and lines before submitting.');
+      AddToast('Please fill out all token sequences and lines before submitting.');
       return;
     }
 
@@ -67,74 +60,92 @@
       })),
     };
 
-    console.log('API Payload:', JSON.stringify(apiPayload, null, 2));
+    if (apiPayload.rules.some(rule => rule.token_sequence.trim() === '' || rule.translation_lines.length === 0)) {
+      AddToast('All rules must have a token sequence and at least one translation line.');
+      return;
+    }
 
-    // SIMULATED API CALL
-    // In a real application, you would make your API call here.
-    // const response = await fetch('/api/translate/rules', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(apiPayload)
-    // });
-    // if(response.ok) {
-    //   isSubmitted = true;
-    //   alert('Submission successful! You can now perform the translation.');
-    // } else {
-    //   alert('Submission failed. Please check the console.');
-    // }
+    if (apiPayload.rules.length === 0) {
+      AddToast('No rules to submit. Please add at least one rule.');
+      return;
+    }
+   
 
-    // For demonstration, we'll just assume it passed
+     try {
+            const response = await fetch('http://localhost:8080/api/translation//readRules', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(apiPayload)
+            });
+
+            if (!response.ok) 
+            {
+                const error_data = await response.json();
+                throw new Error(error_data.details || 'Failed to submit translation input');
+            }
+
+            const result = await response.json();
+            AddToast('Translation input received successfully!', 'success');
+
+        } catch (error) 
+        {
+            console.error('Translation input Error:', error);
+            AddToast(String(error), 'error');
+        }
+
+    
     isSubmitted = true;
   }
 
-  /**
-   * Placeholder for the final translation action.
-   */
+ 
   function handleTranslate() {
     console.log('Performing translation with the submitted rules...');
-    // Add your logic to call the translation endpoint here
+
+
     translationSuccessful = true;
-    alert('Code translated successfully!');
+    AddToast('Code translated successfully!');
   }
 </script>
 
 <div class="inspector-container">
     <h1 class="heading">TRANSLATING </h1>
   <div class="section">
-    <h3 class="section-heading">Source Code</h3>
+    <h3 class="section-heading1">Source Code</h3>
     <div class="code-block-wrapper">
       <pre class="code-block">{source_code || 'No source code available.'}</pre>
     </div>
   </div>
 
   <div class="section">
-    <h3 class="section-heading">Translator Input</h3>
+    <h2 class="section-heading">Translation Rules</h2>
     <div class="rules-container">
       {#each rules as rule, ruleIndex}
         <div class="rule-block">
-          <div class="rule-header">
-            <h4 class="rule-title">Translation Rule {ruleIndex + 1}</h4>
-            <button
-              class="remove-btn"
-              on:click={() => removeRule(ruleIndex)}
-              disabled={rules.length <= 1}
-              title="Remove Rule"
-            >
-              ✕
-            </button>
-          </div>
-          
           <div class="form-group">
-            <label for="token-seq-{ruleIndex}">Token Sequence</label>
+            <div class="rule-header" >
+                <label class="form-label" for="token-seq-{ruleIndex}" style="margin-right: auto;">Token Sequence</label>
+                <button
+                    class="remove-btn"
+                    on:click={() => removeRule(ruleIndex)}
+                    disabled={rules.length <= 1}
+                    title="Remove Rule"
+                    style="margin-left: auto;"
+                >
+                    ✕
+                </button>
+            </div>
+
+      
+            
             <input
               type="text"
               class="input-field"
               id="token-seq-{ruleIndex}"
               bind:value={rule.tokenSequence}
-              placeholder="e.g., IDENTIFIER EQUALS NUMBER"
+              placeholder="Enter token sequence"
             />
           </div>
-    
+          
           {#each rule.lines as line, lineIndex}
             <div class="line-group">
               
@@ -150,20 +161,22 @@
                 on:click={() => removeLine(ruleIndex, lineIndex)}
                 disabled={rule.lines.length <= 1}
                 title="Remove Line"
-              >−</button>
+                aria-label="Remove Line"
+              ><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg></button>
             </div>
               
           {/each}
-         <button class="add-btn" on:click={() => addLine(ruleIndex)}>+ Add Line</button>
+         <button class="add-line" on:click={() => addLine(ruleIndex)}>+ Add Line</button>
         </div>
         
       {/each}
        <div>
                 <button class="add-rule-btn" on:click={addRule}>+ Add New Rule</button>
               
-                <button class="action-btn submit" on:click={handleSubmit} disabled={isSubmitted}>
-                {#if isSubmitted}✓ Submitted{:else}Submit Rules{/if}</button>
-                 
+                <button class="action-btn submit" on:click={handleSubmit} >
+                  Submit Rules
+                </button>
+
           </div>
        
     </div>
@@ -180,9 +193,7 @@
     {/if}
   </div>
 
-  {#if translationSuccessful}
-    <p class="success-message">Translation complete! View the result in the Artifact Viewer.</p>
-  {/if}
+ 
 </div>
 
 <style>
@@ -196,7 +207,7 @@
     --accent-green: #38a169;
     --accent-red: #e53e3e;
     --accent-purple: #805ad5;
-    --accent-orange: #dd6b20;
+    --accent-orange: #6c757d;
     --border-color: #4a5568;
     --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
@@ -211,19 +222,66 @@
     color: var(--text-primary);
   }
 
+  .form-label{
+    color:#1a2a4a;
+    font-family: 'Times New Roman';
+    font-weight: 500;
+  }
   .section {
     display: flex;
     flex-direction: column;
     gap: 1rem;
   }
 
+  .add-line {
+       display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    background-color: #eef2f7;
+    color: #001a6e;
+    border: 1px dashed #c0c7d3;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .add-line:hover {
+    border-color: #001a6e;
+  }
   .section-heading {
+    color: #001a6e;
+    margin-bottom: 0;
+    margin-top: 0;
+    font-family: 'Times New Roman';
+    font-size: 1.25rem;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .section-heading1{
     color: #444;
     margin-bottom: 0;
     margin-top: 0;
     font-family: 'Times New Roman';
   }
 
+  .action-btn.translate {
+    background-color: var(--accent-orange);
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: background-color 0.2s, transform 0.1s;
+    display: block;
+    margin: 0 auto;
+  }
   .heading{
     color: black;
     margin-bottom: 0;
@@ -248,33 +306,29 @@
     
   }
 
-  .rules-container {
+.rules-container {
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
-  }
-  
-  .rule-block {
+}
+
+.rule-block {
     background-color: #f5f5f5;
     border-radius: 0.5rem;
     padding: 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 1rem;
-  }
+    position: relative;
+}
 
-  .rule-header {
+.rule-header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
     margin-bottom: 0.5rem;
-  }
+}
 
-  .rule-title {
-    margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-  }
 
   .form-group, .line-group {
     display: flex;
@@ -309,7 +363,7 @@
     box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.5);
   }
 
-  .add-btn, .action-btn {
+   .action-btn {
     padding: 0.5rem 1rem;
     border: none;
     border-radius: 0.25rem;
@@ -320,11 +374,7 @@
      width: 45%;
   }
   
-  .add-btn {
-    background-color: #001a6e;
-    color: white;
-    align-self: flex-start;
-  }
+
 
    .add-rule-btn {
     justify-content: center;
@@ -342,13 +392,9 @@
     margin-left: 0.8rem;
   }
 
-  .add-btn:hover, .action-btn:hover, .submit:hover { background-color: #1a317d; }
-  .add-btn:active { transform: scale(0.98); }
+   .action-btn:hover, .submit:hover { background-color: #1a317d; }
 
-  .add-rule {
-    align-self: flex-start;
-    margin-top: 1rem;
-  }
+
 
   .remove-btn, .remove-line-btn {
     background: transparent;
@@ -366,8 +412,7 @@
   }
 
   .remove-btn:hover, .remove-line-btn:hover {
-    background-color: var(--accent-red);
-    color: white;
+    color: red;
   }
   
   .remove-line-btn {
@@ -395,7 +440,7 @@
  
 
   .submit:disabled {
-    background-color: var(--accent-green);
+    background-color: #1a317d;
     cursor: default;
   }
 
@@ -403,7 +448,7 @@
     background-color: var(--accent-orange);
     color: white;
   }
-  .translate:hover { background-color: #c05621; }
+  .translate:hover { background-color: rgb(98,102,109) }
 
   .success-message {
     color: var(--accent-green);
