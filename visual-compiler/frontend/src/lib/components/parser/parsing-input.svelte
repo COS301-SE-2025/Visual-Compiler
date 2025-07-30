@@ -379,7 +379,7 @@
         gap: 1.5rem;
     }
     .parser-heading-h1 {
-        color: #001a6e;
+        color: black;
         text-align: center;
         margin-top: 0;
         font-family: 'Times New Roman';

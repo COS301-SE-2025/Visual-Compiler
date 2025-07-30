@@ -99,7 +99,7 @@ func Analyse(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":               "Symbol Table Artefact successfully insertedT.",
-		"symbol_table_artefact": artefact,
+		"message":      "Symbol Table Artefact successfully inserted.",
+		"symbol_table": artefact,
 	})
 }
