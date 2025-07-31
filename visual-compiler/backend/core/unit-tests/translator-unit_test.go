@@ -86,3 +86,90 @@ func TestReadTranslationRules_Valid(t *testing.T) {
 		}
 	}
 }
+
+func TestTranslate_EmptyTree(t *testing.T) {
+	tree := services.SyntaxTree{Root: nil}
+	rules := []services.TranslationRule{
+		{
+			Sequence:    []string{"KEYWORD"},
+			Translation: []string{"{KEYWORD}"},
+		},
+	}
+
+	_, err := services.Translate(tree, rules)
+
+	if err == nil {
+		t.Errorf("Error expected for empty syntax tree")
+	} else {
+		if err.Error() != fmt.Errorf("empty syntax tree").Error() {
+			t.Errorf("Incorrect error received: %v", err)
+		}
+	}
+}
+
+func TestTranslate_UnmatchedToken(t *testing.T) {
+	leaf1 := &services.TreeNode{Symbol: "KEYWORD", Value: "int", Children: nil}
+	leaf2 := &services.TreeNode{Symbol: "UNKNOWN", Value: "unknown", Children: nil}
+	
+	root := &services.TreeNode{
+		Symbol:   "ROOT",
+		Value:    "",
+		Children: []*services.TreeNode{leaf1, leaf2},
+	}
+	tree := services.SyntaxTree{Root: root}
+	
+	rules := []services.TranslationRule{
+		{
+			Sequence:    []string{"KEYWORD"},
+			Translation: []string{"{KEYWORD}"},
+		},
+	}
+
+	_, err := services.Translate(tree, rules)
+
+	if err == nil {
+		t.Errorf("Error expected for untranslated token")
+	} else {
+		expected := "the token (UNKNOWN: unknown) was not part of any translation"
+		if err.Error() != expected {
+			t.Errorf("Incorrect error received: %v", err)
+		}
+	}
+}
+
+func TestTranslate_Valid(t *testing.T) {
+	leaf1 := &services.TreeNode{Symbol: "KEYWORD", Value: "int", Children: nil}
+	leaf2 := &services.TreeNode{Symbol: "IDENTIFIER", Value: "red", Children: nil}
+	leaf3 := &services.TreeNode{Symbol: "ASSIGNMENT", Value: "=", Children: nil}
+	leaf4 := &services.TreeNode{Symbol: "INTEGER", Value: "13", Children: nil}
+	leaf5 := &services.TreeNode{Symbol: "SEPARATOR", Value: ";", Children: nil}
+	
+	root := &services.TreeNode{
+		Symbol:   "ROOT",
+		Value:    "",
+		Children: []*services.TreeNode{leaf1, leaf2, leaf3, leaf4, leaf5},
+	}
+	tree := services.SyntaxTree{Root: root}
+	
+	rules := []services.TranslationRule{
+		{
+			Sequence:    []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "SEPARATOR"},
+			Translation: []string{"add \t rax, {INTEGER}", "mov \t [{IDENTIFIER}], rax"},
+		},
+	}
+
+	result, err := services.Translate(tree, rules)
+
+	if err != nil {
+		t.Errorf("Error not supposed to occur: %v", err)
+	} else {
+		if len(result) != 2 {
+			t.Errorf("Expected 2 lines of target code but received %d", len(result))
+		}
+		
+		expected := []string{"add \t rax, 13", "mov \t [red], rax"}
+		if result[0] != expected[0] || result[1] != expected[1] {
+			t.Errorf("Expected '%s' but received '%s'", expected, result)
+		}
+	}
+}
