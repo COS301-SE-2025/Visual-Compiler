@@ -173,3 +173,132 @@ func TestTranslate_Valid(t *testing.T) {
 		}
 	}
 }
+
+func TestLeafNodes_NoNodes(t *testing.T) {
+	result := services.LeafNodes(nil)
+	
+	if result != nil {
+		t.Errorf("Expected no leaf nodes but received %v", result)
+	}
+}
+
+func TestLeafNodes_SingleLeaf(t *testing.T) {
+	leaf := &services.TreeNode{Symbol: "KEYWORD", Value: "return", Children: nil}
+	
+	result := services.LeafNodes(leaf)
+	
+	if len(result) != 1 {
+		t.Errorf("Expected 1 leaf node but received %d", len(result))
+	}
+	
+	if result[0].Symbol != "KEYWORD" {
+		t.Errorf("Expected 'KEYWORD' for leaf symbol but received %s", result[0].Symbol)
+	}
+	
+	if result[0].Value != "return" {
+		t.Errorf("Expected 'return' for leaf value but received %s", result[0].Value)
+	}
+}
+
+func TestLeafNodes_MultipleLeaves(t *testing.T) {
+	leaf1 := &services.TreeNode{Symbol: "INTEGER", Value: "1", Children: nil}
+	leaf2 := &services.TreeNode{Symbol: "OPERATOR", Value: "+", Children: nil}
+	leaf3 := &services.TreeNode{Symbol: "INTEGER", Value: "2", Children: nil}
+	leaf4 := &services.TreeNode{Symbol: "OPERATOR", Value: "*", Children: nil}
+	leaf5 := &services.TreeNode{Symbol: "INTEGER", Value: "3", Children: nil}
+	
+	branch := &services.TreeNode{
+		Symbol:   "BODMAS",
+		Value:    "",
+		Children: []*services.TreeNode{leaf3, leaf4, leaf5},
+	}
+	
+	root := &services.TreeNode{
+		Symbol:   "ROOT",
+		Value:    "",
+		Children: []*services.TreeNode{leaf1, leaf2, branch},
+	}
+	
+	result := services.LeafNodes(root)
+	
+	if len(result) != 5 {
+		t.Errorf("Expected 5 leaf nodes but received %d", len(result))
+	}
+	
+	expected := []string{"INTEGER", "OPERATOR", "INTEGER", "OPERATOR", "INTEGER"}
+	for i, node := range result {
+		if node.Symbol != expected[i] {
+			t.Errorf("Expected %s at position %d but received %s", expected[i], i, node.Symbol)
+		}
+	}
+}
+
+func TestMatchesSequence_ExactMatch(t *testing.T) {
+	leaves := []*services.TreeNode{
+		{Symbol: "KEYWORD", Value: "int", Children: nil},
+		{Symbol: "IDENTIFIER", Value: "blue", Children: nil},
+		{Symbol: "ASSIGNMENT", Value: "=", Children: nil},
+		{Symbol: "INTEGER", Value: "13", Children: nil},
+		{Symbol: "SEPARATOR", Value: ";", Children: nil},
+	}
+	
+	sequence := []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "SEPARATOR"}
+	
+	result := services.MatchesSequence(leaves, sequence, 0)
+	
+	if !result {
+		t.Errorf("Expected true for exact match")
+	}
+}
+
+func TestMatchesSequence_NoMatch(t *testing.T) {
+	leaves := []*services.TreeNode{
+		{Symbol: "KEYWORD", Value: "int", Children: nil},
+		{Symbol: "IDENTIFIER", Value: "blue", Children: nil},
+		{Symbol: "ASSIGNMENT", Value: "=", Children: nil},
+		{Symbol: "INTEGER", Value: "13", Children: nil},
+		{Symbol: "SEPARATOR", Value: ";", Children: nil},
+	}
+	
+	sequence := []string{"KEYWORD", "IDENTIFIER", "OPERATOR", "SEPARATOR"}
+	
+	result := services.MatchesSequence(leaves, sequence, 0)
+	
+	if result {
+		t.Errorf("Expected false for no match")
+	}
+}
+
+func TestMatchesSequence_OutOfBounds(t *testing.T) {
+	leaves := []*services.TreeNode{
+		{Symbol: "KEYWORD", Value: "for", Children: nil},
+		{Symbol: "IDENTIFIER", Value: "x", Children: nil},
+		{Symbol: "KEYWORD", Value: "range", Children: nil},
+		{Symbol: "INTEGER", Value: "21", Children: nil},
+	}
+	
+	sequence := []string{"KEYWORD", "IDENTIFIER", "KEYWORD", "INTEGER", "SEPARATOR"}
+	
+	result := services.MatchesSequence(leaves, sequence, 0)
+	
+	if result {
+		t.Errorf("Expected false for out of bounds sequence")
+	}
+}
+
+func TestMatchesSequence_StartOffset(t *testing.T) {
+	leaves := []*services.TreeNode{
+		{Symbol: "KEYWORD", Value: "for", Children: nil},
+		{Symbol: "IDENTIFIER", Value: "x", Children: nil},
+		{Symbol: "KEYWORD", Value: "range", Children: nil},
+		{Symbol: "INTEGER", Value: "21", Children: nil},
+	}
+	
+	sequence := []string{"KEYWORD", "INTEGER"}
+	
+	result := services.MatchesSequence(leaves, sequence, 2)
+	
+	if !result {
+		t.Errorf("Expected true for match with offset")
+	}
+}
