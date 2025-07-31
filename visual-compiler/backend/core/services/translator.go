@@ -9,8 +9,8 @@ import (
 
 // Struct for the translation rules
 type TranslationRule struct {
-	Sequence    []string
-	Translation []string
+	Sequence    []string `json:"sequence"`
+	Translation []string `json:"translation"`
 }
 
 // Struct to track whether the syntax tree leaves are translated
@@ -95,10 +95,6 @@ func Translate(tree SyntaxTree, rules []TranslationRule) ([]string, error) {
 	}
 
 	leaf_nodes := LeafNodes(tree.Root)
-
-	if len(leaf_nodes) == 0 {
-		return []string{}, fmt.Errorf("empty syntax tree")
-	}
 
 	var result []string
 	translated := make([]bool, len(leaf_nodes))
