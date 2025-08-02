@@ -149,6 +149,11 @@
 
 	let tokens: Token[] = [];
 	let unexpected_tokens: string[] = [];
+	let translated_code: string[] = [];
+
+	 function handleTranslationReceived(event: CustomEvent<string[]>) {
+        translated_code = event.detail;
+    }
 </script>
 
 <NavBar />
@@ -227,8 +232,8 @@
 
 				{#if selected_phase === 'translator' && TranslatorPhaseTutorial}
 					<svelte:component this={TranslatorPhaseTutorial} />
-					<svelte:component this={TranslatorPhaseInspector} {source_code} />
-					<svelte:component this={TranslatorArtifactViewer} />
+					<svelte:component this={TranslatorPhaseInspector} {source_code} on:translationreceived={handleTranslationReceived} />
+					<svelte:component this={TranslatorArtifactViewer}  {translated_code}/>
 				{/if}
 
 			</div>
