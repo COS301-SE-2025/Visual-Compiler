@@ -594,4 +594,50 @@
 	.translate:hover {
 		background-color: rgb(98, 102, 109);
 	}
+
+	/* --- Dark Mode --- */
+	:global(html.dark-mode) .inspector-container
+  {
+    background: #1a2a4a;
+  }
+	:global(html.dark-mode) .code-block-wrapper,
+	:global(html.dark-mode) .rule-block {
+		background: #2d3748;
+	}
+	:global(html.dark-mode) .heading,
+	:global(html.dark-mode) .section-heading,
+	:global(html.dark-mode) .section-heading1,
+	:global(html.dark-mode) .form-label,
+	:global(html.dark-mode) .code-block {
+		color: #ebeef1;
+	}
+	:global(html.dark-mode) .input-field {
+		background-color: #2d3748;
+		border-color: #4b5563;
+		color: #f0f0f0;
+	}
+	:global(html.dark-mode) .input-field:focus {
+		border-color: #60a5fa;
+		box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4);
+	}
+	:global(html.dark-mode) .add-line,
+	:global(html.dark-mode) .add-rule-btn {
+		border-color: #60a5fa;
+		color: #60a5fa;
+		background: transparent;
+	}
+	:global(html.dark-mode) .submit {
+		background-color: #cccccc;
+		color: #041a47;
+	}
+	:global(html.dark-mode) .default-toggle-btn {
+		background-color: #2d3748;
+		border-color: #4a5568;
+		color: #d1d5db;
+	}
+	:global(html.dark-mode) .default-toggle-btn.selected {
+		background-color: #001a6e;
+		border-color: #60a5fa;
+		color: #e0e7ff;
+	}
 </style>
