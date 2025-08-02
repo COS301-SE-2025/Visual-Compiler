@@ -1,6 +1,9 @@
 <script lang="ts">
 	export let source_code: string;
 	import { AddToast } from '$lib/stores/toast';
+	import { createEventDispatcher } from 'svelte';
+
+	const dispatch = createEventDispatcher();
 
 	let rules = [{ tokenSequence: '', lines: [''] }];
 	let isSubmitted = false;
@@ -159,13 +162,39 @@
 	 * handleTranslate
 	 * @description Initiates the final translation process using the submitted rules.
 	 * @param {void}
-	 * @returns {void}
+	 * @returns {Promise<void>}
 	 */
-	function handleTranslate() {
-		console.log('Performing translation with the submitted rules...');
+	async function handleTranslate() {
+		const user_id = localStorage.getItem('user_id');
+		if (!user_id) {
+			AddToast('User not logged in.', 'error');
+			return;
+		}
 
-		translationSuccessful = true;
-		AddToast('Code translated successfully!', 'success');
+		console.log('Requesting final translation from backend...');
+
+		try {
+			const response = await fetch('http://localhost:8080/api/translating/translate', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ users_id: user_id }) // Send only the user_id as required
+			});
+
+			if (!response.ok) {
+				const errorData = await response.json();
+				throw new Error(errorData.details || 'Failed to translate code.');
+			}
+
+			const result = await response.json();
+			AddToast(result.message || 'Code translated successfully!', 'success');
+			translationSuccessful = true;
+
+			// Dispatch the translated code to the parent component
+			dispatch('translationreceived', result.code);
+		} catch (error: any) {
+			console.error('Translation Error:', error);
+			AddToast(error.message || 'An unknown error occurred during translation.', 'error');
+		}
 	}
 </script>
 
