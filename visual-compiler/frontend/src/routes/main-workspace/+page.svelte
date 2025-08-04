@@ -107,7 +107,8 @@
 	}
 
 	function handlePhaseSelect(type: NodeType) {
-		syntaxTreeData = null; // Reset tree on new phase selection
+		syntaxTreeData = null; 
+		parsingError = null;
 		if (type === 'source') {
 			show_code_input = true;
 		} else {
@@ -145,6 +146,7 @@
 
 	function handleTreeReceived(event: CustomEvent<SyntaxTree>) {
 		syntaxTreeData = event.detail;
+		artifactData = event.detail;
 	}
 
 	let tokens: Token[] = [];
@@ -152,8 +154,17 @@
 	let translated_code: string[] = [];
 
 	 function handleTranslationReceived(event: CustomEvent<string[]>) {
-        translated_code = event.detail;
-    }
+		translated_code = event.detail;
+	}
+
+	let artifactData: SyntaxTree | null = null;
+	let parsingError: any = null;
+
+
+	function handleParsingError(event: CustomEvent) {
+					parsingError = event.detail;
+					syntaxTreeData = null;
+	}
 </script>
 
 <NavBar />
@@ -215,8 +226,9 @@
 						this={ParserPhaseInspector}
 						{source_code}
 						on:treereceived={handleTreeReceived}
+						on:parsingerror={handleParsingError}
 					/>
-					<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} />
+					<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData}  {parsingError}/>
 				{/if}
 
 				{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}

@@ -265,6 +265,7 @@
             dispatch('treereceived', result.tree);
         } catch (error) {
             console.error('Generate Syntax Tree Error:', error);
+            dispatch('parsingerror', error);
             AddToast(String(error), 'error');
         }
     }
