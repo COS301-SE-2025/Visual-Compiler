@@ -386,6 +386,7 @@
 		background-color: #eef2f7;
 		color: #001a6e;
 		border: 1px dashed #c0c7d3;
+		border-color: #c0c7d3;
 		padding: 0.5rem 1rem;
 		border-radius: 6px;
 		font-weight: 500;
@@ -393,7 +394,7 @@
 		transition: all 0.2s ease;
 	}
 
-	.add-line:hover {
+	.add-line:hover, .add-rule-btn:hover {
 		border-color: #001a6e;
 	}
 	.section-heading {
