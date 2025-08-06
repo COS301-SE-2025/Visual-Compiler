@@ -78,7 +78,7 @@ func TestRegister_ExistingEmail(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/users/register", "application/json",
+		"http://51.21.245.160:8080/api/users/register", "application/json",
 		bytes.NewBuffer(req),
 	)
 
@@ -121,7 +121,7 @@ func TestRegister_NewUser(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/users/register", "application/json",
+		"http://51.21.245.160:8080/api/users/register", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -159,7 +159,7 @@ func TestRegister_ExistingUsername(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/users/register", "application/json",
+		"http://51.21.245.160:8080/api/users/register", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -200,7 +200,7 @@ func TestLogin_ExistingUser(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/users/login", "application/json",
+		"http://51.21.245.160:8080/api/users/login", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -242,7 +242,7 @@ func TestLogin_IncorrectPassword(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/users/login", "application/json",
+		"http://51.21.245.160:8080/api/users/login", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -284,7 +284,7 @@ func TestLogin_InvalidUser(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/users/login", "application/json",
+		"http://51.21.245.160:8080/api/users/login", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -316,7 +316,7 @@ func TestDeleteUser_Existing(t *testing.T) {
 	}
 
 	res, err := http.NewRequest("DELETE",
-		"http://localhost:8080/api/users/delete",
+		"http://51.21.245.160:8080/api/users/delete",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -363,7 +363,7 @@ func TestDeleteUser_Invalid(t *testing.T) {
 	}
 
 	res, err := http.NewRequest("DELETE",
-		"http://localhost:8080/api/users/delete",
+		"http://51.21.245.160:8080/api/users/delete",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -403,7 +403,7 @@ func TestGetAllUsers(t *testing.T) {
 	defer closeServer(t, server)
 
 	res, err := http.Get(
-		"http://localhost:8080/api/users/getUsers",
+		"http://51.21.245.160:8080/api/users/getUsers",
 	)
 	if err != nil {
 		t.Errorf("Get all users failed: %v", err)

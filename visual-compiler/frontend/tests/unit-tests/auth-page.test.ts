@@ -61,7 +61,7 @@ describe('login page', () => {
 		await fireEvent.input(password, { target: { value: '12345678' } });
 		await fireEvent.submit(login_form!);
 
-		expect(global.fetch).toHaveBeenCalledWith('http://localhost:8080/api/users/login', {
+		expect(global.fetch).toHaveBeenCalledWith('http://51.21.245.160:8080/api/users/login', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -91,7 +91,7 @@ describe('login page', () => {
 		await fireEvent.input(password, { target: { value: '12345678' } });
 		await fireEvent.submit(login_form!);
 
-		expect(global.fetch).toHaveBeenCalledWith('http://localhost:8080/api/users/login', {
+		expect(global.fetch).toHaveBeenCalledWith('http://51.21.245.160:8080/api/users/login', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -178,7 +178,7 @@ describe('register page', () => {
 		await fireEvent.input(c_password, { target: { value: '12345678' } });
 		await fireEvent.submit(login_form!);
 
-		expect(global.fetch).toHaveBeenCalledWith('http://localhost:8080/api/users/register', {
+		expect(global.fetch).toHaveBeenCalledWith('http://51.21.245.160:8080/api/users/register', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -217,7 +217,7 @@ describe('register page', () => {
 		await fireEvent.input(c_password, { target: { value: '12345678' } });
 		await fireEvent.submit(login_form!);
 
-		expect(global.fetch).toHaveBeenCalledWith('http://localhost:8080/api/users/register', {
+		expect(global.fetch).toHaveBeenCalledWith('http://51.21.245.160:8080/api/users/register', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({

@@ -102,7 +102,7 @@ describe('ParsingInput Component', () => {
 
 		await waitFor(() => {
 			expect(mockFetch).toHaveBeenCalledWith(
-				'http://localhost:8080/api/parsing/grammar',
+				'http://51.21.245.160:8080/api/parsing/grammar',
 				expect.any(Object)
 			);
 			expect(AddToast).toHaveBeenCalledWith('Grammar submitted successfully!', 'success');
