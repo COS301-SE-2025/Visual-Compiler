@@ -110,7 +110,7 @@ jobs:
 
       - name: Copy image to instance
         run: |
-          rsync -az -e "ssh -i ~/.ssh/id_rsa" ./visual-compiler ${{secrets.EC2_USER}}@${{secrets.EC2_HOST}}:/home/${{secrets.EC2_USER}}/app/
+          rsync -az -e "ssh -i ~/.ssh/id_rsa" ./visual-compiler docker-compose.yml ${{secrets.EC2_USER}}@${{secrets.EC2_HOST}}:/home/${{secrets.EC2_USER}}/app/
 
       - name: SSH into instance and Compose
         run: |
