@@ -115,7 +115,7 @@ jobs:
       - name: SSH into instance and Compose
         run: |
           ssh -i ~/.ssh/id_rsa ${{secrets.EC2_USER}}@${{secrets.EC2_HOST}} << 'EOF'
-            cd ~/app/visual-compiler
+            cd ~/app
             echo "Mongo_username=${{secrets.MONGODB_USERNAME}}" >> backend.env
             echo "Mongo_password=${{secrets.MONGODB_PASSWORD}}" >> backend.env
             echo "Mongo_URI=${{secrets.MONGODB_URI}}" >> backend.env 
