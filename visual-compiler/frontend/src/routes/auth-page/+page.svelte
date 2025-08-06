@@ -37,7 +37,7 @@
 		}
 
 		try {
-			const response = await fetch('http://51.21.245.160:8080/api/users/register', {
+			const response = await fetch('http://localhost:8080/api/users/register', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -79,7 +79,7 @@
 		if (is_login_button_disabled) return;
 
 		try {
-			const response = await fetch('http://51.21.245.160:8080/api/users/login', {
+			const response = await fetch('http://localhost:8080/api/users/login', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
