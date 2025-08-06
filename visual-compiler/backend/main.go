@@ -54,7 +54,7 @@ func main() {
 		api_parsing_routes.HandleContext(c)
 	})
 
-	log.Println("Starting backend server on: http://localhost:8080/api")
+	log.Println("Starting backend server on: http://51.21.245.160:8080/api")
 	if err := router.Run(":8080"); err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}

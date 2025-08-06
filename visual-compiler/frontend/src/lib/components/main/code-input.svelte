@@ -55,7 +55,7 @@
 			AddToast('User not logged in.', 'error');
 			return;
 		}
-		fetch('http://localhost:8080/api/lexing/code', {
+		fetch('http://51.21.245.160:8080/api/lexing/code', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({

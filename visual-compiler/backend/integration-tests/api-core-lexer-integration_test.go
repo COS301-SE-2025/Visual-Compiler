@@ -83,7 +83,7 @@ func get_id(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/users/login", "application/json",
+		"http://51.21.245.160:8080/api/users/login", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -128,7 +128,7 @@ func TestStoreSourceCode_Valid(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/code", "application/json",
+		"http://51.21.245.160:8080/api/lexing/code", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -194,7 +194,7 @@ func TestCreateRulesFromCode_Valid(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/rules", "application/json",
+		"http://51.21.245.160:8080/api/lexing/rules", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -245,7 +245,7 @@ func TestCreateRulesFromCode_CoreError(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/rules", "application/json",
+		"http://51.21.245.160:8080/api/lexing/rules", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -285,7 +285,7 @@ func TestCreateRulesFromCode_Val(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/rules", "application/json",
+		"http://51.21.245.160:8080/api/lexing/rules", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -329,7 +329,7 @@ func TestLexing_Valid(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/lexer", "application/json",
+		"http://51.21.245.160:8080/api/lexing/lexer", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -359,7 +359,7 @@ func TestLexing_NoSourceCode(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/lexer", "application/json",
+		"http://51.21.245.160:8080/api/lexing/lexer", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -404,7 +404,7 @@ func TestLexing_CoreError(t *testing.T) {
 		t.Errorf("converting data to json failed")
 	}
 	code_res, err := http.Post(
-		"http://localhost:8080/api/lexing/code", "application/json",
+		"http://51.21.245.160:8080/api/lexing/code", "application/json",
 		bytes.NewBuffer(code_req),
 	)
 	if err != nil {
@@ -431,7 +431,7 @@ func TestLexing_CoreError(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/lexer", "application/json",
+		"http://51.21.245.160:8080/api/lexing/lexer", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -541,7 +541,7 @@ func TestReadDFAFromUser_Valid(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/dfa", "application/json",
+		"http://51.21.245.160:8080/api/lexing/dfa", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -608,7 +608,7 @@ func TestReadDFAFromUser_TestUser(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/dfa", "application/json",
+		"http://51.21.245.160:8080/api/lexing/dfa", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -652,7 +652,7 @@ func TestTokensFromDFA_Valid(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/dfaToTokens", "application/json",
+		"http://51.21.245.160:8080/api/lexing/dfaToTokens", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -695,7 +695,7 @@ func TestTokensFromDFA_NoSourceCode(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/dfaToTokens", "application/json",
+		"http://51.21.245.160:8080/api/lexing/dfaToTokens", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -739,7 +739,7 @@ func TestTokensFromDFA_CoreError(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/dfaToTokens", "application/json",
+		"http://51.21.245.160:8080/api/lexing/dfaToTokens", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -784,7 +784,7 @@ func TestConvertDFAToRG_Valid(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/dfaToRegex", "application/json",
+		"http://51.21.245.160:8080/api/lexing/dfaToRegex", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -832,7 +832,7 @@ func TestConvertDFAToRG_NoDFA(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/dfaToRegex", "application/json",
+		"http://51.21.245.160:8080/api/lexing/dfaToRegex", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -879,7 +879,7 @@ func TestConvertDFAToRG_CoreError(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/dfaToRegex", "application/json",
+		"http://51.21.245.160:8080/api/lexing/dfaToRegex", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -927,7 +927,7 @@ func TestConvertRGToNFA_Valid(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/regexToNFA", "application/json",
+		"http://51.21.245.160:8080/api/lexing/regexToNFA", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -975,7 +975,7 @@ func TestConvertRGToNFA_NoRegexRules(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/regexToNFA", "application/json",
+		"http://51.21.245.160:8080/api/lexing/regexToNFA", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -1023,7 +1023,7 @@ func TestConvertRGToNFA_CoreError(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/regexToNFA", "application/json",
+		"http://51.21.245.160:8080/api/lexing/regexToNFA", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -1072,7 +1072,7 @@ func TestConvertRGToDFA_Valid(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/regexToDFA", "application/json",
+		"http://51.21.245.160:8080/api/lexing/regexToDFA", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -1120,7 +1120,7 @@ func TestConvertRGToDFA_NoRegexRules(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/regexToDFA", "application/json",
+		"http://51.21.245.160:8080/api/lexing/regexToDFA", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -1168,7 +1168,7 @@ func TestConvertRGToDFA_CoreError(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/regexToDFA", "application/json",
+		"http://51.21.245.160:8080/api/lexing/regexToDFA", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -1217,7 +1217,7 @@ func TestConvertNFAToDFA_Valid(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/nfaToDFA", "application/json",
+		"http://51.21.245.160:8080/api/lexing/nfaToDFA", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -1265,7 +1265,7 @@ func TestConvertNFAToDFA_NoNFA(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/nfaToDFA", "application/json",
+		"http://51.21.245.160:8080/api/lexing/nfaToDFA", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -1313,7 +1313,7 @@ func TestConvertNFAToDFA_CoreError(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/lexing/nfaToDFA", "application/json",
+		"http://51.21.245.160:8080/api/lexing/nfaToDFA", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {

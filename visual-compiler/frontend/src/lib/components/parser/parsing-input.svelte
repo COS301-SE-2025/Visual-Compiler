@@ -219,7 +219,7 @@
 		};
 
 		try {
-			const response = await fetch('http://localhost:8080/api/parsing/grammar', {
+			const response = await fetch('http://51.21.245.160:8080/api/parsing/grammar', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(final_json_output)
@@ -249,7 +249,7 @@
 		}
 
 		try {
-			const response = await fetch('http://localhost:8080/api/parsing/tree', {
+			const response = await fetch('http://51.21.245.160:8080/api/parsing/tree', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ users_id: user_id })

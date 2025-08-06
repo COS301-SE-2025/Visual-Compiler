@@ -33,7 +33,7 @@ func TestReadGrammar_CoreError(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/parsing/grammar", "application/json",
+		"http://51.21.245.160:8080/api/parsing/grammar", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -76,7 +76,7 @@ func TestReadGrammar_Valid(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/parsing/grammar", "application/json",
+		"http://51.21.245.160:8080/api/parsing/grammar", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -117,7 +117,7 @@ func TestCreateSyntaxTree_NoTokens(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/parsing/tree", "application/json",
+		"http://51.21.245.160:8080/api/parsing/tree", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -159,7 +159,7 @@ func TestCreateSyntaxTree_NoGrammarCode(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/parsing/tree", "application/json",
+		"http://51.21.245.160:8080/api/parsing/tree", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -200,7 +200,7 @@ func TestCreateSyntaxTree_CoreError(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/parsing/tree", "application/json",
+		"http://51.21.245.160:8080/api/parsing/tree", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -242,7 +242,7 @@ func TestCreateSyntaxTree_Valid(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/parsing/tree", "application/json",
+		"http://51.21.245.160:8080/api/parsing/tree", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -278,7 +278,7 @@ func TestTreeToString_NoSyntaxTree(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/parsing/treeString", "application/json",
+		"http://51.21.245.160:8080/api/parsing/treeString", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
@@ -320,7 +320,7 @@ func TestTreeToString_Valid(t *testing.T) {
 	}
 
 	res, err := http.Post(
-		"http://localhost:8080/api/parsing/treeString", "application/json",
+		"http://51.21.245.160:8080/api/parsing/treeString", "application/json",
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
