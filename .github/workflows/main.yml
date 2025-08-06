@@ -120,6 +120,6 @@ jobs:
             echo "Mongo_password=${{secrets.MONGODB_PASSWORD}}" >> backend.env
             echo "Mongo_URI=${{secrets.MONGODB_URI}}" >> backend.env 
 
-            docker compose --env-file backend.env down || true
-            docker compose --env-file backend.env up -d --build
+            docker compose down || true
+            docker compose up -d --build
           EOF
