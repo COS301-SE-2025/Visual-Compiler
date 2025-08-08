@@ -13,6 +13,8 @@
     let is_loading = false;
     export let onGenerateSymbolTable: (data: {
 		symbol_table : Symbol[];
+        analyser_error: string;
+        analyser_error_details: string;
 	}) => void = () => {};
 
     // --- INTERFACES ---
@@ -264,16 +266,28 @@
         })) || [];
 
         onGenerateSymbolTable({
-				symbol_table: symbols
+				symbol_table: symbols,
+                analyser_error: result.error,
+                analyser_error_details: result.details
 			});
 
         
         symbol_table =  symbols ;
         show_symbol_table = true;
-        AddToast('Symbol table generated successfully!', 'success');
-        dispatch('generate',{
-            symbol_table: symbols
-        });
+
+        if (result.error) {
+            AddToast('Semantic error found!', 'error');
+            dispatch('generate',{
+                symbol_table: symbols,
+                error: result.error,
+                error_details: result.details
+            });
+        }else {
+            AddToast('Symbol table generated successfully!', 'success');
+            dispatch('generate',{
+                symbol_table: symbols
+            });
+        }
     } catch (error) {
          const err = error as { 
             response?: { 

@@ -1,10 +1,12 @@
 <script lang="ts">
 
-    import type {SymbolTable,Symbol} from '$lib/types';
+    import type {Symbol} from '$lib/types';
 
     export let phase: string;
     export let symbol_table: Symbol[] = [];
     export let show_symbol_table = false;
+    export let analyser_error: string;
+    export let analyser_error_details: string;
 
 </script>
 
@@ -36,7 +38,15 @@
             <div class="no-symbols">No symbols generated yet</div>
         {/if}
 
-        
+        {#if analyser_error && analyser_error.length > 0}
+            <div class="error-container">
+                <h4>Error</h4>
+                    <div class="error">
+                        {analyser_error} <br>
+                        {analyser_error_details}
+                    </div>
+            </div>
+        {/if}
     {:else if phase === 'analyser'}
         <div class="empty-state">Symbols will appear here after generation</div>
     {/if}
@@ -96,6 +106,36 @@
         transition: color 0.3s ease;
     }
 
+    .error-container {
+        margin-top: 1.5rem;
+        padding: 1.2rem;
+        background: #f8f9fa;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .error-container h4 {
+        color: #041a47;
+        font-size: 1.1rem;
+        margin: 0 0 1rem 0;
+        padding-bottom: 0.6rem;
+        border-bottom: 1px solid #e5e7eb;
+        transition: color 0.3s ease, border-bottom-color 0.3s ease;
+    }
+
+    .error {
+        padding: 0.5rem 1rem;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 6px;
+        color: #041a47;
+        font-family: monospace;
+        font-size: 0.9rem;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+    }
 
     .empty-state,
     .no-symbols {
@@ -131,7 +171,22 @@
         background: #1a202c;
     }
 
-   
+     :global(html.dark-mode) .error-container {
+        background: #2d3748;
+        border-color: #4a5568;
+    }
+
+    :global(html.dark-mode) .error-container h4 {
+        color: #90cdf4;
+        border-bottom-color: #4a5568;
+    }
+
+   :global(html.dark-mode) .error {
+        background: #4a5568;
+        border-color: #718096;
+        color: #e2e8f0;
+    }
+
     :global(html.dark-mode) .empty-state,
     :global(html.dark-mode) .no-symbols {
         color: #a0aec0;
