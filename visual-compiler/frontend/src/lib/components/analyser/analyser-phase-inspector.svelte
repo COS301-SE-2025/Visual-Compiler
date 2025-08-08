@@ -8,81 +8,84 @@
     const dispatch = createEventDispatcher();
 
     export let source_code: string = '';
-    let showSymbolTable = false;
-    let symbolTable: SymbolTable = { symbols: [] };
-    let isLoading = false;
+    let show_symbol_table = false;
+    let symbol_table: SymbolTable = { symbols: [] };
+    let is_loading = false;
+    export let onGenerateSymbolTable: (data: {
+		symbol_table : Symbol[];
+	}) => void = () => {};
 
     // --- INTERFACES ---
     interface ScopeRule {
         id: number;
-        start: string;
-        end: string;
+        Start: string;
+        End: string;
     }
 
     interface TypeRule {
         id: number;
-        resultType: string;
-        assignment: string;
-        lhs: string;
-        operators: string;
-        rhs: string;
+        ResultData: string;
+        Assignment: string;
+        LHSData: string;
+        Operator: string[];
+        RHSData: string;
     }
 
     interface GrammarRule {
-        variable: string;
-        type: string;
-        functionDeclaration: string;
-        parameter: string;
-        assignment: string;
-        operator: string;
-        term: string;
+        VariableRule: string;
+        TypeRule: string;
+        FunctionRule: string;
+        ParameterRule: string;
+        AssignmentRule: string;
+        OperatorRule: string;
+        TermRule: string;
     }
 
     // --- STATE ---
 
     // Scope Rules State
-    let scopeRules: ScopeRule[] = [{ id: 0, start: '', end: '' }];
-    let nextScopeId = 1;
-    let showStartTooltip = false;
-    let showEndTooltip = false;
-    let submittedScopeRules: ScopeRule[] = []; // Renamed for clarity
+    let scope_rules: ScopeRule[] = [{ id: 0, Start: '', End: '' }];
+    let next_scope_id = 1;
+    let show_start_tooltip = false;
+    let show_end_tooltip = false;
+    let submitted_scope_rules: ScopeRule[] = []; // Renamed for clarity
 
     // Type Rules State
-    let typeRules: TypeRule[] = [{ id: 0, resultType: '', assignment: '', lhs: '', operators: '', rhs: '' }];
-    let nextTypeId = 1;
-    let submittedTypeRules: TypeRule[] = [];
+    let type_rules: TypeRule[] = [{ id: 0, ResultData: '',Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
+    let next_type_id = 1;
+    let submitted_type_rules: TypeRule[] = [];
 
     // Grammar Rules State (single object as per screenshot, user only inputs 1 value for each)
-    let grammarRules: GrammarRule = {
-        variable: '',
-        type: '',
-        functionDeclaration: '',
-        parameter: '',
-        assignment: '',
-        operator: '',
-        term: ''
+    let grammar_rules: GrammarRule = {
+        VariableRule: '',
+        TypeRule: '',
+        FunctionRule: '',
+        ParameterRule: '',
+        AssignmentRule: '',
+        OperatorRule: '',
+        TermRule: ''
     };
-    let submittedGrammarRules: GrammarRule = { ...grammarRules }; // Initialize with empty values
+    let submitted_grammar_rules: GrammarRule = { ...grammar_rules }; // Initialize with empty values
 
     // Overall Submission State
-    let rulesSubmitted = false; // This flag now controls the overall submission state
+    let rules_submitted = false; // This flag now controls the overall submission state
 
     const DEFAULT_SCOPE_RULES = [
-        { id: 0, start: '{', end: '}' }
+        { id: 0, Start: '{', End: '}' }
     ];
 
     const DEFAULT_TYPE_RULES = [
-        { id: 0, resultType: 'int', assignment: '=', lhs: 'INTEGER', operators: '+', rhs: 'INTEGER' }
+        { id: 0, ResultData: 'int', Assignment: '=', LHSData: 'INTEGER', Operator: ['+'], RHSData: 'INTEGER' }
     ];
 
     const DEFAULT_GRAMMAR_RULES: GrammarRule = {
-        variable: 'Identifier',
-        type: 'TYPE',
-        functionDeclaration: 'FUNCTION',
-        parameter: 'PARAMETER',
-        assignment: 'ASSIGNMENT',
-        operator: 'OPERATOR',
-        term: 'TERM'
+        VariableRule: 'IDENTIFIER',
+        TypeRule: 'TYPE',
+        FunctionRule: 'FUNCTION',
+        ParameterRule: 'PARAMETER',
+        AssignmentRule: 'ASSIGNMENT',
+        OperatorRule: 'OPERATOR',
+        TermRule: 'TERM'
     };
     let show_default_rules = false;
 
@@ -90,132 +93,140 @@
 
     // Scope Rules Logic
     function addScopeRow() {
-        scopeRules = [...scopeRules, { id: nextScopeId++, start: '', end: '' }];
-        rulesSubmitted = false;
+        scope_rules = [...scope_rules, { id: next_scope_id++, Start: '', End: '' }];
+        rules_submitted = false;
     }
 
     function removeScopeRow(index: number) {
-        scopeRules.splice(index, 1);
-        scopeRules = scopeRules; // Trigger reactivity
-        rulesSubmitted = false;
+        scope_rules.splice(index, 1);
+        scope_rules = scope_rules; // Trigger reactivity
+        rules_submitted = false;
     }
 
     function handleScopeRuleInput() {
-        rulesSubmitted = false;
+        rules_submitted = false;
     }
 
     // Type Rules Logic
     function addTypeRow() {
-        typeRules = [...typeRules, { id: nextTypeId++, resultType: '', assignment: '', lhs: '', operators: '', rhs: '' }];
-        rulesSubmitted = false;
+        type_rules = [...type_rules, { id: next_type_id++, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
+        rules_submitted = false;
     }
 
     function removeTypeRow(index: number) {
-        typeRules.splice(index, 1);
-        typeRules = typeRules; // Trigger reactivity
-        rulesSubmitted = false;
+        type_rules.splice(index, 1);
+        type_rules = type_rules; // Trigger reactivity
+        rules_submitted = false;
+    }
+
+    function updateTypeOperator(rule: TypeRule, input: string) {
+        const trimmedValue = input.trim();
+        if (trimmedValue === '') {
+            rule.Operator = [''];
+        } else {
+            rule.Operator = trimmedValue
+                .split(',')
+                .map(op => op.trim())
+                .filter(op => op.length > 0);
+        }
+        handleTypeRuleInput();
     }
 
     function handleTypeRuleInput() {
-        rulesSubmitted = false;
+        rules_submitted = false;
     }
 
     // Grammar Rules Logic (inputs are directly bound, no add/remove)
     function handleGrammarRuleInput() {
-        rulesSubmitted = false;
+        rules_submitted = false;
     }
 
     // Universal Submission Logic
     function handleSubmit() {
         // Validate Scope Rules
-        if (scopeRules.some((rule) => rule.start.trim() === '' || rule.end.trim() === '')) {
+        if (scope_rules.some((rule) => rule.Start.trim() === '' || rule.End.trim() === '')) {
             AddToast('Please fill out all Scope Rule fields before submitting.', 'error');
             return;
         }
 
         // Validate Type Rules
-        if (typeRules.some((rule) =>
-            rule.resultType.trim() === '' ||
-            rule.assignment.trim() === '' ||
-            rule.lhs.trim() === '' ||
-            rule.operators.trim() === '' ||
-            rule.rhs.trim() === ''
+        if (type_rules.some((rule) =>
+            rule.ResultData.trim() === '' ||
+            rule.Assignment.trim() === '' ||
+            rule.LHSData.trim() === ''
         )) {
             AddToast('Please fill out all Type Rule fields before submitting.', 'error');
             return;
         }
 
         // Validate Grammar Rules (check if any field is empty)
-        const grammarRuleFields = Object.values(grammarRules);
+        const grammarRuleFields = Object.values(grammar_rules);
         if (grammarRuleFields.some(field => typeof field === 'string' && field.trim() === '')) {
             AddToast('Please fill out all Grammar Rule fields before submitting.', 'error');
             return;
         }
 
         // If all validations pass
-        submittedScopeRules = JSON.parse(JSON.stringify(scopeRules));
-        submittedTypeRules = JSON.parse(JSON.stringify(typeRules));
-        submittedGrammarRules = JSON.parse(JSON.stringify(grammarRules));
+        submitted_scope_rules = JSON.parse(JSON.stringify(scope_rules));
+        submitted_type_rules = JSON.parse(JSON.stringify(type_rules));
+        submitted_grammar_rules = JSON.parse(JSON.stringify(grammar_rules));
 
-        rulesSubmitted = true;
+        rules_submitted = true;
         AddToast('All rules submitted successfully!', 'success');
-        console.log('Submitted Scope Rules:', submittedScopeRules);
-        console.log('Submitted Type Rules:', submittedTypeRules);
-        console.log('Submitted Grammar Rules:', submittedGrammarRules);
     }
 
     // Universal Reset Logic
     function resetState() {
-        scopeRules = [{ id: 0, start: '', end: '' }];
-        nextScopeId = 1;
-        submittedScopeRules = [];
+        scope_rules = [{ id: 0, Start: '', End: '' }];
+        next_scope_id = 1;
+        submitted_scope_rules = [];
 
-        typeRules = [{ id: 0, resultType: '', assignment: '', lhs: '', operators: '', rhs: '' }];
-        nextTypeId = 1;
-        submittedTypeRules = [];
+        type_rules = [{ id: 0, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
+        next_type_id = 1;
+        submitted_type_rules = [];
 
-        grammarRules = {
-            variable: '',
-            type: '',
-            functionDeclaration: '',
-            parameter: '',
-            assignment: '',
-            operator: '',
-            term: ''
+        grammar_rules = {
+            VariableRule: '',
+            TypeRule: '',
+            FunctionRule: '',
+            ParameterRule: '',
+            AssignmentRule: '',
+            OperatorRule: '',
+            TermRule: ''
         };
-        submittedGrammarRules = { ...grammarRules };
+        submitted_grammar_rules = { ...grammar_rules };
 
-        rulesSubmitted = false;
+        rules_submitted = false;
         dispatch('reset');
         AddToast('All rules have been reset.', 'info');
     }
 
     function insertDefaultRules() {
-        scopeRules = DEFAULT_SCOPE_RULES.map(r => ({ ...r }));
-        nextScopeId = 1;
-        typeRules = DEFAULT_TYPE_RULES.map(r => ({ ...r }));
-        nextTypeId = 1;
-        grammarRules = { ...DEFAULT_GRAMMAR_RULES };
+        scope_rules = DEFAULT_SCOPE_RULES.map(r => ({ ...r }));
+        next_scope_id = 1;
+        type_rules = DEFAULT_TYPE_RULES.map(r => ({ ...r }));
+        next_type_id = 1;
+        grammar_rules = { ...DEFAULT_GRAMMAR_RULES };
         show_default_rules = true;
-        rulesSubmitted = false;
+        rules_submitted = false;
     }
 
     function removeDefaultRules() {
-        scopeRules = [{ id: 0, start: '', end: '' }];
-        nextScopeId = 1;
-        typeRules = [{ id: 0, resultType: '', assignment: '', lhs: '', operators: '', rhs: '' }];
-        nextTypeId = 1;
-        grammarRules = {
-            variable: '',
-            type: '',
-            functionDeclaration: '',
-            parameter: '',
-            assignment: '',
-            operator: '',
-            term: ''
+        scope_rules = [{ id: 0, Start: '', End: '' }];
+        next_scope_id = 1;
+        type_rules = [{ id: 0, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
+        next_type_id = 1;
+        grammar_rules = {
+            VariableRule: '',
+            TypeRule: '',
+            FunctionRule: '',
+            ParameterRule: '',
+            AssignmentRule: '',
+            OperatorRule: '',
+            TermRule: ''
         };
         show_default_rules = false;
-        rulesSubmitted = false;
+        rules_submitted = false;
     }
 
     async function handleGenerate() {
@@ -225,14 +236,15 @@
             AddToast('User not logged in. Please log in to save your work.', 'error');
             return;
         }
-        isLoading = true;
+        is_loading = true;
         
         const requestData = {
             users_id: user_id,
-            scope_rules: submittedScopeRules,
-            grammar_rules: submittedGrammarRules,
-            type_rules: submittedTypeRules
+            scope_rules: submitted_scope_rules,
+            grammar_rules: submitted_grammar_rules,
+            type_rules: submitted_type_rules
         };
+
 
         const response = await fetch('http://localhost:8080/api/analysing/analyse', {
             method: 'POST',
@@ -241,38 +253,44 @@
             },
             body: JSON.stringify(requestData)
         });
-
-        console.log("Raw Response:", response); // Check response status
         
         const result = await response.json();
-        console.log("Full API Response:", result); // Inspect complete response
-        
-        // Debug the symbol table artefact structure
-        console.log("SymbolTableArtefact:", result.symbol_table_artefact);
-        console.log("SymbolScopes:", result.symbol_table_artefact?.SymbolScopes);
         
         // Transform the data with proper null checks
-        const symbols = result.symbol_table_artefact?.SymbolScopes?.map((s: any) => ({
+        const symbols = result.symbol_table?.SymbolScopes?.map((s: any) => ({
             name: s.Name || s.name || 'unknown',
             type: s.Type || s.type || 'unknown',
             scope: s.Scope || s.scope || 0
         })) || [];
 
+        onGenerateSymbolTable({
+				symbol_table: symbols
+			});
+
         
-        symbolTable = { symbols };
-        showSymbolTable = true;
+        symbol_table =  symbols ;
+        show_symbol_table = true;
         AddToast('Symbol table generated successfully!', 'success');
-        dispatch('generate');
+        dispatch('generate',{
+            symbol_table: symbols
+        });
     } catch (error) {
+         const err = error as { 
+            response?: { 
+                data?: any; 
+                status?: number 
+            }; 
+            message?: string 
+        };
         console.error('Error details:', {
-            error,
-            response: error.response?.data,
-            status: error.response?.status
+            error: err,
+            response: err.response?.data,
+            status: err.response?.status
         });
         console.error('Error generating symbol table:', error);
-        AddToast(error.message || 'Failed to generate symbol table', 'error');
+        AddToast(err.message || 'Failed to generate symbol table', 'error');
     } finally {
-        isLoading = false;
+        is_loading = false;
     }
 }
 
@@ -280,34 +298,30 @@
 
     // Scope Rules Completeness
     $: lastScopeRowComplete =
-        scopeRules.length > 0 &&
-        scopeRules[scopeRules.length - 1].start.trim() !== '' &&
-        scopeRules[scopeRules.length - 1].end.trim() !== '';
+        scope_rules.length > 0 &&
+        scope_rules[scope_rules.length - 1].Start.trim() !== '' &&
+        scope_rules[scope_rules.length - 1].End.trim() !== '';
 
-    $: allScopeRowsComplete = scopeRules.every(
-        (rule) => rule.start.trim() !== '' && rule.end.trim() !== ''
+    $: allScopeRowsComplete = scope_rules.every(
+        (rule) => rule.Start.trim() !== '' && rule.End.trim() !== ''
     );
 
     // Type Rules Completeness
     $: lastTypeRowComplete =
-        typeRules.length > 0 &&
-        typeRules[typeRules.length - 1].resultType.trim() !== '' &&
-        typeRules[typeRules.length - 1].assignment.trim() !== '' &&
-        typeRules[typeRules.length - 1].lhs.trim() !== '' &&
-        typeRules[typeRules.length - 1].operators.trim() !== '' &&
-        typeRules[typeRules.length - 1].rhs.trim() !== '';
+        type_rules.length > 0 &&
+        type_rules[type_rules.length - 1].ResultData.trim() !== '' &&
+        type_rules[type_rules.length - 1].Assignment.trim() !== '' &&
+        type_rules[type_rules.length - 1].LHSData.trim() !== ''
 
-    $: allTypeRowsComplete = typeRules.every(
+    $: allTypeRowsComplete = type_rules.every(
         (rule) =>
-            rule.resultType.trim() !== '' &&
-            rule.assignment.trim() !== '' &&
-            rule.lhs.trim() !== '' &&
-            rule.operators.trim() !== '' &&
-            rule.rhs.trim() !== ''
+            rule.ResultData.trim() !== '' &&
+            rule.Assignment.trim() !== '' &&
+            rule.LHSData.trim() !== ''
     );
 
     // Grammar Rules Completeness
-    $: allGrammarRulesComplete = Object.values(grammarRules).every(
+    $: allGrammarRulesComplete = Object.values(grammar_rules).every(
         (field) => typeof field === 'string' && field.trim() !== ''
     );
 
@@ -329,7 +343,7 @@
         </button>
     </div>
     <div class="header">
-        {#if rulesSubmitted}
+        {#if rules_submitted}
             <div class="reset-wrapper" transition:fade={{ duration: 150 }}>
                 <button class="reset-button" on:click={resetState} aria-label="Reset rules">
                     <svg
@@ -365,20 +379,20 @@
                 <h2 class="heading2">Scope Rules</h2>
             </div>
             <div class="rules-list">
-                {#each scopeRules as rule, i (rule.id)}
+                {#each scope_rules as rule, i (rule.id)}
                     <div class="rule-row" in:slide={{ duration: 250 }}>
                         <div class="input-tooltip-wrapper">
                             <input
                                 type="text"
-                                bind:value={rule.start}
+                                bind:value={rule.Start}
                                 placeholder="Start Delimiter"
                                 aria-label="Start Delimiter"
                                 class="scope-input"
-                                on:focus={() => i === 0 && (showStartTooltip = true)}
-                                on:blur={() => i === 0 && (showStartTooltip = false)}
+                                on:focus={() => i === 0 && (show_start_tooltip = true)}
+                                on:blur={() => i === 0 && (show_start_tooltip = false)}
                                 on:input={handleScopeRuleInput}
                             />
-                            {#if i === 0 && showStartTooltip}
+                            {#if i === 0 && show_start_tooltip}
                                 <div class="tooltip">Examples include <code>{'{'}</code></div>
                             {/if}
                         </div>
@@ -386,15 +400,15 @@
                         <div class="input-tooltip-wrapper">
                             <input
                                 type="text"
-                                bind:value={rule.end}
+                                bind:value={rule.End}
                                 placeholder="End Delimiter"
                                 aria-label="End Delimiter"
                                 class="scope-input"
-                                on:focus={() => i === 0 && (showEndTooltip = true)}
-                                on:blur={() => i === 0 && (showEndTooltip = false)}
+                                on:focus={() => i === 0 && (show_end_tooltip = true)}
+                                on:blur={() => i === 0 && (show_end_tooltip = false)}
                                 on:input={handleScopeRuleInput}
                             />
-                            {#if i === 0 && showEndTooltip}
+                            {#if i === 0 && show_end_tooltip}
                                 <div class="tooltip">Examples include <code>{'}'}</code></div>
                             {/if}
                         </div>
@@ -402,7 +416,7 @@
                             class="icon-button delete-button"
                             on:click={() => removeScopeRow(i)}
                             aria-label="Remove scope rule row"
-                            disabled={scopeRules.length === 1}
+                            disabled={scope_rules.length === 1}
                         >
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -418,10 +432,11 @@
                                     d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
                                 /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg
                         >
+                        </button>
                     </div>
                 {/each}
             </div>
-            {#if !rulesSubmitted && lastScopeRowComplete}
+            {#if !rules_submitted && lastScopeRowComplete}
                 <div class="add-button-wrapper" transition:slide={{ duration: 150 }}>
                     <button class="add-button" on:click={addScopeRow} aria-label="Add new scope delimiter row">
                         <svg
@@ -448,27 +463,27 @@
                 <h2 class="heading2">Type Rules</h2>
             </div>
             <div class="rules-list type-rules-list">
-                {#each typeRules as rule, i (rule.id)}
+                {#each type_rules as rule, i (rule.id)}
                     <div class="rule-row" in:slide={{ duration: 250 }}>
                         <div class="type-rule-inputs">
-                            <input type="text" bind:value={rule.resultType} placeholder="Result Type" aria-label="Result type" class="scope-input" on:input={handleTypeRuleInput} />
-                            <input type="text" bind:value={rule.assignment} placeholder="Assignment" aria-label="Assignment" class="scope-input" on:input={handleTypeRuleInput} />
-                            <input type="text" bind:value={rule.lhs} placeholder="LHS" aria-label="LHS" class="scope-input" on:input={handleTypeRuleInput} />
-                            <input type="text" bind:value={rule.operators} placeholder="Operators" aria-label="Operators" class="scope-input" on:input={handleTypeRuleInput} />
-                            <input type="text" bind:value={rule.rhs} placeholder="RHS" aria-label="RHS" class="scope-input" on:input={handleTypeRuleInput} />
+                            <input type="text" bind:value={rule.ResultData} placeholder="Result Type" aria-label="Result type" class="scope-input" on:input={handleTypeRuleInput} />
+                            <input type="text" bind:value={rule.Assignment} placeholder="Assignment" aria-label="Assignment" class="scope-input" on:input={handleTypeRuleInput} />
+                            <input type="text" bind:value={rule.LHSData} placeholder="LHS" aria-label="LHS" class="scope-input" on:input={handleTypeRuleInput} />
+                            <input type="text" value={rule.Operator.join(',')} on:input={(e) =>{if (!e.target) return; updateTypeOperator(rule, (e.target as HTMLInputElement).value)}} placeholder="Operator(s)" aria-label="Operator(s)" class="scope-input"/>
+                            <input type="text" bind:value={rule.RHSData} placeholder="RHS" aria-label="RHS" class="scope-input" on:input={handleTypeRuleInput} />
                         </div>
                         <button
                             class="icon-button delete-button"
                             on:click={() => removeTypeRow(i)}
                             aria-label="Remove type rule row"
-                            disabled={typeRules.length === 1}
+                            disabled={type_rules.length === 1}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
                         </button>
                     </div>
                 {/each}
             </div>
-            {#if !rulesSubmitted && lastTypeRowComplete}
+            {#if !rules_submitted && lastTypeRowComplete}
                 <div class="add-button-wrapper" transition:slide={{ duration: 150 }}>
                     <button class="add-button" on:click={addTypeRow} aria-label="Add new type rule row">
                         <svg
@@ -497,37 +512,37 @@
             <div class="grammar-rules-grid">
                 <div class="grammar-rule-item">
                     <label for="grammar-variable" class="grammar-label">Variable</label>
-                    <input id="grammar-variable" type="text" bind:value={grammarRules.variable} class="scope-input" on:input={handleGrammarRuleInput} />
+                    <input id="grammar-variable" type="text" bind:value={grammar_rules.VariableRule} class="scope-input" on:input={handleGrammarRuleInput} />
                 </div>
                 <div class="grammar-rule-item">
                     <label for="grammar-type" class="grammar-label">Type</label>
-                    <input id="grammar-type" type="text" bind:value={grammarRules.type} class="scope-input" on:input={handleGrammarRuleInput} />
+                    <input id="grammar-type" type="text" bind:value={grammar_rules.TypeRule} class="scope-input" on:input={handleGrammarRuleInput} />
                 </div>
                 <div class="grammar-rule-item">
                     <label for="grammar-function-declaration" class="grammar-label">Function Declaration</label>
-                    <input id="grammar-function-declaration" type="text" bind:value={grammarRules.functionDeclaration} class="scope-input" on:input={handleGrammarRuleInput} />
+                    <input id="grammar-function-declaration" type="text" bind:value={grammar_rules.FunctionRule} class="scope-input" on:input={handleGrammarRuleInput} />
                 </div>
                 <div class="grammar-rule-item">
                     <label for="grammar-parameter" class="grammar-label">Parameter</label>
-                    <input id="grammar-parameter" type="text" bind:value={grammarRules.parameter} class="scope-input" on:input={handleGrammarRuleInput} />
+                    <input id="grammar-parameter" type="text" bind:value={grammar_rules.ParameterRule} class="scope-input" on:input={handleGrammarRuleInput} />
                 </div>
                 <div class="grammar-rule-item">
                     <label for="grammar-assignment" class="grammar-label">Assignment</label>
-                    <input id="grammar-assignment" type="text" bind:value={grammarRules.assignment} class="scope-input" on:input={handleGrammarRuleInput} />
+                    <input id="grammar-assignment" type="text" bind:value={grammar_rules.AssignmentRule} class="scope-input" on:input={handleGrammarRuleInput} />
                 </div>
                 <div class="grammar-rule-item">
                     <label for="grammar-operator" class="grammar-label">Operator</label>
-                    <input id="grammar-operator" type="text" bind:value={grammarRules.operator} class="scope-input" on:input={handleGrammarRuleInput} />
+                    <input id="grammar-operator" type="text" bind:value={grammar_rules.OperatorRule} class="scope-input" on:input={handleGrammarRuleInput} />
                 </div>
                 <div class="grammar-rule-item">
                     <label for="grammar-term" class="grammar-label">Term</label>
-                    <input id="grammar-term" type="text" bind:value={grammarRules.term} class="scope-input" on:input={handleGrammarRuleInput} />
+                    <input id="grammar-term" type="text" bind:value={grammar_rules.TermRule} class="scope-input" on:input={handleGrammarRuleInput} />
                 </div>
             </div>
         </div>
     </div>
     <div class="actions-container">
-        {#if !rulesSubmitted}
+        {#if !rules_submitted}
             <button class="submit-button" on:click={handleSubmit} disabled={!overallAllRowsComplete}>
                 Submit All Rules
             </button>
@@ -536,9 +551,9 @@
                 <button 
                     class="generate-button" 
                     on:click={handleGenerate} 
-                    disabled={isLoading}
+                    disabled={is_loading}
                 >
-                    {#if isLoading}
+                    {#if is_loading}
                         Generating...
                     {:else}
                         Generate Symbol Table

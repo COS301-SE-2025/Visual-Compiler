@@ -121,11 +121,18 @@
 		}
 	}
 
-	let showSymbolTable = false;
+	let show_symbol_table = false;
+	let symbol_table: Symbol[] = [];
 
-	 function handleReset() {
-    showSymbolTable = false;
-  }
+	function handleReset() {
+    	show_symbol_table = false;
+		symbol_table = [];
+  	}
+
+	function handleSymbolGeneration(data: { symbol_table: Symbol[]}) {
+		symbol_table = data.symbol_table;
+		show_symbol_table = true;
+	}
 
 	function returnToCanvas() {
 		selected_phase = null;
@@ -233,13 +240,18 @@
 
 				{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}
 					<svelte:component this={AnalyserPhaseTutorial} />
-					 <AnalyserPhaseInspector
-						source_code={source_code}
-						bind:showSymbolTable
-						on:generate={() => showSymbolTable = true}
-						on:reset={handleReset}
+					<svelte:component
+						this={AnalyserPhaseInspector}
+						{source_code}
+						onGenerateSymbolTable = {handleSymbolGeneration}
 					/>
-					<svelte:component this={AnalyserArtifactViewer} {showSymbolTable} on:close={() => showSymbolTable = false} />
+					<svelte:component
+						this={AnalyserArtifactViewer}
+						phase={selected_phase}
+						{symbol_table}
+						{show_symbol_table}
+					/>
+			
 				{/if}
 
 				{#if selected_phase === 'translator' && TranslatorPhaseTutorial}
