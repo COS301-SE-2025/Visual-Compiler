@@ -8,7 +8,7 @@
 	import Toolbox from '$lib/components/main/toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
-	import WelcomeOverlay from '$lib/components/main/welcome-overlay.svelte';
+	import WelcomeOverlay from '$lib/components/main/project-hub.svelte';
 
 	let LexerPhaseTutorial: any;
 	let LexerPhaseInspector: any;
