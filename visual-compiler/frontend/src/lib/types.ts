@@ -1,8 +1,8 @@
 export type NodeType = 'source' | 'lexer' | 'parser' | 'analyser' | 'translator' ;
 
 export interface Token {
-	Type: string;
-	Value: string;
+	type: string;
+	value: string;
 }
 
 export interface SyntaxTreeNode {
@@ -24,3 +24,4 @@ export interface Symbol {
 export interface SymbolTable {
     symbols: Symbol[];
 }
+

@@ -45,6 +45,7 @@ func Analyse(c *gin.Context) {
 		return
 	}
 
+
 	mongo_cli := db.ConnectClient()
 	parsing_collection := mongo_cli.Database("visual-compiler").Collection("parsing")
 	analyse_collection := mongo_cli.Database("visual-compiler").Collection("analysing")
