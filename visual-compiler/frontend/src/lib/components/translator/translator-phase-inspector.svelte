@@ -131,30 +131,28 @@
 		console.log('Submitting translation input:', JSON.stringify(apiPayload, null, 2));
 
 		try {
-			const response = await fetch('http://localhost:8080/api/translating/readRules', {
+			const response = await fetch('http://localhost:8080/api/translating/translate', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(apiPayload)
 			});
 
-			const responseText = await response.text();
-
 			if (!response.ok) {
-				let errorDetails = responseText;
-				try {
-					const errorJson = JSON.parse(responseText);
-					errorDetails = errorJson.details || JSON.stringify(errorJson);
-				} catch (e) {
-					// Not JSON, use raw text
-				}
-				throw new Error(errorDetails);
+				const errorData = await response.json();
+				throw new Error(errorData.details || 'Failed to translate code.');
 			}
 
-			AddToast('Translation input received successfully!', 'success');
-			isSubmitted = true;
+			const result = await response.json();
+			AddToast(result.message || 'Code translated successfully!', 'success');
+			translationSuccessful = true;
+
+			// Dispatch the translated code to the parent component
+			dispatch('translationreceived', result.code);
 		} catch (error: any) {
-			console.error('Translation input Error:', error);
-			AddToast(error.message || 'An unknown error occurred.', 'error');
+			console.error('Translation Error:', error);
+			// Dispatch a new event for the error
+			dispatch('translationerror', error);
+			AddToast(error.message || 'An unknown error occurred during translation.', 'error');
 		}
 	}
 
