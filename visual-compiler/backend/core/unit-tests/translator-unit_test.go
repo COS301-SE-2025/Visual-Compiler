@@ -73,8 +73,8 @@ func TestReadTranslationRules_Valid(t *testing.T) {
 			t.Errorf("Expected 2 rules but received %d", len(rules))
 		}
 		
-		if len(rules[0].Sequence) != 4 {
-			t.Errorf("Expected 4 tokens in first sequence but received %d", len(rules[0].Sequence))
+		if len(rules[0].Sequence) != 5 {
+			t.Errorf("Expected 5 tokens in first sequence but received %d", len(rules[0].Sequence))
 		}
 		
 		if rules[0].Sequence[0] != "KEYWORD" {
@@ -169,6 +169,45 @@ func TestTranslate_Valid(t *testing.T) {
 		
 		expected := []string{"add \t rax, 13", "mov \t [red], rax"}
 		if result[0] != expected[0] || result[1] != expected[1] {
+			t.Errorf("Expected '%s' but received '%s'", expected, result)
+		}
+	}
+}
+
+func TestTranslate_Repeated(t *testing.T) {
+	leaf1 := &services.TreeNode{Symbol: "KEYWORD", Value: "int", Children: nil}
+	leaf2 := &services.TreeNode{Symbol: "IDENTIFIER", Value: "grey", Children: nil}
+	leaf3 := &services.TreeNode{Symbol: "ASSIGNMENT", Value: "=", Children: nil}
+	leaf4 := &services.TreeNode{Symbol: "IDENTIFIER", Value: "black", Children: nil}
+	leaf5 := &services.TreeNode{Symbol: "OPERATOR", Value: "+", Children: nil}
+	leaf6 := &services.TreeNode{Symbol: "IDENTIFIER", Value: "white", Children: nil}
+	leaf7 := &services.TreeNode{Symbol: "SEPARATOR", Value: ";", Children: nil}
+	
+	root := &services.TreeNode{
+		Symbol:   "ROOT",
+		Value:    "",
+		Children: []*services.TreeNode{leaf1, leaf2, leaf3, leaf4, leaf5, leaf6, leaf7},
+	}
+	tree := services.SyntaxTree{Root: root}
+	
+	rules := []services.TranslationRule{
+		{
+			Sequence:    []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "IDENTIFIER", "OPERATOR", "IDENTIFIER", "SEPARATOR"},
+			Translation: []string{"mov \t rax, [{IDENTIFIER}]", "add \t rax, [{IDENTIFIER}]", "add \t rax, [{IDENTIFIER}]"},
+		},
+	}
+
+	result, err := services.Translate(tree, rules)
+
+	if err != nil {
+		t.Errorf("Error not supposed to occur: %v", err)
+	} else {
+		if len(result) != 3 {
+			t.Errorf("Expected 3 lines of target code but received %d", len(result))
+		}
+		
+		expected := []string{"mov \t rax, [grey]", "add \t rax, [black]", "add \t rax, [white]"}
+		if result[0] != expected[0] || result[1] != expected[1] || result[2] != expected[2] {
 			t.Errorf("Expected '%s' but received '%s'", expected, result)
 		}
 	}
