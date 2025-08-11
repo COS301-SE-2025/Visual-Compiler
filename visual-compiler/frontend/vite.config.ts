@@ -9,7 +9,8 @@ export default defineConfig(({ mode }) => ({
 			allowedHosts: [
 				'visual-compiler-alb-1542446286.eu-north-1.elb.amazonaws.com',
 				'visual-compiler.co.za',
-				'www.visual-compiler.co.za'
+				'www.visual-compiler.co.za',
+				'http://localhost:8080',
 			],
 			port: 5173
 		}
