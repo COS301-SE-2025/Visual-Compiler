@@ -201,7 +201,7 @@ func UseRule(leaves []*TreeNode, sequence []string, translation []string) []stri
 		if i < len(sequence) {
 			token_map[symbol] = append(token_map[symbol], &TokenTracker{
 				Value: leaves[i].Value,
-				Avail: false,
+				Avail: true,
 			})
 		}
 	}
@@ -225,23 +225,21 @@ func UseRule(leaves []*TreeNode, sequence []string, translation []string) []stri
 // Replaces the placeholders in the template with their actual values
 func SubstituteTemplate(template string, token_map map[string][]*TokenTracker) string {
 
-	result := template
-
 	for symbol, value := range token_map {
 
 		placeholder := "{" + symbol + "}"
 
-		for strings.Contains(result, placeholder) {
+		for strings.Contains(template, placeholder) {
 
-			var unused string
+			var replacement string
 			found := false
 
 			for _, tracker := range value {
 
-				if !tracker.Avail {
-					unused = tracker.Value
+				if tracker.Avail {
+					replacement = tracker.Value
 					if len(value) > 1 {
-						tracker.Avail = true
+						tracker.Avail = false
 					}
 					found = true
 					break
@@ -249,7 +247,7 @@ func SubstituteTemplate(template string, token_map map[string][]*TokenTracker) s
 			}
 
 			if found {
-				result = strings.Replace(result, placeholder, unused, 1)
+				result = strings.Replace(template, placeholder, replacement, 1)
 			} else {
 				break
 			}
