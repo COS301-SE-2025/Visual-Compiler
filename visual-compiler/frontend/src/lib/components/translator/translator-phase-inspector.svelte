@@ -131,7 +131,7 @@
 		console.log('Submitting translation input:', JSON.stringify(apiPayload, null, 2));
 
 		try {
-			const response = await fetch('http://localhost:8080/api/translating/translate', {
+			const response = await fetch('http://localhost:8080/api/translating/readRules', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(apiPayload)
@@ -139,20 +139,15 @@
 
 			if (!response.ok) {
 				const errorData = await response.json();
-				throw new Error(errorData.details || 'Failed to translate code.');
+				throw new Error(errorData.details || 'Failed to submit translation rules.');
 			}
 
 			const result = await response.json();
-			AddToast(result.message || 'Code translated successfully!', 'success');
-			translationSuccessful = true;
-
-			// Dispatch the translated code to the parent component
-			dispatch('translationreceived', result.code);
+			AddToast('Translation rules submitted successfully!', 'success');
+			isSubmitted = true;
 		} catch (error: any) {
-			console.error('Translation Error:', error);
-			// Dispatch a new event for the error
-			dispatch('translationerror', error);
-			AddToast(error.message || 'An unknown error occurred during translation.', 'error');
+			console.error('Rule submission Error:', error);
+			AddToast(error.message || 'An unknown error occurred.', 'error');
 		}
 	}
 
@@ -191,6 +186,8 @@
 			dispatch('translationreceived', result.code);
 		} catch (error: any) {
 			console.error('Translation Error:', error);
+			// Dispatch a new event for the error
+			dispatch('translationerror', error);
 			AddToast(error.message || 'An unknown error occurred during translation.', 'error');
 		}
 	}
@@ -392,7 +389,8 @@
 		transition: all 0.2s ease;
 	}
 
-	.add-line:hover, .add-rule-btn:hover {
+	.add-line:hover,
+	.add-rule-btn:hover {
 		border-color: #001a6e;
 	}
 	.section-heading {
@@ -595,10 +593,9 @@
 	}
 
 	/* --- Dark Mode --- */
-	:global(html.dark-mode) .inspector-container
-  {
-    background: #1a2a4a;
-  }
+	:global(html.dark-mode) .inspector-container {
+		background: #1a2a4a;
+	}
 	:global(html.dark-mode) .code-block-wrapper,
 	:global(html.dark-mode) .rule-block {
 		background: #2d3748;
