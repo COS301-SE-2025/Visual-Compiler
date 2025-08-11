@@ -486,12 +486,16 @@
 	}
 
 	const DEFAULT_INPUT_ROWS = [
-		{ type: 'keyword', regex: 'int|str|if', error: '' },
-		{ type: 'identifier', regex: '[a-zA-Z]+', error: '' },
-		{ type: 'integer', regex: '[0-9]+', error: '' },
-		{ type: 'assignment', regex: '=', error: '' },
-		{ type: 'operator', regex: '[+\\-*/%]', error: '' },
-		{ type: 'separator', regex: ';', error: '' }
+		{ type: 'KEYWORD', regex: 'int|return', error: '' },
+		{ type: 'IDENTIFIER', regex: '[a-zA-Z_]+', error: '' },
+		{ type: 'INTEGER', regex: '[0-9]+', error: '' },
+		{ type: 'ASSIGNMENT', regex: '=', error: '' },
+		{ type: 'OPERATOR', regex: '[+\\-*/%]', error: '' },
+		{ type: 'SEPARATOR', regex: ';', error: '' },
+        { type: 'OPEN_BRACKETS', regex: '\\(', error: '' },
+        { type: 'CLOSE_BRACKETS', regex: '\\)', error: '' },
+        { type: 'OPEN_SCOPE', regex: '\{', error: '' },
+        { type: 'CLOSE_SCOPE', regex: '\}', error: '' }
 	];
 
 	let editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));

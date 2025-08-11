@@ -245,6 +245,95 @@ func TestCreateSyntaxTree_Valid(t *testing.T) {
 	}
 }
 
+func TestCreateSyntaxTree_Valid_MoreComplex(t *testing.T) {
+
+	tokens := []services.TypeValue{
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "blue"},
+		{Type: "ASSIGNMENT", Value: "="},
+		{Type: "INTEGER", Value: "13"},
+		{Type: "OPERATOR", Value: "+"},
+		{Type: "INTEGER", Value: "89"},
+		{Type: "SEPARATOR", Value: ";"},
+	}
+
+	grammar := services.Grammar{
+		Variables: []string{"STATEMENT", "DECLARATION", "EXPRESSION", "TYPE", "TERM"},
+		Terminals: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "OPERATOR", "SEPARATOR", "STRING"},
+		Start:     "STATEMENT",
+		Rules: []services.ParsingRule{
+			{Input: "STATEMENT", Output: []string{"DECLARATION", "SEPARATOR"}},
+			{Input: "DECLARATION", Output: []string{"TYPE", "IDENTIFIER", "ASSIGNMENT", "EXPRESSION"}},
+			{Input: "EXPRESSION", Output: []string{"TERM", "OPERATOR", "TERM"}},
+			{Input: "TERM", Output: []string{"STRING"}},
+			{Input: "TERM", Output: []string{"INTEGER"}},
+			{Input: "TYPE", Output: []string{"KEYWORD"}},
+		},
+	}
+	syntax_tree, err := services.CreateSyntaxTree(tokens, grammar)
+
+	if err != nil {
+		t.Errorf("Error not supposed to occur for not tokens: %v", err)
+	} else {
+		if syntax_tree.Root == nil {
+			t.Errorf("No root")
+		}
+		if syntax_tree.Root.Children == nil {
+			t.Errorf("No children")
+		}
+		if syntax_tree.Root.Symbol == "" {
+			t.Errorf("No symbol")
+		}
+	}
+}
+
+func TestCreateSyntaxTree_Valid_Complex(t *testing.T) {
+
+	tokens := []services.TypeValue{
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "blue"},
+		{Type: "ASSIGNMENT", Value: "="},
+		{Type: "INTEGER", Value: "13"},
+		{Type: "OPERATOR", Value: "+"},
+		{Type: "INTEGER", Value: "89"},
+		{Type: "SEPARATOR", Value: ";"},
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "function_do"},
+		{Type: "BRACKETS", Value: "("},
+		{Type: "BRACKETS", Value: ")"},
+
+	}
+
+	grammar := services.Grammar{
+		Variables: []string{"STATEMENT", "DECLARATION", "EXPRESSION", "TYPE", "TERM"},
+		Terminals: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "OPERATOR", "SEPARATOR", "STRING"},
+		Start:     "STATEMENT",
+		Rules: []services.ParsingRule{
+			{Input: "STATEMENT", Output: []string{"DECLARATION", "SEPARATOR"}},
+			{Input: "DECLARATION", Output: []string{"TYPE", "IDENTIFIER", "ASSIGNMENT", "EXPRESSION"}},
+			{Input: "EXPRESSION", Output: []string{"TERM", "OPERATOR", "TERM"}},
+			{Input: "TERM", Output: []string{"STRING"}},
+			{Input: "TERM", Output: []string{"INTEGER"}},
+			{Input: "TYPE", Output: []string{"KEYWORD"}},
+		},
+	}
+	syntax_tree, err := services.CreateSyntaxTree(tokens, grammar)
+
+	if err != nil {
+		t.Errorf("Error not supposed to occur for not tokens: %v", err)
+	} else {
+		if syntax_tree.Root == nil {
+			t.Errorf("No root")
+		}
+		if syntax_tree.Root.Children == nil {
+			t.Errorf("No children")
+		}
+		if syntax_tree.Root.Symbol == "" {
+			t.Errorf("No symbol")
+		}
+	}
+}
+
 func TestParseSymbol_NoTokens(t *testing.T) {
 	tokens := []services.TypeValue{}
 
