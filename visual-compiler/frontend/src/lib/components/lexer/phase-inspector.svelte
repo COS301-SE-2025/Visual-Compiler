@@ -471,12 +471,37 @@
 		showDefault = true;
 		editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
 		inputRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
-		states = 'S0, S1, S2, S3, S4, S5, S6, S7, S8';
+		states = 'S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17';
 		startState = 'S0';
 		acceptedStates =
-			'S3->KEYWORD, S4->IDENTIFIER, S5->ASSIGNMENT, S6->OPERATOR, S7->INTEGER, S8->SEPARATOR';
-		transitions =
-			'S0,i->S1\nS1,n->S2\nS2,t->S3\nS0,[a-zA-Z_]->S4\nS4,[a-zA-Z_]->S4\nS0,=->S5\nS0,[+-*/%]->S6\nS0,[0-9]->S7\nS7,[0-9]->S7\nS0,;->S8';
+			'S3->KEYWORD, S14->KEYWORD, S4->IDENTIFIER, S5->ASSIGNMENT, S6->OPERATOR, S7->INTEGER, S8->SEPARATOR, S15->OPEN_BRACKETS, S16->CLOSE_BRACKETS, S17->OPEN_SCOPE, S18->CLOSE_SCOPE ';
+		transitions ='S0,i->S1\n';
+        transitions +='S1,n->S2\n';
+        transitions +='S2,t->S3\n';
+
+        transitions += 'S0,r->S9\n';
+        transitions += 'S9,e->S10\n';
+        transitions += 'S10,t->S11\n';
+        transitions += 'S11,u->S12\n';
+        transitions += 'S12,r->S13\n';
+        transitions += 'S13,n->S14\n';
+
+        transitions +='S0,[a-zA-Z_]->S4\n';
+        transitions +='S4,[a-zA-Z_]->S4\n';
+
+        transitions +='S0,=->S5\n';
+        transitions +='S0,[+\\-*/%]->S6\n';
+
+        transitions +='S0,[0-9]->S7\n';
+        transitions +='S7,[0-9]->S7\n';
+
+        transitions +='S0,;->S8\n';
+
+        transitions += 'S0,(->S15\n';
+        transitions += 'S0,)->S16\n';
+
+        transitions += 'S0,{->S17\n';
+        transitions += 'S0,}->S18\n';
 	}
 
 	function removeDefault() {
