@@ -207,8 +207,10 @@ func TestTranslate_Repeated(t *testing.T) {
 		}
 		
 		expected := []string{"mov \t rax, [grey]", "add \t rax, [black]", "add \t rax, [white]"}
-		if result[0] != expected[0] || result[1] != expected[1] || result[2] != expected[2] {
-			t.Errorf("Expected '%s' but received '%s'", expected, result)
+		for i, line := range result {
+			if line != expected[i] {
+				t.Errorf("Expected '%s' at line %d but received '%s'", expected[i], i, line)
+			}
 		}
 	}
 }
@@ -325,7 +327,7 @@ func TestMatchesSequence_OutOfBounds(t *testing.T) {
 	}
 }
 
-func TestMatchesSequence_StartOffset(t *testing.T) {
+func TestMatchesSequence_Offset(t *testing.T) {
 	leaves := []*services.TreeNode{
 		{Symbol: "KEYWORD", Value: "for", Children: nil},
 		{Symbol: "IDENTIFIER", Value: "x", Children: nil},
@@ -339,5 +341,140 @@ func TestMatchesSequence_StartOffset(t *testing.T) {
 	
 	if !result {
 		t.Errorf("Expected true for match with offset")
+	}
+}
+
+func TestUseRule_SingleResult(t *testing.T) {
+	leaves := []*services.TreeNode{
+		{Symbol: "KEYWORD", Value: "print", Children: nil},
+		{Symbol: "INTEGER", Value: "13", Children: nil},
+	}
+	
+	sequence := []string{"KEYWORD", "INTEGER"}
+	translation := []string{"{KEYWORD} \"{INTEGER}\""}
+	
+	result := services.UseRule(leaves, sequence, translation)
+	
+	if len(result) != 1 {
+		t.Errorf("Expected 1 result but received %d", len(result))
+	}
+	
+	expected := "print \"13\""
+	if result[0] != expected {
+		t.Errorf("Expected '%s' but received '%s'", expected, result[0])
+	}
+}
+
+func TestUseRule_MultipleResult(t *testing.T) {
+	leaves := []*services.TreeNode{
+		{Symbol: "IDENTIFIER", Value: "i", Children: nil},
+		{Symbol: "OPERATOR", Value: "++", Children: nil},
+		{Symbol: "SEPARATOR", Value: ";", Children: nil},
+	}
+	
+	sequence := []string{"IDENTIFIER", "OPERATOR", "SEPARATOR"}
+	translation := []string{
+		"{",
+		"\t inc [{IDENTIFIER}]",
+		"}",
+	}
+	
+	result := services.UseRule(leaves, sequence, translation)
+	
+	if len(result) != 3 {
+		t.Errorf("Expected 3 results but received %d", len(result))
+	}
+	
+	expected := []string{
+		"{",
+		"\t inc [i]",
+		"}",
+	}
+	
+	for i, line := range result {
+		if line != expected[i] {
+			t.Errorf("Expected '%s' at line %d but received '%s'", expected[i], i, line)
+		}
+	}
+}
+
+func TestUseRule_RepeatedToken(t *testing.T) {
+	leaves := []*services.TreeNode{
+		{Symbol: "IDENTIFIER", Value: "new_blue", Children: nil},
+		{Symbol: "ASSIGNMENT", Value: "=", Children: nil},
+		{Symbol: "IDENTIFIER", Value: "old_blue", Children: nil},
+		{Symbol: "SEPERATOR", Value: ";", Children: nil},
+	}
+	
+	sequence := []string{"IDENTIFIER", "ASSIGNMENT", "IDENTIFIER", "SEPARATOR"}
+	translation := []string{"mov [{IDENTIFIER}], [{IDENTIFIER}]"}
+	
+	result := services.UseRule(leaves, sequence, translation)
+	
+	if len(result) != 1 {
+		t.Errorf("Expected 1 result but received %d", len(result))
+	}
+	
+	expected := "mov [new_blue], [old_blue]"
+	if result[0] != expected {
+		t.Errorf("Expected '%s' but received '%s'", expected, result[0])
+	}
+}
+
+func TestSubstituteTemplate_NoPlaceholders(t *testing.T) {
+	template := "Hello World"
+	token_map := make(map[string][]*services.TokenTracker)
+	
+	result := services.SubstituteTemplate(template, token_map)
+	
+	if result != template {
+		t.Errorf("Expected '%s' but received '%s'", template, result)
+	}
+}
+
+func TestSubstituteTemplate_SinglePlaceholder(t *testing.T) {
+	template := "print [{IDENTIFIER}]"
+	token_map := map[string][]*services.TokenTracker{
+		"IDENTIFIER": {{Value: "blue", Avail: true}},
+	}
+	
+	result := services.SubstituteTemplate(template, token_map)
+	
+	expected := "print [blue]"
+	if result != expected {
+		t.Errorf("Expected '%s' but received '%s'", expected, result)
+	}
+}
+
+func TestSubstituteTemplate_MultiplePlaceholders(t *testing.T) {
+	template := "print [{IDENTIFIER}] for {INTEGER}"
+	token_map := map[string][]*services.TokenTracker{
+		"IDENTIFIER":  {{Value: "blue", Avail: true}},
+		"INTEGER":  {{Value: "13", Avail: true}},
+	}
+	
+	result := services.SubstituteTemplate(template, token_map)
+	
+	expected := "print [blue] for 13"
+	if result != expected {
+		t.Errorf("Expected '%s' but received '%s'", expected, result)
+	}
+}
+
+func TestSubstituteTemplate_RepeatedPlaceholders(t *testing.T) {
+	template := "[{IDENTIFIER}] and [{IDENTIFIER}] and [{IDENTIFIER}]"
+	token_map := map[string][]*services.TokenTracker{
+		"IDENTIFIER": {
+			{Value: "red", Avail: true},
+			{Value: "green", Avail: true},
+			{Value: "blue", Avail: true},
+		},
+	}
+	
+	result := services.SubstituteTemplate(template, token_map)
+	
+	expected := "[red] and [green] and [blue]"
+	if result != expected {
+		t.Errorf("Expected '%s' but received '%s'", expected, result)
 	}
 }
