@@ -139,6 +139,21 @@ definitions:
     - source_code
     - users_id
     type: object
+  handlers.TranslatorRules:
+    properties:
+      translation_rules:
+        description: Translation Rules
+        items:
+          $ref: '#/definitions/services.TranslationRule'
+        type: array
+      users_id:
+        description: User's ID for searching and storing purposes
+        example: 685df259c1294de5546b045f
+        type: string
+    required:
+    - translation_rules
+    - users_id
+    type: object
   handlers.readDFARequest:
     properties:
       accepting_states:
@@ -192,11 +207,8 @@ definitions:
   services.ParsingRule:
     properties:
       input:
-        example: S
         type: string
       output:
-        example:
-        - Decl
         items:
           type: string
         type: array
@@ -218,6 +230,17 @@ definitions:
         type: string
       to:
         type: string
+    type: object
+  services.TranslationRule:
+    properties:
+      sequence:
+        items:
+          type: string
+        type: array
+      translation:
+        items:
+          type: string
+        type: array
     type: object
   services.TypeRegex:
     properties:
@@ -789,6 +812,89 @@ paths:
       summary: Create and store syntax tree as a string from stored tree
       tags:
       - Parsing
+  /translating/rules:
+    post:
+      consumes:
+      - application/json
+      description: Takes the user's rules, reads it, verifies it and stores it with
+        the user's ID. If translation rules already exist, it overwrites those rules
+        and removes any other created fields (translation)
+      parameters:
+      - description: Read Translation Rules From User
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.TranslatorRules'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Translation Rules successfully stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Translation rules failed to insert
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create translation rules
+      tags:
+      - Translating
+  /translating/translate:
+    post:
+      consumes:
+      - application/json
+      description: Searches the database for the user's Syntax tree and Translation
+        Rules. If found, both are used to translate the tree into code. The code is
+        either created or ,if already existing, updated. If the syntax tree and translation
+        rules are not found, returns an error
+      parameters:
+      - description: Create Code from Syntax Tree and Translation Rules
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.IDRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Code successfully created and stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Conversion failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Tree not found/Rules not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Translates syntax tree using the translation rules into code
+      tags:
+      - Translating
   /users/delete:
     delete:
       consumes:
