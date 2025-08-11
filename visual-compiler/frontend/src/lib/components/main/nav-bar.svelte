@@ -2,6 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { theme, ToggleTheme } from '../../../lib/stores/theme';
 	import HelpMenu from './help-menu.svelte';
+	import AdminPanel from './admin-panel.svelte';
+	import { onMount } from 'svelte';
 
 	const light_logo_url = '/half_stack_phoenix_only.png';
 	const dark_logo_url = '/half_stack_phoenix_grey.png';
@@ -13,6 +15,8 @@
 
 	let show_help = false;
 	let actions_container_node: HTMLElement; // A reference to the container div
+	let is_admin = false;
+	let show_admin_panel = false;
 
 	// logout
 	// Return type: void
@@ -35,6 +39,10 @@
 			show_help = false;
 		}
 	}
+
+	onMount(() => {
+		is_admin = localStorage.getItem('is_admin') === 'true';
+	});
 </script>
 
 <svelte:window on:click={handleWindowClick} />
@@ -45,7 +53,14 @@
 
 	<div class="actions-container" bind:this={actions_container_node}>
 		<div class="actions">
-			<button class="action-btn" on:click={() => (show_help = !show_help)} aria-label="Help">
+			{#if is_admin}
+				<button class="action-btn admin-btn" aria-label="Admin Panel" on:click={() => show_admin_panel = !show_admin_panel}>
+					<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--admin-icon-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M12 2l3 7h7l-5.5 4.5L18 21l-6-4-6 4 1.5-7.5L2 9h7z"/>
+					</svg>
+				</button>
+			{/if}
+			<button class="action-btn help-btn" on:click={() => (show_help = !show_help)} aria-label="Help">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="24"
@@ -89,10 +104,25 @@
 		{#if show_help}
 			<HelpMenu on:close={() => (show_help = false)} />
 		{/if}
+
+		{#if show_admin_panel}
+			<AdminPanel on:close={() => show_admin_panel = false} />
+		{/if}
 	</div>
 </header>
 
 <style>
+	:root {
+		--admin-icon-color: #041a47;
+	}
+	:global(html.dark-mode) {
+		--admin-icon-color: #d3d3d3;
+	}
+	.admin-btn svg {
+		stroke: var(--admin-icon-color);
+		transition: stroke 0.3s;
+	}
+
 	.navbar {
 		position: relative;
 		height: 3.5rem;
@@ -172,5 +202,13 @@
 
 	:global(html.dark-mode) .action-btn:hover {
 		color: #b0b0b0;
+	}
+
+	.admin-btn {
+		margin-right: 0.05rem;
+	}
+
+	.help-btn {
+		margin-left: 0.7rem;
 	}
 </style>

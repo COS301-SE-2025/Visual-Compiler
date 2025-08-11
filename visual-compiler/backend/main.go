@@ -40,6 +40,7 @@ func main() {
 	api_lexing_routes := routers.SetupLexingRouter()
 	api_parsing_routes := routers.SetupParsingRouter()
 	api_analysing_routes := routers.SetupAnalysingRouter()
+	api_translating_routes := routers.SetupTranslatorRouter()
 
 	router.Any("/api/users/*any", func(c *gin.Context) {
 		c.Request.URL.Path = c.Param("any")
@@ -59,6 +60,11 @@ func main() {
 	router.Any("/api/analysing/*any", func(c *gin.Context) {
 		c.Request.URL.Path = c.Param("any")
 		api_analysing_routes.HandleContext(c)
+	})
+
+	router.Any("/api/translating/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		api_translating_routes.HandleContext(c)
 	})
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
