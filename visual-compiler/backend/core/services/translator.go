@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -77,6 +78,10 @@ func ReadTranslationRules(input []byte) ([]TranslationRule, error) {
 			}
 		}
 	}
+
+	sort.SliceStable(translator, func(i, j int) bool {
+		return len(translator[i].Sequence) > len(translator[j].Sequence)
+	})
 
 	return translator, nil
 }
@@ -225,11 +230,13 @@ func UseRule(leaves []*TreeNode, sequence []string, translation []string) []stri
 // Replaces the placeholders in the template with their actual values
 func SubstituteTemplate(template string, token_map map[string][]*TokenTracker) string {
 
+	result := template
+
 	for symbol, value := range token_map {
 
 		placeholder := "{" + symbol + "}"
 
-		for strings.Contains(template, placeholder) {
+		for strings.Contains(result, placeholder) {
 
 			var replacement string
 			found := false
@@ -247,7 +254,7 @@ func SubstituteTemplate(template string, token_map map[string][]*TokenTracker) s
 			}
 
 			if found {
-				result = strings.Replace(template, placeholder, replacement, 1)
+				result = strings.Replace(result, placeholder, replacement, 1)
 			} else {
 				break
 			}
