@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
 				'visual-compiler-alb-1542446286.eu-north-1.elb.amazonaws.com',
 				'visual-compiler.co.za',
 				'www.visual-compiler.co.za',
-				'http://localhost:8080',
+				'localhost',
 			],
 			port: 5173
 		}
@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => ({
 				resolve: {
 					conditions: ['browser']
 				},
-				server: undefined,
+				server: {},
 			},
 			{
 				extends: './vite.config.ts',
@@ -49,7 +49,7 @@ export default defineConfig(({ mode }) => ({
 					exclude: ['tests/**/*.{test,spec}.{js,ts}', 'node_modules/**'],
 					setupFiles: ['./vitest-setup-server.ts']
 				},
-				server: undefined,
+				server: {},
 			}
 		]
 	}
