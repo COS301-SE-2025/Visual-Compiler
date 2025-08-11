@@ -29,7 +29,7 @@ jobs:
 
       - name: Tests for frontend
         working-directory: ./visual-compiler/frontend
-        run: npm run test -- --coverage
+        run: NODE_ENV=test npm run test -- --coverage
 
       - name: Upload coverage for frontend
         uses: codecov/codecov-action@v4
