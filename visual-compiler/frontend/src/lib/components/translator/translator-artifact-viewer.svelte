@@ -3,7 +3,7 @@
 
 	// Prop to receive the translated code
 	export let translated_code: string[] = [];
-
+	export let translationError: any = null;
 	/**
 	 * copy_to_clipboard
 	 * @description Copies the generated code to the user's clipboard.
@@ -50,14 +50,43 @@
 		{/if}
 	</div>
 
-	<div class="code-wrapper">
-		{#if translated_code && translated_code.length > 0}
-			<div class="line-numbers">
-				{#each translated_code as _, i}
-					<span>{i + 1}</span>
-				{/each}
+	<div class="artifact-viewer">
+		{#if translationError}
+			<div class="error-state">
+				<div class="error-icon">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="48"
+						height="48"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<circle cx="12" cy="12" r="10" />
+						<line x1="12" y1="8" x2="12" y2="12" />
+						<line x1="12" y1="16" x2="12.01" y2="16" />
+					</svg>
+				</div>
+				<h4>Translation Failed</h4>
+				<p class="error-message">
+					The translation could not be completed with the provided rules. Please check your input and
+					try again.
+				</p>
+				<pre class="error-details">{translationError.message || String(translationError)}</pre>
 			</div>
-			<pre class="code-block"><code>{#each translated_code as line}{line}{'\n'}{/each}</code></pre>
+		{:else if translated_code && translated_code.length > 0}
+			<div class="code-wrapper">
+				<div class="line-numbers">
+					{#each translated_code as _, i}
+						<span>{i + 1}</span>
+					{/each}
+				</div>
+				<pre
+					class="code-block"><code>{#each translated_code as line}{line}{'\n'}{/each}</code></pre>
+			</div>
 		{:else}
 			<div class="empty-state">
 				<svg
@@ -213,6 +242,61 @@
 	}
 	:global(html.dark-mode) .empty-state {
 		color: #9ca3af;
+	}
+
+	.error-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		padding: 2rem;
+		flex-grow: 1;
+		background-color: #fff5f5;
+		border: 1px solid #e53e3e;
+		border-radius: 8px;
+		color: #9b2c2c;
+	}
+	.error-icon {
+		color: #e53e3e;
+		margin-bottom: 1rem;
+	}
+	.error-state h4 {
+		margin: 0 0 0.5rem 0;
+		font-size: 1.25rem;
+		color: #c53030;
+	}
+	.error-message {
+		margin: 0 0 1rem 0;
+		max-width: 450px;
+		line-height: 1.6;
+	}
+	.error-details {
+		background-color: #fed7d7;
+		padding: 0.75rem 1rem;
+		border-radius: 6px;
+		font-family: 'Fira Code', monospace;
+		font-size: 0.85rem;
+		white-space: pre-wrap;
+		word-wrap: break-word;
+		max-width: 100%;
+		text-align: left;
+		color: #742a2a;
+	}
+	:global(html.dark-mode) .error-state {
+		background-color: #4a2d2d;
+		border-color: #e53e3e;
+		color: #fca5a5;
+	}
+	:global(html.dark-mode) .error-icon {
+		color: #fca5a5;
+	}
+	:global(html.dark-mode) .error-state h4 {
+		color: #fc8181;
+	}
+	:global(html.dark-mode) .error-details {
+		background-color: #4a2d2d;
+		color: #fed7d7;
 	}
 </style>
 

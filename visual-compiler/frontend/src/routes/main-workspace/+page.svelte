@@ -21,7 +21,7 @@
 	let TranslatorPhaseTutorial: any;
 	let TranslatorPhaseInspector: any;
 	let TranslatorArtifactViewer: any;
-
+	
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
 
@@ -59,6 +59,7 @@
 	let source_code = '';
 	let show_tokens = false;
 	let syntaxTreeData: SyntaxTree | null = null;
+	let translationError: any = null;
 
 	// --- TOOLTIPS AND LABELS ---
 	const tooltips: Record<NodeType, string> = {
@@ -109,6 +110,7 @@
 	function handlePhaseSelect(type: NodeType) {
 		syntaxTreeData = null; 
 		parsingError = null;
+		translationError = null;
 		if (type === 'source') {
 			show_code_input = true;
 		} else {
@@ -119,6 +121,11 @@
 				return;
 			}
 		}
+	}
+
+	function handleTranslationError(event: CustomEvent) {
+		translationError = event.detail;
+		translated_code = []; 
 	}
 
 	let show_symbol_table = false;
@@ -264,8 +271,13 @@
 
 				{#if selected_phase === 'translator' && TranslatorPhaseTutorial}
 					<svelte:component this={TranslatorPhaseTutorial} />
-					<svelte:component this={TranslatorPhaseInspector} {source_code} on:translationreceived={handleTranslationReceived} />
-					<svelte:component this={TranslatorArtifactViewer}  {translated_code}/>
+					<svelte:component
+						this={TranslatorPhaseInspector}
+						{source_code}
+						on:translationreceived={handleTranslationReceived}
+						on:translationerror={handleTranslationError}
+					/>
+					<svelte:component this={TranslatorArtifactViewer}  {translated_code} {translationError}/>
 				{/if}
 
 			</div>
