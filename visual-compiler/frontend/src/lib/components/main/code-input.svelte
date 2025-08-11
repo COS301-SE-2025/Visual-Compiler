@@ -28,8 +28,8 @@
 			previous_code_text = code_text;
 			code_text = 'int blue = 13 + 5;\n';
 			code_text += 'int function_name(int red) {\n';
-			code_text += 'int green = red;\n';
-			code_text += 'return green;\n';
+			code_text += '    int green = red;\n';
+			code_text += '    return green;\n';
 			code_text += '}\n';
 			isDefaultInput = true;
 		} else {
