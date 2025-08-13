@@ -18,6 +18,8 @@ type UserPublic struct {
 	Username string `json:"username"`
 	// User's Email
 	Email string `json:"email"`
+	// User's projects
+	Projects bson.A `json:"projects"`
 }
 
 // @Summary Get all users
@@ -53,11 +55,13 @@ func GetAllUsers(c *gin.Context) {
 		id := raw["_id"].(bson.ObjectID)
 		username := raw["username"].(string)
 		email := raw["email"].(string)
+		projects := raw["projects"].(bson.A)
 
 		all_users_public = append(all_users_public, UserPublic{
 			ID:       id,
 			Username: username,
 			Email:    email,
+			Projects: projects,
 		})
 	}
 
