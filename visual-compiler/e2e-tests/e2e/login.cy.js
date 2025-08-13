@@ -18,7 +18,7 @@ describe('Login Test', () => {
 
         cy.get('.icon-submit-btn').click();
 
-        cy.contains('Login successful!', { timeout: 10000 });
+        cy.contains('Login successful!');
 
     })
 
@@ -42,7 +42,7 @@ describe('Login Test', () => {
 
         cy.get('.icon-submit-btn').click();
 
-        cy.contains('Login failed: Invalid credentials', { timeout: 10000 });
+        cy.contains('Login failed: Invalid credentials');
 
     })
 })

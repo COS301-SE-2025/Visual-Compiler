@@ -13,9 +13,7 @@ describe('Registration Test', () => {
 
         cy.wait(1000); 
         cy.get('.tab-nav button').contains("Register").click();
-        cy.wait(1000); 
         cy.get('.tab-nav button').contains("Register").should('have.class', 'active');
-        cy.wait(1000); 
 
         cy.get('body').should('contain', 'Username').and('contain', 'Email');
 
@@ -27,7 +25,7 @@ describe('Registration Test', () => {
 
         cy.get('.icon-submit-btn').click();
 
-        cy.contains('Successfully registered user', { timeout: 10000 });
+        cy.contains('Successfully registered user', {timeout: 1000});
 
     })
 
@@ -45,9 +43,7 @@ describe('Registration Test', () => {
 
         cy.wait(1000); 
         cy.get('.tab-nav button').contains("Register").click();
-        cy.wait(1000); 
         cy.get('.tab-nav button').contains("Register").should('have.class', 'active');
-        cy.wait(1000); 
 
         cy.get('body').should('contain', 'Username').and('contain', 'Email');
 
@@ -59,7 +55,7 @@ describe('Registration Test', () => {
 
         cy.get('.icon-submit-btn').click();
 
-        cy.contains('Registration failed', { timeout: 10000 });
+        cy.contains('Registration failed', {timeout: 1000});
 
     })
 })
