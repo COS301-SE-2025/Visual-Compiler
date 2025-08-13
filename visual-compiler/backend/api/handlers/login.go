@@ -61,6 +61,7 @@ func Login(c *gin.Context) {
 		Password string        `bson:"password"`
 		ID       bson.ObjectID `bson:"_id"`
 		Is_Admin bool          `bson:"is_admin"`
+		Projects []bson.M      `bson:"projects"`
 	}
 
 	err := users_collection.FindOne(ctx, filter_login).Decode(&db_user)
@@ -82,5 +83,6 @@ func Login(c *gin.Context) {
 		"message":  "Login Successful. Welcome " + db_user.Username,
 		"id":       db_user.ID,
 		"is_admin": db_user.Is_Admin,
+		"projects": db_user.Projects,
 	})
 }
