@@ -242,6 +242,9 @@
 							placeholder="Enter token sequence"
 						/>
 					</div>
+					<div style="display: flex; justify-content: center; align-items: center; margin: 0.1rem 0;">
+						<span style="font-size: 2rem; color: #888;">&#8595;</span>
+					</div>
 
 					{#each rule.lines as line, lineIndex}
 						<div class="line-group">
