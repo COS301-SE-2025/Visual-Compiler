@@ -20,11 +20,6 @@ func SetupUserRouter() *gin.Engine {
 	r.POST("/login", handlers.Login)
 	r.GET("/getUsers", handlers.GetAllUsers)
 	r.DELETE("/delete", handlers.DeleteUser)
-	r.POST("/save", handlers.SaveProjectName)
-	r.POST("/savePipeline", handlers.SaveProjectPipeline)
-	r.GET("/getProjects", handlers.GetAllProjects)
-	r.GET("/getProject", handlers.GetProject)
-	r.DELETE("/deleteProject", handlers.DeleteProject)
 
 	return r
 }

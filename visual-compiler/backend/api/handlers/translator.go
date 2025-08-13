@@ -18,8 +18,6 @@ type TranslatorRules struct {
 	UsersID bson.ObjectID `json:"users_id" binding:"required" example:"685df259c1294de5546b045f"`
 	// Translation Rules
 	Rules []services.TranslationRule `json:"translation_rules" binding:"required"`
-	// User's project name
-	Project_Name string `json:"project_name" binding:"required"`
 }
 
 // @Summary Create translation rules
@@ -56,7 +54,7 @@ func ReadRules(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID}
 	var userexisting bson.M
 
 	err = collection.FindOne(ctx, filters).Decode(&userexisting)
@@ -65,7 +63,6 @@ func ReadRules(c *gin.Context) {
 		_, err = collection.InsertOne(ctx, bson.M{
 			"translating_rules": rules,
 			"users_id":          req.UsersID,
-			"project_name":      req.Project_Name,
 		})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
@@ -127,13 +124,13 @@ func TranslateCode(c *gin.Context) {
 		Rules []services.TranslationRule `bson:"translating_rules"`
 	}
 
-	err := parsing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&parsing_res)
+	err := parsing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&parsing_res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tree not found. Please go back to parsing"})
 		return
 	}
 
-	err = translating_collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&translating_res)
+	err = translating_collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&translating_res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Translating rules not found. Please go back to Translation"})
 		return
@@ -145,7 +142,7 @@ func TranslateCode(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID}
 	update_users_translating := bson.M{"$set": bson.M{
 		"code": translated_code,
 	}}
