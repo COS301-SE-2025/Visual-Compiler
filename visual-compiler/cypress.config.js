@@ -1,15 +1,13 @@
-import { defineConfig } from 'cypress';
+const { defineConfig } = require("cypress");
 
-export default defineConfig({
+module.exports = defineConfig({
   e2e: {
-    supportFile: './e2e-tests/support/e2e.js',
-    specPattern: './e2e-tests/e2e/**/*.cy.{js,ts}',
-    fixturesFolder: './e2e-tests/fixtures',
-    videosFolder: './e2e-tests/videos',
-    screenshotsFolder: './e2e-tests/screenshots',
+    setupNodeEvents(on, config) {
+  
+    },
     env: {
-    frontendUrl: 'http://localhost:5173',
-    backendUrl: 'http://localhost:8080',
-    }
+        frontend_url: 'http://localhost:5173',
+        backend_url: 'http://localhost:8080',
+      }
   },
 });
