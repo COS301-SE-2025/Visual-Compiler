@@ -6,6 +6,9 @@ definitions:
         allOf:
         - $ref: '#/definitions/services.GrammarRules'
         description: Grammar rules to be analysed
+      project_name:
+        description: User's project name
+        type: string
       scope_rules:
         description: Scope rules for the variables/functions scopes
         items:
@@ -22,24 +25,29 @@ definitions:
         type: string
     required:
     - grammar_rules
+    - project_name
     - scope_rules
     - type_rules
     - users_id
     type: object
   handlers.DeleteRequest:
     properties:
-      id:
+      users_id:
         example: 685df259c1294de5546b045f
         type: string
     required:
-    - id
+    - users_id
     type: object
   handlers.IDRequest:
     properties:
+      project_name:
+        description: User's project name
+        type: string
       users_id:
         description: Represents the User's ID from frontend
         type: string
     required:
+    - project_name
     - users_id
     type: object
   handlers.LoginReq:
@@ -54,8 +62,28 @@ definitions:
     - login
     - password
     type: object
+  handlers.ProjectRequest:
+    properties:
+      pipeline:
+        additionalProperties: {}
+        description: User's saved pipeline
+        type: object
+      project_name:
+        description: User's project name
+        type: string
+      users_id:
+        description: Represents the User's ID from frontend
+        type: string
+    required:
+    - pipeline
+    - project_name
+    - users_id
+    type: object
   handlers.ReadGrammerFromUser:
     properties:
+      project_name:
+        description: User's project name
+        type: string
       rules:
         description: User's defined rules
         items:
@@ -89,6 +117,7 @@ definitions:
           type: string
         type: array
     required:
+    - project_name
     - rules
     - start
     - terminals
@@ -120,15 +149,22 @@ definitions:
         items:
           $ref: '#/definitions/services.TypeRegex'
         type: array
+      project_name:
+        description: User's project name
+        type: string
       users_id:
         description: Represents the User's ID from frontend
         type: string
     required:
     - pairs
+    - project_name
     - users_id
     type: object
   handlers.SourceCodeOnlyRequest:
     properties:
+      project_name:
+        description: User's project name
+        type: string
       source_code:
         description: Represents the User's source code
         type: string
@@ -136,11 +172,15 @@ definitions:
         description: Represents the User's ID from frontend
         type: string
     required:
+    - project_name
     - source_code
     - users_id
     type: object
   handlers.TranslatorRules:
     properties:
+      project_name:
+        description: User's project name
+        type: string
       translation_rules:
         description: Translation Rules
         items:
@@ -151,6 +191,7 @@ definitions:
         example: 685df259c1294de5546b045f
         type: string
     required:
+    - project_name
     - translation_rules
     - users_id
     type: object
@@ -161,6 +202,9 @@ definitions:
         items:
           $ref: '#/definitions/services.AcceptingState'
         type: array
+      project_name:
+        description: User's project name
+        type: string
       start_state:
         description: Represents the start state of the automata
         type: string
@@ -178,6 +222,7 @@ definitions:
         description: Represents the User's ID from frontend
         type: string
     required:
+    - project_name
     - users_id
     type: object
   services.AcceptingState:
@@ -937,6 +982,128 @@ paths:
       summary: Delete User
       tags:
       - Users
+  /users/deleteProject:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a project and all associated fields in every collection
+        in the database
+      parameters:
+      - description: Delete Project
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.IDRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Successfully deleted project
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Failed to delete project
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a project
+      tags:
+      - Users
+  /users/getProject:
+    get:
+      consumes:
+      - application/json
+      description: Gets all the details about a user's project in every collection
+        in the database
+      parameters:
+      - description: Name of project
+        in: query
+        name: project_name
+        required: true
+        type: string
+      - description: User's ID
+        in: query
+        name: users_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Retrieved all project details
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid input/Conversion failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Error in reading from specific collection
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a project
+      tags:
+      - Users
+  /users/getProjects:
+    get:
+      consumes:
+      - application/json
+      description: Gets all the user's project names
+      parameters:
+      - description: User's ID
+        in: query
+        name: users_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Retrieved all project names
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all user's projects
+      tags:
+      - Users
   /users/getUsers:
     get:
       consumes:
@@ -1041,6 +1208,89 @@ paths:
               type: string
             type: object
       summary: Register User
+      tags:
+      - Users
+  /users/save:
+    post:
+      consumes:
+      - application/json
+      description: Saves the project name in the Users table
+      parameters:
+      - description: Save User's Defined Project Name
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.IDRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Project added successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "409":
+          description: Project name already exists
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Save project name
+      tags:
+      - Users
+  /users/savePipeline:
+    post:
+      consumes:
+      - application/json
+      description: Saves the project's pipeline to be shown when the user opens that
+        project on the frontend
+      parameters:
+      - description: Save User's Pipeline
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ProjectRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Pipeline saved
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: User not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Save project pipeline from frontend
       tags:
       - Users
 swagger: "2.0"

@@ -15,15 +15,14 @@ import (
 type AnalyseUserInputs struct {
 	// User's ID for storing purposes
 	UsersID bson.ObjectID `json:"users_id" binding:"required" example:"685df259c1294de5546b045f"`
-
 	// Scope rules for the variables/functions scopes
 	ScopeRules []*services.ScopeRule `json:"scope_rules" binding:"required"`
-
 	// Grammar rules to be analysed
 	GrammarRules services.GrammarRules `json:"grammar_rules" binding:"required"`
-
 	// Type rules for Type Checking
 	TypeRules []services.TypeRule `json:"type_rules" binding:"required"`
+	// User's project name
+	Project_Name string `json:"project_name" binding:"required"`
 }
 
 // @Summary Analysing phase
@@ -57,7 +56,7 @@ func Analyse(c *gin.Context) {
 		Tree services.SyntaxTree `bson:"tree"`
 	}
 
-	err := parsing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&parsing_res)
+	err := parsing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&parsing_res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tree not found. Please go back to parsing"})
 		return
@@ -69,7 +68,7 @@ func Analyse(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": req.UsersID}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	var userexisting bson.M
 
 	err = analyse_collection.FindOne(ctx, filters).Decode(&userexisting)
@@ -78,6 +77,7 @@ func Analyse(c *gin.Context) {
 		_, err = analyse_collection.InsertOne(ctx, bson.M{
 			"users_id":              req.UsersID,
 			"symbol_table_artefact": artefact,
+			"project_name":          req.Project_Name,
 		})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
