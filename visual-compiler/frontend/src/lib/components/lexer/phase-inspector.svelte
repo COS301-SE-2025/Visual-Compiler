@@ -815,6 +815,26 @@
 					currentAutomatonForModal.isDfa
 				);
 			}, 50); // Small delay to allow modal to render
+		} else if (!isExpanded && currentAutomatonForModal) {
+			// Determine which container was the original one and re-render
+			let originalContainer = null;
+			if (showRegexVisOnly) {
+				if (showRegexNfaVis) originalContainer = regexNfaContainer;
+				if (showRegexDfaVis) originalContainer = regexDfaContainer;
+			} else {
+				if (automataDisplay === 'NFA') originalContainer = nfaContainer;
+				if (automataDisplay === 'DFA') originalContainer = dfaContainer;
+			}
+
+			if (originalContainer) {
+				setTimeout(() => {
+					renderRegexAutomatonVis(
+						originalContainer,
+						currentAutomatonForModal.data,
+						currentAutomatonForModal.isDfa
+					);
+				}, 50);
+			}
 		}
 	};
 
