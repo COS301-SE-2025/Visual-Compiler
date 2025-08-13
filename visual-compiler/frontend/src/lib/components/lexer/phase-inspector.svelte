@@ -27,8 +27,12 @@
 	let networkInstance = null; // To hold the active vis-network instance
 
 	function addNewRow() {
-		userInputRows = [...userInputRows, { type: '', regex: '', error: '' }];
-	}
+    if (showDefault) {
+        editableDefaultRows = [...editableDefaultRows, { type: '', regex: '', error: '' }];
+    } else {
+        userInputRows = [...userInputRows, { type: '', regex: '', error: '' }];
+    }
+}
 
 	function validateRegex(pattern: string): boolean {
 		try {
@@ -1002,11 +1006,12 @@
 							</div>
 						{/each}
 					</div>
-					{#if userInputRows[userInputRows.length - 1].type && userInputRows[userInputRows.length - 1].regex}
-						<button class="add-button" on:click={addNewRow}>
-							<span>+</span>
-						</button>
-					{/if}
+					{#if (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).type && 
+      (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).regex}
+    <button class="add-button" on:click={addNewRow} title="Add new expression">
+        <span>+</span>
+    </button>
+{/if}
 				</div>
 				{#if formError}
 					<div class="form-error">{formError}</div>
