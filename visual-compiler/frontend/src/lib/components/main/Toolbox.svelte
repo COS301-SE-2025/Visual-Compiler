@@ -106,8 +106,8 @@
 	.phase-btn {
 		height: 90px;
 		width: 200px;
-		background-color: #041a47;
-		color: white;
+		background-color: #4BB3FD;
+		color: #000000;
 		border-radius: 8px;
 		padding: 8px;
 		font-size: 0.9rem;
@@ -124,7 +124,7 @@
 	}
 
 	.phase-btn:hover {
-		background-color: #05276f;
+		background-color: #3a90ca;
 		transform: translateY(-2px);
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 	}
@@ -203,13 +203,13 @@
 	}
 
 	:global(html.dark-mode) .phase-btn {
-		background-color: #041a47;
-		color: #f0f0f0;
+		background-color: #001A6E;
+		color: #ffffff;
 		border: 1px solid #374151;
 	}
 
 	:global(html.dark-mode) .phase-btn:hover {
-		background-color: #2a4a8a;
+		background-color: #002a8e;
 	}
 
 	:global(html.dark-mode) .phase-btn:active {
