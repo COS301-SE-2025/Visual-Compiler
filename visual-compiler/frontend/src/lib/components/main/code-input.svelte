@@ -269,8 +269,8 @@
 
 	.confirm-btn {
 		padding: 0.5rem 1.5rem;
-		background: #001a6e;
-		color: white;
+		background: #BED2E6;
+		color: 000000;
 		border: none;
 		border-radius: 4px;
 		font-size: 0.95rem;
@@ -282,12 +282,13 @@
 	}
 
 	.confirm-btn:disabled {
-		background: #ccc;
+		background: #e6e6e6;
+		color: #666666;
 		cursor: not-allowed;
 	}
 
 	.confirm-btn:not(:disabled):hover {
-		background: #074799;
+		background: #a8bdd1;
 	}
 
 	.tick {
@@ -377,4 +378,20 @@
         background-color: #374151;
         border-color: #6b7280;
     }
+
+	:global(html.dark-mode) .confirm-btn {
+		background: #001A6E;
+		color: #ffffff;
+		border: 1px solid #374151;
+	}
+
+	:global(html.dark-mode) .confirm-btn:not(:disabled):hover {
+		background: #002a8e;
+	}
+
+	:global(html.dark-mode) .confirm-btn:disabled {
+		background: #2d3748;
+		color: #a0aec0;
+		border-color: #4a5568;
+	}
 </style>

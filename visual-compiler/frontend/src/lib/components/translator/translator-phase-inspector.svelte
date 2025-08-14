@@ -578,12 +578,18 @@
 	}
 
 	.submit {
-		background-color: #001a6e;
-		color: white;
+		background-color: #BED2E6;
+		color: 000000;
+	}
+
+	.submit:hover {
+		background-color: #a8bdd1;
+		transform: translateY(-2px);
 	}
 
 	.submit:disabled {
-		background-color: #1a317d;
+		background-color: #cccccc;
+		color: #666666;
 		cursor: default;
 	}
 
@@ -626,8 +632,18 @@
 		background: transparent;
 	}
 	:global(html.dark-mode) .submit {
-		background-color: #cccccc;
-		color: #041a47;
+		background-color: #001A6E; 
+		color: #ffffff;            
+	}
+
+	:global(html.dark-mode) .submit:hover {
+		background-color: #002a8e;
+	}
+
+	:global(html.dark-mode) .submit:disabled {
+		background-color: #2d3748;
+		color: #9ca3af;
+		border-color: #4a5568;
 	}
 	:global(html.dark-mode) .default-toggle-btn {
 		background-color: #2d3748;

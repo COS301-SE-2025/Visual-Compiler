@@ -106,7 +106,7 @@
 	.phase-btn {
 		height: 90px;
 		width: 200px;
-		background-color: #4BB3FD;
+		background-color: #BED2E6;
 		color: #000000;
 		border-radius: 8px;
 		padding: 8px;
@@ -124,7 +124,7 @@
 	}
 
 	.phase-btn:hover {
-		background-color: #3a90ca;
+		background-color: #a8bdd1;
 		transform: translateY(-2px);
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 	}
@@ -137,7 +137,7 @@
 
 	/* Style for the disabled button state */
 	.phase-btn:disabled {
-		background-color: #cccccc;
+		background-color: #e6e6e6;
 		color: #666666;
 		cursor: not-allowed;
 		transform: none;
@@ -147,7 +147,7 @@
 	}
 
 	.phase-btn:disabled:hover {
-		background-color: #cccccc;
+		background-color: #e6e6e6;
 		transform: none;
 		box-shadow: none;
 	}

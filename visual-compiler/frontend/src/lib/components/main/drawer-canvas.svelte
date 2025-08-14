@@ -50,7 +50,7 @@
 					position={node.position}
 					drop="center"
 					useDefaults
-					bgColor={$theme === 'dark' ? '#001A6E' : '#4BB3FD'}
+					bgColor={$theme === 'dark' ? '#001A6E' : '#BED2E6'}
 					textColor={$theme === 'dark' ? '#ffffff' : '#000000'}
 					borderColor={$theme === 'dark' ? '#374151' : '#FFFDD0'}
 					editable={false}
@@ -65,7 +65,7 @@
 	:root[svelvet-theme='custom-theme'] {
 		--background-color: transparent;
 		--dot-color: transparent;
-		--node-color: #4BB3FD;
+		--node-color: #BED2E6;
 		--node-text-color: #000000;
 		--node-border-color: #FFFDD0;
 		--node-selection-color: #3b82f6;

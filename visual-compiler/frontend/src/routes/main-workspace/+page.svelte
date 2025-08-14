@@ -482,8 +482,8 @@
 		bottom: 20px;
 		right: 20px;
 		padding: 0.5rem 1rem;
-		background: #001a6e;
-		color: white;
+		background: #BED2E6;
+		color: 000000;
 		border: none;
 		border-radius: 4px;
 		cursor: pointer;
@@ -492,7 +492,7 @@
 		margin-bottom: 1rem;
 	}
 	.return-button:hover {
-		background: #074799;
+		background: #a8bdd1;
 	}
 	.code-input-overlay {
 		position: fixed;
@@ -592,12 +592,12 @@
 		color: #f0f0f0;
 	}
 	:global(html.dark-mode) .return-button {
-		background: #1a3a7a;
+		background: #001A6E;
 		margin-right: 1rem;
-		color: #cccccc;
+		color: #ffffff;
 	}
 	:global(html.dark-mode) .return-button:hover {
-		background: #2a4a8a;
+		background: #002a8e;
 		margin-right: 1rem;
 	}
 </style>
