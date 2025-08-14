@@ -3,6 +3,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/routers"
@@ -26,13 +27,18 @@ func main() {
 
 	// Attach CORS middleware
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "http://51.21.245.160:5173/"},
+		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "https://visual-compiler.co.za"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+
+	// health check for AWS
+	router.GET("/api/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
 
 	// Attach your routes
 	api_user_routes := routers.SetupUserRouter()
