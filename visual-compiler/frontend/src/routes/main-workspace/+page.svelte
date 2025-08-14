@@ -4,6 +4,7 @@
 	import type { NodeType, Token, SyntaxTree } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
+	import { projectName } from '$lib/stores/project'; // Import the new store
 	import NavBar from '$lib/components/main/nav-bar.svelte';
 	import Toolbox from '$lib/components/main/toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
@@ -28,19 +29,39 @@
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
 
+	// Subscribe to the project name store
+	let currentProjectName = '';
+	projectName.subscribe((value) => {
+		currentProjectName = value;
+	});
+
 	onMount(async () => {
 		LexerPhaseTutorial = (await import('$lib/components/lexer/lexer-phase-tutorial.svelte')).default;
 		LexerPhaseInspector = (await import('$lib/components/lexer/phase-inspector.svelte')).default;
 		LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte')).default;
 		ParserPhaseTutorial = (await import('$lib/components/parser/parser-phase-tutorial.svelte')).default;
 		ParserPhaseInspector = (await import('$lib/components/parser/parsing-input.svelte')).default;
-		ParserArtifactViewer = (await import('$lib/components/parser/parser-artifact-viewer.svelte')).default;
-		AnalyserPhaseTutorial = (await import('$lib/components/analyser/analyser-phase-tutorial.svelte')).default;
-		AnalyserPhaseInspector = (await import('$lib/components/analyser/analyser-phase-inspector.svelte')).default;
-		AnalyserArtifactViewer = (await import('$lib/components/analyser/analyser-artifact-viewer.svelte')).default;
-		TranslatorPhaseTutorial = (await import('$lib/components/translator/translator-phase-tutorial.svelte')).default;
-		TranslatorPhaseInspector = (await import('$lib/components/translator/translator-phase-inspector.svelte')).default;
-		TranslatorArtifactViewer = (await import('$lib/components/translator/translator-artifact-viewer.svelte')).default;
+		ParserArtifactViewer = (
+			await import('$lib/components/parser/parser-artifact-viewer.svelte')
+		).default;
+		AnalyserPhaseTutorial = (
+			await import('$lib/components/analyser/analyser-phase-tutorial.svelte')
+		).default;
+		AnalyserPhaseInspector = (
+			await import('$lib/components/analyser/analyser-phase-inspector.svelte')
+		).default;
+		AnalyserArtifactViewer = (
+			await import('$lib/components/analyser/analyser-artifact-viewer.svelte')
+		).default;
+		TranslatorPhaseTutorial = (
+			await import('$lib/components/translator/translator-phase-tutorial.svelte')
+		).default;
+		TranslatorPhaseInspector = (
+			await import('$lib/components/translator/translator-phase-inspector.svelte')
+		).default;
+		TranslatorArtifactViewer = (
+			await import('$lib/components/translator/translator-artifact-viewer.svelte')
+		).default;
 
 		document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
 		if (!localStorage.getItem('hasSeenDragTip')) {
@@ -53,7 +74,6 @@
 			// // Important: Remove the flag so the overlay doesn't reappear on refresh.
 			// sessionStorage.removeItem('showWelcomeOverlay');
 		}
-		
 	});
 
 	function handleWelcomeClose() {
@@ -123,7 +143,7 @@
 	}
 
 	function handlePhaseSelect(type: NodeType) {
-		syntaxTreeData = null; 
+		syntaxTreeData = null;
 		parsingError = null;
 		translationError = null;
 		if (type === 'source') {
@@ -140,22 +160,26 @@
 
 	function handleTranslationError(event: CustomEvent) {
 		translationError = event.detail;
-		translated_code = []; 
+		translated_code = [];
 	}
 
 	let show_symbol_table = false;
 	let symbol_table: Symbol[] = [];
-	let analyser_error = "";
-	let analyser_error_details = "";
+	let analyser_error = '';
+	let analyser_error_details = '';
 
 	function handleReset() {
-    	show_symbol_table = false;
+		show_symbol_table = false;
 		symbol_table = [];
-		analyser_error = "";
-		analyser_error_details = "";
-  	}
+		analyser_error = '';
+		analyser_error_details = '';
+	}
 
-	function handleSymbolGeneration(data: { symbol_table: Symbol[], analyser_error:string, analyser_error_details:string}) {
+	function handleSymbolGeneration(data: {
+		symbol_table: Symbol[];
+		analyser_error: string;
+		analyser_error_details: string;
+	}) {
 		symbol_table = data.symbol_table;
 		show_symbol_table = true;
 		analyser_error = data.analyser_error;
@@ -188,35 +212,38 @@
 	let unexpected_tokens: string[] = [];
 	let translated_code: string[] = [];
 
-	 function handleTranslationReceived(event: CustomEvent<string[]>) {
+	function handleTranslationReceived(event: CustomEvent<string[]>) {
 		translated_code = event.detail;
 	}
 
 	let artifactData: SyntaxTree | null = null;
 	let parsingError: any = null;
 
-
 	function handleParsingError(event: CustomEvent) {
-					parsingError = event.detail;
-					syntaxTreeData = null;
+		parsingError = event.detail;
+		syntaxTreeData = null;
 	}
 </script>
 
 <NavBar />
 
 <div class="main">
-
-
 	<WelcomeOverlay bind:show={showWelcomeOverlay} on:close={handleWelcomeClose} />
 
 	<Toolbox {handleCreateNode} {tooltips} />
 	<div class="workspace" bind:this={workspace_el} tabindex="-1">
+		{#if currentProjectName}
+			<div class="project-name-display">
+				{currentProjectName}
+			</div>
+		{/if}
 		<DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} />
 
 		{#if show_drag_tip}
 			<div class="help-tip">
 				<span
-					><b>Pro-Tip:</b> For the smoothest experience, click to select a node before dragging it.</span
+					><b>Pro-Tip:</b> For the smoothest experience, click to select a node before dragging
+					it.</span
 				>
 				<button on:click={dismissDragTip} class="dismiss-tip-btn" aria-label="Dismiss tip">
 					<svg
@@ -229,8 +256,8 @@
 						stroke-width="2.5"
 						stroke-linecap="round"
 						stroke-linejoin="round"
-						><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"
-						></line></svg
+						><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18"
+						/></svg
 					>
 				</button>
 			</div>
@@ -238,70 +265,72 @@
 	</div>
 
 	{#if selected_phase}
-	<div class="analysis-overlay">
-		<div class="analysis-view">
-			<div class="three-column-layout">
-				{#if selected_phase === 'lexer' && LexerPhaseTutorial}
-					<svelte:component this={LexerPhaseTutorial} />
-					<svelte:component
-						this={LexerPhaseInspector}
-						{source_code}
-						onGenerateTokens={handleTokenGeneration}
-					/>
-					<svelte:component
-						this={LexerArtifactViewer}
-						phase={selected_phase}
-						{tokens}
-						{unexpected_tokens}
-						{show_tokens}
-					/>
-				{/if}
+		<div class="analysis-overlay">
+			<div class="analysis-view">
+				<div class="three-column-layout">
+					{#if selected_phase === 'lexer' && LexerPhaseTutorial}
+						<svelte:component this={LexerPhaseTutorial} />
+						<svelte:component
+							this={LexerPhaseInspector}
+							{source_code}
+							onGenerateTokens={handleTokenGeneration}
+						/>
+						<svelte:component
+							this={LexerArtifactViewer}
+							phase={selected_phase}
+							{tokens}
+							{unexpected_tokens}
+							{show_tokens}
+						/>
+					{/if}
 
-				{#if selected_phase === 'parser' && ParserPhaseTutorial}
-					<svelte:component this={ParserPhaseTutorial} />
-					<svelte:component
-						this={ParserPhaseInspector}
-						{source_code}
-						on:treereceived={handleTreeReceived}
-						on:parsingerror={handleParsingError}
-					/>
-					<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData}  {parsingError}/>
-				{/if}
+					{#if selected_phase === 'parser' && ParserPhaseTutorial}
+						<svelte:component this={ParserPhaseTutorial} />
+						<svelte:component
+							this={ParserPhaseInspector}
+							{source_code}
+							on:treereceived={handleTreeReceived}
+							on:parsingerror={handleParsingError}
+						/>
+						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} {parsingError} />
+					{/if}
 
-				{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}
-					<svelte:component this={AnalyserPhaseTutorial} />
-					<svelte:component
-						this={AnalyserPhaseInspector}
-						{source_code}
-						onGenerateSymbolTable = {handleSymbolGeneration}
-					/>
-					<svelte:component
-						this={AnalyserArtifactViewer}
-						phase={selected_phase}
-						{symbol_table}
-						{analyser_error}
-						{analyser_error_details}
-						{show_symbol_table}
-					/>
-			
-				{/if}
+					{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}
+						<svelte:component this={AnalyserPhaseTutorial} />
+						<svelte:component
+							this={AnalyserPhaseInspector}
+							{source_code}
+							onGenerateSymbolTable={handleSymbolGeneration}
+						/>
+						<svelte:component
+							this={AnalyserArtifactViewer}
+							phase={selected_phase}
+							{symbol_table}
+							{analyser_error}
+							{analyser_error_details}
+							{show_symbol_table}
+						/>
+					{/if}
 
-				{#if selected_phase === 'translator' && TranslatorPhaseTutorial}
-					<svelte:component this={TranslatorPhaseTutorial} />
-					<svelte:component
-						this={TranslatorPhaseInspector}
-						{source_code}
-						on:translationreceived={handleTranslationReceived}
-						on:translationerror={handleTranslationError}
-					/>
-					<svelte:component this={TranslatorArtifactViewer}  {translated_code} {translationError}/>
-				{/if}
-
+					{#if selected_phase === 'translator' && TranslatorPhaseTutorial}
+						<svelte:component this={TranslatorPhaseTutorial} />
+						<svelte:component
+							this={TranslatorPhaseInspector}
+							{source_code}
+							on:translationreceived={handleTranslationReceived}
+							on:translationerror={handleTranslationError}
+						/>
+						<svelte:component
+							this={TranslatorArtifactViewer}
+							{translated_code}
+							{translationError}
+						/>
+					{/if}
+				</div>
+				<button on:click={returnToCanvas} class="return-button"> ← Return to Canvas </button>
 			</div>
-			<button on:click={returnToCanvas} class="return-button"> ← Return to Canvas </button>
 		</div>
-	</div>
-{/if}
+	{/if}
 
 	{#if show_code_input}
 		<div class="code-input-overlay">
@@ -323,7 +352,7 @@
 	:global(*) {
 		box-sizing: border-box;
 	}
-	
+
 	.main {
 		display: flex;
 		height: calc(100vh - 3.5rem);
@@ -339,6 +368,18 @@
 		flex-direction: column;
 		position: relative;
 		outline: none;
+	}
+	.project-name-display {
+		position: absolute;
+		top: 1rem;
+		left: 1rem;
+		background-color: rgba(255, 255, 255, 0.8);
+		color: #041a47;
+		padding: 0.5rem 1rem;
+		border-radius: 6px;
+		font-weight: 600;
+		z-index: 10;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 	}
 	.analysis-overlay {
 		position: fixed;
@@ -404,7 +445,7 @@
 		width: 100%;
 		position: relative;
 	}
-	
+
 	.close-btn {
 		position: absolute;
 		top: 1rem;
@@ -451,6 +492,10 @@
 
 	:global(html.dark-mode) .main {
 		background-color: #161823;
+	}
+	:global(html.dark-mode) .project-name-display {
+		background-color: rgba(26, 32, 44, 0.8);
+		color: #e2e8f0;
 	}
 	:global(html.dark-mode) .analysis-overlay {
 		background: rgba(10, 26, 58, 0.95);

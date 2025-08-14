@@ -1,10 +1,15 @@
+<!-- src/lib/components/main/project-hub.svelte -->
 <script lang="ts">
-    import { createEventDispatcher, onMount } from 'svelte';
-    import { fly } from 'svelte/transition';
+	import { createEventDispatcher, onMount } from 'svelte';
+	import { fly } from 'svelte/transition';
+	import { projectName } from '$lib/stores/project';
+	import ProjectNamePrompt from './project-name-prompt.svelte';
 
-    export let show = false;
+	export let show = false;
 
-    let userName = '';
+	let userName = '';
+	let showProjectNamePrompt = false;
+
 	let recentProjects = [
 		{ name: 'Lexer', dateModified: 'August 4, 2025' },
 		{ name: 'Pascal Parser', dateModified: 'July 28, 2025' },
@@ -14,88 +19,105 @@
 		{ name: 'Java-Python', dateModified: 'June 15, 2025' }
 	];
 
-    const dispatch = createEventDispatcher();
+	const dispatch = createEventDispatcher();
 
-    function handleClose() {
-        dispatch('close');
-    }
+	function handleClose() {
+		dispatch('close');
+	}
 
-    onMount(() => {
-        const storedUserId = localStorage.getItem('user_id');
-        userName = storedUserId || 'Guest';
-    });
+	function createNewProject() {
+		showProjectNamePrompt = true;
+	}
+
+	function handleProjectNameConfirm(event: CustomEvent<string>) {
+		const newProjectName = event.detail;
+		projectName.set(newProjectName);
+		console.log(`Project created with name: ${newProjectName}`); // For verification
+		showProjectNamePrompt = false;
+		handleClose(); // This closes the ProjectHub overlay
+	}
+
+	onMount(() => {
+		const storedUserId = localStorage.getItem('user_id');
+		userName = storedUserId || 'Guest';
+	});
 </script>
 
 {#if show}
-    <div class="backdrop" transition:fly={{ y: -50, duration: 300, opacity: 0.5 }} on:click={handleClose}>
-        <div class="modal" on:click|stopPropagation>
-            <button class="close-button" on:click={handleClose}>
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="close-icon"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                >
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
+	<div class="backdrop" transition:fly={{ y: -50, duration: 300, opacity: 0.5 }} on:click={handleClose}>
+		<div class="modal" on:click|stopPropagation>
+			<button class="close-button" on:click={handleClose}>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					class="close-icon"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke="currentColor"
+					stroke-width="2"
+				>
+					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+				</svg>
+			</button>
 
+			<h3 class="section-heading">Start a new project</h3>
+			<div class="start-project-buttons">
+				<button class="project-button" on:click={createNewProject}>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						class="plus-icon"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+					</svg>
+					<span class="button-label">New Blank</span>
+				</button>
+				<button class="project-button">
+					<span class="default-project-text">Default</span>
+					<span class="button-label">Project</span>
+				</button>
+			</div>
 
-            <h3 class="section-heading">Start a new project</h3>
-            <div class="start-project-buttons">
-                <button class="project-button">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        class="plus-icon"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span class="button-label">New Blank</span>
-                </button>
-                <button class="project-button">
-                    <span class="default-project-text">Default</span>
-                    <span class="button-label">Project</span>
-                </button>
-            </div>
+			<div class="search-bar-container">
+				<div class="search-icon-wrapper">
+					<svg
+						class="search-icon"
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 20 20"
+						fill="currentColor"
+					>
+						<path
+							fill-rule="evenodd"
+							d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+							clip-rule="evenodd"
+						/>
+					</svg>
+				</div>
+				<input type="text" placeholder="Search projects..." class="search-input" />
+			</div>
 
-            <div class="search-bar-container">
-                <div class="search-icon-wrapper">
-                    <svg
-                        class="search-icon"
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 20 20"
-                        fill="currentColor"
-                    >
-                        <path
-                            fill-rule="evenodd"
-                            d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
-                            clip-rule="evenodd"
-                        />
-                    </svg>
-                </div>
-                <input type="text" placeholder="Search projects..." class="search-input" />
-            </div>
-
-            <h3 class="section-heading">Recent Projects</h3>
-            <div class="project-list-container">
-                <div class="project-grid">
-                    {#each recentProjects as project}
-                        <div class="project-block">
-                            <p class="project-name">{project.name}</p>
-                            <p class="project-date">{project.dateModified}</p>
-                        </div>
-                    {/each}
-                </div>
-            </div>
-        </div>
-    </div>
+			<h3 class="section-heading">Recent Projects</h3>
+			<div class="project-list-container">
+				<div class="project-grid">
+					{#each recentProjects as project}
+						<div class="project-block">
+							<p class="project-name">{project.name}</p>
+							<p class="project-date">{project.dateModified}</p>
+						</div>
+					{/each}
+				</div>
+			</div>
+		</div>
+	</div>
 {/if}
+
+<ProjectNamePrompt
+	bind:show={showProjectNamePrompt}
+	on:confirm={handleProjectNameConfirm}
+	on:cancel={() => (showProjectNamePrompt = false)}
+/>
 
 <style>
     .backdrop {
@@ -334,4 +356,4 @@
     :global(html.dark) .close-icon {
         color: #a0aec0;
 	}
-	</style>
+</style>
