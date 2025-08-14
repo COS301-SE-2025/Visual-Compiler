@@ -332,8 +332,8 @@ h3 {
 
 .nav-button {
     padding: 0.5rem 1rem;
-    background: var(--button-background, #001a6e); /* Light mode default */
-    color: var(--button-text-color, #ffffff); /* Light mode default */
+    background: var(--button-background, #BED2E6); /* Light mode default */
+    color: var(--button-text-color, #000000); /* Light mode default */
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -343,7 +343,7 @@ h3 {
 }
 
 .nav-button:hover {
-    background: var(--button-hover-background, #003366); /* Light mode hover */
+    background: var(--button-hover-background, #a8bdd1); /* Light mode hover */
     transform: translateY(-2px);
 }
 
@@ -452,5 +452,18 @@ h3 {
     --button-text-color: #e2e8f0;
     --button-disabled-background: #718096;
     --step-counter-color: #a0aec0;
+}
+
+:global(html.dark-mode) .nav-button{
+    background: #001A6E;  
+    color: #ffffff;
+}
+:global(html.dark-mode) .nav-button:hover {
+    background: #002a8e; 
+}
+
+:global(html.dark-mode) .nav-button:disabled {
+    background: #2d3748;
+    color: #9ca3af;
 }
 </style>

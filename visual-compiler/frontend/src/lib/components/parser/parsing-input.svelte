@@ -592,13 +592,18 @@
     }
     .submit-button {
         padding: 0.6rem 1.5rem;
-        background: #001a6e;
-        color: white;
+        background: #BED2E6;
+        color: 000000;
         border: none;
         border-radius: 6px;
         font-size: 0.9rem;
         font-weight: 500;
         cursor: pointer;
+    }
+
+    .submit-button:hover {
+        background: #a8bdd1;
+        transform: translateY(-2px);
     }
 
     /* Dark Mode Styles */
@@ -643,8 +648,8 @@
         color: #60a5fa;
     }
     :global(html.dark-mode) .submit-button {
-        background-color: #cccccc;
-        color: #041a47;
+        background-color: #001A6E;
+        color: #ffffff;
     }
     :global(html.dark-mode) .default-toggle-btn {
         background-color: #2d3748;

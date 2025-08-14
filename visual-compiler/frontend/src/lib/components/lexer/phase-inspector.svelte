@@ -469,6 +469,16 @@
 		selectedType = type;
 		resetInputs();
 		showRegexActionButtons = false;
+		
+		// Reset visualization states
+		showNfaVis = false;
+		showDfaVis = false;
+		showRegexNfaVis = false;
+		showRegexDfaVis = false;
+		showRegexOutput = false;
+		automataDisplay = null;
+		currentAutomatonForModal = null;
+
 		if (type === 'REGEX') {
 			showDefault = false;
 			userInputRows = [{ type: '', regex: '', error: '' }];
@@ -557,7 +567,6 @@
 				AddToast('DFA→Regex failed: ' + errorText, 'error');
 				return;
 			}
-			// Optionally, you can use the rules here if you want to display them
 
 			// 3. Convert Regex to DFA
 			const dfaRes = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
@@ -572,7 +581,7 @@
 			}
 			const dfaData = await dfaRes.json();
 			regexDfa = adaptAutomatonForVis(dfaData.dfa);
-			currentAutomatonForModal = { data: regexDfa, isDfa: true }; // Store for modal
+			currentAutomatonForModal = { data: regexDfa, isDfa: true }; 
 			showDfaVis = true;
 			showNfaVis = false;
 			automataDisplay = 'DFA';
@@ -644,7 +653,7 @@
 			const data = await response.json();
 			console.log('NFA from backend:', JSON.stringify(data.nfa, null, 2));
 			regexNfa = adaptAutomatonForVis(data.nfa);
-			currentAutomatonForModal = { data: regexNfa, isDfa: false }; // Store for modal
+			currentAutomatonForModal = { data: regexNfa, isDfa: false }; 
 			showRegexNfaVis = true;
 			showRegexDfaVis = false;
 			showRegexVisOnly = true;
@@ -675,7 +684,7 @@
 			const data = await response.json();
 			console.log('DFA from backend:', JSON.stringify(data.dfa, null, 2));
 			regexDfa = adaptAutomatonForVis(data.dfa);
-			currentAutomatonForModal = { data: regexDfa, isDfa: true }; // Store for modal
+			currentAutomatonForModal = { data: regexDfa, isDfa: true };
 			showRegexDfaVis = true;
 			showRegexNfaVis = false;
 			showRegexVisOnly = true;
@@ -687,7 +696,6 @@
 	}
 
 	function adaptAutomatonForVis(automaton: any) {
-		// Convert transitions array to nested object if needed
 		let transitionsObj: Record<string, Record<string, string[]>> = {};
 		if (Array.isArray(automaton.transitions)) {
 			for (const t of automaton.transitions) {
@@ -699,7 +707,6 @@
 			transitionsObj = automaton.transitions || {};
 		}
 
-		// Try to infer alphabet if not present
 		let alphabet: string[] = automaton.alphabet || [];
 		if ((!alphabet || alphabet.length === 0) && Object.keys(transitionsObj).length > 0) {
 			const symbols = new Set<string>();
@@ -808,7 +815,6 @@
 		showRegexDfaVis = false;
 	}
 
-	// Functions for the expandable modal
 	const toggleExpand = () => {
 		isExpanded = !isExpanded;
 		if (isExpanded && currentAutomatonForModal) {
@@ -818,9 +824,8 @@
 					currentAutomatonForModal.data,
 					currentAutomatonForModal.isDfa
 				);
-			}, 50); // Small delay to allow modal to render
+			}, 50); 
 		} else if (!isExpanded && currentAutomatonForModal) {
-			// Determine which container was the original one and re-render
 			let originalContainer = null;
 			if (showRegexVisOnly) {
 				if (showRegexNfaVis) originalContainer = regexNfaContainer;
@@ -848,7 +853,6 @@
 		}
 	};
 
-	// New function to fit the graph after the modal animation is complete
 	function fitGraphToModal() {
 		if (networkInstance) {
 			networkInstance.fit();
@@ -1221,7 +1225,7 @@
 	{/if}
 </div>
 
-<!-- Expandable Modal -->
+
 {#if isExpanded}
 	<div class="modal-backdrop" on:click={toggleExpand} transition:fade={{ duration: 200 }}>
 		<div
@@ -1247,7 +1251,7 @@
 				</button>
 			</div>
 			<div class="modal-body" bind:this={expandedVisContainer}>
-				<!-- Expanded vis-network graph will be rendered here -->
+
 			</div>
 		</div>
 	</div>
@@ -1383,8 +1387,8 @@
 		width: 32px;
 		height: 32px;
 		border-radius: 50%;
-		background: #041a47;
-		color: white;
+		background: #BED2E6;
+		color: 000000;
 		border: none;
 		cursor: pointer;
 		display: flex;
@@ -1400,8 +1404,8 @@
 
 	.submit-button {
 		padding: 0.6rem 1.5rem;
-		background: #041a47;
-		color: white;
+		background: #BED2E6;
+		color: 000000;
 		border: none;
 		border-radius: 6px;
 		font-size: 0.9rem;
@@ -1414,7 +1418,7 @@
 	}
 
 	.submit-button:hover {
-		background: #27548a;
+		background: #a8bdd1;
 		transform: translateY(-2px);
 	}
 
@@ -1428,8 +1432,8 @@
 
 	.generate-button {
 		padding: 0.6rem 1.5rem;
-		background: #6c757d;
-		color: white;
+		background: #a8bdd1;
+		color: 000000;
 		border: none;
 		border-radius: 6px;
 		font-size: 0.9rem;
@@ -1599,14 +1603,14 @@
 		padding: 0.625rem 1.25rem;
 		border-radius: 0.75rem;
 		font-size: 0.9375rem;
-		background: #e0e7ff;
-		color: #1e40af;
+		background: #BED2E6;
+		color: #000000;
 		box-shadow: 0 1px 2px 0 rgba(30, 64, 175, 0.05);
 	}
 
 	.action-btn:hover,
 	.action-btn:focus {
-		background: #d0d9ff;
+		background: #a8bdd1;
 		box-shadow: 0 1px 3px 0 rgba(30, 64, 175, 0.1), 0 1px 2px 0 rgba(30, 64, 175, 0.06);
 		transform: translateY(-1px);
 	}
@@ -1629,7 +1633,7 @@
 		max-width: 750px;
 		width: 100%;
 		transition: background-color 0.3s ease, box-shadow 0.3s ease;
-		position: relative; /* Added for positioning the expand button */
+		position: relative; 
 	}
 
 	.vis-heading {
@@ -1749,33 +1753,33 @@
 	}
 
 	:global(html.dark-mode) .add-button {
-		background: #3b82f6;
+		background: #001A6E;
 		color: #ffffff;
 	}
 
 	:global(html.dark-mode) .add-button:hover {
-		background: #60a5fa;
+		background: #002a8e;
 	}
 
 	:global(html.dark-mode) .submit-button {
-		background: #e2e8f0;
-		color: #041a47;
+		background: #001A6E;
+		color: #ffffff;
 		font-weight: 600;
 	}
 
 	:global(html.dark-mode) .submit-button:hover {
-		background: #ffffff;
+		background: #002a8e;
 	}
 
 	:global(html.dark-mode) .generate-button,
 	:global(html.dark-mode) .action-btn {
-		background: #4a5568;
-		color: #e2e8f0;
+		background: #001A6E;
+		color: #ffffff;
 	}
 
 	:global(html.dark-mode) .generate-button:hover,
 	:global(html.dark-mode) .action-btn:hover {
-		background: #718096;
+		background: #002a8e;
 	}
 
 	:global(html.dark-mode) .automaton-btn {
@@ -1865,6 +1869,17 @@
 
 	:global(html.dark-mode) ::-webkit-scrollbar-thumb:hover {
 		background: #616e80;
+	}
+
+	/* Back button after NFA/DFA visualization */
+	button[style*="align-self: flex-start"] {
+		background: #BED2E6 !important; 
+		color: #000000 !important; 
+	}
+
+	:global(html.dark-mode) button[style*="align-self: flex-start"] {
+		background: #001A6E !important; 
+		color: #ffffff !important; 
 	}
 
 
