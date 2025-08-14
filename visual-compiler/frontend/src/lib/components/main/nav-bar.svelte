@@ -3,7 +3,7 @@
 	import { theme, ToggleTheme } from '../../../lib/stores/theme';
 	import HelpMenu from './help-menu.svelte';
 	import AdminPanel from './admin-panel.svelte';
-	import WelcomeOverlay from './project-hub.svelte'; // Adjusted path
+	import WelcomeOverlay from '../project-hub/project-hub.svelte'; // Adjusted path
 	import { onMount } from 'svelte';
 
 	const light_logo_url = '/half_stack_phoenix_only.png';
