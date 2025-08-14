@@ -1110,9 +1110,9 @@ func TestConvertDFAToRegex_NoAcceptingStates(t *testing.T) {
 
 func TestConvertDFAToRegex_ValidDFA(t *testing.T) {
 	expected_res := []services.TypeRegex{
-		{Type: "IDENTIFIER", Regex: "[a-z][a-z0-9]+"},
-		{Type: "KEYWORD", Regex: "int|if"},
-		{Type: "NUMBER", Regex: "[0-9]+"},
+		{Type: "IDENTIFIER", Regex: "[a-zA-Z_]\\w*"},
+		{Type: "KEYWORD", Regex: "\\b(int|if)\\b"},
+		{Type: "NUMBER", Regex: "\\d+"},
 	}
 
 	dfa := services.Automata{
@@ -1197,9 +1197,9 @@ func TestConvertDFAToRegex_ValidDFANoRegex(t *testing.T) {
 
 func TestConvertDFAToRegex_ValidDFARanges(t *testing.T) {
 	expected_res := []services.TypeRegex{
-		{Type: "IDENTIFIER", Regex: "[a-z][a-z0-9]+"},
-		{Type: "KEYWORD", Regex: "int|if"},
-		{Type: "NUMBER", Regex: "[0-9]+"},
+		{Type: "IDENTIFIER", Regex: "[a-zA-Z_]\\w*"},
+		{Type: "KEYWORD", Regex: "\\b(int|if)\\b"},
+		{Type: "NUMBER", Regex: "\\d+"},
 	}
 
 	dfa := services.Automata{
@@ -1245,27 +1245,13 @@ func TestConvertDFAToRegex_ValidDFARanges(t *testing.T) {
 func TestConvertDFAToRegex_Complex(t *testing.T) {
 	expected_res := []services.TypeRegex{
 		{Type: "ID", Regex: "i"},
-		{Type: "ID", Regex: "[a-hj-zA-Z_][a-zA-Z_0-9]+"},
-		{Type: "ID", Regex: "i[a-eg-zA-Z_0-9][a-zA-Z_0-9]+"},
-		{Type: "ID", Regex: "if[a-zA-Z_0-9][a-zA-Z_0-9]+"},
-		{Type: "IF", Regex: "if"},
-		{Type: "NUM", Regex: "[+-][0-9][0-9]+"},
-		{Type: "FLOAT", Regex: `\.[0-9][0-9]+`},
-		{Type: "FLOAT", Regex: `[0-9][.][0-9]+`},
-		{Type: "FLOAT", Regex: `[+-]\.[0-9][0-9]+`},
-		{Type: "FLOAT", Regex: `[+-][0-9][.][0-9]+`},
-		{Type: "FLOAT", Regex: `\.[0-9]\[eE[0-9][0-9]+`},
-		{Type: "FLOAT", Regex: `[+-][0-9][eE][0-9][0-9]+`},
-		{Type: "FLOAT", Regex: `[0-9][.]\[eE[0-9][0-9]+`},
-		{Type: "FLOAT", Regex: `[0-9][eE][+-][0-9][0-9]+`},
-		{Type: "FLOAT", Regex: `\.[0-9]\[eE[+-][0-9][0-9]+`},
-		{Type: "FLOAT", Regex: `[+-]\.[0-9]\[eE[0-9][0-9]+`},
-		{Type: "FLOAT", Regex: `[+-][0-9][.]\[eE[0-9][0-9]+`},
-		{Type: "FLOAT", Regex: `[+-][0-9][eE][+-][0-9][0-9]+`},
-		{Type: "FLOAT", Regex: `[0-9][.]\[eE[+-][0-9][0-9]+`},
-		{Type: "FLOAT", Regex: `[+-]\.[0-9]\[eE[+-][0-9][0-9]+`},
-		{Type: "FLOAT", Regex: `[+-][0-9][.]\[eE[+-][0-9][0-9]+`},
-		{Type: "FLOAT", Regex: `[0-9][eE][0-9][0-9]+`},
+		{Type: "ID", Regex: "[a-hj-zA-Z_]([a-zA-Z_0-9])*"},
+		{Type: "ID", Regex: "i[a-eg-zA-Z_0-9]([a-zA-Z_0-9])*"},
+		{Type: "ID", Regex: "if[a-zA-Z_0-9]([a-zA-Z_0-9])*"},
+		{Type: "IF", Regex: "\\bif\\b"},
+		{Type: "NUM", Regex: "[+-]?\\d+"},
+		{Type: "FLOAT", Regex: `\d+\.\d+`},
+		{Type: "FLOAT", Regex: `\d+[eE][+-]?\d+`},
 	}
 
 	dfa := services.Automata{
@@ -1325,11 +1311,11 @@ func TestConvertDFAToRegex_Complex(t *testing.T) {
 
 func TestSimplifyRegex_Keyword(t *testing.T) {
 
-	regex := "if|else"
+	regex := "\\b(if|else)\\b"
 
 	output := services.SimplifyRegex(regex)
 
-	if output[0] != regex {
+	if output != nil {
 		t.Errorf("Function not working correctly")
 	}
 }
@@ -1360,10 +1346,213 @@ func TestSimplifyRegex_RemoveDuplictaes(t *testing.T) {
 	}
 }
 
+func TestConvertTypeToRegex_Valid(t *testing.T) {
+
+	expected_res := "\\bif\\b"
+
+	regex := "if"
+
+	services.ConvertTypeToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+func TestConvertTypeToRegex_ValidMultiple(t *testing.T) {
+
+	expected_res := "\\b(if|else)\\b"
+
+	regex := "if|else"
+
+	services.ConvertTypeToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
+func TestConvertTypeToRegex_Invalid(t *testing.T) {
+
+	expected_res := "[0-9]"
+
+	regex := "[0-9]"
+
+	services.ConvertTypeToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
+func TestConvertKeywordToRegex_Valid(t *testing.T) {
+
+	expected_res := "\\bif\\b"
+
+	regex := "if"
+
+	services.ConvertKeywordToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+func TestConvertKeywordToRegex_ValidMultiple(t *testing.T) {
+
+	expected_res := "\\b(if|else)\\b"
+
+	regex := "if|else"
+
+	services.ConvertKeywordToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
+func TestConvertIdentifierToRegex_Valid(t *testing.T) {
+
+	expected_res := "[a-zA-Z_]\\w"
+
+	regex := "[a-z][a-z0-9]"
+
+	services.ConvertIdentifierToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+func TestConvertIdentifierToRegex_ValidLetterOrDigit(t *testing.T) {
+
+	expected_res := "\\w"
+
+	regex := "[a-z0-9]"
+
+	services.ConvertIdentifierToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
+func TestConvertIdentifierToRegex_ValidLetter(t *testing.T) {
+
+	expected_res := "[a-zA-Z_]"
+
+	regex := "[a-z]"
+
+	services.ConvertIdentifierToRegex(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
+func TestConvertNumberToRegex(t *testing.T) {
+
+	expected_res := `\d+`
+	regex := "([0-9])*"
+	services.ConvertNumberToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = `\d`
+	regex = "[0-9]"
+	services.ConvertNumberToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = `\d+`
+	regex = `\d(\d)*`
+	services.ConvertNumberToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = `\d+`
+	regex = `\d\d+`
+	services.ConvertNumberToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "[+-]?\\d+"
+	regex = "\\d+|[+-]\\d+"
+	services.ConvertNumberToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
+func TestConvertFloatToRegex(t *testing.T) {
+
+	expected_res := "\\d+\\.\\d+|\\d+[eE][+-]?\\d+"
+	regex := "\\d+[eE][+-]?\\d+"
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "\\d+(\\.\\d+)?"
+	regex = `\d+\.\d+`
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	regex = "([0-9])*"
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	regex = "[0-9]"
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	regex = `\d(\d)*`
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	regex = `\d\d+`
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	regex = "\\d+|[+-]\\d+"
+
+	services.ConvertFloatToRegex(&regex)
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+}
+
 func TestConvertRawRegexToRegexRules(t *testing.T) {
 
-	expected_res := "[a-z0-9]+"
-	regex := "(abcdefghijklmnopqrstuvwxyz0123456789)*"
+	expected_res := "[a-z0-9]"
+	regex := "abcdefghijklmnopqrstuvwxyz0123456789"
 
 	services.ConvertRawRegexToRegexRules(&regex)
 
@@ -1371,8 +1560,8 @@ func TestConvertRawRegexToRegexRules(t *testing.T) {
 		t.Errorf("Incorrect conversion: %v", regex)
 	}
 
-	expected_res = "[A-Z0-9]+"
-	regex = "(ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789)*"
+	expected_res = "[A-Z0-9]"
+	regex = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 	services.ConvertRawRegexToRegexRules(&regex)
 
@@ -1380,8 +1569,8 @@ func TestConvertRawRegexToRegexRules(t *testing.T) {
 		t.Errorf("Incorrect conversion: %v", regex)
 	}
 
-	expected_res = "[a-z]+"
-	regex = "(abcdefghijklmnopqrstuvwxyz)*"
+	expected_res = "[a-z]"
+	regex = "abcdefghijklmnopqrstuvwxyz"
 
 	services.ConvertRawRegexToRegexRules(&regex)
 
@@ -1389,8 +1578,8 @@ func TestConvertRawRegexToRegexRules(t *testing.T) {
 		t.Errorf("Incorrect conversion: %v", regex)
 	}
 
-	expected_res = "[A-Z]+"
-	regex = "(ABCDEFGHIJKLMNOPQRSTUVWXYZ)*"
+	expected_res = "[A-Z]"
+	regex = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 	services.ConvertRawRegexToRegexRules(&regex)
 
@@ -1398,8 +1587,8 @@ func TestConvertRawRegexToRegexRules(t *testing.T) {
 		t.Errorf("Incorrect conversion: %v", regex)
 	}
 
-	expected_res = "[0-9]+"
-	regex = "(0123456789)*"
+	expected_res = "[0-9]"
+	regex = "0123456789"
 
 	services.ConvertRawRegexToRegexRules(&regex)
 
