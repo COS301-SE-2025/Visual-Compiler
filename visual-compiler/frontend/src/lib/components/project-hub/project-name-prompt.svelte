@@ -1,4 +1,3 @@
-<!-- src/lib/components/main/project-name-prompt.svelte -->
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
