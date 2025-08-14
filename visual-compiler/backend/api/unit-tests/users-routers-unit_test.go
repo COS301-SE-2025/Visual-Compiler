@@ -21,7 +21,7 @@ func TestRouterRoutes(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := routers.SetupUserRouter()
 	endpoints := router.Routes()
-	if len(endpoints) != 4 {
+	if len(endpoints) != 9 {
 		t.Errorf("Expected routes to be registered")
 	}
 }
