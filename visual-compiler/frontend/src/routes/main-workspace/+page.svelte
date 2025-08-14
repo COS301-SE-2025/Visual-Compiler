@@ -22,6 +22,7 @@
 	let TranslatorPhaseTutorial: any;
 	let TranslatorPhaseInspector: any;
 	let TranslatorArtifactViewer: any;
+
 	let showWelcomeOverlay = false;
 
 	let workspace_el: HTMLElement;
@@ -73,6 +74,7 @@
 	let source_code = '';
 	let show_tokens = false;
 	let syntaxTreeData: SyntaxTree | null = null;
+	let translationError: any = null;
 
 	// --- TOOLTIPS AND LABELS ---
 	const tooltips: Record<NodeType, string> = {
@@ -123,6 +125,7 @@
 	function handlePhaseSelect(type: NodeType) {
 		syntaxTreeData = null; 
 		parsingError = null;
+		translationError = null;
 		if (type === 'source') {
 			show_code_input = true;
 		} else {
@@ -135,11 +138,29 @@
 		}
 	}
 
-	let showSymbolTable = false;
+	function handleTranslationError(event: CustomEvent) {
+		translationError = event.detail;
+		translated_code = []; 
+	}
 
-	 function handleReset() {
-    showSymbolTable = false;
-  }
+	let show_symbol_table = false;
+	let symbol_table: Symbol[] = [];
+	let analyser_error = "";
+	let analyser_error_details = "";
+
+	function handleReset() {
+    	show_symbol_table = false;
+		symbol_table = [];
+		analyser_error = "";
+		analyser_error_details = "";
+  	}
+
+	function handleSymbolGeneration(data: { symbol_table: Symbol[], analyser_error:string, analyser_error_details:string}) {
+		symbol_table = data.symbol_table;
+		show_symbol_table = true;
+		analyser_error = data.analyser_error;
+		analyser_error_details = data.analyser_error_details;
+	}
 
 	function returnToCanvas() {
 		selected_phase = null;
@@ -249,19 +270,31 @@
 
 				{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}
 					<svelte:component this={AnalyserPhaseTutorial} />
-					 <AnalyserPhaseInspector
-						source_code={source_code}
-						bind:showSymbolTable
-						on:generate={() => showSymbolTable = true}
-						on:reset={handleReset}
+					<svelte:component
+						this={AnalyserPhaseInspector}
+						{source_code}
+						onGenerateSymbolTable = {handleSymbolGeneration}
 					/>
-					<svelte:component this={AnalyserArtifactViewer} {showSymbolTable} on:close={() => showSymbolTable = false} />
+					<svelte:component
+						this={AnalyserArtifactViewer}
+						phase={selected_phase}
+						{symbol_table}
+						{analyser_error}
+						{analyser_error_details}
+						{show_symbol_table}
+					/>
+			
 				{/if}
 
 				{#if selected_phase === 'translator' && TranslatorPhaseTutorial}
 					<svelte:component this={TranslatorPhaseTutorial} />
-					<svelte:component this={TranslatorPhaseInspector} {source_code} on:translationreceived={handleTranslationReceived} />
-					<svelte:component this={TranslatorArtifactViewer}  {translated_code}/>
+					<svelte:component
+						this={TranslatorPhaseInspector}
+						{source_code}
+						on:translationreceived={handleTranslationReceived}
+						on:translationerror={handleTranslationError}
+					/>
+					<svelte:component this={TranslatorArtifactViewer}  {translated_code} {translationError}/>
 				{/if}
 
 			</div>

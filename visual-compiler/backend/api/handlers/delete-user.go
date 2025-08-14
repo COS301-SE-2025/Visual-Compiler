@@ -8,8 +8,8 @@ import (
 
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/db"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/bson/primitive"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 // Specifies what is required from the user as a JSON body DELETE request
