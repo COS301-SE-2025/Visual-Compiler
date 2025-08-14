@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { writable } from 'svelte/store';
+	import { writable, get } from 'svelte/store';
 	import type { NodeType, Token, SyntaxTree } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
@@ -38,8 +38,10 @@
 	onMount(async () => {
 		LexerPhaseTutorial = (await import('$lib/components/lexer/lexer-phase-tutorial.svelte')).default;
 		LexerPhaseInspector = (await import('$lib/components/lexer/phase-inspector.svelte')).default;
-		LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte')).default;
-		ParserPhaseTutorial = (await import('$lib/components/parser/parser-phase-tutorial.svelte')).default;
+		LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte'))
+			.default;
+		ParserPhaseTutorial = (await import('$lib/components/parser/parser-phase-tutorial.svelte'))
+			.default;
 		ParserPhaseInspector = (await import('$lib/components/parser/parsing-input.svelte')).default;
 		ParserArtifactViewer = (
 			await import('$lib/components/parser/parser-artifact-viewer.svelte')
@@ -95,6 +97,22 @@
 	let show_tokens = false;
 	let syntaxTreeData: SyntaxTree | null = null;
 	let translationError: any = null;
+	let savedProjectData: object | null = null;
+
+	// --- SAVE PROJECT FUNCTIONALITY ---
+	function saveProject() {
+		const canvasNodes = get(nodes);
+		const projectData = {
+			projectName: currentProjectName,
+			nodes: canvasNodes
+		};
+
+		savedProjectData = projectData;
+		// For now, we'll just log it. Later, you can send this to your backend.
+		console.log('Project Saved:', JSON.stringify(savedProjectData, null, 2));
+
+		AddToast(`Project "${currentProjectName}" saved!`, 'success');
+	}
 
 	// --- TOOLTIPS AND LABELS ---
 	const tooltips: Record<NodeType, string> = {
@@ -233,8 +251,28 @@
 	<Toolbox {handleCreateNode} {tooltips} />
 	<div class="workspace" bind:this={workspace_el} tabindex="-1">
 		{#if currentProjectName}
-			<div class="project-name-display">
-				{currentProjectName}
+			<div class="project-header">
+				<div class="project-info-bar">
+					<span class="project-name">{currentProjectName}</span>
+					<div class="separator" />
+					<button class="save-button" on:click={saveProject} aria-label="Save Project" title="Save Project">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+							<polyline points="17 21 17 13 7 13 7 21" />
+							<polyline points="7 3 7 8 15 8" />
+						</svg>
+					</button>
+				</div>
 			</div>
 		{/if}
 		<DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} />
@@ -369,17 +407,46 @@
 		position: relative;
 		outline: none;
 	}
-	.project-name-display {
+	.project-header {
 		position: absolute;
 		top: 1rem;
 		left: 1rem;
-		background-color: rgba(255, 255, 255, 0.8);
+		z-index: 10;
+	}
+	.project-info-bar {
+		display: flex;
+		align-items: center;
+		background-color: rgba(255, 255, 255, 0.9);
 		color: #041a47;
-		padding: 0.5rem 1rem;
+		padding: 0.25rem 0.25rem 0.25rem 1rem;
 		border-radius: 6px;
 		font-weight: 600;
-		z-index: 10;
 		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+	.project-name {
+		padding-right: 0.75rem;
+	}
+	.separator {
+		width: 1px;
+		height: 20px;
+		background-color: #d1d5db;
+		margin-right: 0.5rem;
+	}
+	.save-button {
+		background-color: transparent;
+		color: #041a47;
+		border: none;
+		border-radius: 50%;
+		width: 32px;
+		height: 32px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: background-color 0.2s ease;
+	}
+	.save-button:hover {
+		background-color: #eef2f7;
 	}
 	.analysis-overlay {
 		position: fixed;
@@ -493,9 +560,18 @@
 	:global(html.dark-mode) .main {
 		background-color: #161823;
 	}
-	:global(html.dark-mode) .project-name-display {
-		background-color: rgba(26, 32, 44, 0.8);
+	:global(html.dark-mode) .project-info-bar {
+		background-color: rgba(26, 32, 44, 0.9);
 		color: #e2e8f0;
+	}
+	:global(html.dark-mode) .separator {
+		background-color: #4a5568;
+	}
+	:global(html.dark-mode) .save-button {
+		color: #e2e8f0;
+	}
+	:global(html.dark-mode) .save-button:hover {
+		background-color: #2d3748;
 	}
 	:global(html.dark-mode) .analysis-overlay {
 		background: rgba(10, 26, 58, 0.95);
