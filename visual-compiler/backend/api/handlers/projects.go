@@ -113,7 +113,7 @@ func SaveProjectPipeline(c *gin.Context) {
 	err := collection.FindOne(ctx, filters).Err()
 
 	if err == mongo.ErrNoDocuments {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "Project not found"})
 		return
 	} else if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error: " + err.Error()})
