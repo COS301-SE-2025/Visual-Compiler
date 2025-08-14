@@ -12,6 +12,15 @@
 	let textareaEl: HTMLTextAreaElement;
 	export let onCodeSubmitted: (code: string) => void = () => {};
 
+	// --- NEW MOCK DATA FOR PROJECTS ---
+	const mockProjects = [
+		{ name: 'Select a project...', code: '' },
+		{ name: 'Lexer Project', code: '// Mock translated code for Lexer Project\n\nfunction lexer(code) {\n  // ...\n}' },
+		{ name: 'Parser Project', code: '// Mock translated code for Parser Project\n\nfunction parser(tokens) {\n  // ...\n}' },
+		{ name: 'Translator Project', code: '// Mock translated code for Translator Project\n\nfunction translator(ast) {\n  // ...\n}' }
+	];
+	let selectedProject = mockProjects[0];
+
 	// Sync with global store
 	let confirmed_code = '';
 	const unsubscribe = confirmedSourceCode.subscribe(value => {
@@ -38,7 +47,6 @@
 		const input = event.target as HTMLInputElement;
 		const file = input.files?.[0];
 		if (!file) return;
-
 		if (!file.name.toLowerCase().endsWith('.txt')) {
 			AddToast('Only .txt files are allowed. Please upload a valid plain text file.', 'error');
 			input.value = '';
@@ -74,7 +82,6 @@
 				})
 			});
 			if (!res.ok) throw new Error();
-
 			AddToast('Code confirmed and saved!', 'success');
 			confirmedSourceCode.set(code_text);
 			isConfirmed = true;
@@ -82,6 +89,14 @@
 			await tick();
 		} catch {
 			AddToast('Failed to save source code', 'error');
+		}
+	}
+
+	// --- NEW FUNCTION TO HANDLE PROJECT SELECTION ---
+	function handleProjectSelect() {
+		if (selectedProject) {
+			code_text = selectedProject.code;
+			isDefaultInput = false; 
 		}
 	}
 
@@ -114,14 +129,26 @@
 		placeholder="Paste or type your source code here…"
 	></textarea>
 
+	<div class="controls-grid">
+		<div class="control-item">
+			<label class="upload-btn">
+				Upload File
+				<input type="file" accept=".txt" on:change={handleFileChange} />
+			</label>
+		</div>
+
+		<div class="control-item project-selector">
+			<label for="project-select">Import from Project</label>
+			<select id="project-select" bind:value={selectedProject} on:change={handleProjectSelect}>
+				{#each mockProjects as project}
+					<option value={project}>{project.name}</option>
+				{/each}
+			</select>
+		</div>
+	</div>
 
 
 	<div class="controls">
-		<label class="upload-btn">
-			Upload File
-			<input type="file" accept=".txt" on:change={handleFileChange} />
-		</label>
-
 		<button
 			type="button"
 			class="confirm-btn"
@@ -142,11 +169,11 @@
 </div>
 
 <style>
-
-	.current{
+	.current {
 		margin-top: 0;
 		margin-bottom: 0.25rem;
 	}
+
 	.code-input-container {
 		display: flex;
 		flex-direction: column;
@@ -174,6 +201,45 @@
 		justify-content: center;
 	}
 
+	.controls-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem;
+		align-items: flex-end; /* Align items to the bottom */
+		margin-bottom: 1rem;
+	}
+
+	.control-item {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.project-selector label {
+		font-size: 0.9rem;
+		font-weight: 500;
+		margin-bottom: 0.5rem;
+		color: #333;
+	}
+
+	.project-selector select {
+		padding: 0.5rem 0.8rem;
+		border-radius: 4px;
+		border: 1px solid #ccc;
+		background-color: white;
+		font-size: 0.95rem;
+		cursor: pointer;
+		-webkit-appearance: none;
+		appearance: none;
+		background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+		background-repeat: no-repeat;
+		background-position: right 0.7rem center;
+		background-size: 1em;
+	}
+	
+	.project-selector select:hover {
+		border-color: #888;
+	}
+	
 	.upload-btn {
 		position: relative;
 		overflow: hidden;
@@ -184,7 +250,9 @@
 		border-radius: 4px;
 		font-size: 0.95rem;
 		cursor: pointer;
+		text-align: center;
 	}
+
 	.upload-btn input[type='file'] {
 		position: absolute;
 		left: 0;
@@ -194,6 +262,7 @@
 		opacity: 0;
 		cursor: pointer;
 	}
+
 	.upload-btn:hover {
 		background: #838386;
 	}
@@ -211,13 +280,16 @@
 		align-items: center;
 		gap: 0.3rem;
 	}
+
 	.confirm-btn:disabled {
 		background: #ccc;
 		cursor: not-allowed;
 	}
+
 	.confirm-btn:not(:disabled):hover {
 		background: #074799;
 	}
+
 	.tick {
 		font-size: 1.2rem;
 		line-height: 1;
@@ -239,6 +311,7 @@
 		align-items: center;
 		justify-content: center;
 	}
+
 	.default-source-btn:hover,
 	.default-source-btn:focus {
 		background: #d0d9ff;
@@ -264,6 +337,30 @@
 		border-color: #4a5568;
 	}
 
+	:global(html.dark-mode) .project-selector label {
+		color: #ccc;
+	}
+
+	:global(html.dark-mode) .project-selector select {
+		background: #2d3748;
+		color: #ccc;
+		border-color: #4a5568;
+		background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cccccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+	}
+
+	:global(html.dark-mode) .project-selector select:hover {
+		border-color: #6b7280;
+	}
+	
+	:global(html.dark-mode) select option {
+		background-color: #2d3748;
+		color: #ccc;
+	}
+	
+	:global(html.dark-mode) select option:hover {
+		background-color: #4a5568;
+	}
+
 	 :global(html.dark-mode) .default-source-btn  {
         background-color: #2d3748;
         border-color: #4a5568;
@@ -275,6 +372,7 @@
         border-color: #60a5fa;
         color: #e0e7ff;
     }
+
     :global(html.dark-mode) .default-source-btn:not(.selected):hover {
         background-color: #374151;
         border-color: #6b7280;
