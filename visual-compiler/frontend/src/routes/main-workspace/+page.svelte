@@ -8,6 +8,7 @@
 	import Toolbox from '$lib/components/main/toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
+	import WelcomeOverlay from '$lib/components/main/project-hub.svelte';
 
 	let LexerPhaseTutorial: any;
 	let LexerPhaseInspector: any;
@@ -21,7 +22,9 @@
 	let TranslatorPhaseTutorial: any;
 	let TranslatorPhaseInspector: any;
 	let TranslatorArtifactViewer: any;
-	
+
+	let showWelcomeOverlay = false;
+
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
 
@@ -43,7 +46,19 @@
 		if (!localStorage.getItem('hasSeenDragTip')) {
 			show_drag_tip = true;
 		}
+
+		if (sessionStorage.getItem('showWelcomeOverlay') === 'true') {
+			showWelcomeOverlay = true; // Trigger the overlay to show.
+
+			// // Important: Remove the flag so the overlay doesn't reappear on refresh.
+			// sessionStorage.removeItem('showWelcomeOverlay');
+		}
+		
 	});
+
+	function handleWelcomeClose() {
+		showWelcomeOverlay = false;
+	}
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -190,8 +205,10 @@
 <NavBar />
 
 <div class="main">
-	<!-- svelte-ignore component_name_lowercase -->
-	<!-- svelte-ignore element_invalid_self_closing_tag -->
+
+
+	<WelcomeOverlay bind:show={showWelcomeOverlay} on:close={handleWelcomeClose} />
+
 	<Toolbox {handleCreateNode} {tooltips} />
 	<div class="workspace" bind:this={workspace_el} tabindex="-1">
 		<DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} />

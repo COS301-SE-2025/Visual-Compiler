@@ -159,16 +159,17 @@
 		bottom: 110%;
 		left: 50%;
 		transform: translateX(-50%);
-		background: #1e1e1e;
+		background-color: #333;
 		color: #fff;
 		font-size: 0.75rem;
-		padding: 6px 10px;
-		border-radius: 15px;
+		padding: 0.4rem 0.8rem;
+		border-radius: 4px;
 		white-space: nowrap;
 		z-index: 10;
 		transition: opacity 0.2s ease;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 		pointer-events: none;
+		font-family:'Times New Roman', Times, serif ;
 	}
 
 	.custom-tooltip::after {
@@ -229,7 +230,7 @@
 
 	:global(html.dark-mode) .custom-tooltip {
 		background: #333;
-	}
+	}	
 
 	:global(html.dark-mode) .custom-tooltip::after {
 		border-color: #333 transparent transparent transparent;
