@@ -25,7 +25,6 @@ func SetupUserRouter() *gin.Engine {
 	r.GET("/getProjects", handlers.GetAllProjects)
 	r.GET("/getProject", handlers.GetProject)
 	r.DELETE("/deleteProject", handlers.DeleteProject)
-	r.PATCH("/update", handlers.EditUser)
 
 	return r
 }

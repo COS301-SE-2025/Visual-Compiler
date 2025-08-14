@@ -1,23 +1,5 @@
 basePath: /api
 definitions:
-  handlers.AdminRequest:
-    properties:
-      admin_id:
-        description: Represents the Admin's ID from frontend
-        type: string
-      email:
-        description: 'Optional: User''s new email address'
-        type: string
-      username:
-        description: 'Optional: User''s new username'
-        type: string
-      users_id:
-        description: Represents the User's ID from frontend
-        type: string
-    required:
-    - admin_id
-    - users_id
-    type: object
   handlers.AnalyseUserInputs:
     properties:
       grammar_rules:
@@ -1142,60 +1124,6 @@ paths:
               type: string
             type: object
       summary: Save project pipeline from frontend
-      tags:
-      - Users
-  /users/update:
-    patch:
-      consumes:
-      - application/json
-      description: Update user details. Either updating username, email or both
-      parameters:
-      - description: Edit User
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/handlers.AdminRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: User update successful
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Invalid input or ID format
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "403":
-          description: Unauthorized access
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "404":
-          description: User not found
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "409":
-          description: Username/Email taken
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Update User
       tags:
       - Users
 swagger: "2.0"
