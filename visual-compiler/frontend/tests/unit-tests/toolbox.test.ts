@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi } from 'vitest';
-import Toolbox from '../../src/lib/components/main/toolbox.svelte';
+import Toolbox from '../../src/lib/components/main/Toolbox.svelte';
 
 // Mock tooltips to simplify the test
 const mockTooltips = {

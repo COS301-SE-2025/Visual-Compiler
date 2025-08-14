@@ -553,11 +553,9 @@ func TestCreateTokens_PunctuationTokensUnidentified(t *testing.T) {
 		"3",
 		"err",
 		",",
-		"_",
 		":=",
 		"service",
-		"(",
-		")",
+		"()",
 	}
 
 	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)

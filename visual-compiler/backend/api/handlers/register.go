@@ -81,7 +81,6 @@ func Register(c *gin.Context) {
 		"email":    req.Email,
 		"password": string(hashed_password),
 		"username": normalised_username,
-		"projects": []bson.M{},
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in registering user"})
