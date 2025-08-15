@@ -29,16 +29,21 @@
 
     // --- DEFAULT GRAMMAR DATA ---
     const DEFAULT_GRAMMAR = {
-        variables: 'STATEMENT, DECLARATION, EXPRESSION, TYPE, TERM',
-        terminals: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, SEPARATOR',
+        variables: 'PROGRAM, CODE, STATEMENT, DECLARATION, EXPRESSION, TYPE, TERM, FUNCTION, PARAM, FUNCTION_DECLARATION, FUNC_BLOCK, RETURN_S',
+        terminals: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, SEPARATOR, OPEN_BRACKETS, CLOSE_BRACKETS ,OPEN_SCOPE, CLOSE_SCOPE,STRING',
         rules: [
+            { nonTerminal: 'PROGRAM', translations: ['STATEMENT','FUNCTION'] },
+            { nonTerminal: 'FUNCTION', translations: ['FUNCTION_DECLARATION', 'FUNC_BLOCK'] },
+            { nonTerminal: 'FUNCTION_DECLARATION', translations: ['TYPE', 'IDENTIFIER', 'PARAM'] },
+            { nonTerminal: 'PARAM', translations: ['OPEN_BRACKETS', 'TYPE', 'IDENTIFIER', 'CLOSE_BRACKETS'] },
+            { nonTerminal: 'FUNC_BLOCK', translations: ['OPEN_SCOPE', 'STATEMENT', 'RETURN_S','CLOSE_SCOPE'] },
+            { nonTerminal: 'RETURN_S', translations: ['KEYWORD', 'TERM', 'SEPARATOR'] },
             { nonTerminal: 'STATEMENT', translations: ['DECLARATION', 'SEPARATOR'] },
-            {
-                nonTerminal: 'DECLARATION',
-                translations: ['TYPE', 'IDENTIFIER', 'ASSIGNMENT', 'EXPRESSION']
-            },
+            { nonTerminal: 'DECLARATION',translations: ['TYPE', 'IDENTIFIER', 'ASSIGNMENT', 'EXPRESSION']},
             { nonTerminal: 'EXPRESSION', translations: ['TERM', 'OPERATOR', 'TERM'] },
+            { nonTerminal: 'EXPRESSION', translations: ['TERM'] },
             { nonTerminal: 'TERM', translations: ['INTEGER'] },
+            { nonTerminal: 'TERM', translations: ['IDENTIFIER'] },
             { nonTerminal: 'TYPE', translations: ['KEYWORD'] }
         ]
     };
