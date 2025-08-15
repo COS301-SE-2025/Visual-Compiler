@@ -1,6 +1,8 @@
 <script lang="ts">
     import { onMount, createEventDispatcher } from 'svelte';
     import { AddToast } from '$lib/stores/toast';
+    import { projectName } from '$lib/stores/project';
+    import { get } from 'svelte/store';
 
     export let source_code = '';
 
@@ -26,6 +28,8 @@
     let terminals_string = '';
     let show_default_grammar = false;
     let is_grammar_submitted = false;
+    let tokens = null;
+    let tokens_unidentified = null;
 
     // --- DEFAULT GRAMMAR DATA ---
     const DEFAULT_GRAMMAR = {
@@ -49,8 +53,9 @@
     };
 
     // onMount
-    onMount(() => {
+    onMount(async () => {
         addNewRule();
+        await fetchTokens(); // Try to fetch existing tokens
     });
 
     // handleGrammarChange
@@ -131,8 +136,15 @@
     // handleSubmitGrammar
     async function handleSubmitGrammar() {
         const user_id = localStorage.getItem('user_id');
+        const project = get(projectName);
+
         if (!user_id) {
-            AddToast('User not logged in. Please log in to save your work.', 'error');
+            AddToast('User not logged in.', 'error');
+            return;
+        }
+
+        if (!project) {
+            AddToast('No project selected.', 'error');
             return;
         }
 
@@ -204,19 +216,17 @@
         }
 
         const formatted_rules = cleaned_rules
-            .map((rule) => {
-                const output_array = rule.translations
+            .map((rule) => ({
+                input: rule.nonTerminal.trim(),
+                output: rule.translations
                     .flatMap((t) => t.value.trim().split(' '))
-                    .filter((v) => v);
-                return {
-                    input: rule.nonTerminal.trim(),
-                    output: output_array
-                };
-            })
+                    .filter((v) => v)
+            }))
             .filter((rule) => rule.input && rule.output.length > 0);
 
         const final_json_output = {
             users_id: user_id,
+            project_name: project,
             variables: variable_list,
             terminals: terminal_list,
             start: start_variable,
@@ -226,13 +236,16 @@
         try {
             const response = await fetch('http://localhost:8080/api/parsing/grammar', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json' 
+                },
                 body: JSON.stringify(final_json_output)
             });
 
             if (!response.ok) {
                 const error_data = await response.json();
-                throw new Error(error_data.details || 'Failed to submit grammar');
+                throw new Error(error_data.error || 'Failed to submit grammar');
             }
 
             const result = await response.json();
@@ -245,33 +258,104 @@
         }
     }
 
+    // fetchTokens
+    async function fetchTokens() {
+        const user_id = localStorage.getItem('user_id');
+        const project = get(projectName);
+
+        if (!user_id || !project) return null;
+
+        try {
+            const response = await fetch('http://localhost:8080/api/lexing/lexer', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    users_id: user_id,
+                    project_name: project
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch tokens');
+            }
+
+            const data = await response.json();
+            tokens = data.tokens;
+            tokens_unidentified = data.tokens_unidentified;
+            return data.tokens;
+        } catch (error) {
+            console.error('Error fetching tokens:', error);
+            return null;
+        }
+    }
+
     // generateSyntaxTree
     async function generateSyntaxTree() {
         const user_id = localStorage.getItem('user_id');
-        if (!user_id) {
-            AddToast('User not logged in.', 'error');
+        const project = get(projectName);
+
+        if (!user_id || !project) {
+            AddToast('Missing user ID or project', 'error');
             return;
         }
 
         try {
-            const response = await fetch('http://localhost:8080/api/parsing/tree', {
+            // First verify tokens exist
+            const tokensResponse = await fetch(`http://localhost:8080/api/lexing/lexer`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ users_id: user_id })
+                headers: {
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    users_id: user_id,
+                    project_name: project
+                })
             });
 
-            if (!response.ok) {
-                const error_data = await response.json();
-                throw new Error(error_data.details || 'Failed to generate syntax tree');
+            if (!tokensResponse.ok) {
+                AddToast('Please generate tokens first', 'error');
+                return;
             }
 
-            const result = await response.json();
-            AddToast('Syntax tree generated successfully!', 'success');
-            dispatch('treereceived', result.tree);
+            // Now try to generate syntax tree
+            const response = await fetch('http://localhost:8080/api/parsing/tree', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    users_id: user_id,
+                    project_name: project
+                })
+            });
+
+            const data = await response.json();
+            console.log('Syntax tree response:', data); // Debug log
+
+            if (!response.ok) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                throw new Error('Failed to generate syntax tree');
+            }
+
+            if (data.tree) {
+                AddToast('Syntax tree generated successfully!', 'success');
+                dispatch('treereceived', data.tree);
+            } else {
+                throw new Error('No tree data in response');
+            }
         } catch (error) {
-            console.error('Generate Syntax Tree Error:', error);
-            dispatch('parsingerror', error);
-            AddToast(String(error), 'error');
+            console.error('Full error details:', error); // Debug log
+            AddToast(
+                `Failed to generate syntax tree: ${error.message}. Please ensure tokens and grammar are valid.`,
+                'error'
+            );
         }
     }
 </script>

@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { writable, get } from 'svelte/store';
-	import type { NodeType, Token, SyntaxTree } from '$lib/types';
+	import type { NodeType, Token, SyntaxTree, NodeConnection } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
 	import { projectName } from '$lib/stores/project'; // Import the new store
 	import NavBar from '$lib/components/main/nav-bar.svelte';
-	import Toolbox from '$lib/components/main/toolbox.svelte';
+	import Toolbox from '$lib/components/main/Toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 	import WelcomeOverlay from '$lib/components/project-hub/project-hub.svelte';
@@ -99,6 +99,227 @@
 	let translationError: any = null;
 	let savedProjectData: object | null = null;
 
+	// --- CONNECTION TRACKING STATE ---
+	let phase_completion_status = {
+		source: false,
+		lexer: false,
+		parser: false,
+		analyser: false,
+		translator: false
+	};
+
+	// --- PHYSICAL CONNECTION TRACKING ---
+	let physicalConnections: NodeConnection[] = [];
+
+	// Handle physical connection changes from canvas
+	function handleConnectionChange(connections: NodeConnection[]) {
+		physicalConnections = connections;
+		console.log('Physical connections updated:', physicalConnections);
+	}
+
+	// Check if there's a physical connection between two node types
+	function hasPhysicalConnection(sourceType: NodeType, targetType: NodeType): boolean {
+		return physicalConnections.some(conn => {
+			const sourceNode = findNodeByType(sourceType);
+			const targetNode = findNodeByType(targetType);
+			
+			if (!sourceNode || !targetNode) return false;
+			
+			return (conn.sourceNodeId === sourceNode.id && conn.targetNodeId === targetNode.id) ||
+			       (conn.sourceNodeId === targetNode.id && conn.targetNodeId === sourceNode.id);
+		});
+	}
+
+	// --- CONNECTION VALIDATION FUNCTIONS ---
+	function findNodeByType(nodeType: NodeType): CanvasNode | null {
+		const currentNodes = get(nodes);
+		return currentNodes.find(node => node.type === nodeType) || null;
+	}
+
+	function validateNodeAccess(nodeType: NodeType): boolean {
+		const currentNodes = get(nodes);
+		
+		switch (nodeType) {
+			case 'source':
+				return true; // Source is always accessible
+			
+			case 'lexer':
+				// Check if source node exists
+				const sourceNode = findNodeByType('source');
+				if (!sourceNode) {
+					AddToast('Please add a Source Code node before accessing the Lexer.', 'error');
+					return false;
+				}
+				// Check if source code has been submitted
+				if (!source_code.trim()) {
+					AddToast('Source Code must be submitted before proceeding to Lexer.', 'error');
+					return false;
+				}
+				// Check for physical connection between source and lexer
+				if (!hasPhysicalConnection('source', 'lexer')) {
+					AddToast('Please connect the Source Code node to the Lexer node with an edge before proceeding.', 'error');
+					return false;
+				}
+				return true;
+			
+			case 'parser':
+				// First check if source node exists
+				const sourceNodeForParser = findNodeByType('source');
+				if (!sourceNodeForParser) {
+					AddToast('Please add a Source Code node first before accessing the Parser.', 'error');
+					return false;
+				}
+				// Check if source code has been submitted
+				if (!source_code.trim()) {
+					AddToast('Please enter source code first before accessing the Parser.', 'error');
+					return false;
+				}
+				// Check if lexer node exists
+				const lexerNode = findNodeByType('lexer');
+				if (!lexerNode) {
+					AddToast('Please add a Lexer node and complete lexical analysis before accessing the Parser.', 'error');
+					return false;
+				}
+				// Check for physical connection between source and lexer
+				if (!hasPhysicalConnection('source', 'lexer')) {
+					AddToast('Please connect the Source Code node to the Lexer node with an edge first.', 'error');
+					return false;
+				}
+				// Check if lexer phase has been completed
+				if (!phase_completion_status.lexer) {
+					AddToast('Please complete the lexical analysis phase before proceeding to parsing.', 'error');
+					return false;
+				}
+				// Check for physical connection between lexer and parser
+				if (!hasPhysicalConnection('lexer', 'parser')) {
+					AddToast('Please connect the Lexer node to the Parser node with an edge before proceeding.', 'error');
+					return false;
+				}
+				return true;
+			
+			case 'analyser':
+				// First check if source node exists
+				const sourceNodeForAnalyser = findNodeByType('source');
+				if (!sourceNodeForAnalyser) {
+					AddToast('Please add a Source Code node first before accessing the Analyser.', 'error');
+					return false;
+				}
+				// Check if source code has been submitted
+				if (!source_code.trim()) {
+					AddToast('Please enter source code first before accessing the Analyser.', 'error');
+					return false;
+				}
+				// Check if lexer node exists
+				const lexerNodeForAnalyser = findNodeByType('lexer');
+				if (!lexerNodeForAnalyser) {
+					AddToast('Please add a Lexer node and complete lexical analysis before accessing the Analyser.', 'error');
+					return false;
+				}
+				// Check for physical connection between source and lexer
+				if (!hasPhysicalConnection('source', 'lexer')) {
+					AddToast('Please connect the Source Code node to the Lexer node with an edge first.', 'error');
+					return false;
+				}
+				// Check if lexer phase has been completed
+				if (!phase_completion_status.lexer) {
+					AddToast('Please complete the lexical analysis phase before accessing the Analyser.', 'error');
+					return false;
+				}
+				// Check if parser node exists
+				const parserNode = findNodeByType('parser');
+				if (!parserNode) {
+					AddToast('Please add a Parser node and complete parsing before accessing the Analyser.', 'error');
+					return false;
+				}
+				// Check for physical connection between lexer and parser
+				if (!hasPhysicalConnection('lexer', 'parser')) {
+					AddToast('Please connect the Lexer node to the Parser node with an edge first.', 'error');
+					return false;
+				}
+				// Check if parser phase has been completed
+				if (!phase_completion_status.parser) {
+					AddToast('Please complete the parsing phase before proceeding to analysis.', 'error');
+					return false;
+				}
+				// Check for physical connection between parser and analyser
+				if (!hasPhysicalConnection('parser', 'analyser')) {
+					AddToast('Please connect the Parser node to the Analyser node with an edge before proceeding.', 'error');
+					return false;
+				}
+				return true;
+			
+			case 'translator':
+				// First check if source node exists
+				const sourceNodeForTranslator = findNodeByType('source');
+				if (!sourceNodeForTranslator) {
+					AddToast('Please add a Source Code node first before accessing the Translator.', 'error');
+					return false;
+				}
+				// Check if source code has been submitted
+				if (!source_code.trim()) {
+					AddToast('Please enter source code first before accessing the Translator.', 'error');
+					return false;
+				}
+				// Check if lexer node exists
+				const lexerNodeForTranslator = findNodeByType('lexer');
+				if (!lexerNodeForTranslator) {
+					AddToast('Please add a Lexer node and complete lexical analysis before accessing the Translator.', 'error');
+					return false;
+				}
+				// Check for physical connection between source and lexer
+				if (!hasPhysicalConnection('source', 'lexer')) {
+					AddToast('Please connect the Source Code node to the Lexer node with an edge first.', 'error');
+					return false;
+				}
+				// Check if lexer phase has been completed
+				if (!phase_completion_status.lexer) {
+					AddToast('Please complete the lexical analysis phase before accessing the Translator.', 'error');
+					return false;
+				}
+				// Check if parser node exists
+				const parserNodeForTranslator = findNodeByType('parser');
+				if (!parserNodeForTranslator) {
+					AddToast('Please add a Parser node and complete parsing before accessing the Translator.', 'error');
+					return false;
+				}
+				// Check for physical connection between lexer and parser
+				if (!hasPhysicalConnection('lexer', 'parser')) {
+					AddToast('Please connect the Lexer node to the Parser node with an edge first.', 'error');
+					return false;
+				}
+				// Check if parser phase has been completed
+				if (!phase_completion_status.parser) {
+					AddToast('Please complete the parsing phase before accessing the Translator.', 'error');
+					return false;
+				}
+				// Check if analyser node exists
+				const analyserNode = findNodeByType('analyser');
+				if (!analyserNode) {
+					AddToast('Please add an Analyser node and complete analysis before accessing the Translator.', 'error');
+					return false;
+				}
+				// Check for physical connection between parser and analyser
+				if (!hasPhysicalConnection('parser', 'analyser')) {
+					AddToast('Please connect the Parser node to the Analyser node with an edge first.', 'error');
+					return false;
+				}
+				// Check if analyser phase has been completed
+				if (!phase_completion_status.analyser) {
+					AddToast('Please complete the analysis phase before proceeding to translation.', 'error');
+					return false;
+				}
+				// Check for physical connection between analyser and translator
+				if (!hasPhysicalConnection('analyser', 'translator')) {
+					AddToast('Please connect the Analyser node to the Translator node with an edge before proceeding.', 'error');
+					return false;
+				}
+				return true;
+			
+			default:
+				return false;
+		}
+	}
+
 	// --- SAVE PROJECT FUNCTIONALITY ---
 	function saveProject() {
 		const canvasNodes = get(nodes);
@@ -161,6 +382,11 @@
 	}
 
 	function handlePhaseSelect(type: NodeType) {
+		// Validate node access before proceeding
+		if (!validateNodeAccess(type)) {
+			return; // Toast message already shown by validateNodeAccess
+		}
+
 		syntaxTreeData = null;
 		parsingError = null;
 		translationError = null;
@@ -193,15 +419,27 @@
 		analyser_error_details = '';
 	}
 
-	function handleSymbolGeneration(data: {
-		symbol_table: Symbol[];
-		analyser_error: string;
-		analyser_error_details: string;
-	}) {
-		symbol_table = data.symbol_table;
-		show_symbol_table = true;
-		analyser_error = data.analyser_error;
-		analyser_error_details = data.analyser_error_details;
+	function handleSymbolGeneration(data: { symbol_table: Symbol[]; error?: string; error_details?: string }) {
+		if (data.symbol_table && data.symbol_table.length > 0) {
+			show_symbol_table = true;
+			symbol_table = data.symbol_table;
+			analyser_error = '';
+			analyser_error_details = '';
+			// Mark analyser phase as complete when symbol table is generated successfully
+			phase_completion_status.analyser = true;
+		} else {
+			show_symbol_table = false;
+			analyser_error = data.error || 'Analysis failed';
+			analyser_error_details = data.error_details || '';
+		}
+	}
+
+	function handleTranslationReceived(event: CustomEvent<string[]>) {
+		translated_code = event.detail;
+		// Mark translator phase as complete when translation is received
+		if (event.detail && event.detail.length > 0) {
+			phase_completion_status.translator = true;
+		}
 	}
 
 	function returnToCanvas() {
@@ -213,26 +451,30 @@
 		show_tokens = false;
 		source_code = code;
 		show_code_input = false;
+		// Mark source phase as complete when code is submitted
+		phase_completion_status.source = true;
 	}
 
 	function handleTokenGeneration(data: { tokens: Token[]; unexpected_tokens: string[] }) {
 		show_tokens = true;
 		tokens = data.tokens;
 		unexpected_tokens = data.unexpected_tokens;
+		// Mark lexer phase as complete when tokens are generated successfully
+		if (data.tokens.length > 0) {
+			phase_completion_status.lexer = true;
+		}
 	}
 
 	function handleTreeReceived(event: CustomEvent<SyntaxTree>) {
 		syntaxTreeData = event.detail;
 		artifactData = event.detail;
+		// Mark parser phase as complete when syntax tree is received
+		phase_completion_status.parser = true;
 	}
 
 	let tokens: Token[] = [];
 	let unexpected_tokens: string[] = [];
 	let translated_code: string[] = [];
-
-	function handleTranslationReceived(event: CustomEvent<string[]>) {
-		translated_code = event.detail;
-	}
 
 	let artifactData: SyntaxTree | null = null;
 	let parsingError: any = null;
@@ -254,7 +496,7 @@
 			<div class="project-header">
 				<div class="project-info-bar">
 					<span class="project-name">{currentProjectName}</span>
-					<div class="separator" />
+					<div class="separator"></div>
 					<button class="save-button" on:click={saveProject} aria-label="Save Project" title="Save Project">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -275,7 +517,7 @@
 				</div>
 			</div>
 		{/if}
-		<DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} />
+		<DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} onConnectionChange={handleConnectionChange} />
 
 		{#if show_drag_tip}
 			<div class="help-tip">
@@ -482,8 +724,8 @@
 		bottom: 20px;
 		right: 20px;
 		padding: 0.5rem 1rem;
-		background: #BED2E6;
-		color: 000000;
+		background: #001a6e;
+		color: white;
 		border: none;
 		border-radius: 4px;
 		cursor: pointer;
@@ -492,7 +734,7 @@
 		margin-bottom: 1rem;
 	}
 	.return-button:hover {
-		background: #a8bdd1;
+		background: #074799;
 	}
 	.code-input-overlay {
 		position: fixed;
@@ -592,12 +834,12 @@
 		color: #f0f0f0;
 	}
 	:global(html.dark-mode) .return-button {
-		background: #001A6E;
+		background: #1a3a7a;
 		margin-right: 1rem;
-		color: #ffffff;
+		color: #cccccc;
 	}
 	:global(html.dark-mode) .return-button:hover {
-		background: #002a8e;
+		background: #2a4a8a;
 		margin-right: 1rem;
 	}
 </style>

@@ -5,6 +5,8 @@
 	import ProjectNamePrompt from './project-name-prompt.svelte';
 	import DeleteConfirmPrompt from './delete-confirmation.svelte'; 
 
+	const dispatch = createEventDispatcher();
+
 	export let show = false;
 
 	let userName = '';
@@ -12,16 +14,47 @@
 	let showDeleteConfirmPrompt = false; // State for the delete confirmation
 	let projectToDelete = ''; // State to hold the name of the project to be deleted
 
-	let recentProjects = [
-		{ name: 'Lexer', dateModified: 'August 4, 2025' },
-		{ name: 'Pascal Parser', dateModified: 'July 28, 2025' },
-		{ name: 'x86 Generator', dateModified: 'July 15, 2025' },
-		{ name: 'Semantic Rules', dateModified: 'June 30, 2025' },
-		{ name: 'AST Viewer', dateModified: 'June 21, 2025' },
-		{ name: 'Java-Python', dateModified: 'June 15, 2025' }
-	];
+	interface Project {
+		name: string;
+		dateModified: string;
+	}
 
-	const dispatch = createEventDispatcher();
+	let recentProjects: Project[] = [];
+	
+	async function fetchProjects() {
+		const userId = localStorage.getItem('user_id');
+		if (!userId) return;
+
+		try {
+			const response = await fetch(`http://localhost:8080/api/users/getProjects?users_id=${userId}`, {
+				method: 'GET',
+				headers: {
+					'accept': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			
+			if (data.all_projects) {
+				// Transform projects into the required format
+				recentProjects = data.all_projects.map((projectName: string) => ({
+					name: projectName,
+					dateModified: new Date().toLocaleDateString('en-US', {
+						year: 'numeric',
+						month: 'long',
+						day: 'numeric'
+					})
+				}));
+			}
+		} catch (error) {
+			console.error('Error fetching projects:', error);
+			recentProjects = []; // Reset to empty array on error
+		}
+	}
 
 	function handleClose() {
 		dispatch('close');
@@ -31,12 +64,70 @@
 		showProjectNamePrompt = true;
 	}
 
-	function handleProjectNameConfirm(event: CustomEvent<string>) {
+	async function selectProject(selectedProjectName: string) {
+		const userId = localStorage.getItem('user_id');
+		if (!userId) return;
+
+		try {
+			const response = await fetch(
+				`http://localhost:8080/api/users/getProject?project_name=${selectedProjectName}&users_id=${userId}`, {
+				method: 'GET',
+				headers: {
+					'accept': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			
+			if (data.message === "Retrieved users project details") {
+				// Store the selected project name in the store
+				projectName.set(selectedProjectName);
+				// Close the project hub modal
+				handleClose();
+			} else {
+				console.error('Failed to retrieve project details');
+			}
+		} catch (error) {
+			console.error('Error verifying project selection:', error);
+		}
+	}
+
+	async function handleProjectNameConfirm(event: CustomEvent<string>) {
 		const newProjectName = event.detail;
-		projectName.set(newProjectName);
-		console.log(`Project created with name: ${newProjectName}`); // For verification
-		showProjectNamePrompt = false;
-		handleClose(); // This closes the ProjectHub overlay
+		const userId = localStorage.getItem('user_id');
+		if (!userId) return;
+
+		try {
+			const response = await fetch('http://localhost:8080/api/users/save', {
+				method: 'POST',
+				headers: {
+					'accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					project_name: newProjectName,
+					users_id: userId
+				})
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+
+			// Update UI and close modal
+			projectName.set(newProjectName);
+			showProjectNamePrompt = false;
+			await fetchProjects(); // Refresh the project list
+			handleClose();
+		} catch (error) {
+			console.error('Error saving project:', error);
+		}
 	}
 
 	/**
@@ -67,6 +158,7 @@
 	onMount(() => {
 		const storedUserId = localStorage.getItem('user_id');
 		userName = storedUserId || 'Guest';
+		fetchProjects(); // Fetch projects when component mounts
 	});
 </script>
 
@@ -129,7 +221,7 @@
 			<div class="project-list-container">
 				<div class="project-grid">
 					{#each recentProjects as project}
-						<div class="project-block">
+						<div class="project-block" on:click={() => selectProject(project.name)}>
 							<button
 								class="delete-button"
 								on:click={(event) => handleDeleteClick(project.name, event)}
