@@ -8,13 +8,12 @@ import (
 
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/db"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 // Specifies what is required from the user as a JSON body DELETE request
 type DeleteRequest struct {
-	ID string `json:"id" binding:"required" example:"685df259c1294de5546b045f"`
+	ID bson.ObjectID `json:"users_id" binding:"required" example:"685df259c1294de5546b045f"`
 }
 
 // @Summary Delete User
@@ -31,15 +30,8 @@ type DeleteRequest struct {
 func DeleteUser(c *gin.Context) {
 	var req DeleteRequest
 
-	// Bind JSON body to struct
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
-		return
-	}
-
-	objectID, err := primitive.ObjectIDFromHex(req.ID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
 		return
 	}
 
@@ -48,11 +40,13 @@ func DeleteUser(c *gin.Context) {
 	lexing_collection := client.Database("visual-compiler").Collection("lexing")
 	parsing_collection := client.Database("visual-compiler").Collection("parsing")
 	analysing_collection := client.Database("visual-compiler").Collection("analysing")
+	// optimising_collection := client.Database("visual-compiler").Collection("optimising")
+	// translating_collection := client.Database("visual-compiler").Collection("translating")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	res, err := users_collection.DeleteOne(ctx, bson.M{"_id": objectID})
+	res, err := users_collection.DeleteOne(ctx, bson.M{"_id": req.ID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user: " + err.Error()})
 		return
@@ -63,19 +57,19 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	lexing_res, err := lexing_collection.DeleteOne(ctx, bson.M{"user_id": objectID})
+	lexing_res, err := lexing_collection.DeleteOne(ctx, bson.M{"user_id": req.ID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user's related lexing data: " + err.Error()})
 		return
 	}
 
-	parsing_res, err := parsing_collection.DeleteOne(ctx, bson.M{"user_id": objectID})
+	parsing_res, err := parsing_collection.DeleteOne(ctx, bson.M{"user_id": req.ID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user's related parsing data: " + err.Error()})
 		return
 	}
 
-	analysing_res, err := analysing_collection.DeleteOne(ctx, bson.M{"user_id": objectID})
+	analysing_res, err := analysing_collection.DeleteOne(ctx, bson.M{"user_id": req.ID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user's related analysing data: " + err.Error()})
 		return

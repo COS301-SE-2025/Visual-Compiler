@@ -24,6 +24,8 @@ type ReadGrammerFromUser struct {
 	StartVar string `json:"start" binding:"required" example:"S"`
 	// User's defined rules
 	Rules []services.ParsingRule `json:"rules" binding:"required"`
+	// User's project name
+	Project_Name string `json:"project_name" binding:"required"`
 }
 
 // @Summary Processs and store user-defined grammer
@@ -67,15 +69,16 @@ func ReadGrammar(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Grammar creation failed", "details": err.Error()})
 	}
 
-	filters := bson.M{"users_id": req.UsersID}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	var userexisting bson.M
 
 	err = collection.FindOne(ctx, filters).Decode(&userexisting)
 
 	if err == mongo.ErrNoDocuments {
 		_, err = collection.InsertOne(ctx, bson.M{
-			"users_id": req.UsersID,
-			"grammar":  grammar,
+			"users_id":     req.UsersID,
+			"grammar":      grammar,
+			"project_name": req.Project_Name,
 		})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
@@ -137,13 +140,13 @@ func CreateSyntaxTree(c *gin.Context) {
 		Grammar services.Grammar `bson:"grammar"`
 	}
 
-	err := lexing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&lexing_res)
+	err := lexing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&lexing_res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tokens code not found. Please go back to lexing"})
 		return
 	}
 
-	err = parsing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&parsing_res)
+	err = parsing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&parsing_res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Grammar code not found. Please create one"})
 		return
@@ -155,7 +158,7 @@ func CreateSyntaxTree(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": req.UsersID}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	update_users_tree := bson.M{"$set": bson.M{
 		"tree": tree,
 	}}
@@ -200,7 +203,7 @@ func TreeToString(c *gin.Context) {
 		Tree services.SyntaxTree `bson:"tree"`
 	}
 
-	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Syntax tree not found. Please create one"})
 		return
@@ -208,7 +211,7 @@ func TreeToString(c *gin.Context) {
 
 	tree_as_string := services.ConvertTreeToString(res.Tree.Root, "", true)
 
-	filters := bson.M{"users_id": req.UsersID}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	update_users_tree_string := bson.M{"$set": bson.M{
 		"tree_string": tree_as_string,
 	}}
