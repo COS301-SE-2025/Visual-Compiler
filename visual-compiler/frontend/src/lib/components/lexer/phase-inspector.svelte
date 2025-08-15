@@ -5,6 +5,8 @@
 	import { onMount } from 'svelte';
 	import { DataSet, Network } from 'vis-network/standalone';
 	import { fade, scale } from 'svelte/transition';
+	import { projectName } from '$lib/stores/project';
+	import { get } from 'svelte/store'; 
 
 	export let source_code = '';
 	export let onGenerateTokens: (data: {
@@ -87,14 +89,20 @@
 		}
 
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName);
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 
 		if (selectedType === 'REGEX') {
 			const requestData = {
 				users_id: user_id,
+				project_name: project,
 				pairs: nonEmptyRows.map((row) => ({
 					Type: row.type.toUpperCase(),
 					Regex: row.regex
@@ -120,6 +128,7 @@
 
 		const requestData = {
 			users_id: user_id,
+			project_name: project,
 			source_code: showDefault ? DEFAULT_SOURCE_CODE : userSourceCode,
 			pairs: nonEmptyRows.map((row) => ({
 				Type: row.type.toUpperCase(),
@@ -153,13 +162,20 @@
 	async function generateTokens() {
 		try {
 			const user_id = localStorage.getItem('user_id');
+			const project = get(projectName);
 			if (!user_id) {
 				AddToast('User not logged in.', 'error');
 				return;
 			}
+			if (!project) {
+                AddToast('No project selected.', 'error');
+                return;
+            }
+
 			const requestData = {
 				users_id: user_id,
 				source_code: source_code,
+				project_name: project,
 				pairs: (showDefault ? editableDefaultRows : userInputRows).map((row) => ({
 					Type: row.type.toUpperCase(),
 					Regex: row.regex
@@ -201,9 +217,16 @@
 	// Helper: Save DFA to backend
 	async function saveDfaToBackend() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
-			return false;
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
+			return;
 		}
 
 		const dfa = {
@@ -214,7 +237,8 @@
 			transitions: [],
 			start_state: startState.trim(),
 			accepting_states: parseAcceptedStates(acceptedStates),
-			users_id: user_id
+			users_id: user_id,
+			project_name: project
 		};
 
 		// Parse transitions
@@ -256,13 +280,20 @@
 		if (!saved) return;
 
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
 			return;
 		}
 
+		if (!project) {
+			AddToast('No project selected.', 'error');
+			return;
+		}
+
 		// Only need to send users_id, backend loads DFA from DB
-		const body = { users_id: user_id };
+		const body = { users_id: user_id, project_name: project };
 
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/dfaToTokens', {
@@ -411,8 +442,15 @@
 
 	async function showNfaDiagram() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 
@@ -425,7 +463,7 @@
 			const dfaToRegexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!dfaToRegexRes.ok) {
 				const errorText = await dfaToRegexRes.text();
@@ -437,7 +475,7 @@
 			const regexToNfaRes = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!regexToNfaRes.ok) {
 				const errorText = await regexToNfaRes.text();
@@ -575,8 +613,15 @@
 	// Show DFA button handler
 	async function handleShowDfa() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 
@@ -589,7 +634,7 @@
 			const regexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!regexRes.ok) {
 				const errorText = await regexRes.text();
@@ -601,7 +646,7 @@
 			const dfaRes = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!dfaRes.ok) {
 				const errorText = await dfaRes.text();
@@ -629,8 +674,15 @@
 		if (!saved) return;
 
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 
@@ -638,7 +690,7 @@
 			const response = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -664,15 +716,22 @@
 
 	async function handleRegexToNFA() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -695,15 +754,22 @@
 
 	async function handleRegexToDFA() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();

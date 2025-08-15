@@ -2,6 +2,8 @@
 	export let source_code: string;
 	import { AddToast } from '$lib/stores/toast';
 	import { createEventDispatcher } from 'svelte';
+	import { projectName } from '$lib/stores/project';
+	import { get } from 'svelte/store'; 
 
 	const dispatch = createEventDispatcher();
 
@@ -101,10 +103,15 @@
 	 */
 	async function handleSubmit() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName);
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
 			return;
 		}
+		if (!project) {
+            AddToast('No project selected.', 'error');
+            return;
+        }
 
 		const isValid = rules.every(
 			(rule) => rule.tokenSequence.trim() !== '' && rule.lines.every((line) => line.trim() !== '')
@@ -117,6 +124,7 @@
 
 		const apiPayload = {
 			users_id: user_id,
+			project_name: get(projectName),
 			translation_rules: rules.map((rule) => ({
 				sequence: [rule.tokenSequence],
 				translation: rule.lines
@@ -159,10 +167,15 @@
 	 */
 	async function handleTranslate() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName);
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
 			return;
 		}
+		if (!project) {
+            AddToast('No project selected.', 'error');
+            return;
+        }
 
 		console.log('Requesting final translation from backend...');
 
@@ -170,7 +183,7 @@
 			const response = await fetch('http://localhost:8080/api/translating/translate', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id }) // Send only the user_id as required
+				body: JSON.stringify({ users_id: user_id, project_name: project }) 
 			});
 
 			if (!response.ok) {
