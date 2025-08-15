@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Svelvet, Node } from 'svelvet';
 	import type { Writable } from 'svelte/store';
-	import type { NodeType } from '$lib/types';
+	import type { NodeType, NodeConnection } from '$lib/types';
 	import { theme } from '../../stores/theme';
 
 	interface CanvasNode {
