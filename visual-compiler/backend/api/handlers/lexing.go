@@ -19,8 +19,6 @@ type SourceCodeOnlyRequest struct {
 	UsersID bson.ObjectID `json:"users_id" binding:"required"`
 	// Represents the User's source code
 	Code string `json:"source_code" binding:"required"`
-	// User's project name
-	Project_Name string `json:"project_name" binding:"required"`
 }
 
 // Specifies the JSON body request.
@@ -29,16 +27,12 @@ type RulesRequest struct {
 	Pairs []services.TypeRegex `json:"pairs" binding:"required"`
 	// Represents the User's ID from frontend
 	UsersID bson.ObjectID `json:"users_id" binding:"required"`
-	// User's project name
-	Project_Name string `json:"project_name" binding:"required"`
 }
 
 // Specifies the JSON body request for the Users ID.
 type IDRequest struct {
 	// Represents the User's ID from frontend
 	UsersID bson.ObjectID `json:"users_id" binding:"required"`
-	// User's project name
-	Project_Name string `json:"project_name" binding:"required"`
 }
 
 // @Summary Store the user's source code
@@ -65,19 +59,15 @@ func StoreSourceCode(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	filters := bson.M{
-		"users_id":     req.UsersID,
-		"project_name": req.Project_Name,
-	}
+	filters := bson.M{"users_id": req.UsersID}
 	var userexisting bson.M
 
 	err := collection.FindOne(ctx, filters).Decode(&userexisting)
 
 	if err == mongo.ErrNoDocuments {
 		_, err = collection.InsertOne(ctx, bson.M{
-			"code":         req.Code,
-			"users_id":     req.UsersID,
-			"project_name": req.Project_Name,
+			"code":     req.Code,
+			"users_id": req.UsersID,
 		})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
@@ -156,10 +146,7 @@ func CreateRulesFromCode(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{
-		"users_id":     req.UsersID,
-		"project_name": req.Project_Name,
-	}
+	filters := bson.M{"users_id": req.UsersID}
 	update_users_rules := bson.M{
 		"$set": bson.M{
 			"rules": rules,
@@ -205,7 +192,7 @@ func Lexing(c *gin.Context) {
 		Rules []services.TypeRegex `bson:"rules"`
 	}
 
-	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Source code not found"})
 		return
@@ -249,8 +236,6 @@ type readDFARequest struct {
 	Accepting []services.AcceptingState `json:"accepting_states"`
 	// Represents the User's ID from frontend
 	UsersID bson.ObjectID `json:"users_id" binding:"required"`
-	// User's project name
-	Project_Name string `json:"project_name" binding:"required"`
 }
 
 // @Summary Reads DFA from user
@@ -291,10 +276,7 @@ func ReadDFAFromUser(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	filters := bson.M{
-		"users_id":     req.UsersID,
-		"project_name": req.Project_Name,
-	}
+	filters := bson.M{"users_id": req.UsersID}
 
 	var user_existing bson.M
 	err = collection.FindOne(ctx, filters).Decode(&user_existing)
@@ -366,7 +348,7 @@ func TokensFromDFA(c *gin.Context) {
 		DFA  services.Automata `bson:"dfa"`
 	}
 
-	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Source code not found"})
 		return
@@ -378,10 +360,7 @@ func TokensFromDFA(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{
-		"users_id":     req.UsersID,
-		"project_name": req.Project_Name,
-	}
+	filters := bson.M{"users_id": req.UsersID}
 	update_users_lexing := bson.D{
 		bson.E{
 			Key: "$set", Value: bson.M{
@@ -432,7 +411,7 @@ func ConvertDFAToRG(c *gin.Context) {
 		DFA services.Automata `bson:"dfa"`
 	}
 
-	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "DFA not found. Please create one"})
 		return
@@ -444,10 +423,7 @@ func ConvertDFAToRG(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{
-		"users_id":     req.UsersID,
-		"project_name": req.Project_Name,
-	}
+	filters := bson.M{"users_id": req.UsersID}
 	update_users_lexing := bson.M{"$set": bson.M{
 		"rules": rules,
 	}}
@@ -493,7 +469,7 @@ func ConvertRGToNFA(c *gin.Context) {
 		Rules []services.TypeRegex `bson:"rules"`
 	}
 
-	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Regex rules not found. Please create one"})
 		return
@@ -510,7 +486,7 @@ func ConvertRGToNFA(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID}
 	update_users_lexing := bson.M{"$set": bson.M{
 		"nfa": nfa,
 	}}
@@ -556,7 +532,7 @@ func ConvertRGToDFA(c *gin.Context) {
 		Rules []services.TypeRegex `bson:"rules"`
 	}
 
-	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Regex rules not found. Please create one"})
 		return
@@ -573,7 +549,7 @@ func ConvertRGToDFA(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID}
 	update_users_lexing := bson.M{"$set": bson.M{
 		"dfa": dfa,
 	}}
@@ -619,7 +595,7 @@ func ConvertNFAToDFA(c *gin.Context) {
 		NFA services.Automata `bson:"nfa"`
 	}
 
-	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "NFA not found. Please create one"})
 		return
@@ -631,7 +607,7 @@ func ConvertNFAToDFA(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID}
 	update_users_lexing := bson.M{"$set": bson.M{
 		"dfa": dfa,
 	}}

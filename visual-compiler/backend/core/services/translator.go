@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 )
 
 // Struct for the translation rules
 type TranslationRule struct {
-	Sequence    []string `json:"sequence"`
-	Translation []string `json:"translation"`
+	Sequence    []string
+	Translation []string
 }
 
 // Struct to track whether the syntax tree leaves are translated
@@ -79,10 +78,6 @@ func ReadTranslationRules(input []byte) ([]TranslationRule, error) {
 		}
 	}
 
-	sort.SliceStable(translator, func(i, j int) bool {
-		return len(translator[i].Sequence) > len(translator[j].Sequence)
-	})
-
 	return translator, nil
 }
 
@@ -100,6 +95,10 @@ func Translate(tree SyntaxTree, rules []TranslationRule) ([]string, error) {
 	}
 
 	leaf_nodes := LeafNodes(tree.Root)
+
+	if len(leaf_nodes) == 0 {
+		return []string{}, fmt.Errorf("empty syntax tree")
+	}
 
 	var result []string
 	translated := make([]bool, len(leaf_nodes))
@@ -206,7 +205,7 @@ func UseRule(leaves []*TreeNode, sequence []string, translation []string) []stri
 		if i < len(sequence) {
 			token_map[symbol] = append(token_map[symbol], &TokenTracker{
 				Value: leaves[i].Value,
-				Avail: true,
+				Avail: false,
 			})
 		}
 	}
@@ -238,15 +237,15 @@ func SubstituteTemplate(template string, token_map map[string][]*TokenTracker) s
 
 		for strings.Contains(result, placeholder) {
 
-			var replacement string
+			var unused string
 			found := false
 
 			for _, tracker := range value {
 
-				if tracker.Avail {
-					replacement = tracker.Value
+				if !tracker.Avail {
+					unused = tracker.Value
 					if len(value) > 1 {
-						tracker.Avail = false
+						tracker.Avail = true
 					}
 					found = true
 					break
@@ -254,7 +253,7 @@ func SubstituteTemplate(template string, token_map map[string][]*TokenTracker) s
 			}
 
 			if found {
-				result = strings.Replace(result, placeholder, replacement, 1)
+				result = strings.Replace(result, placeholder, unused, 1)
 			} else {
 				break
 			}

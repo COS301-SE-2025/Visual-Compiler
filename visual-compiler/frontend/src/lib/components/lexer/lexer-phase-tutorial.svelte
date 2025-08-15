@@ -403,8 +403,8 @@
 
     .nav-button {
         padding: 0.5rem 1rem;
-        background: #BED2E6;
-        color: 000000;
+        background: #001a6e;
+        color: white;
         border: none;
         border-radius: 4px;
         cursor: pointer;
@@ -648,8 +648,8 @@
     }
 
     :global(html.dark-mode) .nav-button {
-        background: #001A6E;
-        color: #ffffff;
+        background: #003366;
+        color: white;
     }
 
     :global(html.dark-mode) .nav-button:disabled {

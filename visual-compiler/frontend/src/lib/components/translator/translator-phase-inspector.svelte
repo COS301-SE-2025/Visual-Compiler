@@ -137,16 +137,23 @@
 				body: JSON.stringify(apiPayload)
 			});
 
+			const responseText = await response.text();
+
 			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.details || 'Failed to submit translation rules.');
+				let errorDetails = responseText;
+				try {
+					const errorJson = JSON.parse(responseText);
+					errorDetails = errorJson.details || JSON.stringify(errorJson);
+				} catch (e) {
+					// Not JSON, use raw text
+				}
+				throw new Error(errorDetails);
 			}
 
-			const result = await response.json();
-			AddToast('Translation rules submitted successfully!', 'success');
+			AddToast('Translation input received successfully!', 'success');
 			isSubmitted = true;
 		} catch (error: any) {
-			console.error('Rule submission Error:', error);
+			console.error('Translation input Error:', error);
 			AddToast(error.message || 'An unknown error occurred.', 'error');
 		}
 	}
@@ -186,8 +193,6 @@
 			dispatch('translationreceived', result.code);
 		} catch (error: any) {
 			console.error('Translation Error:', error);
-			// Dispatch a new event for the error
-			dispatch('translationerror', error);
 			AddToast(error.message || 'An unknown error occurred during translation.', 'error');
 		}
 	}
@@ -241,9 +246,6 @@
 							bind:value={rule.tokenSequence}
 							placeholder="Enter token sequence"
 						/>
-					</div>
-					<div style="display: flex; justify-content: center; align-items: center; margin: 0.1rem 0;">
-						<span style="font-size: 2rem; color: #888;">&#8595;</span>
 					</div>
 
 					{#each rule.lines as line, lineIndex}
@@ -392,8 +394,7 @@
 		transition: all 0.2s ease;
 	}
 
-	.add-line:hover,
-	.add-rule-btn:hover {
+	.add-line:hover, .add-rule-btn:hover {
 		border-color: #001a6e;
 	}
 	.section-heading {
@@ -578,18 +579,12 @@
 	}
 
 	.submit {
-		background-color: #BED2E6;
-		color: 000000;
-	}
-
-	.submit:hover {
-		background-color: #a8bdd1;
-		transform: translateY(-2px);
+		background-color: #001a6e;
+		color: white;
 	}
 
 	.submit:disabled {
-		background-color: #cccccc;
-		color: #666666;
+		background-color: #1a317d;
 		cursor: default;
 	}
 
@@ -602,9 +597,10 @@
 	}
 
 	/* --- Dark Mode --- */
-	:global(html.dark-mode) .inspector-container {
-		background: #1a2a4a;
-	}
+	:global(html.dark-mode) .inspector-container
+  {
+    background: #1a2a4a;
+  }
 	:global(html.dark-mode) .code-block-wrapper,
 	:global(html.dark-mode) .rule-block {
 		background: #2d3748;
@@ -632,18 +628,8 @@
 		background: transparent;
 	}
 	:global(html.dark-mode) .submit {
-		background-color: #001A6E; 
-		color: #ffffff;            
-	}
-
-	:global(html.dark-mode) .submit:hover {
-		background-color: #002a8e;
-	}
-
-	:global(html.dark-mode) .submit:disabled {
-		background-color: #2d3748;
-		color: #9ca3af;
-		border-color: #4a5568;
+		background-color: #cccccc;
+		color: #041a47;
 	}
 	:global(html.dark-mode) .default-toggle-btn {
 		background-color: #2d3748;

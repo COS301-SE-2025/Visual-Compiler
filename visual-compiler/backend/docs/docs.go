@@ -981,186 +981,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/users/deleteProject": {
-            "delete": {
-                "description": "Deletes a project and all associated fields in every collection in the database",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Delete a project",
-                "parameters": [
-                    {
-                        "description": "Delete Project",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successfully deleted project",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "User not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Failed to delete project",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/users/getProject": {
-            "get": {
-                "description": "Gets all the details about a user's project in every collection in the database",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Get a project",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Name of project",
-                        "name": "project_name",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "User's ID",
-                        "name": "users_id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Retrieved all project details",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input/Conversion failed",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Error in reading from specific collection",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/users/getProjects": {
-            "get": {
-                "description": "Gets all the user's project names",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Get all user's projects",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "User's ID",
-                        "name": "users_id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Retrieved all project names",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "User not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/users/getUsers": {
             "get": {
                 "description": "Gets all users currently in the database",
@@ -1321,245 +1141,13 @@ const docTemplate = `{
                     }
                 }
             }
-        },
-        "/users/save": {
-            "post": {
-                "description": "Saves the project name in the Users table",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Save project name",
-                "parameters": [
-                    {
-                        "description": "Save User's Defined Project Name",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Project added successfully",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Project name already exists",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/users/savePipeline": {
-            "post": {
-                "description": "Saves the project's pipeline to be shown when the user opens that project on the frontend",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Save project pipeline from frontend",
-                "parameters": [
-                    {
-                        "description": "Save User's Pipeline",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.ProjectRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Pipeline saved",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "User not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/users/update": {
-            "patch": {
-                "description": "Update user details. Either updating username, email or both",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Update User",
-                "parameters": [
-                    {
-                        "description": "Edit User",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/handlers.AdminRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "User update successful",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input or ID format",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Unauthorized access",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "User not found",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "409": {
-                        "description": "Username/Email taken",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
-        "handlers.AdminRequest": {
-            "type": "object",
-            "required": [
-                "admin_id",
-                "users_id"
-            ],
-            "properties": {
-                "admin_id": {
-                    "description": "Represents the Admin's ID from frontend",
-                    "type": "string"
-                },
-                "email": {
-                    "description": "Optional: User's new email address",
-                    "type": "string"
-                },
-                "username": {
-                    "description": "Optional: User's new username",
-                    "type": "string"
-                },
-                "users_id": {
-                    "description": "Represents the User's ID from frontend",
-                    "type": "string"
-                }
-            }
-        },
         "handlers.AnalyseUserInputs": {
             "type": "object",
             "required": [
                 "grammar_rules",
-                "project_name",
                 "scope_rules",
                 "type_rules",
                 "users_id"
@@ -1572,10 +1160,6 @@ const docTemplate = `{
                             "$ref": "#/definitions/services.GrammarRules"
                         }
                     ]
-                },
-                "project_name": {
-                    "description": "User's project name",
-                    "type": "string"
                 },
                 "scope_rules": {
                     "description": "Scope rules for the variables/functions scopes",
@@ -1601,10 +1185,10 @@ const docTemplate = `{
         "handlers.DeleteRequest": {
             "type": "object",
             "required": [
-                "users_id"
+                "id"
             ],
             "properties": {
-                "users_id": {
+                "id": {
                     "type": "string",
                     "example": "685df259c1294de5546b045f"
                 }
@@ -1613,14 +1197,9 @@ const docTemplate = `{
         "handlers.IDRequest": {
             "type": "object",
             "required": [
-                "project_name",
                 "users_id"
             ],
             "properties": {
-                "project_name": {
-                    "description": "User's project name",
-                    "type": "string"
-                },
                 "users_id": {
                     "description": "Represents the User's ID from frontend",
                     "type": "string"
@@ -1644,33 +1223,9 @@ const docTemplate = `{
                 }
             }
         },
-        "handlers.ProjectRequest": {
-            "type": "object",
-            "required": [
-                "pipeline",
-                "project_name",
-                "users_id"
-            ],
-            "properties": {
-                "pipeline": {
-                    "description": "User's saved pipeline",
-                    "type": "object",
-                    "additionalProperties": {}
-                },
-                "project_name": {
-                    "description": "User's project name",
-                    "type": "string"
-                },
-                "users_id": {
-                    "description": "Represents the User's ID from frontend",
-                    "type": "string"
-                }
-            }
-        },
         "handlers.ReadGrammerFromUser": {
             "type": "object",
             "required": [
-                "project_name",
                 "rules",
                 "start",
                 "terminals",
@@ -1678,10 +1233,6 @@ const docTemplate = `{
                 "variables"
             ],
             "properties": {
-                "project_name": {
-                    "description": "User's project name",
-                    "type": "string"
-                },
                 "rules": {
                     "description": "User's defined rules",
                     "type": "array",
@@ -1754,7 +1305,6 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "pairs",
-                "project_name",
                 "users_id"
             ],
             "properties": {
@@ -1765,10 +1315,6 @@ const docTemplate = `{
                         "$ref": "#/definitions/services.TypeRegex"
                     }
                 },
-                "project_name": {
-                    "description": "User's project name",
-                    "type": "string"
-                },
                 "users_id": {
                     "description": "Represents the User's ID from frontend",
                     "type": "string"
@@ -1778,15 +1324,10 @@ const docTemplate = `{
         "handlers.SourceCodeOnlyRequest": {
             "type": "object",
             "required": [
-                "project_name",
                 "source_code",
                 "users_id"
             ],
             "properties": {
-                "project_name": {
-                    "description": "User's project name",
-                    "type": "string"
-                },
                 "source_code": {
                     "description": "Represents the User's source code",
                     "type": "string"
@@ -1800,15 +1341,10 @@ const docTemplate = `{
         "handlers.TranslatorRules": {
             "type": "object",
             "required": [
-                "project_name",
                 "translation_rules",
                 "users_id"
             ],
             "properties": {
-                "project_name": {
-                    "description": "User's project name",
-                    "type": "string"
-                },
                 "translation_rules": {
                     "description": "Translation Rules",
                     "type": "array",
@@ -1826,7 +1362,6 @@ const docTemplate = `{
         "handlers.readDFARequest": {
             "type": "object",
             "required": [
-                "project_name",
                 "users_id"
             ],
             "properties": {
@@ -1836,10 +1371,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/services.AcceptingState"
                     }
-                },
-                "project_name": {
-                    "description": "User's project name",
-                    "type": "string"
                 },
                 "start_state": {
                     "description": "Represents the start state of the automata",

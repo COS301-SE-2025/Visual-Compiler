@@ -644,6 +644,10 @@ func Analyse(scope_rules []*ScopeRule, syntax_tree SyntaxTree, rules GrammarRule
 
 	}
 
+	if len(symbol_table_artefact.SymbolScopes) == 0 {
+		return SymbolTableArtefact{}, SyntaxTree{},fmt.Errorf("No symbols found")
+	}
+
 	return *symbol_table_artefact, syntax_tree, nil
 }
 
