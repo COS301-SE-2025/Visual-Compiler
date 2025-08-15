@@ -108,6 +108,28 @@
 		translator: false
 	};
 
+	// --- PHYSICAL CONNECTION TRACKING ---
+	let physicalConnections: NodeConnection[] = [];
+
+	// Handle physical connection changes from canvas
+	function handleConnectionChange(connections: NodeConnection[]) {
+		physicalConnections = connections;
+		console.log('Physical connections updated:', physicalConnections);
+	}
+
+	// Check if there's a physical connection between two node types
+	function hasPhysicalConnection(sourceType: NodeType, targetType: NodeType): boolean {
+		return physicalConnections.some(conn => {
+			const sourceNode = findNodeByType(sourceType);
+			const targetNode = findNodeByType(targetType);
+			
+			if (!sourceNode || !targetNode) return false;
+			
+			return (conn.sourceNodeId === sourceNode.id && conn.targetNodeId === targetNode.id) ||
+			       (conn.sourceNodeId === targetNode.id && conn.targetNodeId === sourceNode.id);
+		});
+	}
+
 	// --- CONNECTION VALIDATION FUNCTIONS ---
 	function findNodeByType(nodeType: NodeType): CanvasNode | null {
 		const currentNodes = get(nodes);
@@ -133,6 +155,11 @@
 					AddToast('Source Code must be submitted before proceeding to Lexer.', 'error');
 					return false;
 				}
+				// Check for physical connection between source and lexer
+				if (!hasPhysicalConnection('source', 'lexer')) {
+					AddToast('Please connect the Source Code node to the Lexer node with an edge before proceeding.', 'error');
+					return false;
+				}
 				return true;
 			
 			case 'parser':
@@ -153,9 +180,19 @@
 					AddToast('Please add a Lexer node and complete lexical analysis before accessing the Parser.', 'error');
 					return false;
 				}
+				// Check for physical connection between source and lexer
+				if (!hasPhysicalConnection('source', 'lexer')) {
+					AddToast('Please connect the Source Code node to the Lexer node with an edge first.', 'error');
+					return false;
+				}
 				// Check if lexer phase has been completed
 				if (!phase_completion_status.lexer) {
 					AddToast('Please complete the lexical analysis phase before proceeding to parsing.', 'error');
+					return false;
+				}
+				// Check for physical connection between lexer and parser
+				if (!hasPhysicalConnection('lexer', 'parser')) {
+					AddToast('Please connect the Lexer node to the Parser node with an edge before proceeding.', 'error');
 					return false;
 				}
 				return true;
@@ -178,6 +215,11 @@
 					AddToast('Please add a Lexer node and complete lexical analysis before accessing the Analyser.', 'error');
 					return false;
 				}
+				// Check for physical connection between source and lexer
+				if (!hasPhysicalConnection('source', 'lexer')) {
+					AddToast('Please connect the Source Code node to the Lexer node with an edge first.', 'error');
+					return false;
+				}
 				// Check if lexer phase has been completed
 				if (!phase_completion_status.lexer) {
 					AddToast('Please complete the lexical analysis phase before accessing the Analyser.', 'error');
@@ -189,9 +231,19 @@
 					AddToast('Please add a Parser node and complete parsing before accessing the Analyser.', 'error');
 					return false;
 				}
+				// Check for physical connection between lexer and parser
+				if (!hasPhysicalConnection('lexer', 'parser')) {
+					AddToast('Please connect the Lexer node to the Parser node with an edge first.', 'error');
+					return false;
+				}
 				// Check if parser phase has been completed
 				if (!phase_completion_status.parser) {
 					AddToast('Please complete the parsing phase before proceeding to analysis.', 'error');
+					return false;
+				}
+				// Check for physical connection between parser and analyser
+				if (!hasPhysicalConnection('parser', 'analyser')) {
+					AddToast('Please connect the Parser node to the Analyser node with an edge before proceeding.', 'error');
 					return false;
 				}
 				return true;
@@ -214,6 +266,11 @@
 					AddToast('Please add a Lexer node and complete lexical analysis before accessing the Translator.', 'error');
 					return false;
 				}
+				// Check for physical connection between source and lexer
+				if (!hasPhysicalConnection('source', 'lexer')) {
+					AddToast('Please connect the Source Code node to the Lexer node with an edge first.', 'error');
+					return false;
+				}
 				// Check if lexer phase has been completed
 				if (!phase_completion_status.lexer) {
 					AddToast('Please complete the lexical analysis phase before accessing the Translator.', 'error');
@@ -223,6 +280,11 @@
 				const parserNodeForTranslator = findNodeByType('parser');
 				if (!parserNodeForTranslator) {
 					AddToast('Please add a Parser node and complete parsing before accessing the Translator.', 'error');
+					return false;
+				}
+				// Check for physical connection between lexer and parser
+				if (!hasPhysicalConnection('lexer', 'parser')) {
+					AddToast('Please connect the Lexer node to the Parser node with an edge first.', 'error');
 					return false;
 				}
 				// Check if parser phase has been completed
@@ -236,9 +298,19 @@
 					AddToast('Please add an Analyser node and complete analysis before accessing the Translator.', 'error');
 					return false;
 				}
+				// Check for physical connection between parser and analyser
+				if (!hasPhysicalConnection('parser', 'analyser')) {
+					AddToast('Please connect the Parser node to the Analyser node with an edge first.', 'error');
+					return false;
+				}
 				// Check if analyser phase has been completed
 				if (!phase_completion_status.analyser) {
 					AddToast('Please complete the analysis phase before proceeding to translation.', 'error');
+					return false;
+				}
+				// Check for physical connection between analyser and translator
+				if (!hasPhysicalConnection('analyser', 'translator')) {
+					AddToast('Please connect the Analyser node to the Translator node with an edge before proceeding.', 'error');
 					return false;
 				}
 				return true;
@@ -445,7 +517,7 @@
 				</div>
 			</div>
 		{/if}
-		<DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} />
+		<DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} onConnectionChange={handleConnectionChange} />
 
 		{#if show_drag_tip}
 			<div class="help-tip">

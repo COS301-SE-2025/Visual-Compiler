@@ -27,8 +27,10 @@ export interface SymbolTable {
 
 export interface NodeConnection {
     id: string;
-    source: string;
-    target: string;
+    sourceNodeId: string;
+    targetNodeId: string;
+    sourceType: NodeType;
+    targetType: NodeType;
     sourceAnchor?: string;
     targetAnchor?: string;
 }
