@@ -435,8 +435,8 @@
     .table-header {
         display: grid;
         grid-template-columns: 90px 1fr;
-        background: #001a6e;
-        color: white;
+        background: #BED2E6;
+        color: #000000;
         padding: 0.5rem 0.75rem;
         font-weight: 500;
         font-size: 0.9rem;
@@ -514,8 +514,8 @@
     }
 
     .dfa-nfa-table th {
-        background: #e6edfa;
-        color: #001a6e;
+        background: #BED2E6;
+        color: #000000;
     }
 
     .accept {
@@ -668,8 +668,9 @@
     }
 
     :global(html.dark-mode) .table-header {
-        background: #003366;
+        background: #001A6E;
         border-bottom-color: #4a5568;
+        color: #ffffff;
     }
 
     :global(html.dark-mode) .table-row {
@@ -704,8 +705,8 @@
     }
 
     :global(html.dark-mode) .dfa-nfa-table th {
-        background: #003366; 
-        color: #f0f0f0;
+        background: #001A6E; 
+        color: #ffffff;
     }
 
     :global(html.dark-mode) .accept {

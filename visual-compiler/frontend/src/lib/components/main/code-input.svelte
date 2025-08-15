@@ -3,6 +3,8 @@
 	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import { tick } from 'svelte';
 	import { onMount } from 'svelte';
+	import { projectName } from '$lib/stores/project';
+	import { get } from 'svelte/store';  
 
 	let code_text = '';
 	
@@ -67,8 +69,13 @@
 	async function submitCode() {
 		if (!code_text.trim()) return;
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName);
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 
@@ -78,6 +85,7 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					users_id: user_id,
+					project_name:project,
 					source_code: code_text
 				})
 			});

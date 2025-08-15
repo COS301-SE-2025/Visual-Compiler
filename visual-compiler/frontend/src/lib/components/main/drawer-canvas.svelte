@@ -52,7 +52,7 @@
 					useDefaults
 					bgColor={$theme === 'dark' ? '#001A6E' : '#BED2E6'}
 					textColor={$theme === 'dark' ? '#ffffff' : '#000000'}
-					borderColor={$theme === 'dark' ? '#374151' : '#FFFDD0'}
+					borderColor={$theme === 'dark' ? '#374151' : '#FFFFFF'}
 					editable={false}
 					on:nodeClicked={() => onNodeClick(node.type)}
 				/>
@@ -67,7 +67,7 @@
 		--dot-color: transparent;
 		--node-color: #BED2E6;
 		--node-text-color: #000000;
-		--node-border-color: #FFFDD0;
+		--node-border-color: #FFFFFF;
 		--node-selection-color: #3b82f6;
 	}
 

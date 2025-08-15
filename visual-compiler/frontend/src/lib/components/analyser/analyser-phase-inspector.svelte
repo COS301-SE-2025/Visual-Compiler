@@ -3,7 +3,8 @@
     import { AddToast } from '$lib/stores/toast';
     import { createEventDispatcher } from 'svelte';
     import type { SymbolTable } from '$lib/types';
-    
+    import { projectName } from '$lib/stores/project';
+	import { get } from 'svelte/store'; 
 
     const dispatch = createEventDispatcher();
 
@@ -234,8 +235,13 @@
     async function handleGenerate() {
     try {
         const user_id = localStorage.getItem('user_id');
-        if (!user_id) {
-            AddToast('User not logged in. Please log in to save your work.', 'error');
+		const project = get(projectName);
+		if (!user_id) {
+			AddToast('User not logged in.', 'error');
+			return;
+		}
+		if (!project) {
+            AddToast('No project selected.', 'error');
             return;
         }
         is_loading = true;
@@ -244,7 +250,8 @@
             users_id: user_id,
             scope_rules: submitted_scope_rules,
             grammar_rules: submitted_grammar_rules,
-            type_rules: submitted_type_rules
+            type_rules: submitted_type_rules,
+            project_name: project
         };
 
 
