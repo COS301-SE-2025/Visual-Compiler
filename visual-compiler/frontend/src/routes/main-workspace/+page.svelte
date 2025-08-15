@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { writable } from 'svelte/store';
+	import { writable, get } from 'svelte/store';
 	import type { NodeType, Token, SyntaxTree } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
+	import { projectName } from '$lib/stores/project'; // Import the new store
 	import NavBar from '$lib/components/main/nav-bar.svelte';
 	import Toolbox from '$lib/components/main/toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
+	import WelcomeOverlay from '$lib/components/project-hub/project-hub.svelte';
 
 	let LexerPhaseTutorial: any;
 	let LexerPhaseInspector: any;
@@ -22,28 +24,63 @@
 	let TranslatorPhaseInspector: any;
 	let TranslatorArtifactViewer: any;
 
+	let showWelcomeOverlay = false;
+
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
+
+	// Subscribe to the project name store
+	let currentProjectName = '';
+	projectName.subscribe((value) => {
+		currentProjectName = value;
+	});
 
 	onMount(async () => {
 		LexerPhaseTutorial = (await import('$lib/components/lexer/lexer-phase-tutorial.svelte')).default;
 		LexerPhaseInspector = (await import('$lib/components/lexer/phase-inspector.svelte')).default;
-		LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte')).default;
-		ParserPhaseTutorial = (await import('$lib/components/parser/parser-phase-tutorial.svelte')).default;
+		LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte'))
+			.default;
+		ParserPhaseTutorial = (await import('$lib/components/parser/parser-phase-tutorial.svelte'))
+			.default;
 		ParserPhaseInspector = (await import('$lib/components/parser/parsing-input.svelte')).default;
-		ParserArtifactViewer = (await import('$lib/components/parser/parser-artifact-viewer.svelte')).default;
-		AnalyserPhaseTutorial = (await import('$lib/components/analyser/analyser-phase-tutorial.svelte')).default;
-		AnalyserPhaseInspector = (await import('$lib/components/analyser/analyser-phase-inspector.svelte')).default;
-		AnalyserArtifactViewer = (await import('$lib/components/analyser/analyser-artifact-viewer.svelte')).default;
-		TranslatorPhaseTutorial = (await import('$lib/components/translator/translator-phase-tutorial.svelte')).default;
-		TranslatorPhaseInspector = (await import('$lib/components/translator/translator-phase-inspector.svelte')).default;
-		TranslatorArtifactViewer = (await import('$lib/components/translator/translator-artifact-viewer.svelte')).default;
+		ParserArtifactViewer = (
+			await import('$lib/components/parser/parser-artifact-viewer.svelte')
+		).default;
+		AnalyserPhaseTutorial = (
+			await import('$lib/components/analyser/analyser-phase-tutorial.svelte')
+		).default;
+		AnalyserPhaseInspector = (
+			await import('$lib/components/analyser/analyser-phase-inspector.svelte')
+		).default;
+		AnalyserArtifactViewer = (
+			await import('$lib/components/analyser/analyser-artifact-viewer.svelte')
+		).default;
+		TranslatorPhaseTutorial = (
+			await import('$lib/components/translator/translator-phase-tutorial.svelte')
+		).default;
+		TranslatorPhaseInspector = (
+			await import('$lib/components/translator/translator-phase-inspector.svelte')
+		).default;
+		TranslatorArtifactViewer = (
+			await import('$lib/components/translator/translator-artifact-viewer.svelte')
+		).default;
 
 		document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
 		if (!localStorage.getItem('hasSeenDragTip')) {
 			show_drag_tip = true;
 		}
+
+		if (sessionStorage.getItem('showWelcomeOverlay') === 'true') {
+			showWelcomeOverlay = true; // Trigger the overlay to show.
+
+			// // Important: Remove the flag so the overlay doesn't reappear on refresh.
+			// sessionStorage.removeItem('showWelcomeOverlay');
+		}
 	});
+
+	function handleWelcomeClose() {
+		showWelcomeOverlay = false;
+	}
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -59,6 +96,23 @@
 	let source_code = '';
 	let show_tokens = false;
 	let syntaxTreeData: SyntaxTree | null = null;
+	let translationError: any = null;
+	let savedProjectData: object | null = null;
+
+	// --- SAVE PROJECT FUNCTIONALITY ---
+	function saveProject() {
+		const canvasNodes = get(nodes);
+		const projectData = {
+			projectName: currentProjectName,
+			nodes: canvasNodes
+		};
+
+		savedProjectData = projectData;
+		// For now, we'll just log it. Later, you can send this to your backend.
+		console.log('Project Saved:', JSON.stringify(savedProjectData, null, 2));
+
+		AddToast(`Project "${currentProjectName}" saved!`, 'success');
+	}
 
 	// --- TOOLTIPS AND LABELS ---
 	const tooltips: Record<NodeType, string> = {
@@ -107,7 +161,9 @@
 	}
 
 	function handlePhaseSelect(type: NodeType) {
-		syntaxTreeData = null; // Reset tree on new phase selection
+		syntaxTreeData = null;
+		parsingError = null;
+		translationError = null;
 		if (type === 'source') {
 			show_code_input = true;
 		} else {
@@ -120,11 +176,33 @@
 		}
 	}
 
-	let showSymbolTable = false;
+	function handleTranslationError(event: CustomEvent) {
+		translationError = event.detail;
+		translated_code = [];
+	}
 
-	 function handleReset() {
-    showSymbolTable = false;
-  }
+	let show_symbol_table = false;
+	let symbol_table: Symbol[] = [];
+	let analyser_error = '';
+	let analyser_error_details = '';
+
+	function handleReset() {
+		show_symbol_table = false;
+		symbol_table = [];
+		analyser_error = '';
+		analyser_error_details = '';
+	}
+
+	function handleSymbolGeneration(data: {
+		symbol_table: Symbol[];
+		analyser_error: string;
+		analyser_error_details: string;
+	}) {
+		symbol_table = data.symbol_table;
+		show_symbol_table = true;
+		analyser_error = data.analyser_error;
+		analyser_error_details = data.analyser_error_details;
+	}
 
 	function returnToCanvas() {
 		selected_phase = null;
@@ -145,25 +223,65 @@
 
 	function handleTreeReceived(event: CustomEvent<SyntaxTree>) {
 		syntaxTreeData = event.detail;
+		artifactData = event.detail;
 	}
 
 	let tokens: Token[] = [];
 	let unexpected_tokens: string[] = [];
+	let translated_code: string[] = [];
+
+	function handleTranslationReceived(event: CustomEvent<string[]>) {
+		translated_code = event.detail;
+	}
+
+	let artifactData: SyntaxTree | null = null;
+	let parsingError: any = null;
+
+	function handleParsingError(event: CustomEvent) {
+		parsingError = event.detail;
+		syntaxTreeData = null;
+	}
 </script>
 
 <NavBar />
 
 <div class="main">
-	<!-- svelte-ignore component_name_lowercase -->
-	<!-- svelte-ignore element_invalid_self_closing_tag -->
+	<WelcomeOverlay bind:show={showWelcomeOverlay} on:close={handleWelcomeClose} />
+
 	<Toolbox {handleCreateNode} {tooltips} />
 	<div class="workspace" bind:this={workspace_el} tabindex="-1">
+		{#if currentProjectName}
+			<div class="project-header">
+				<div class="project-info-bar">
+					<span class="project-name">{currentProjectName}</span>
+					<div class="separator" />
+					<button class="save-button" on:click={saveProject} aria-label="Save Project" title="Save Project">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+							<polyline points="17 21 17 13 7 13 7 21" />
+							<polyline points="7 3 7 8 15 8" />
+						</svg>
+					</button>
+				</div>
+			</div>
+		{/if}
 		<DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} />
 
 		{#if show_drag_tip}
 			<div class="help-tip">
 				<span
-					><b>Pro-Tip:</b> For the smoothest experience, click to select a node before dragging it.</span
+					><b>Pro-Tip:</b> For the smoothest experience, click to select a node before dragging
+					it.</span
 				>
 				<button on:click={dismissDragTip} class="dismiss-tip-btn" aria-label="Dismiss tip">
 					<svg
@@ -176,8 +294,8 @@
 						stroke-width="2.5"
 						stroke-linecap="round"
 						stroke-linejoin="round"
-						><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"
-						></line></svg
+						><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18"
+						/></svg
 					>
 				</button>
 			</div>
@@ -185,56 +303,72 @@
 	</div>
 
 	{#if selected_phase}
-	<div class="analysis-overlay">
-		<div class="analysis-view">
-			<div class="three-column-layout">
-				{#if selected_phase === 'lexer' && LexerPhaseTutorial}
-					<svelte:component this={LexerPhaseTutorial} />
-					<svelte:component
-						this={LexerPhaseInspector}
-						{source_code}
-						onGenerateTokens={handleTokenGeneration}
-					/>
-					<svelte:component
-						this={LexerArtifactViewer}
-						phase={selected_phase}
-						{tokens}
-						{unexpected_tokens}
-						{show_tokens}
-					/>
-				{/if}
+		<div class="analysis-overlay">
+			<div class="analysis-view">
+				<div class="three-column-layout">
+					{#if selected_phase === 'lexer' && LexerPhaseTutorial}
+						<svelte:component this={LexerPhaseTutorial} />
+						<svelte:component
+							this={LexerPhaseInspector}
+							{source_code}
+							onGenerateTokens={handleTokenGeneration}
+						/>
+						<svelte:component
+							this={LexerArtifactViewer}
+							phase={selected_phase}
+							{tokens}
+							{unexpected_tokens}
+							{show_tokens}
+						/>
+					{/if}
 
-				{#if selected_phase === 'parser' && ParserPhaseTutorial}
-					<svelte:component this={ParserPhaseTutorial} />
-					<svelte:component
-						this={ParserPhaseInspector}
-						{source_code}
-						on:treereceived={handleTreeReceived}
-					/>
-					<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} />
-				{/if}
+					{#if selected_phase === 'parser' && ParserPhaseTutorial}
+						<svelte:component this={ParserPhaseTutorial} />
+						<svelte:component
+							this={ParserPhaseInspector}
+							{source_code}
+							on:treereceived={handleTreeReceived}
+							on:parsingerror={handleParsingError}
+						/>
+						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} {parsingError} />
+					{/if}
 
-				{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}
-					<svelte:component this={AnalyserPhaseTutorial} />
-					 <AnalyserPhaseInspector
-						bind:showSymbolTable
-						on:generate={() => showSymbolTable = true}
-						on:reset={handleReset}
-					/>
-					<svelte:component this={AnalyserArtifactViewer} {showSymbolTable} on:close={() => showSymbolTable = false} />
-				{/if}
+					{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}
+						<svelte:component this={AnalyserPhaseTutorial} />
+						<svelte:component
+							this={AnalyserPhaseInspector}
+							{source_code}
+							onGenerateSymbolTable={handleSymbolGeneration}
+						/>
+						<svelte:component
+							this={AnalyserArtifactViewer}
+							phase={selected_phase}
+							{symbol_table}
+							{analyser_error}
+							{analyser_error_details}
+							{show_symbol_table}
+						/>
+					{/if}
 
-				{#if selected_phase === 'translator' && TranslatorPhaseTutorial}
-					<svelte:component this={TranslatorPhaseTutorial} />
-					<svelte:component this={TranslatorPhaseInspector} />
-					<svelte:component this={TranslatorArtifactViewer} />
-				{/if}
-
+					{#if selected_phase === 'translator' && TranslatorPhaseTutorial}
+						<svelte:component this={TranslatorPhaseTutorial} />
+						<svelte:component
+							this={TranslatorPhaseInspector}
+							{source_code}
+							on:translationreceived={handleTranslationReceived}
+							on:translationerror={handleTranslationError}
+						/>
+						<svelte:component
+							this={TranslatorArtifactViewer}
+							{translated_code}
+							{translationError}
+						/>
+					{/if}
+				</div>
+				<button on:click={returnToCanvas} class="return-button"> ← Return to Canvas </button>
 			</div>
-			<button on:click={returnToCanvas} class="return-button"> ← Return to Canvas </button>
 		</div>
-	</div>
-{/if}
+	{/if}
 
 	{#if show_code_input}
 		<div class="code-input-overlay">
@@ -256,7 +390,7 @@
 	:global(*) {
 		box-sizing: border-box;
 	}
-	
+
 	.main {
 		display: flex;
 		height: calc(100vh - 3.5rem);
@@ -272,6 +406,47 @@
 		flex-direction: column;
 		position: relative;
 		outline: none;
+	}
+	.project-header {
+		position: absolute;
+		top: 1rem;
+		left: 1rem;
+		z-index: 10;
+	}
+	.project-info-bar {
+		display: flex;
+		align-items: center;
+		background-color: rgba(255, 255, 255, 0.9);
+		color: #041a47;
+		padding: 0.25rem 0.25rem 0.25rem 1rem;
+		border-radius: 6px;
+		font-weight: 600;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	}
+	.project-name {
+		padding-right: 0.75rem;
+	}
+	.separator {
+		width: 1px;
+		height: 20px;
+		background-color: #d1d5db;
+		margin-right: 0.5rem;
+	}
+	.save-button {
+		background-color: transparent;
+		color: #041a47;
+		border: none;
+		border-radius: 50%;
+		width: 32px;
+		height: 32px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: background-color 0.2s ease;
+	}
+	.save-button:hover {
+		background-color: #eef2f7;
 	}
 	.analysis-overlay {
 		position: fixed;
@@ -307,8 +482,8 @@
 		bottom: 20px;
 		right: 20px;
 		padding: 0.5rem 1rem;
-		background: #001a6e;
-		color: white;
+		background: #BED2E6;
+		color: 000000;
 		border: none;
 		border-radius: 4px;
 		cursor: pointer;
@@ -317,7 +492,7 @@
 		margin-bottom: 1rem;
 	}
 	.return-button:hover {
-		background: #074799;
+		background: #a8bdd1;
 	}
 	.code-input-overlay {
 		position: fixed;
@@ -337,7 +512,7 @@
 		width: 100%;
 		position: relative;
 	}
-	
+
 	.close-btn {
 		position: absolute;
 		top: 1rem;
@@ -385,6 +560,19 @@
 	:global(html.dark-mode) .main {
 		background-color: #161823;
 	}
+	:global(html.dark-mode) .project-info-bar {
+		background-color: rgba(26, 32, 44, 0.9);
+		color: #e2e8f0;
+	}
+	:global(html.dark-mode) .separator {
+		background-color: #4a5568;
+	}
+	:global(html.dark-mode) .save-button {
+		color: #e2e8f0;
+	}
+	:global(html.dark-mode) .save-button:hover {
+		background-color: #2d3748;
+	}
 	:global(html.dark-mode) .analysis-overlay {
 		background: rgba(10, 26, 58, 0.95);
 	}
@@ -404,12 +592,12 @@
 		color: #f0f0f0;
 	}
 	:global(html.dark-mode) .return-button {
-		background: #1a3a7a;
+		background: #001A6E;
 		margin-right: 1rem;
-		color: #cccccc;
+		color: #ffffff;
 	}
 	:global(html.dark-mode) .return-button:hover {
-		background: #2a4a8a;
+		background: #002a8e;
 		margin-right: 1rem;
 	}
 </style>
