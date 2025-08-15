@@ -67,7 +67,7 @@ func TestRegister_ExistingEmail(t *testing.T) {
 
 	user_data := map[string]string{
 		"username": "tiaharripersad",
-		"email":    "t@gmail.com",
+		"email":    "tia@gmail.com",
 		"password": "tia1234$$",
 	}
 

@@ -10,6 +10,8 @@ import (
 	"testing"
 )
 
+var project_temp_name string
+
 func loginUser(t *testing.T) {
 	//server := startServer(t)
 	//defer closeServer(server)
@@ -50,6 +52,7 @@ func loginUser(t *testing.T) {
 
 		test_user_id = body_array["id"]
 		project_name = "project1"
+		project_temp_name = "project_temp"
 	}
 }
 
@@ -61,7 +64,7 @@ func TestSaveProjectName_Success(t *testing.T) {
 
 	user_data := map[string]string{
 		"users_id":     test_user_id,
-		"project_name": project_name,
+		"project_name": project_temp_name,
 	}
 
 	req, err := json.Marshal(user_data)
@@ -148,7 +151,7 @@ func TestSaveProjectPipeline_Success(t *testing.T) {
 
 	user_data := map[string]any{
 		"users_id":     test_user_id,
-		"project_name": project_name,
+		"project_name": project_temp_name,
 		"pipeline": map[string]any{
 			"node-1": "source_code",
 			"node-2": "lexer",
@@ -193,7 +196,7 @@ func TestDeleteProject_Success(t *testing.T) {
 
 	user_data := map[string]string{
 		"users_id":     test_user_id,
-		"project_name": project_name,
+		"project_name": project_temp_name,
 	}
 
 	req, err := json.Marshal(user_data)
@@ -243,7 +246,7 @@ func TestSaveProjectPipeline_UserNotFound(t *testing.T) {
 
 	user_data := map[string]any{
 		"users_id":     test_user_id,
-		"project_name": project_name,
+		"project_name": project_temp_name,
 		"pipeline": map[string]any{
 			"node-1": "source_code",
 			"node-2": "lexer",
@@ -283,7 +286,7 @@ func TestDeleteProject_UserNotFound(t *testing.T) {
 
 	user_data := map[string]string{
 		"users_id":     "123e45df6f7b89f50014505a",
-		"project_name": project_name,
+		"project_name": project_temp_name,
 	}
 
 	req, err := json.Marshal(user_data)
@@ -366,7 +369,6 @@ func TestGetProject_Success(t *testing.T) {
 	project_url := "http://localhost:8080/api/users/getProject"
 	url_param := url.Values{}
 	url_param.Add("users_id", test_user_id)
-	fmt.Printf(test_user_id)
 	url_param.Add("project_name", "test_project")
 	user_url := fmt.Sprintf("%s?%s", project_url, url_param.Encode())
 
