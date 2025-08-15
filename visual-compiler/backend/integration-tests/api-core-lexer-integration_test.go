@@ -54,6 +54,18 @@ func startServerCore(t *testing.T) *http.Server {
 		parser_router.HandleContext(c)
 	})
 
+	analyser_router := routers.SetupAnalysingRouter()
+	router.Any("/api/analysing/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		analyser_router.HandleContext(c)
+	})
+
+	translator_router := routers.SetupTranslatorRouter()
+	router.Any("/api/translating/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		translator_router.HandleContext(c)
+	})
+
 	server := &http.Server{
 		Addr:    ":8080",
 		Handler: router,
