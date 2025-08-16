@@ -9,11 +9,17 @@
 
 	export let show = false;
 
+	// Watch for changes to the 'show' prop and refresh projects when modal opens
+	$: if (show) {
+		fetchProjects();
+	}
+
 	let userName = '';
 	let showProjectNamePrompt = false;
 	let showDeleteConfirmPrompt = false; // State for the delete confirmation
 	let projectToDelete = ''; // State to hold the name of the project to be deleted
 	let hasExistingProject = false; // Track if a project is already loaded
+	let currentProjectName = ''; // Track the current project name
 
 	interface Project {
 		name: string;
@@ -149,13 +155,49 @@
 	 * @function confirmDelete
 	 * @description Proceeds with the deletion after user confirmation.
 	 */
-	function confirmDelete() {
+	async function confirmDelete() {
 		console.log(`Confirmed deletion of project: ${projectToDelete}`);
-		// This is where you will later add the logic to call your backend API to delete the project.
-		// For now, we'll also filter it from the UI list as a visual confirmation.
-		recentProjects = recentProjects.filter((p) => p.name !== projectToDelete);
-		showDeleteConfirmPrompt = false;
-		projectToDelete = '';
+		const userId = localStorage.getItem('user_id');
+		if (!userId) return;
+
+		try {
+			const response = await fetch('http://localhost:8080/api/users/deleteProject', {
+				method: 'DELETE',
+				headers: {
+					'accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					project_name: projectToDelete,
+					users_id: userId
+				})
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			console.log('Project deleted successfully:', data);
+
+			// Remove from UI list after successful deletion
+			recentProjects = recentProjects.filter((p) => p.name !== projectToDelete);
+			
+			// If the deleted project is the currently loaded project, clear it
+			if (projectToDelete === currentProjectName) {
+				projectName.set('');
+				currentProjectName = '';
+				hasExistingProject = false;
+			}
+			
+			showDeleteConfirmPrompt = false;
+			projectToDelete = '';
+		} catch (error) {
+			console.error('Error deleting project:', error);
+			// Still close the modal even if delete fails
+			showDeleteConfirmPrompt = false;
+			projectToDelete = '';
+		}
 	}
 
 	onMount(() => {
@@ -165,6 +207,7 @@
 		// Check if there's already a project loaded
 		const unsubscribe = projectName.subscribe(value => {
 			hasExistingProject = value.trim() !== '';
+			currentProjectName = value;
 		});
 		
 		fetchProjects(); // Fetch projects when component mounts
