@@ -2,7 +2,7 @@
 	import { AddToast } from '$lib/stores/toast';
 	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import { tick } from 'svelte';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store';  
 
@@ -30,8 +30,8 @@
 		if (!code_text) code_text = value; // Auto fill input if empty
 	});
 
-	onMount(() => {
-		return () => unsubscribe(); // clean up store subscription
+	onDestroy(() => {
+		unsubscribe(); // clean up store subscription
 	});
 
 	function handleDefaultInput() {

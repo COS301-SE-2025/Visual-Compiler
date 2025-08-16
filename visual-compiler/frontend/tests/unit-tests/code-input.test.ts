@@ -9,6 +9,28 @@ vi.mock('$lib/stores/toast', () => ({
 }));
 import { AddToast } from '$lib/stores/toast';
 
+// Mock the project store
+vi.mock('$lib/stores/project', () => ({
+	projectName: {
+		subscribe: vi.fn((callback) => {
+			callback('test-project');
+			return vi.fn(); // Return the unsubscribe function directly
+		})
+	}
+}));
+
+// Mock the source code store
+vi.mock('$lib/stores/source-code', () => ({
+	confirmedSourceCode: {
+		set: vi.fn(),
+		update: vi.fn(),
+		subscribe: vi.fn((callback) => {
+			callback('');
+			return vi.fn(); // Return the unsubscribe function directly
+		})
+	}
+}));
+
 // Mock the global fetch function
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -84,7 +106,10 @@ describe('CodeInput Component', () => {
 		const test_code = 'let x = 10';
 
 		// Mock a successful fetch response
-		mockFetch.mockResolvedValue({ ok: true });
+		const mockResponse = {
+			ok: true
+		};
+		mockFetch.mockResolvedValue(mockResponse);
 
 		render(CodeInput, { onCodeSubmitted: mockHandler });
 
