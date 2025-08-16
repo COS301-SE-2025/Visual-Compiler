@@ -996,6 +996,15 @@
 		<pre class="source-display">{source_code || 'no source code available'}</pre>
 	</div>
 
+	<div class="instructions-section">
+		<div class="instructions-content">
+			<h4 class="instructions-header">Instructions</h4>
+			<p class="instructions-text">
+				Mock Data
+			</p>
+		</div>
+	</div>
+
 	<div class="automaton-btn-row">
 		<button
 			class="automaton-btn {selectedType === 'REGEX' ? 'selected' : ''}"
@@ -1447,6 +1456,34 @@
 		margin-bottom: 2rem;
 	}
 
+	.instructions-section {
+		margin: 1.5rem 0 2rem 0;
+		background: #f8f9fa;
+		border-radius: 8px;
+		border-left: 4px solid #007acc;
+		transition: background-color 0.3s ease, border-color 0.3s ease;
+	}
+
+	.instructions-content {
+		padding: 1.25rem 1.5rem;
+	}
+
+	.instructions-header {
+		margin: 0 0 0.75rem 0;
+		font-size: 1rem;
+		font-weight: 600;
+		color: #333;
+		transition: color 0.3s ease;
+	}
+
+	.instructions-text {
+		margin: 0;
+		font-size: 0.9rem;
+		line-height: 1.5;
+		color: #555;
+		transition: color 0.3s ease;
+	}
+
 	.source-display {
 		background: #f5f5f5;
 		padding: 1rem;
@@ -1881,6 +1918,19 @@
 	:global(html.dark-mode) .lexor-heading-h1,
 	:global(html.dark-mode) .automaton-section label {
 		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .instructions-section {
+		background: #2d3748;
+		border-left-color: #4da9ff;
+	}
+
+	:global(html.dark-mode) .instructions-header {
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .instructions-text {
+		color: #cbd5e0;
 	}
 
 	:global(html.dark-mode) .source-display,
