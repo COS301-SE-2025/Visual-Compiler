@@ -14,7 +14,7 @@ vi.mock('$lib/stores/project', () => ({
 	projectName: {
 		subscribe: vi.fn((callback) => {
 			callback('test-project');
-			return { unsubscribe: vi.fn() };
+			return vi.fn(); // Return the unsubscribe function directly
 		})
 	}
 }));
@@ -26,7 +26,7 @@ vi.mock('$lib/stores/source-code', () => ({
 		update: vi.fn(),
 		subscribe: vi.fn((callback) => {
 			callback('');
-			return { unsubscribe: vi.fn() };
+			return vi.fn(); // Return the unsubscribe function directly
 		})
 	}
 }));
