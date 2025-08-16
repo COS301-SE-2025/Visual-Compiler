@@ -11,6 +11,16 @@ vi.mock('$lib/stores/toast', () => ({
 }));
 import { AddToast } from '$lib/stores/toast';
 
+// Mock the project store
+vi.mock('$lib/stores/project', () => ({
+	projectName: {
+		subscribe: vi.fn((callback) => {
+			callback('test-project');
+			return { unsubscribe: vi.fn() };
+		})
+	}
+}));
+
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
@@ -30,6 +40,12 @@ describe('ParsingInput Component', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		window.localStorage.setItem('user_id', 'test-user-parser-123'); // Simulate logged-in user
+		
+		// Set up default mock for fetch (for fetchTokens call in onMount)
+		mockFetch.mockResolvedValue({
+			ok: false,
+			json: async () => ({ error: 'No tokens found' })
+		});
 	});
 
 	// TestInitialRender_Success
@@ -60,11 +76,11 @@ describe('ParsingInput Component', () => {
 		const variablesInput = screen.getByLabelText('Variables') as HTMLInputElement;
 		const terminalsInput = screen.getByLabelText('Terminals') as HTMLInputElement;
 
-		expect(variablesInput.value).toBe('STATEMENT, DECLARATION, EXPRESSION, TYPE, TERM');
+		expect(variablesInput.value).toBe('PROGRAM, CODE, STATEMENT, DECLARATION, EXPRESSION, TYPE, TERM, FUNCTION, PARAM, FUNCTION_DECLARATION, FUNC_BLOCK, RETURN_S');
 		expect(terminalsInput.value).toBe(
-			'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, SEPARATOR'
+			'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, SEPARATOR, OPEN_BRACKETS, CLOSE_BRACKETS ,OPEN_SCOPE, CLOSE_SCOPE,STRING'
 		);
-		expect(screen.getByDisplayValue('STATEMENT')).toBeInTheDocument();
+		expect(screen.getByDisplayValue('PROGRAM')).toBeInTheDocument();
 	});
 
 	// TestValidation_Failure_NoStartSymbol
@@ -84,10 +100,12 @@ describe('ParsingInput Component', () => {
 
 	// TestSubmitGrammar_Success
 	it('TestSubmitGrammar_Success: Submits grammar and shows generate button on success', async () => {
-		mockFetch.mockResolvedValueOnce({
+		const mockResponse = {
 			ok: true,
-			json: () => Promise.resolve({ message: 'Grammar submitted successfully!' })
-		});
+			json: async () => ({ message: 'Grammar submitted successfully!' })
+		};
+		// Override the default mock for this test
+		mockFetch.mockResolvedValue(mockResponse);
 
 		render(ParsingInput);
 
