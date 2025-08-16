@@ -9,11 +9,17 @@
 
 	export let show = false;
 
+	// Watch for changes to the 'show' prop and refresh projects when modal opens
+	$: if (show) {
+		fetchProjects();
+	}
+
 	let userName = '';
 	let showProjectNamePrompt = false;
 	let showDeleteConfirmPrompt = false; // State for the delete confirmation
 	let projectToDelete = ''; // State to hold the name of the project to be deleted
 	let hasExistingProject = false; // Track if a project is already loaded
+	let currentProjectName = ''; // Track the current project name
 
 	interface Project {
 		name: string;
@@ -176,6 +182,14 @@
 
 			// Remove from UI list after successful deletion
 			recentProjects = recentProjects.filter((p) => p.name !== projectToDelete);
+			
+			// If the deleted project is the currently loaded project, clear it
+			if (projectToDelete === currentProjectName) {
+				projectName.set('');
+				currentProjectName = '';
+				hasExistingProject = false;
+			}
+			
 			showDeleteConfirmPrompt = false;
 			projectToDelete = '';
 		} catch (error) {
@@ -193,6 +207,7 @@
 		// Check if there's already a project loaded
 		const unsubscribe = projectName.subscribe(value => {
 			hasExistingProject = value.trim() !== '';
+			currentProjectName = value;
 		});
 		
 		fetchProjects(); // Fetch projects when component mounts
