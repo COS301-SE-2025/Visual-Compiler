@@ -13,6 +13,7 @@
 	let showProjectNamePrompt = false;
 	let showDeleteConfirmPrompt = false; // State for the delete confirmation
 	let projectToDelete = ''; // State to hold the name of the project to be deleted
+	let hasExistingProject = false; // Track if a project is already loaded
 
 	interface Project {
 		name: string;
@@ -57,7 +58,9 @@
 	}
 
 	function handleClose() {
-		dispatch('close');
+		if (hasExistingProject) {
+			dispatch('close');
+		}
 	}
 
 	function createNewProject() {
@@ -158,14 +161,26 @@
 	onMount(() => {
 		const storedUserId = localStorage.getItem('user_id');
 		userName = storedUserId || 'Guest';
+		
+		// Check if there's already a project loaded
+		const unsubscribe = projectName.subscribe(value => {
+			hasExistingProject = value.trim() !== '';
+		});
+		
 		fetchProjects(); // Fetch projects when component mounts
+		
+		// Clean up subscription when component is destroyed
+		return () => {
+			unsubscribe();
+		};
 	});
 </script>
 
 {#if show}
-	<div class="backdrop" transition:fly={{ y: -50, duration: 300, opacity: 0.5 }} on:click={handleClose}>
+	<div class="backdrop" transition:fly={{ y: -50, duration: 300, opacity: 0.5 }} on:click={hasExistingProject ? handleClose : undefined}>
 		<div class="modal" on:click|stopPropagation>
-			<button class="close-button" on:click={handleClose}>
+			{#if hasExistingProject}
+			<button class="close-button" on:click={handleClose} aria-label="Close project hub">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					class="close-icon"
@@ -177,6 +192,7 @@
 					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 				</svg>
 			</button>
+			{/if}
 
 			<h3 class="section-heading">Start a new project</h3>
 			<div class="start-project-buttons">
