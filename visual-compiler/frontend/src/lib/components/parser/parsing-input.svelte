@@ -1,6 +1,8 @@
 <script lang="ts">
     import { onMount, createEventDispatcher } from 'svelte';
     import { AddToast } from '$lib/stores/toast';
+    import { projectName } from '$lib/stores/project';
+    import { get } from 'svelte/store';
 
     export let source_code = '';
 
@@ -26,26 +28,34 @@
     let terminals_string = '';
     let show_default_grammar = false;
     let is_grammar_submitted = false;
+    let tokens = null;
+    let tokens_unidentified = null;
 
     // --- DEFAULT GRAMMAR DATA ---
     const DEFAULT_GRAMMAR = {
-        variables: 'STATEMENT, DECLARATION, EXPRESSION, TYPE, TERM',
-        terminals: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, SEPARATOR',
+        variables: 'PROGRAM, CODE, STATEMENT, DECLARATION, EXPRESSION, TYPE, TERM, FUNCTION, PARAM, FUNCTION_DECLARATION, FUNC_BLOCK, RETURN_S',
+        terminals: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, SEPARATOR, OPEN_BRACKETS, CLOSE_BRACKETS ,OPEN_SCOPE, CLOSE_SCOPE,STRING',
         rules: [
+            { nonTerminal: 'PROGRAM', translations: ['STATEMENT','FUNCTION'] },
+            { nonTerminal: 'FUNCTION', translations: ['FUNCTION_DECLARATION', 'FUNC_BLOCK'] },
+            { nonTerminal: 'FUNCTION_DECLARATION', translations: ['TYPE', 'IDENTIFIER', 'PARAM'] },
+            { nonTerminal: 'PARAM', translations: ['OPEN_BRACKETS', 'TYPE', 'IDENTIFIER', 'CLOSE_BRACKETS'] },
+            { nonTerminal: 'FUNC_BLOCK', translations: ['OPEN_SCOPE', 'STATEMENT', 'RETURN_S','CLOSE_SCOPE'] },
+            { nonTerminal: 'RETURN_S', translations: ['KEYWORD', 'TERM', 'SEPARATOR'] },
             { nonTerminal: 'STATEMENT', translations: ['DECLARATION', 'SEPARATOR'] },
-            {
-                nonTerminal: 'DECLARATION',
-                translations: ['TYPE', 'IDENTIFIER', 'ASSIGNMENT', 'EXPRESSION']
-            },
+            { nonTerminal: 'DECLARATION',translations: ['TYPE', 'IDENTIFIER', 'ASSIGNMENT', 'EXPRESSION']},
             { nonTerminal: 'EXPRESSION', translations: ['TERM', 'OPERATOR', 'TERM'] },
+            { nonTerminal: 'EXPRESSION', translations: ['TERM'] },
             { nonTerminal: 'TERM', translations: ['INTEGER'] },
+            { nonTerminal: 'TERM', translations: ['IDENTIFIER'] },
             { nonTerminal: 'TYPE', translations: ['KEYWORD'] }
         ]
     };
 
     // onMount
-    onMount(() => {
+    onMount(async () => {
         addNewRule();
+        await fetchTokens(); // Try to fetch existing tokens
     });
 
     // handleGrammarChange
@@ -126,8 +136,15 @@
     // handleSubmitGrammar
     async function handleSubmitGrammar() {
         const user_id = localStorage.getItem('user_id');
+        const project = get(projectName);
+
         if (!user_id) {
-            AddToast('User not logged in. Please log in to save your work.', 'error');
+            AddToast('Authentication required: Please log in to save grammar rules', 'error');
+            return;
+        }
+
+        if (!project) {
+            AddToast('No project selected: Please select or create a project first', 'error');
             return;
         }
 
@@ -139,7 +156,7 @@
 
         if (cleaned_rules.length === 0) {
             // If all rules were cleared, show an error and add a new blank rule for convenience.
-            AddToast('Grammar is empty. Please define at least one rule.', 'error');
+            AddToast('Empty grammar: Please define at least one production rule to continue', 'error');
             addNewRule();
             return;
         }
@@ -167,7 +184,7 @@
             const non_terminal = rule.nonTerminal.trim();
             // This check is slightly redundant due to the filter, but good for safety.
             if (!non_terminal) {
-                AddToast('All rules must have a non-terminal (left-hand side).', 'error');
+                AddToast('Missing non-terminal: Every production rule must have a left-hand side symbol', 'error');
                 return;
             }
             if (!variable_list.includes(non_terminal)) {
@@ -180,7 +197,7 @@
 
             const has_at_least_one_production = rule.translations.some((t) => t.value.trim() !== '');
             if (!has_at_least_one_production) {
-                AddToast(`Rule for '${non_terminal}' must have at least one production.`, 'error');
+                AddToast(`Empty production: Rule for '${non_terminal}' needs at least one production on the right-hand side`, 'error');
                 return;
             }
 
@@ -199,19 +216,17 @@
         }
 
         const formatted_rules = cleaned_rules
-            .map((rule) => {
-                const output_array = rule.translations
+            .map((rule) => ({
+                input: rule.nonTerminal.trim(),
+                output: rule.translations
                     .flatMap((t) => t.value.trim().split(' '))
-                    .filter((v) => v);
-                return {
-                    input: rule.nonTerminal.trim(),
-                    output: output_array
-                };
-            })
+                    .filter((v) => v)
+            }))
             .filter((rule) => rule.input && rule.output.length > 0);
 
         const final_json_output = {
             users_id: user_id,
+            project_name: project,
             variables: variable_list,
             terminals: terminal_list,
             start: start_variable,
@@ -221,51 +236,126 @@
         try {
             const response = await fetch('http://localhost:8080/api/parsing/grammar', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json' 
+                },
                 body: JSON.stringify(final_json_output)
             });
 
             if (!response.ok) {
                 const error_data = await response.json();
-                throw new Error(error_data.details || 'Failed to submit grammar');
+                throw new Error(error_data.error || 'Failed to submit grammar');
             }
 
             const result = await response.json();
-            AddToast(result.message || 'Grammar submitted successfully!', 'success');
+            AddToast('Grammar saved successfully! Your parsing rules are ready for syntax analysis', 'success');
             is_grammar_submitted = true;
         } catch (error) {
             console.error('Submit Grammar Error:', error);
-            AddToast(String(error), 'error');
+            AddToast('Grammar save failed: ' + String(error), 'error');
             is_grammar_submitted = false;
+        }
+    }
+
+    // fetchTokens
+    async function fetchTokens() {
+        const user_id = localStorage.getItem('user_id');
+        const project = get(projectName);
+
+        if (!user_id || !project) return null;
+
+        try {
+            const response = await fetch('http://localhost:8080/api/lexing/lexer', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    users_id: user_id,
+                    project_name: project
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch tokens');
+            }
+
+            const data = await response.json();
+            tokens = data.tokens;
+            tokens_unidentified = data.tokens_unidentified;
+            return data.tokens;
+        } catch (error) {
+            console.error('Error fetching tokens:', error);
+            return null;
         }
     }
 
     // generateSyntaxTree
     async function generateSyntaxTree() {
         const user_id = localStorage.getItem('user_id');
-        if (!user_id) {
-            AddToast('User not logged in.', 'error');
+        const project = get(projectName);
+
+        if (!user_id || !project) {
+            AddToast('Authentication error: Missing user credentials or project information', 'error');
             return;
         }
 
         try {
-            const response = await fetch('http://localhost:8080/api/parsing/tree', {
+            // First verify tokens exist
+            const tokensResponse = await fetch(`http://localhost:8080/api/lexing/lexer`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ users_id: user_id })
+                headers: {
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    users_id: user_id,
+                    project_name: project
+                })
             });
 
-            if (!response.ok) {
-                const error_data = await response.json();
-                throw new Error(error_data.details || 'Failed to generate syntax tree');
+            if (!tokensResponse.ok) {
+                AddToast('Tokens required: Please complete lexical analysis and generate tokens first', 'error');
+                return;
             }
 
-            const result = await response.json();
-            AddToast('Syntax tree generated successfully!', 'success');
-            dispatch('treereceived', result.tree);
+            // Now try to generate syntax tree
+            const response = await fetch('http://localhost:8080/api/parsing/tree', {
+                method: 'POST',
+                headers: {
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    users_id: user_id,
+                    project_name: project
+                })
+            });
+
+            const data = await response.json();
+            console.log('Syntax tree response:', data); // Debug log
+
+            if (!response.ok) {
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                throw new Error('Failed to generate syntax tree');
+            }
+
+            if (data.tree) {
+                AddToast('Parse tree generated successfully! Your syntax analysis is complete', 'success');
+                dispatch('treereceived', data.tree);
+            } else {
+                throw new Error('No tree data in response');
+            }
         } catch (error) {
-            console.error('Generate Syntax Tree Error:', error);
-            AddToast(String(error), 'error');
+            console.error('Full error details:', error); // Debug log
+            AddToast(
+                `Failed to generate syntax tree: ${error.message}. Please ensure tokens and grammar are valid.`,
+                'error'
+            );
         }
     }
 </script>
@@ -379,7 +469,7 @@
         gap: 1.5rem;
     }
     .parser-heading-h1 {
-        color: #001a6e;
+        color: black;
         text-align: center;
         margin-top: 0;
         font-family: 'Times New Roman';
@@ -591,13 +681,18 @@
     }
     .submit-button {
         padding: 0.6rem 1.5rem;
-        background: #001a6e;
-        color: white;
+        background: #BED2E6;
+        color: 000000;
         border: none;
         border-radius: 6px;
         font-size: 0.9rem;
         font-weight: 500;
         cursor: pointer;
+    }
+
+    .submit-button:hover {
+        background: #a8bdd1;
+        transform: translateY(-2px);
     }
 
     /* Dark Mode Styles */
@@ -642,8 +737,8 @@
         color: #60a5fa;
     }
     :global(html.dark-mode) .submit-button {
-        background-color: #cccccc;
-        color: #041a47;
+        background-color: #001A6E;
+        color: #ffffff;
     }
     :global(html.dark-mode) .default-toggle-btn {
         background-color: #2d3748;

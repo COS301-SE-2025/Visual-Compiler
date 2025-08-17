@@ -1,8 +1,12 @@
 <script lang="ts">
+	// @ts-nocheck
 	import type { Token } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
 	import { onMount } from 'svelte';
 	import { DataSet, Network } from 'vis-network/standalone';
+	import { fade, scale } from 'svelte/transition';
+	import { projectName } from '$lib/stores/project';
+	import { get } from 'svelte/store'; 
 
 	export let source_code = '';
 	export let onGenerateTokens: (data: {
@@ -18,9 +22,19 @@
 	let showGenerateButton = false;
 	let showRegexActionButtons = false;
 
+	// New state for the expandable modal
+	let isExpanded = false;
+	let currentAutomatonForModal = null; // To store the data for the modal
+	let expandedVisContainer: HTMLElement; // Container for the expanded view
+	let networkInstance = null; // To hold the active vis-network instance
+
 	function addNewRow() {
-		userInputRows = [...userInputRows, { type: '', regex: '', error: '' }];
-	}
+    if (showDefault) {
+        editableDefaultRows = [...editableDefaultRows, { type: '', regex: '', error: '' }];
+    } else {
+        userInputRows = [...userInputRows, { type: '', regex: '', error: '' }];
+    }
+}
 
 	function validateRegex(pattern: string): boolean {
 		try {
@@ -75,14 +89,20 @@
 		}
 
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName);
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+			AddToast('Authentication required: Please log in to save lexical rules', 'error');
+			return;
+		}
+		if (!project) {
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
 		if (selectedType === 'REGEX') {
 			const requestData = {
 				users_id: user_id,
+				project_name: project,
 				pairs: nonEmptyRows.map((row) => ({
 					Type: row.type.toUpperCase(),
 					Regex: row.regex
@@ -101,13 +121,14 @@
 				submissionStatus = { show: true, success: true, message: 'Rules stored successfully!' };
 				showRegexActionButtons = true;
 			} catch (error) {
-				AddToast('Failed to save rules', 'error');
+				AddToast('Save failed: Unable to store lexical rules. Please check your connection and try again', 'error');
 			}
 			return;
 		}
 
 		const requestData = {
 			users_id: user_id,
+			project_name: project,
 			source_code: showDefault ? DEFAULT_SOURCE_CODE : userSourceCode,
 			pairs: nonEmptyRows.map((row) => ({
 				Type: row.type.toUpperCase(),
@@ -129,7 +150,7 @@
 			showGenerateButton = true;
 		} catch (error) {
 			console.error('Store error:', error);
-			AddToast('Cannot connect to server. Please ensure the backend is running.', 'error');
+			AddToast('Connection error: Cannot reach server. Please ensure the backend is running and try again', 'error');
 		}
 
 		// Show regex action buttons after successful submit in REGEX mode
@@ -141,13 +162,20 @@
 	async function generateTokens() {
 		try {
 			const user_id = localStorage.getItem('user_id');
+			const project = get(projectName);
 			if (!user_id) {
-				AddToast('User not logged in.', 'error');
+				AddToast('Authentication required: Please log in to generate tokens', 'error');
 				return;
 			}
+			if (!project) {
+                AddToast('No project selected: Please select or create a project first', 'error');
+                return;
+            }
+
 			const requestData = {
 				users_id: user_id,
 				source_code: source_code,
+				project_name: project,
 				pairs: (showDefault ? editableDefaultRows : userInputRows).map((row) => ({
 					Type: row.type.toUpperCase(),
 					Regex: row.regex
@@ -182,16 +210,23 @@
 			};
 		} catch (error) {
 			console.error('Generate tokens error:', error);
-			AddToast('Error generating tokens', 'error');
+			AddToast('Tokenization failed: Unable to generate tokens from your lexical rules', 'error');
 		}
 	}
 
 	// Helper: Save DFA to backend
 	async function saveDfaToBackend() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
-			return false;
+			AddToast('Authentication required: Please log in to save automata data', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected: Please select or create a project first', 'error');
+			return;
 		}
 
 		const dfa = {
@@ -202,7 +237,8 @@
 			transitions: [],
 			start_state: startState.trim(),
 			accepting_states: parseAcceptedStates(acceptedStates),
-			users_id: user_id
+			users_id: user_id,
+			project_name: project
 		};
 
 		// Parse transitions
@@ -229,12 +265,12 @@
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
-				AddToast('Failed to save DFA: ' + errorText, 'error');
+				AddToast('Save failed: Unable to save DFA - ' + errorText, 'error');
 				return false;
 			}
 			return true;
 		} catch (error) {
-			AddToast('Failed to save DFA: ' + error, 'error');
+			AddToast('Save error: Failed to save DFA - ' + error, 'error');
 			return false;
 		}
 	}
@@ -244,13 +280,20 @@
 		if (!saved) return;
 
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+			AddToast('Authentication required: Please log in to perform tokenization', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
 		// Only need to send users_id, backend loads DFA from DB
-		const body = { users_id: user_id };
+		const body = { users_id: user_id, project_name: project };
 
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/dfaToTokens', {
@@ -267,9 +310,9 @@
 				tokens: data.tokens,
 				unexpected_tokens: data.tokens_unidentified
 			});
-			AddToast('Tokenisation successful!', 'success');
+			AddToast('Tokenization complete! Your source code has been successfully tokenized', 'success');
 		} catch (error) {
-			AddToast('Tokenisation failed: ' + error, 'error');
+			AddToast('Tokenization failed: ' + error, 'error');
 		}
 	}
 
@@ -399,8 +442,15 @@
 
 	async function showNfaDiagram() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 
@@ -413,7 +463,7 @@
 			const dfaToRegexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!dfaToRegexRes.ok) {
 				const errorText = await dfaToRegexRes.text();
@@ -425,7 +475,7 @@
 			const regexToNfaRes = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!regexToNfaRes.ok) {
 				const errorText = await regexToNfaRes.text();
@@ -434,6 +484,7 @@
 			}
 			const nfaData = await regexToNfaRes.json();
 			regexNfa = adaptAutomatonForVis(nfaData.nfa);
+			currentAutomatonForModal = { data: regexNfa, isDfa: false }; // Store for modal
 			showNfaVis = true;
 			showDfaVis = false;
 			automataDisplay = 'NFA';
@@ -456,6 +507,16 @@
 		selectedType = type;
 		resetInputs();
 		showRegexActionButtons = false;
+		
+		// Reset visualization states
+		showNfaVis = false;
+		showDfaVis = false;
+		showRegexNfaVis = false;
+		showRegexDfaVis = false;
+		showRegexOutput = false;
+		automataDisplay = null;
+		currentAutomatonForModal = null;
+
 		if (type === 'REGEX') {
 			showDefault = false;
 			userInputRows = [{ type: '', regex: '', error: '' }];
@@ -471,12 +532,37 @@
 		showDefault = true;
 		editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
 		inputRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
-		states = 'S0, S1, S2, S3, S4, S5, S6, S7, S8';
+		states = 'S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17';
 		startState = 'S0';
 		acceptedStates =
-			'S3->KEYWORD, S4->IDENTIFIER, S5->ASSIGNMENT, S6->OPERATOR, S7->INTEGER, S8->SEPARATOR';
-		transitions =
-			'S0,i->S1\nS1,n->S2\nS2,t->S3\nS0,[a-zA-Z_]->S4\nS4,[a-zA-Z_]->S4\nS0,=->S5\nS0,[+-*/%]->S6\nS0,[0-9]->S7\nS7,[0-9]->S7\nS0,;->S8';
+			'S3->KEYWORD, S14->KEYWORD, S4->IDENTIFIER, S5->ASSIGNMENT, S6->OPERATOR, S7->INTEGER, S8->SEPARATOR, S15->OPEN_BRACKETS, S16->CLOSE_BRACKETS, S17->OPEN_SCOPE, S18->CLOSE_SCOPE ';
+		transitions ='S0,i->S1\n';
+        transitions +='S1,n->S2\n';
+        transitions +='S2,t->S3\n';
+
+        transitions += 'S0,r->S9\n';
+        transitions += 'S9,e->S10\n';
+        transitions += 'S10,t->S11\n';
+        transitions += 'S11,u->S12\n';
+        transitions += 'S12,r->S13\n';
+        transitions += 'S13,n->S14\n';
+
+        transitions +='S0,[a-zA-Z_]->S4\n';
+        transitions +='S4,[a-zA-Z_]->S4\n';
+
+        transitions +='S0,=->S5\n';
+        transitions +='S0,[+\\-*/%]->S6\n';
+
+        transitions +='S0,[0-9]->S7\n';
+        transitions +='S7,[0-9]->S7\n';
+
+        transitions +='S0,;->S8\n';
+
+        transitions += 'S0,(->S15\n';
+        transitions += 'S0,)->S16\n';
+
+        transitions += 'S0,{->S17\n';
+        transitions += 'S0,}->S18\n';
 	}
 
 	function removeDefault() {
@@ -486,12 +572,16 @@
 	}
 
 	const DEFAULT_INPUT_ROWS = [
-		{ type: 'keyword', regex: 'int|str|if', error: '' },
-		{ type: 'identifier', regex: '[a-zA-Z]+', error: '' },
-		{ type: 'integer', regex: '[0-9]+', error: '' },
-		{ type: 'assignment', regex: '=', error: '' },
-		{ type: 'operator', regex: '[+\\-*/%]', error: '' },
-		{ type: 'separator', regex: ';', error: '' }
+		{ type: 'KEYWORD', regex: 'int|return', error: '' },
+		{ type: 'IDENTIFIER', regex: '[a-zA-Z_]+', error: '' },
+		{ type: 'INTEGER', regex: '[0-9]+', error: '' },
+		{ type: 'ASSIGNMENT', regex: '=', error: '' },
+		{ type: 'OPERATOR', regex: '[+\\-*/%]', error: '' },
+		{ type: 'SEPARATOR', regex: ';', error: '' },
+        { type: 'OPEN_BRACKETS', regex: '\\(', error: '' },
+        { type: 'CLOSE_BRACKETS', regex: '\\)', error: '' },
+        { type: 'OPEN_SCOPE', regex: '\{', error: '' },
+        { type: 'CLOSE_SCOPE', regex: '\}', error: '' }
 	];
 
 	let editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
@@ -523,8 +613,15 @@
 	// Show DFA button handler
 	async function handleShowDfa() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 
@@ -537,20 +634,19 @@
 			const regexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!regexRes.ok) {
 				const errorText = await regexRes.text();
 				AddToast('DFA→Regex failed: ' + errorText, 'error');
 				return;
 			}
-			// Optionally, you can use the rules here if you want to display them
 
 			// 3. Convert Regex to DFA
 			const dfaRes = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!dfaRes.ok) {
 				const errorText = await dfaRes.text();
@@ -559,6 +655,7 @@
 			}
 			const dfaData = await dfaRes.json();
 			regexDfa = adaptAutomatonForVis(dfaData.dfa);
+			currentAutomatonForModal = { data: regexDfa, isDfa: true }; 
 			showDfaVis = true;
 			showNfaVis = false;
 			automataDisplay = 'DFA';
@@ -577,8 +674,15 @@
 		if (!saved) return;
 
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 
@@ -586,7 +690,7 @@
 			const response = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -612,15 +716,22 @@
 
 	async function handleRegexToNFA() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -630,6 +741,7 @@
 			const data = await response.json();
 			console.log('NFA from backend:', JSON.stringify(data.nfa, null, 2));
 			regexNfa = adaptAutomatonForVis(data.nfa);
+			currentAutomatonForModal = { data: regexNfa, isDfa: false }; 
 			showRegexNfaVis = true;
 			showRegexDfaVis = false;
 			showRegexVisOnly = true;
@@ -642,15 +754,22 @@
 
 	async function handleRegexToDFA() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -660,6 +779,7 @@
 			const data = await response.json();
 			console.log('DFA from backend:', JSON.stringify(data.dfa, null, 2));
 			regexDfa = adaptAutomatonForVis(data.dfa);
+			currentAutomatonForModal = { data: regexDfa, isDfa: true };
 			showRegexDfaVis = true;
 			showRegexNfaVis = false;
 			showRegexVisOnly = true;
@@ -671,7 +791,6 @@
 	}
 
 	function adaptAutomatonForVis(automaton: any) {
-		// Convert transitions array to nested object if needed
 		let transitionsObj: Record<string, Record<string, string[]>> = {};
 		if (Array.isArray(automaton.transitions)) {
 			for (const t of automaton.transitions) {
@@ -683,7 +802,6 @@
 			transitionsObj = automaton.transitions || {};
 		}
 
-		// Try to infer alphabet if not present
 		let alphabet: string[] = automaton.alphabet || [];
 		if ((!alphabet || alphabet.length === 0) && Object.keys(transitionsObj).length > 0) {
 			const symbols = new Set<string>();
@@ -711,6 +829,12 @@
 
 	function renderRegexAutomatonVis(container: HTMLElement, automaton: any, isDfa = false) {
 		if (!automaton || !container) return;
+
+		if (networkInstance) {
+			networkInstance.destroy();
+			networkInstance = null;
+		}
+
 		const nodeIds: Record<string, string> = {};
 		automaton.states.forEach((state: string) => {
 			nodeIds[state] = state.replace(/[^a-zA-Z0-9_]/g, '_');
@@ -723,8 +847,8 @@
 				color: automaton.acceptedStates.includes(state)
 					? '#D2FFD2'
 					: state === automaton.startState
-						? '#D2E5FF'
-						: '#FFD2D2',
+					? '#D2E5FF'
+					: '#FFD2D2',
 				borderWidth: automaton.acceptedStates.includes(state) ? 3 : 1
 			}))
 		);
@@ -762,7 +886,7 @@
 			physics: false
 		});
 		const edges = new DataSet(edgesArr);
-		new Network(
+		networkInstance = new Network(
 			container,
 			{ nodes, edges },
 			{
@@ -785,897 +909,1373 @@
 		showRegexNfaVis = false;
 		showRegexDfaVis = false;
 	}
+
+	const toggleExpand = () => {
+		isExpanded = !isExpanded;
+		if (isExpanded && currentAutomatonForModal) {
+			setTimeout(() => {
+				renderRegexAutomatonVis(
+					expandedVisContainer,
+					currentAutomatonForModal.data,
+					currentAutomatonForModal.isDfa
+				);
+			}, 50); 
+		} else if (!isExpanded && currentAutomatonForModal) {
+			let originalContainer = null;
+			if (showRegexVisOnly) {
+				if (showRegexNfaVis) originalContainer = regexNfaContainer;
+				if (showRegexDfaVis) originalContainer = regexDfaContainer;
+			} else {
+				if (automataDisplay === 'NFA') originalContainer = nfaContainer;
+				if (automataDisplay === 'DFA') originalContainer = dfaContainer;
+			}
+
+			if (originalContainer) {
+				setTimeout(() => {
+					renderRegexAutomatonVis(
+						originalContainer,
+						currentAutomatonForModal.data,
+						currentAutomatonForModal.isDfa
+					);
+				}, 50);
+			}
+		}
+	};
+
+	const handleKeydown = (event: KeyboardEvent) => {
+		if (isExpanded && event.key === 'Escape') {
+			toggleExpand();
+		}
+	};
+
+	function fitGraphToModal() {
+		if (networkInstance) {
+			networkInstance.fit();
+		}
+	}
+
+	// Zoom functionality for expanded view
+	function zoomIn() {
+		if (networkInstance && isExpanded) {
+			const scale = networkInstance.getScale();
+			networkInstance.moveTo({
+				scale: Math.min(scale * 1.2, 3) // Max zoom level of 3x
+			});
+		}
+	}
+
+	function zoomOut() {
+		if (networkInstance && isExpanded) {
+			const scale = networkInstance.getScale();
+			networkInstance.moveTo({
+				scale: Math.max(scale * 0.8, 0.1) // Min zoom level of 0.1x
+			});
+		}
+	}
+
+	function resetZoom() {
+		if (networkInstance && isExpanded) {
+			networkInstance.fit({
+				animation: {
+					duration: 500,
+					easingFunction: 'easeInOutCubic'
+				}
+			});
+		}
+	}
 </script>
 
+<svelte:window on:keydown={handleKeydown} />
+
 <div class="phase-inspector">
-    <div class="source-code-section">
-        <div class="lexor-heading">
-            <h1 class="lexor-heading-h1">LEXING</h1>
-        </div>
-        <h3 class="source-code-header">Source Code</h3>
-        <pre class="source-display">{source_code || 'no source code available'}</pre>
-    </div>
+	<div class="source-code-section">
+		<div class="lexor-heading">
+			<h1 class="lexor-heading-h1">LEXING</h1>
+		</div>
+		<h3 class="source-code-header">Source Code</h3>
+		<pre class="source-display">{source_code || 'no source code available'}</pre>
+	</div>
 
-    <div class="automaton-btn-row">
-        <button
-            class="automaton-btn {selectedType === 'REGEX' ? 'selected' : ''}"
-            on:click={() => selectType('REGEX')}
-            type="button"
-        >
-            Regular Expression
-        </button>
-        <button
-            class="automaton-btn {selectedType === 'AUTOMATA' ? 'selected' : ''}"
-            on:click={() => {
-                selectType('AUTOMATA');
-                automataDisplay = null;
-            }}
-            type="button"
-        >
-            Automata
-        </button>
+	<div class="instructions-section">
+		<div class="instructions-content">
+			<h4 class="instructions-header">Instructions</h4>
+			<p class="instructions-text">
+				Mock Data
+			</p>
+		</div>
+	</div>
 
-        {#if selectedType && !showDefault}
-            <button
-                class="default-toggle-btn"
-                on:click={insertDefault}
-                type="button"
-                aria-label="Insert default input"
-                title="Insert default input"
-            >
-                <span class="icon">🪄</span>
-            </button>
-        {/if}
-        {#if selectedType && showDefault}
-            <button
-                class="default-toggle-btn selected"
-                on:click={removeDefault}
-                type="button"
-                aria-label="Remove default input"
-                title="Remove default input"
-            >
-                <span class="icon">🧹</span>
-            </button>
-        {/if}
-    </div>
+	<div class="automaton-btn-row">
+		<button
+			class="automaton-btn {selectedType === 'REGEX' ? 'selected' : ''}"
+			on:click={() => selectType('REGEX')}
+			type="button"
+		>
+			Regular Expression
+		</button>
+		<button
+			class="automaton-btn {selectedType === 'AUTOMATA' ? 'selected' : ''}"
+			on:click={() => {
+				selectType('AUTOMATA');
+				automataDisplay = null;
+			}}
+			type="button"
+		>
+			Automata
+		</button>
 
-    {#if selectedType === 'REGEX'}
-        {#if showRegexVisOnly}
-            {#if showRegexNfaVis && regexNfa}
-                <div class="automata-container pretty-vis-box">
-                    <div class="vis-heading">
-                        <span class="vis-title">NFA Visualization (from REGEX)</span>
-                    </div>
-                    <div bind:this={regexNfaContainer} class="vis-graph-area" />
-                </div>
-                <button
-                    class="submit-button"
-                    style="align-self: flex-start; margin-top: 1.5rem;"
-                    on:click={handleBackFromRegexVis}
-                >
-                    ← Back
-                </button>
-            {/if}
-            {#if showRegexDfaVis && regexDfa}
-                <div class="automata-container pretty-vis-box">
-                    <div class="vis-heading">
-                        <span class="vis-title">DFA Visualization (from REGEX)</span>
-                    </div>
-                    <div bind:this={regexDfaContainer} class="vis-graph-area" />
-                </div>
-                <button
-                    class="submit-button"
-                    style="align-self: flex-start; margin-top: 1.5rem;"
-                    on:click={handleBackFromRegexVis}
-                >
-                    ← Back
-                </button>
-            {/if}
-        {:else}
-            <div>
-                <div class="shared-block">
-                    <div class="block-headers">
-                        <div class="header-section">
-                            <h3>Type</h3>
-                        </div>
-                        <div class="header-section">
-                            <h3>Regular Expression</h3>
-                        </div>
-                    </div>
-                    <div class="input-rows">
-                        {#each showDefault ? editableDefaultRows : userInputRows as row, i}
-                            <div class="input-row">
-                                <div class="input-block">
-                                    <input
-                                        type="text"
-                                        bind:value={row.type}
-                                        on:input={handleInputChange}
-                                        placeholder="Enter type..."
-                                        class:error={row.error}
-                                    />
-                                </div>
-                                <div class="input-block">
-                                    <input
-                                        type="text"
-                                        bind:value={row.regex}
-                                        on:input={handleInputChange}
-                                        placeholder="Enter regex pattern..."
-                                        class:error={row.error}
-                                    />
-                                </div>
-                                {#if row.error}
-                                    <div class="error-message">{row.error}</div>
-                                {/if}
-                            </div>
-                        {/each}
-                    </div>
-                    {#if userInputRows[userInputRows.length - 1].type && userInputRows[userInputRows.length - 1].regex}
-                        <button class="add-button" on:click={addNewRow}>
-                            <span>+</span>
-                        </button>
-                    {/if}
-                </div>
-                {#if formError}
-                    <div class="form-error">{formError}</div>
-                {/if}
-                <div class="button-stack">
-                    <button class="submit-button" on:click={handleSubmit}> Submit </button>
-                    {#if showRegexActionButtons}
-                        <div class="regex-action-buttons">
-                            <button class="generate-button" on:click={generateTokens}>Generate Tokens</button>
-                            <button
-                                class="generate-button"
-                                on:click={handleRegexToNFA}
-                                title="Convert Regular Expression to a NFA">NFA</button
-                            >
-                            <button
-                                class="generate-button"
-                                on:click={handleRegexToDFA}
-                                title="Convert Regular Expression to a DFA">DFA</button
-                            >
-                        </div>
-                    {/if}
-                </div>
-                {#if submissionStatus.show}
-                    <div
-                        class="status-message"
-                        class:success={submissionStatus.success === true}
-                        class:info={submissionStatus.message === 'info'}
-                    >
-                        {submissionStatus.message}
-                    </div>
-                {/if}
-            </div>
-        {/if}
-    {:else if selectedType === 'AUTOMATA'}
-        <div class="automaton-section">
-            <div class="automaton-left">
-                <label>
-                    States:
-                    <input class="automaton-input" bind:value={states} placeholder="e.g. q0,q1,q2" />
-                </label>
-                <label>
-                    Start State:
-                    <input class="automaton-input" bind:value={startState} placeholder="e.g. q0" />
-                </label>
-                <label>
-                    Accepted States:
-                    <input
-                        class="automaton-input"
-                        bind:value={acceptedStates}
-                        placeholder="e.g. q2->int, q1->string"
-                    />
-                </label>
-            </div>
-            <div class="automaton-right">
-                <label>
-                    Transitions:
-                    <textarea
-                        class="automaton-input automaton-transitions"
-                        bind:value={transitions}
-                        placeholder="e.g. q0,a->q1&#10;q1,b->q2"
-                    ></textarea>
-                </label>
-            </div>
-            <div class="automata-action-row" style="grid-column: span 2;">
-                <button
-                    class="action-btn"
-                    type="button"
-                    on:click={() => {
-                        showNfaDiagram();
-                        automataDisplay = 'NFA';
-                    }}>Show NFA</button
-                >
-                <button
-                    class="action-btn"
-                    type="button"
-                    on:click={() => {
-                        handleShowDfa();
-                        automataDisplay = 'DFA';
-                    }}>Show DFA</button
-                >
-                <button
-                    class="action-btn"
-                    type="button"
-                    on:click={() => {
-                        handleTokenisation();
-                        automataDisplay = null;
-                    }}>Tokenisation</button
-                >
-                <button
-                    class="action-btn"
-                    type="button"
-                    on:click={() => {
-                        handleConvertToRegex();
-                        automataDisplay = 'RE';
-                    }}
-                    title="Convert to Regular Expression">RE</button
-                >
-            </div>
-        </div>
+		{#if selectedType && !showDefault}
+			<button
+				class="default-toggle-btn"
+				on:click={insertDefault}
+				type="button"
+				aria-label="Insert default input"
+				title="Insert default input"
+			>
+				<span class="icon">🪄</span>
+			</button>
+		{/if}
+		{#if selectedType && showDefault}
+			<button
+				class="default-toggle-btn selected"
+				on:click={removeDefault}
+				type="button"
+				aria-label="Remove default input"
+				title="Remove default input"
+			>
+				<span class="icon">🧹</span>
+			</button>
+		{/if}
+	</div>
 
-        {#if automataDisplay === 'NFA' && showNfaVis}
-            <div class="automata-container pretty-vis-box">
-                <div class="vis-heading">
-                    <span class="vis-title">NFA Visualization</span>
-                </div>
-                <div bind:this={nfaContainer} class="vis-graph-area" />
-            </div>
-        {:else if automataDisplay === 'DFA' && showDfaVis}
-            <div class="automata-container pretty-vis-box">
-                <div class="vis-heading">
-                    <span class="vis-title">DFA Visualization</span>
-                </div>
-                <div bind:this={dfaContainer} class="vis-graph-area" />
-            </div>
-        {:else if automataDisplay === 'RE' && showRegexOutput && regexRules.length > 0}
-            <div class="regex-display-container pretty-vis-box">
-                <div class="vis-heading">
-                    <span class="vis-title">Generated Regular Expressions</span>
-                </div>
-                <table class="regex-table">
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Regular Expression</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {#each regexRules as rule}
-                            <tr>
-                                <td class="regex-type">{rule.token_type || rule.Type || rule.type || '-'}</td>
-                                <td class="regex-pattern"><code>{rule.regex || rule.Regex || '-'}</code></td>
-                            </tr>
-                        {/each}
-                    </tbody>
-                </table>
-            </div>
-        {/if}
+	{#if selectedType === 'REGEX'}
+		{#if showRegexVisOnly}
+			{#if showRegexNfaVis && regexNfa}
+				<div class="automata-container pretty-vis-box">
+					<div class="vis-heading">
+						<span class="vis-title">NFA Visualization (from REGEX)</span>
+					</div>
+					<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							fill="currentColor"
+							viewBox="0 0 16 16"
+						>
+							<path
+								d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
+							/>
+						</svg>
+					</button>
+					<div bind:this={regexNfaContainer} class="vis-graph-area" />
+				</div>
+				<button
+					class="submit-button"
+					style="align-self: flex-start; margin-top: 1.5rem;"
+					on:click={handleBackFromRegexVis}
+				>
+					← Back
+				</button>
+			{/if}
+			{#if showRegexDfaVis && regexDfa}
+				<div class="automata-container pretty-vis-box">
+					<div class="vis-heading">
+						<span class="vis-title">DFA Visualization (from REGEX)</span>
+					</div>
+					<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							fill="currentColor"
+							viewBox="0 0 16 16"
+						>
+							<path
+								d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
+							/>
+						</svg>
+					</button>
+					<div bind:this={regexDfaContainer} class="vis-graph-area" />
+				</div>
+				<button
+					class="submit-button"
+					style="align-self: flex-start; margin-top: 1.5rem;"
+					on:click={handleBackFromRegexVis}
+				>
+					← Back
+				</button>
+			{/if}
+		{:else}
+			<div>
+				<div class="shared-block">
+					<div class="block-headers">
+						<div class="header-section">
+							<h3>Type</h3>
+						</div>
+						<div class="header-section">
+							<h3>Regular Expression</h3>
+						</div>
+					</div>
+					<div class="input-rows">
+						{#each showDefault ? editableDefaultRows : userInputRows as row, i}
+							<div class="input-row">
+								<div class="input-block">
+									<input
+										type="text"
+										bind:value={row.type}
+										on:input={handleInputChange}
+										placeholder="Enter type..."
+										class:error={row.error}
+									/>
+								</div>
+								<div class="input-block">
+									<input
+										type="text"
+										bind:value={row.regex}
+										on:input={handleInputChange}
+										placeholder="Enter regex pattern..."
+										class:error={row.error}
+									/>
+								</div>
+								{#if row.error}
+									<div class="error-message">{row.error}</div>
+								{/if}
+							</div>
+						{/each}
+					</div>
+					{#if (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).type && 
+      (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).regex}
+    <button class="add-button" on:click={addNewRow} title="Add new expression">
+        <span>+</span>
+    </button>
+{/if}
+				</div>
+				{#if formError}
+					<div class="form-error">{formError}</div>
+				{/if}
+				<div class="button-stack">
+					<button class="submit-button" on:click={handleSubmit}> Submit </button>
+					{#if showRegexActionButtons}
+						<div class="regex-action-buttons">
+							<button class="generate-button" on:click={generateTokens}>Generate Tokens</button>
+							<button
+								class="generate-button"
+								on:click={handleRegexToNFA}
+								title="Convert Regular Expression to a NFA">NFA</button
+							>
+							<button
+								class="generate-button"
+								on:click={handleRegexToDFA}
+								title="Convert Regular Expression to a DFA">DFA</button
+							>
+						</div>
+					{/if}
+				</div>
+				{#if submissionStatus.show}
+					<div
+						class="status-message"
+						class:success={submissionStatus.success === true}
+						class:info={submissionStatus.message === 'info'}
+					>
+						{submissionStatus.message}
+					</div>
+				{/if}
+			</div>
+		{/if}
+	{:else if selectedType === 'AUTOMATA'}
+		<div class="automaton-section">
+			<div class="automaton-left">
+				<label>
+					States:
+					<input class="automaton-input" bind:value={states} placeholder="e.g. q0,q1,q2" />
+				</label>
+				<label>
+					Start State:
+					<input class="automaton-input" bind:value={startState} placeholder="e.g. q0" />
+				</label>
+				<label>
+					Accepted States:
+					<input
+						class="automaton-input"
+						bind:value={acceptedStates}
+						placeholder="e.g. q2->int, q1->string"
+					/>
+				</label>
+			</div>
+			<div class="automaton-right">
+				<label>
+					Transitions:
+					<textarea
+						class="automaton-input automaton-transitions"
+						bind:value={transitions}
+						placeholder="e.g. q0,a->q1&#10;q1,b->q2"
+					></textarea>
+				</label>
+			</div>
+			<div class="automata-action-row" style="grid-column: span 2;">
+				<button
+					class="action-btn"
+					type="button"
+					on:click={() => {
+						showNfaDiagram();
+						automataDisplay = 'NFA';
+					}}>Show NFA</button
+				>
+				<button
+					class="action-btn"
+					type="button"
+					on:click={() => {
+						handleShowDfa();
+						automataDisplay = 'DFA';
+					}}>Show DFA</button
+				>
+				<button
+					class="action-btn"
+					type="button"
+					on:click={() => {
+						handleTokenisation();
+						automataDisplay = null;
+					}}>Tokenisation</button
+				>
+				<button
+					class="action-btn"
+					type="button"
+					on:click={() => {
+						handleConvertToRegex();
+						automataDisplay = 'RE';
+					}}
+					title="Convert to Regular Expression">RE</button
+				>
+			</div>
+		</div>
 
-        {#if showRegexNfaVis && regexNfa}
-            <div class="automata-container pretty-vis-box">
-                <div class="vis-heading">
-                    <span class="vis-title">NFA Visualization (from REGEX)</span>
-                </div>
-                <div bind:this={regexNfaContainer} class="vis-graph-area" />
-            </div>
-        {/if}
-        {#if showRegexDfaVis && regexDfa}
-            <div class="automata-container pretty-vis-box">
-                <div class="vis-heading">
-                    <span class="vis-title">DFA Visualization (from REGEX)</span>
-                </div>
-                <div bind:this={regexDfaContainer} class="vis-graph-area" />
-            </div>
-        {/if}
-    {/if}
+		{#if automataDisplay === 'NFA' && showNfaVis}
+			<div class="automata-container pretty-vis-box">
+				<div class="vis-heading">
+					<span class="vis-title">NFA Visualization</span>
+				</div>
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						fill="currentColor"
+						viewBox="0 0 16 16"
+					>
+						<path
+							d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
+						/>
+					</svg>
+				</button>
+				<div bind:this={nfaContainer} class="vis-graph-area" />
+			</div>
+		{:else if automataDisplay === 'DFA' && showDfaVis}
+			<div class="automata-container pretty-vis-box">
+				<div class="vis-heading">
+					<span class="vis-title">DFA Visualization</span>
+				</div>
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						fill="currentColor"
+						viewBox="0 0 16 16"
+					>
+						<path
+							d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
+						/>
+					</svg>
+				</button>
+				<div bind:this={dfaContainer} class="vis-graph-area" />
+			</div>
+		{:else if automataDisplay === 'RE' && showRegexOutput && regexRules.length > 0}
+			<div class="regex-display-container pretty-vis-box">
+				<div class="vis-heading">
+					<span class="vis-title">Generated Regular Expressions</span>
+				</div>
+				<table class="regex-table">
+					<thead>
+						<tr>
+							<th>Type</th>
+							<th>Regular Expression</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each regexRules as rule}
+							<tr>
+								<td class="regex-type">{rule.token_type || rule.Type || rule.type || '-'}</td>
+								<td class="regex-pattern"><code>{rule.regex || rule.Regex || '-'}</code></td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		{/if}
+
+		{#if showRegexNfaVis && regexNfa}
+			<div class="automata-container pretty-vis-box">
+				<div class="vis-heading">
+					<span class="vis-title">NFA Visualization (from REGEX)</span>
+				</div>
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						fill="currentColor"
+						viewBox="0 0 16 16"
+					>
+						<path
+							d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
+						/>
+					</svg>
+				</button>
+				<div bind:this={regexNfaContainer} class="vis-graph-area" />
+			</div>
+		{/if}
+		{#if showRegexDfaVis && regexDfa}
+			<div class="automata-container pretty-vis-box">
+				<div class="vis-heading">
+					<span class="vis-title">DFA Visualization (from REGEX)</span>
+				</div>
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="16"
+						height="16"
+						fill="currentColor"
+						viewBox="0 0 16 16"
+					>
+						<path
+							d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
+						/>
+					</svg>
+				</button>
+				<div bind:this={regexDfaContainer} class="vis-graph-area" />
+			</div>
+		{/if}
+	{/if}
 </div>
 
+
+{#if isExpanded}
+	<div class="modal-backdrop" on:click={toggleExpand} transition:fade={{ duration: 200 }}>
+		<div
+			class="modal-content"
+			on:click|stopPropagation
+			transition:scale={{ duration: 250, start: 0.95 }}
+			on:introend={fitGraphToModal}
+		>
+			<div class="modal-header">
+				<div class="header-left">
+					<h3>Expanded Automaton View</h3>
+				</div>
+				<div class="header-center">
+					<div class="zoom-controls">
+						<button 
+							on:click={zoomOut} 
+							class="zoom-btn" 
+							title="Zoom Out"
+							aria-label="Zoom out"
+						>
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<circle cx="11" cy="11" r="8"/>
+								<path d="m21 21-4.35-4.35"/>
+								<line x1="8" y1="11" x2="14" y2="11"/>
+							</svg>
+						</button>
+						<button 
+							on:click={resetZoom} 
+							class="zoom-btn reset-btn" 
+							title="Reset Zoom"
+							aria-label="Reset zoom to fit"
+						>
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+								<circle cx="12" cy="12" r="3"/>
+							</svg>
+						</button>
+						<button 
+							on:click={zoomIn} 
+							class="zoom-btn" 
+							title="Zoom In"
+							aria-label="Zoom in"
+						>
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<circle cx="11" cy="11" r="8"/>
+								<path d="m21 21-4.35-4.35"/>
+								<line x1="11" y1="8" x2="11" y2="14"/>
+								<line x1="8" y1="11" x2="14" y2="11"/>
+							</svg>
+						</button>
+					</div>
+				</div>
+				<div class="header-right">
+					<button on:click={toggleExpand} class="modal-close-btn" aria-label="Close expanded view">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							fill="currentColor"
+							viewBox="0 0 16 16"
+						>
+							<path
+								d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"
+							/>
+						</svg>
+					</button>
+				</div>
+			</div>
+			<div class="modal-body" bind:this={expandedVisContainer}>
+
+			</div>
+		</div>
+	</div>
+{/if}
+
 <style>
-    .phase-inspector {
-        flex: 1.2;
-        padding: 0.2rem 2rem 2rem 2rem;
-        background: #fff;
-        transition: background-color 0.3s ease;
-    }
-
-    .source-code-header {
-        color: #444;
-        transition: color 0.3s ease;
-    }
-
-    .lexor-heading-h1 {
-        transition: color 0.3s ease;
-    }
-
-    .source-code-section {
-        margin-bottom: 2rem;
-    }
-
-    .source-display {
-        background: #f5f5f5;
-        padding: 1rem;
-        border-radius: 4px;
-        overflow-x: auto;
-        font-family: monospace;
-        white-space: pre-wrap;
-        margin: 0;
-        transition: background-color 0.3s ease, color 0.3s ease;
-    }
-
-    .shared-block {
-        background: #f5f5f5;
-        padding: 1.2rem;
-        border-radius: 8px;
-        position: relative;
-        transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .lexor-heading {
-        justify-items: center;
-    }
-
-    .block-headers {
-        display: flex;
-        gap: 2rem;
-        margin-bottom: 1rem;
-        padding-bottom: 0.8rem;
-        border-bottom: 1px solid #e0e0e0;
-        transition: border-color 0.3s ease;
-    }
-
-    .header-section {
-        flex: 1;
-    }
-
-    .header-section h3 {
-        margin: 0;
-        color: #041a47;
-        font-size: 1rem;
-        font-weight: 600;
-        transition: color 0.3s ease;
-    }
-
-    .input-rows {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-        padding-top: 0.5rem;
-    }
-
-    .input-row {
-        display: flex;
-        gap: 2rem;
-        position: relative;
-    }
-
-    .input-block {
-        flex: 1;
-    }
-
-    .input-block input {
-        width: 100%;
-        padding: 0.8rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 0.9rem;
-        background: white;
-        color: #333;
-        box-sizing: border-box;
-        transition:
-            border-color 0.2s,
-            box-shadow 0.2s,
-            background-color 0.3s ease,
-            color 0.3s ease;
-    }
-
-    .input-block input:focus {
-        outline: none;
-        border-color: #041a47;
-        box-shadow: 0 0 0 2px rgba(4, 26, 71, 0.1);
-    }
-
-    .input-block input.error {
-        border-color: #dc3545;
-    }
-
-    .input-block input.error:focus {
-        box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25);
-    }
-
-    .error-message {
-        color: #dc3545;
-        font-size: 0.8rem;
-        margin-top: 0.25rem;
-        position: absolute;
-        bottom: -1.2rem;
-    }
-
-    .form-error {
-        color: #dc3545;
-        text-align: center;
-        margin: 0.5rem 0;
-        font-size: 0.9rem;
-    }
-
-    .add-button {
-        position: absolute;
-        right: -16px;
-        bottom: -16px;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: #041a47;
-        color: white;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        transition: background-color 0.2s;
-    }
-
-    .add-button:hover {
-        background: #27548a;
-    }
-
-    .submit-button {
-        padding: 0.6rem 1.5rem;
-        background: #041a47;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0, 26, 110, 0.1);
-        margin: 0 auto;
-        display: block;
-        transition: background-color 0.2s, color 0.2s, transform 0.2s;
-    }
-
-    .submit-button:hover {
-        background: #27548a;
-        transform: translateY(-2px);
-    }
-
-    .button-stack {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 0.5rem;
-        margin-top: 1.5rem;
-    }
-
-    .generate-button {
-        padding: 0.6rem 1.5rem;
-        background: #6c757d;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        cursor: pointer;
-        transition: background-color 0.2s ease, transform 0.2s;
-    }
-
-    .generate-button:hover {
-        background: #5a6268;
-        transform: translateY(-2px);
-    }
-
-    .status-message {
-        text-align: center;
-        padding: 0.5rem 1rem;
-        margin-top: 1rem;
-        border-radius: 4px;
-        font-size: 0.9rem;
-        background: #dc3545;
-        color: white;
-        opacity: 0;
-        animation: fadeInOut 3s ease-in-out;
-    }
-
-    .status-message.success { background: #28a745; }
-    .status-message.info { background: #0096c7; }
-
-    @keyframes fadeInOut {
-        0%, 100% { opacity: 0; }
-        10%, 90% { opacity: 1; }
-    }
-
-    .automaton-btn-row {
-        display: flex;
-        gap: 0.7rem;
-        margin: 2rem 0 1.5rem 0;
-        align-items: center;
-    }
-
-    .automaton-btn {
-        padding: 0.4rem 1rem;
-        border: 2px solid #e5e7eb;
-        border-radius: 1.2rem;
-        background: white;
-        color: #041a47;
-        font-weight: 500;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        outline: none;
-    }
-
-    .automaton-btn.selected {
-        border-color: #041a47;
-        background: #e6edfa;
-        color: #041a47;
-    }
-
-    .automaton-btn:not(.selected):hover {
-        border-color: #7da2e3;
-        background: #f5f8fd;
-    }
-
-    .default-toggle-btn {
-        margin-left: 1.2rem;
-        padding: 0.4rem 0.7rem;
-        border-radius: 50%;
-        border: 2px solid #e5e7eb;
-        background: white;
-        color: #041a47;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 2.3rem;
-        width: 2.3rem;
-    }
-
-    .default-toggle-btn.selected {
-        background: #d0e2ff;
-        border-color: #041a47;
-    }
-
-    .default-toggle-btn:hover,
-    .default-toggle-btn:focus {
-        background: #f5f8fd;
-        border-color: #7da2e3;
-    }
-
-    .icon {
-        font-size: 1.3rem;
-        line-height: 1;
-        pointer-events: none;
-    }
-
-    .automaton-section {
-        margin-top: 0;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.2rem 1.5rem;
-        max-width: 600px;
-	
-    }
-
-    .automaton-section label {
-        font-weight: 500;
-        color: #041a47;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        font-size: 1.05rem;
-        transition: color 0.3s ease;
-			margin-top: 0.5rem;
-    }
-
-    .automaton-input {
-        padding: 0.7rem 1rem;
-        border: 1.5px solid #b6c6e3;
-        border-radius: 0.7rem;
-        font-size: 1rem;
-        background: #f8fafc;
-        color: #041a47;
-        transition: all 0.2s ease;
-        width: 100%;
-        box-sizing: border-box;
-    }
-
-    .automaton-input:focus {
-        border-color: #041a47;
-        outline: none;
-        background: #e6edfa;
-    }
-
-    .automaton-transitions {
-        min-height: 13rem;
-        font-family: 'Fira Mono', monospace;
-        resize: vertical;
-    }
-
-    .automata-action-row {
-        grid-column: span 2;
-        display: flex;
-        gap: 1.25rem;
-        margin-top: 1.75rem;
-        justify-content: flex-start;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    .action-btn {
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.25s ease;
-        border: none;
-        outline: none;
-        padding: 0.625rem 1.25rem;
-        border-radius: 0.75rem;
-        font-size: 0.9375rem;
-        background: #e0e7ff;
-        color: #1e40af;
-        box-shadow: 0 1px 2px 0 rgba(30, 64, 175, 0.05);
-    }
-
-    .action-btn:hover,
-    .action-btn:focus {
-        background: #d0d9ff;
-        box-shadow: 0 1px 3px 0 rgba(30, 64, 175, 0.1), 0 1px 2px 0 rgba(30, 64, 175, 0.06);
-        transform: translateY(-1px);
-    }
-    
-    .regex-action-buttons {
-        display: flex;
-        justify-content: center;
-        gap: 0.5rem;
-        margin-top: 0.5rem;
-    }
-
-    .pretty-vis-box, .regex-display-container {
-        background: #f8fafc;
-        border-radius: 14px;
-        box-shadow: 0 2px 12px rgba(30, 64, 175, 0.07), 0 1.5px 6px rgba(0, 0, 0, 0.04);
-        padding: 1.5rem;
-        margin-top: 2.2rem;
-        margin-bottom: 1.5rem;
-        max-width: 750px;
-        width: 100%;
-        transition: background-color 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .vis-heading {
-        margin-bottom: 1.1rem;
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #1e40af;
-        transition: color 0.3s ease;
-    }
-
-    .vis-title {
-        font-size: 1.18rem;
-        font-weight: 600;
-        color: #1e40af;
-        transition: color 0.3s ease;
-    }
-
-    .vis-graph-area {
-        width: 100%;
-        max-width: 450px;
-        height: 350px;
-        border: 1.5px solid #e0e7ef;
-        border-radius: 10px;
-        background: #fff;
-        margin: 0 auto;
-        box-shadow: 0 1px 4px rgba(30, 64, 175, 0.04);
-        transition: background-color 0.3s ease, border-color 0.3s ease;
-    }
-
-    .regex-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 1rem;
-    }
-
-    .regex-table th,
-    .regex-table td {
-        padding: 0.7rem 1rem;
-        border-bottom: 1px solid #e0e7ef;
-        text-align: left;
-        transition: border-color 0.3s ease;
-    }
-
-    .regex-table th {
-        background: #e6edfa;
-        color: #041a47;
-        font-size: 1.05rem;
-        transition: background-color 0.3s ease, color 0.3s ease;
-    }
-
-    .regex-type {
-        font-weight: 600;
-        color: #1e40af;
-        letter-spacing: 0.03em;
-        transition: color 0.3s ease;
-    }
-
-    .regex-pattern code {
-        background: #e0e7ff;
-        color: #0a2540;
-        padding: 0.2em 0.5em;
-        border-radius: 5px;
-        font-family: 'Fira Mono', monospace;
-        font-size: 1.01em;
-        word-break: break-all;
-        display: inline-block;
-        transition: background-color 0.3s ease, color 0.3s ease;
-    }
-
-    /* --- Dark Mode Styles --- */
-    :global(html.dark-mode) .phase-inspector {
-        background: #1a2a4a;
-    }
-
-    :global(html.dark-mode) .source-code-header,
-    :global(html.dark-mode) .lexor-heading-h1,
-    :global(html.dark-mode) .automaton-section label {
-        color: #e2e8f0;
-    }
-
-    :global(html.dark-mode) .source-display,
-    :global(html.dark-mode) .shared-block,
-    :global(html.dark-mode) .pretty-vis-box,
-    :global(html.dark-mode) .regex-display-container {
-        background: #2d3748;
-    }
-
-    :global(html.dark-mode) .source-display {
-        color: #e2e8f0;
-    }
-
-    :global(html.dark-mode) .block-headers {
-        border-bottom-color: #4a5568;
-    }
-
-    :global(html.dark-mode) .header-section h3 {
-        color: #90cdf4;
-    }
-
-    :global(html.dark-mode) .input-block input,
-    :global(html.dark-mode) .automaton-input {
-        background: #2d3748;
-        color: #e2e8f0;
-        border-color: #4a5568;
-    }
-
-    :global(html.dark-mode) .input-block input::placeholder,
-    :global(html.dark-mode) .automaton-input::placeholder {
-        color: #a0aec0;
-    }
-
-    :global(html.dark-mode) .input-block input:focus,
-    :global(html.dark-mode) .automaton-input:focus {
-        border-color: #60a5fa;
-        background-color: #2d3748;
-        box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.2);
-    }
-
-    :global(html.dark-mode) .add-button {
-        background: #3b82f6;
-        color: #ffffff;
-    }
-
-    :global(html.dark-mode) .add-button:hover {
-        background: #60a5fa;
-    }
-
-    :global(html.dark-mode) .submit-button {
-        background: #e2e8f0;
-        color: #041a47;
-        font-weight: 600;
-    }
-
-    :global(html.dark-mode) .submit-button:hover {
-        background: #ffffff;
-    }
-
-    :global(html.dark-mode) .generate-button,
-    :global(html.dark-mode) .action-btn {
-        background: #4a5568;
-        color: #e2e8f0;
-    }
-
-    :global(html.dark-mode) .generate-button:hover,
-    :global(html.dark-mode) .action-btn:hover {
-        background: #718096;
-    }
-
-    :global(html.dark-mode) .automaton-btn {
-        background: transparent;
-        color: #cbd5e1;
-        border-color: #4a5568;
-    }
-
-    :global(html.dark-mode) .automaton-btn.selected {
-        background: #2d3748;
-        color: #ffffff;
-        border-color: #63b3ed;
-    }
-
-    :global(html.dark-mode) .automaton-btn:not(.selected):hover {
-        border-color: #63b3ed;
-        background: rgba(45, 55, 72, 0.5);
-    }
-
-    :global(html.dark-mode) .default-toggle-btn {
-        background: transparent;
-        color: #cbd5e1;
-        border-color: #4a5568;
-    }
-
-    :global(html.dark-mode) .default-toggle-btn.selected {
-        background: #2d3748;
-        border-color: #63b3ed;
-        color: #e2e8f0;
-    }
-
-    :global(html.dark-mode) .default-toggle-btn:hover {
-        background: rgba(45, 55, 72, 0.5);
-        border-color: #63b3ed;
-    }
-
-    :global(html.dark-mode) .vis-heading,
-    :global(html.dark-mode) .vis-title {
-        color: #90cdf4;
-    }
-
-    :global(html.dark-mode) .vis-graph-area {
-        background: #1a202c;
-        border-color: #4a5568;
-    }
-
-    :global(html.dark-mode) .regex-table th {
-        background: #1a202c;
-        color: #e2e8f0;
-    }
-
-    :global(html.dark-mode) .regex-table td {
-        border-color: #4a5568;
-    }
-
-    :global(html.dark-mode) .regex-type {
-        color: #90cdf4;
-    }
-
-    :global(html.dark-mode) .regex-pattern code {
-        background: #4a5568;
-        color: #e2e8f0;
-    }
-
-    
-    ::-webkit-scrollbar {
-        width: 11px;
-    }
-    ::-webkit-scrollbar-track {
-        background: #f1f1f1;
-    }
-    ::-webkit-scrollbar-thumb {
-        background-color: #888;
-        border-radius: 10px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: #555;
-    }
-
-    :global(html.dark-mode) ::-webkit-scrollbar-track {
-        background: #2d3748;
-    }
-
-    :global(html.dark-mode) ::-webkit-scrollbar-thumb {
-        background-color: #4a5568; 
-        border-color: #2d3748; 
-    }
-
-    :global(html.dark-mode) ::-webkit-scrollbar-thumb:hover {
-        background: #616e80;
-    }
+	.phase-inspector {
+		flex: 1.2;
+		padding: 0.2rem 2rem 2rem 2rem;
+		background: #fff;
+		transition: background-color 0.3s ease;
+	}
+
+	.source-code-header {
+		color: #444;
+		transition: color 0.3s ease;
+	}
+
+	.lexor-heading-h1 {
+		transition: color 0.3s ease;
+	}
+
+	.source-code-section {
+		margin-bottom: 2rem;
+	}
+
+	.instructions-section {
+		margin: 1.5rem 0 2rem 0;
+		background: #f8f9fa;
+		border-radius: 8px;
+		border-left: 4px solid #007acc;
+		transition: background-color 0.3s ease, border-color 0.3s ease;
+	}
+
+	.instructions-content {
+		padding: 1.25rem 1.5rem;
+	}
+
+	.instructions-header {
+		margin: 0 0 0.75rem 0;
+		font-size: 1rem;
+		font-weight: 600;
+		color: #333;
+		transition: color 0.3s ease;
+	}
+
+	.instructions-text {
+		margin: 0;
+		font-size: 0.9rem;
+		line-height: 1.5;
+		color: #555;
+		transition: color 0.3s ease;
+	}
+
+	.source-display {
+		background: #f5f5f5;
+		padding: 1rem;
+		border-radius: 4px;
+		overflow-x: auto;
+		font-family: monospace;
+		white-space: pre-wrap;
+		margin: 0;
+		transition: background-color 0.3s ease, color 0.3s ease;
+	}
+
+	.shared-block {
+		background: #f5f5f5;
+		padding: 1.2rem;
+		border-radius: 8px;
+		position: relative;
+		transition: background-color 0.3s ease, box-shadow 0.3s ease;
+	}
+
+	.lexor-heading {
+		justify-items: center;
+	}
+
+	.block-headers {
+		display: flex;
+		gap: 2rem;
+		margin-bottom: 1rem;
+		padding-bottom: 0.8rem;
+		border-bottom: 1px solid #e0e0e0;
+		transition: border-color 0.3s ease;
+	}
+
+	.header-section {
+		flex: 1;
+	}
+
+	.header-section h3 {
+		margin: 0;
+		color: #041a47;
+		font-size: 1rem;
+		font-weight: 600;
+		transition: color 0.3s ease;
+	}
+
+	.input-rows {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		padding-top: 0.5rem;
+	}
+
+	.input-row {
+		display: flex;
+		gap: 2rem;
+		position: relative;
+	}
+
+	.input-block {
+		flex: 1;
+	}
+
+	.input-block input {
+		width: 100%;
+		padding: 0.8rem;
+		border: 1px solid #ddd;
+		border-radius: 4px;
+		font-size: 0.9rem;
+		background: white;
+		color: #333;
+		box-sizing: border-box;
+		transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s ease, color 0.3s ease;
+	}
+
+	.input-block input:focus {
+		outline: none;
+		border-color: #041a47;
+		box-shadow: 0 0 0 2px rgba(4, 26, 71, 0.1);
+	}
+
+	.input-block input.error {
+		border-color: #dc3545;
+	}
+
+	.input-block input.error:focus {
+		box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.25);
+	}
+
+	.error-message {
+		color: #dc3545;
+		font-size: 0.8rem;
+		margin-top: 0.25rem;
+		position: absolute;
+		bottom: -1.2rem;
+	}
+
+	.form-error {
+		color: #dc3545;
+		text-align: center;
+		margin: 0.5rem 0;
+		font-size: 0.9rem;
+	}
+
+	.add-button {
+		position: absolute;
+		right: -16px;
+		bottom: -16px;
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		background: #BED2E6;
+		color: 000000;
+		border: none;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.2rem;
+		transition: background-color 0.2s;
+	}
+
+	.add-button:hover {
+		background: #27548a;
+	}
+
+	.submit-button {
+		padding: 0.6rem 1.5rem;
+		background: #BED2E6;
+		color: 000000;
+		border: none;
+		border-radius: 6px;
+		font-size: 0.9rem;
+		font-weight: 500;
+		cursor: pointer;
+		box-shadow: 0 2px 4px rgba(0, 26, 110, 0.1);
+		margin: 0 auto;
+		display: block;
+		transition: background-color 0.2s, color 0.2s, transform 0.2s;
+	}
+
+	.submit-button:hover {
+		background: #a8bdd1;
+		transform: translateY(-2px);
+	}
+
+	.button-stack {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+		margin-top: 1.5rem;
+	}
+
+	.generate-button {
+		padding: 0.6rem 1.5rem;
+		background: #a8bdd1;
+		color: 000000;
+		border: none;
+		border-radius: 6px;
+		font-size: 0.9rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background-color 0.2s ease, transform 0.2s;
+	}
+
+	.generate-button:hover {
+		background: #5a6268;
+		transform: translateY(-2px);
+	}
+
+	.status-message {
+		text-align: center;
+		padding: 0.5rem 1rem;
+		margin-top: 1rem;
+		border-radius: 4px;
+		font-size: 0.9rem;
+		background: #dc3545;
+		color: white;
+		opacity: 0;
+		animation: fadeInOut 3s ease-in-out;
+	}
+
+	.status-message.success {
+		background: #28a745;
+	}
+	.status-message.info {
+		background: #0096c7;
+	}
+
+	@keyframes fadeInOut {
+		0%,
+		100% {
+			opacity: 0;
+		}
+		10%,
+		90% {
+			opacity: 1;
+		}
+	}
+
+	.automaton-btn-row {
+		display: flex;
+		gap: 0.7rem;
+		margin: 2rem 0 1.5rem 0;
+		align-items: center;
+	}
+
+	.automaton-btn {
+		padding: 0.4rem 1rem;
+		border: 2px solid #e5e7eb;
+		border-radius: 1.2rem;
+		background: white;
+		color: #041a47;
+		font-weight: 500;
+		font-size: 0.95rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		outline: none;
+	}
+
+	.automaton-btn.selected {
+		border-color: #041a47;
+		background: #e6edfa;
+		color: #041a47;
+	}
+
+	.automaton-btn:not(.selected):hover {
+		border-color: #7da2e3;
+		background: #f5f8fd;
+	}
+
+	.default-toggle-btn {
+		margin-left: 1.2rem;
+		padding: 0.4rem 0.7rem;
+		border-radius: 50%;
+		border: 2px solid #e5e7eb;
+		background: white;
+		color: #041a47;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		height: 2.3rem;
+		width: 2.3rem;
+	}
+
+	.default-toggle-btn.selected {
+		background: #d0e2ff;
+		border-color: #041a47;
+	}
+
+	.default-toggle-btn:hover,
+	.default-toggle-btn:focus {
+		background: #f5f8fd;
+		border-color: #7da2e3;
+	}
+
+	.icon {
+		font-size: 1.3rem;
+		line-height: 1;
+		pointer-events: none;
+	}
+
+	.automaton-section {
+		margin-top: 0;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1.2rem 1.5rem;
+		max-width: 600px;
+	}
+
+	.automaton-section label {
+		font-weight: 500;
+		color: #041a47;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		font-size: 1.05rem;
+		transition: color 0.3s ease;
+		margin-top: 0.5rem;
+	}
+
+	.automaton-input {
+		padding: 0.7rem 1rem;
+		border: 1.5px solid #b6c6e3;
+		border-radius: 0.7rem;
+		font-size: 1rem;
+		background: #f8fafc;
+		color: #041a47;
+		transition: all 0.2s ease;
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	.automaton-input:focus {
+		border-color: #041a47;
+		outline: none;
+		background: #e6edfa;
+	}
+
+	.automaton-transitions {
+		min-height: 13rem;
+		font-family: 'Fira Mono', monospace;
+		resize: vertical;
+	}
+
+	.automata-action-row {
+		grid-column: span 2;
+		display: flex;
+		gap: 1.25rem;
+		margin-top: 1.75rem;
+		justify-content: flex-start;
+		align-items: center;
+		flex-wrap: wrap;
+	}
+
+	.action-btn {
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 0.25s ease;
+		border: none;
+		outline: none;
+		padding: 0.625rem 1.25rem;
+		border-radius: 0.75rem;
+		font-size: 0.9375rem;
+		background: #BED2E6;
+		color: #000000;
+		box-shadow: 0 1px 2px 0 rgba(30, 64, 175, 0.05);
+	}
+
+	.action-btn:hover,
+	.action-btn:focus {
+		background: #a8bdd1;
+		box-shadow: 0 1px 3px 0 rgba(30, 64, 175, 0.1), 0 1px 2px 0 rgba(30, 64, 175, 0.06);
+		transform: translateY(-1px);
+	}
+
+	.regex-action-buttons {
+		display: flex;
+		justify-content: center;
+		gap: 0.5rem;
+		margin-top: 0.5rem;
+	}
+
+	.pretty-vis-box,
+	.regex-display-container {
+		background: #f8fafc;
+		border-radius: 14px;
+		box-shadow: 0 2px 12px rgba(30, 64, 175, 0.07), 0 1.5px 6px rgba(0, 0, 0, 0.04);
+		padding: 1.5rem;
+		margin-top: 2.2rem;
+		margin-bottom: 1.5rem;
+		max-width: 750px;
+		width: 100%;
+		transition: background-color 0.3s ease, box-shadow 0.3s ease;
+		position: relative; 
+	}
+
+	.vis-heading {
+		margin-bottom: 1.1rem;
+		font-size: 1.25rem;
+		font-weight: 600;
+		color: #1e40af;
+		transition: color 0.3s ease;
+	}
+
+	.vis-title {
+		font-size: 1.18rem;
+		font-weight: 600;
+		color: #1e40af;
+		transition: color 0.3s ease;
+	}
+
+	.vis-graph-area {
+		width: 100%;
+		max-width: 450px;
+		height: 350px;
+		border: 1.5px solid #e0e7ef;
+		border-radius: 10px;
+		background: #fff;
+		margin: 0 auto;
+		box-shadow: 0 1px 4px rgba(30, 64, 175, 0.04);
+		transition: background-color 0.3s ease, border-color 0.3s ease;
+	}
+
+	.regex-table {
+		width: 100%;
+		border-collapse: collapse;
+		margin-top: 1rem;
+	}
+
+	.regex-table th,
+	.regex-table td {
+		padding: 0.7rem 1rem;
+		border-bottom: 1px solid #e0e7ef;
+		text-align: left;
+		transition: border-color 0.3s ease;
+	}
+
+	.regex-table th {
+		background: #e6edfa;
+		color: #041a47;
+		font-size: 1.05rem;
+		transition: background-color 0.3s ease, color 0.3s ease;
+	}
+
+	.regex-type {
+		font-weight: 600;
+		color: #1e40af;
+		letter-spacing: 0.03em;
+		transition: color 0.3s ease;
+	}
+
+	.regex-pattern code {
+		background: #e0e7ff;
+		color: #0a2540;
+		padding: 0.2em 0.5em;
+		border-radius: 5px;
+		font-family: 'Fira Mono', monospace;
+		font-size: 1.01em;
+		word-break: break-all;
+		display: inline-block;
+		transition: background-color 0.3s ease, color 0.3s ease;
+	}
+
+	/* --- Dark Mode Styles --- */
+	:global(html.dark-mode) .phase-inspector {
+		background: #1a2a4a;
+	}
+
+	:global(html.dark-mode) .source-code-header,
+	:global(html.dark-mode) .lexor-heading-h1,
+	:global(html.dark-mode) .automaton-section label {
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .instructions-section {
+		background: #2d3748;
+		border-left-color: #4da9ff;
+	}
+
+	:global(html.dark-mode) .instructions-header {
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .instructions-text {
+		color: #cbd5e0;
+	}
+
+	:global(html.dark-mode) .source-display,
+	:global(html.dark-mode) .shared-block,
+	:global(html.dark-mode) .pretty-vis-box,
+	:global(html.dark-mode) .regex-display-container {
+		background: #2d3748;
+	}
+
+	:global(html.dark-mode) .source-display {
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .block-headers {
+		border-bottom-color: #4a5568;
+	}
+
+	:global(html.dark-mode) .header-section h3 {
+		color: #90cdf4;
+	}
+
+	:global(html.dark-mode) .input-block input,
+	:global(html.dark-mode) .automaton-input {
+		background: #2d3748;
+		color: #e2e8f0;
+		border-color: #4a5568;
+	}
+
+	:global(html.dark-mode) .input-block input::placeholder,
+	:global(html.dark-mode) .automaton-input::placeholder {
+		color: #a0aec0;
+	}
+
+	:global(html.dark-mode) .input-block input:focus,
+	:global(html.dark-mode) .automaton-input:focus {
+		border-color: #60a5fa;
+		background-color: #2d3748;
+		box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.2);
+	}
+
+	:global(html.dark-mode) .add-button {
+		background: #001A6E;
+		color: #ffffff;
+	}
+
+	:global(html.dark-mode) .add-button:hover {
+		background: #002a8e;
+	}
+
+	:global(html.dark-mode) .submit-button {
+		background: #001A6E;
+		color: #ffffff;
+		font-weight: 600;
+	}
+
+	:global(html.dark-mode) .submit-button:hover {
+		background: #002a8e;
+	}
+
+	:global(html.dark-mode) .generate-button,
+	:global(html.dark-mode) .action-btn {
+		background: #001A6E;
+		color: #ffffff;
+	}
+
+	:global(html.dark-mode) .generate-button:hover,
+	:global(html.dark-mode) .action-btn:hover {
+		background: #002a8e;
+	}
+
+	:global(html.dark-mode) .automaton-btn {
+		background: transparent;
+		color: #cbd5e1;
+		border-color: #4a5568;
+	}
+
+	:global(html.dark-mode) .automaton-btn.selected {
+		background: #2d3748;
+		color: #ffffff;
+		border-color: #63b3ed;
+	}
+
+	:global(html.dark-mode) .automaton-btn:not(.selected):hover {
+		border-color: #63b3ed;
+		background: rgba(45, 55, 72, 0.5);
+	}
+
+	:global(html.dark-mode) .default-toggle-btn {
+		background: transparent;
+		color: #cbd5e1;
+		border-color: #4a5568;
+	}
+
+	:global(html.dark-mode) .default-toggle-btn.selected {
+		background: #2d3748;
+		border-color: #63b3ed;
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .default-toggle-btn:hover {
+		background: rgba(45, 55, 72, 0.5);
+		border-color: #63b3ed;
+	}
+
+	:global(html.dark-mode) .vis-heading,
+	:global(html.dark-mode) .vis-title {
+		color: #90cdf4;
+	}
+
+	:global(html.dark-mode) .vis-graph-area {
+		background: #1a202c;
+		border-color: #4a5568;
+	}
+
+	:global(html.dark-mode) .regex-table th {
+		background: #1a202c;
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .regex-table td {
+		border-color: #4a5568;
+	}
+
+	:global(html.dark-mode) .regex-type {
+		color: #90cdf4;
+	}
+
+	:global(html.dark-mode) .regex-pattern code {
+		background: #4a5568;
+		color: #e2e8f0;
+	}
+
+	::-webkit-scrollbar {
+		width: 11px;
+	}
+	::-webkit-scrollbar-track {
+		background: #f1f1f1;
+	}
+	::-webkit-scrollbar-thumb {
+		background-color: #888;
+		border-radius: 10px;
+	}
+	::-webkit-scrollbar-thumb:hover {
+		background: #555;
+	}
+
+	:global(html.dark-mode) ::-webkit-scrollbar-track {
+		background: #2d3748;
+	}
+
+	:global(html.dark-mode) ::-webkit-scrollbar-thumb {
+		background-color: #4a5568;
+		border-color: #2d3748;
+	}
+
+	:global(html.dark-mode) ::-webkit-scrollbar-thumb:hover {
+		background: #616e80;
+	}
+
+	/* Back button after NFA/DFA visualization */
+	button[style*="align-self: flex-start"] {
+		background: #BED2E6 !important; 
+		color: #000000 !important; 
+	}
+
+	:global(html.dark-mode) button[style*="align-self: flex-start"] {
+		background: #001A6E !important; 
+		color: #ffffff !important; 
+	}
+
+
+	.expand-btn {
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: #1e40af;
+		padding: 0.25rem;
+		border-radius: 50%;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		transition: background-color 0.2s;
+		position: absolute;
+		top: 1.5rem;
+		right: 1.5rem;
+	}
+	.expand-btn:hover {
+		background-color: rgba(0, 0, 0, 0.1);
+	}
+	:global(html.dark-mode) .expand-btn {
+		color: #90cdf4;
+	}
+	:global(html.dark-mode) .expand-btn:hover {
+		background-color: rgba(255, 255, 255, 0.1);
+	}
+
+	.modal-backdrop {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: rgba(0, 0, 0, 0.6);
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 1000;
+	}
+
+	.modal-content {
+		background: #fff;
+		padding: 1.5rem;
+		border-radius: 12px;
+		box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+		width: 80vw;
+		height: 80vh;
+		display: flex;
+		flex-direction: column;
+	}
+	:global(html.dark-mode) .modal-content {
+		background: #2d3748;
+	}
+
+	.modal-header {
+		display: flex;
+		align-items: center;
+		border-bottom: 1px solid #e0e0e0;
+		padding-bottom: 1rem;
+		margin-bottom: 1rem;
+	}
+	:global(html.dark-mode) .modal-header {
+		border-bottom-color: #4a5568;
+	}
+
+	.header-left,
+	.header-right {
+		flex: 1;
+		display: flex;
+		align-items: center;
+	}
+
+	.header-left {
+		justify-content: flex-start;
+	}
+
+	.header-center {
+		flex: 0 0 auto;
+		display: flex;
+		justify-content: center;
+	}
+
+	.header-right {
+		justify-content: flex-end;
+	}
+
+	.zoom-controls {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		background: #f8f9fa;
+		border: 1px solid #dee2e6;
+		border-radius: 8px;
+		padding: 0.25rem;
+	}
+	:global(html.dark-mode) .zoom-controls {
+		background: #4a5568;
+		border-color: #6b7280;
+	}
+
+	.zoom-btn {
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: #374151;
+		padding: 0.5rem;
+		border-radius: 4px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s ease;
+		min-width: 32px;
+		min-height: 32px;
+	}
+	.zoom-btn:hover {
+		background-color: #e9ecef;
+		color: #1f2937;
+	}
+	.zoom-btn:active {
+		transform: scale(0.95);
+	}
+	:global(html.dark-mode) .zoom-btn {
+		color: #f9fafb;
+	}
+	:global(html.dark-mode) .zoom-btn:hover {
+		background-color: #5a6578;
+		color: #ffffff;
+	}
+
+	.reset-btn {
+		border-left: 1px solid #dee2e6;
+		border-right: 1px solid #dee2e6;
+		margin: 0 0.25rem;
+		border-radius: 4px;
+	}
+	:global(html.dark-mode) .reset-btn {
+		border-left-color: #6b7280;
+		border-right-color: #6b7280;
+	}
+
+	.modal-header h3 {
+		margin: 0;
+		font-size: 1.25rem;
+		font-weight: 600;
+		color: #041a47;
+	}
+	:global(html.dark-mode) .modal-header h3 {
+		color: #e2e8f0;
+	}
+
+	.modal-close-btn {
+		background: none;
+		border: none;
+		font-size: 1.5rem;
+		cursor: pointer;
+		color: #666;
+		padding: 0.5rem;
+		line-height: 1;
+		border-radius: 50%;
+		transition: background-color 0.2s;
+	}
+	.modal-close-btn:hover {
+		background-color: #f0f0f0;
+	}
+	:global(html.dark-mode) .modal-close-btn {
+		color: #a0aec0;
+	}
+	:global(html.dark-mode) .modal-close-btn:hover {
+		background-color: #4a5568;
+	}
+
+	.modal-body {
+		flex-grow: 1;
+		width: 100%;
+		height: 100%;
+		overflow: hidden;
+		position: relative;
+	}
 </style>

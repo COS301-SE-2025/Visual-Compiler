@@ -217,7 +217,7 @@ func Lexing(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": req.UsersID}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	update_users_lexing := bson.M{"$set": bson.M{
 		"tokens":              tokens,
 		"tokens_unidentified": unidentified,

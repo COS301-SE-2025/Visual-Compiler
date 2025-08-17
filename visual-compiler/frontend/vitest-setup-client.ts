@@ -17,3 +17,12 @@ Object.defineProperty(window, 'matchMedia', {
 		dispatchEvent: vi.fn()
 	}))
 });
+
+// Mock for Element.animate - JSDOM doesn't support Web Animations API
+Element.prototype.animate = vi.fn().mockImplementation(() => ({
+	onfinish: null,
+	cancel: vi.fn(),
+	finish: vi.fn(),
+	play: vi.fn(),
+	pause: vi.fn()
+}));

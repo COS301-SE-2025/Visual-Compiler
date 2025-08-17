@@ -1,9 +1,15 @@
 <script lang="ts">
 	import type { NodeType } from '$lib/types';
 	import { theme } from '../../stores/theme';
+	import { AddToast } from '../../stores/toast';
 
 	export let handleCreateNode: (type: NodeType) => void;
 	export let tooltips: Record<NodeType, string>;
+
+	// A set to keep track of the node types that have been created.
+	let createdNodeTypes = new Set<NodeType>();
+	// A flag to ensure the toast is only shown once.
+	let hasShownDisabledToast = false;
 
 	const node_types: { id: NodeType; label: string }[] = [
 		{ id: 'source', label: 'Source Code' },
@@ -16,9 +22,32 @@
 	// createNode
 	// Return type: void
 	// Parameter type(s): NodeType
-	// A wrapper function that calls the handleCreateNode prop passed from the parent.
+	// A wrapper function that calls the handleCreateNode prop and disables the button.
 	function createNode(type: NodeType) {
+		// Call the function passed from the parent to create the node.
 		handleCreateNode(type);
+		// Add the node's type to our set.
+		createdNodeTypes.add(type);
+		// This reassignment is necessary to make Svelte recognize the change and update the UI.
+		createdNodeTypes = createdNodeTypes;
+	}
+
+	// handleClick
+	// Return type: void
+	// Parameter type(s): NodeType
+	// This function handles the click event on the button's wrapper.
+	function handleClick(type: NodeType) {
+		if (createdNodeTypes.has(type)) {
+			// If the node type has already been created, the button is disabled.
+			if (!hasShownDisabledToast) {
+				// Show a toast notification only the first time.
+				AddToast('Duplicate node: Only one node of each type is allowed in the pipeline', 'info');
+				hasShownDisabledToast = true;
+			}
+		} else {
+			// If the button is not disabled, create the node.
+			createNode(type);
+		}
 	}
 </script>
 
@@ -26,10 +55,13 @@
 	<h2 class="toolbox-heading">Blocks</h2>
 	<h2 class="toolbox-instruction">Click a block to add it to the canvas.</h2>
 	{#each node_types as n}
-		<button class="phase-btn" on:click={() => createNode(n.id)}>
-			{n.label}
-			<span class="custom-tooltip">{tooltips[n.id]}</span>
-		</button>
+		<!-- Wrapper div to capture clicks even when the button is disabled -->
+		<div on:click={() => handleClick(n.id)}>
+			<button class="phase-btn" disabled={createdNodeTypes.has(n.id)}>
+				{n.label}
+				<span class="custom-tooltip">{tooltips[n.id]}</span>
+			</button>
+		</div>
 	{/each}
 </aside>
 
@@ -74,8 +106,8 @@
 	.phase-btn {
 		height: 90px;
 		width: 200px;
-		background-color: #041a47;
-		color: white;
+		background-color: #BED2E6;
+		color: #000000;
 		border-radius: 8px;
 		padding: 8px;
 		font-size: 0.9rem;
@@ -92,7 +124,7 @@
 	}
 
 	.phase-btn:hover {
-		background-color: #05276f;
+		background-color: #a8bdd1;
 		transform: translateY(-2px);
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 	}
@@ -103,6 +135,23 @@
 		box-shadow: 0 2px 3px rgba(0, 0, 0, 0.08);
 	}
 
+	/* Style for the disabled button state */
+	.phase-btn:disabled {
+		background-color: #e6e6e6;
+		color: #666666;
+		cursor: not-allowed;
+		transform: none;
+		box-shadow: none;
+		/* This makes the click event pass through to the parent div */
+		pointer-events: none;
+	}
+
+	.phase-btn:disabled:hover {
+		background-color: #e6e6e6;
+		transform: none;
+		box-shadow: none;
+	}
+
 	.custom-tooltip {
 		visibility: hidden;
 		opacity: 0;
@@ -110,16 +159,17 @@
 		bottom: 110%;
 		left: 50%;
 		transform: translateX(-50%);
-		background: #1e1e1e;
+		background-color: #333;
 		color: #fff;
 		font-size: 0.75rem;
-		padding: 6px 10px;
-		border-radius: 15px;
+		padding: 0.4rem 0.8rem;
+		border-radius: 4px;
 		white-space: nowrap;
 		z-index: 10;
 		transition: opacity 0.2s ease;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 		pointer-events: none;
+		font-family:'Times New Roman', Times, serif ;
 	}
 
 	.custom-tooltip::after {
@@ -154,22 +204,33 @@
 	}
 
 	:global(html.dark-mode) .phase-btn {
-		background-color: #041a47;
-		color: #f0f0f0;
+		background-color: #001A6E;
+		color: #ffffff;
 		border: 1px solid #374151;
 	}
 
 	:global(html.dark-mode) .phase-btn:hover {
-		background-color: #2a4a8a;
+		background-color: #002a8e;
 	}
 
 	:global(html.dark-mode) .phase-btn:active {
 		background: #3a5a9a;
 	}
 
+	/* Style for the disabled button state in dark mode */
+	:global(html.dark-mode) .phase-btn:disabled {
+		background-color: #2d3748;
+		color: #a0aec0;
+		border-color: #4a5568;
+	}
+
+	:global(html.dark-mode) .phase-btn:disabled:hover {
+		background-color: #2d3748;
+	}
+
 	:global(html.dark-mode) .custom-tooltip {
 		background: #333;
-	}
+	}	
 
 	:global(html.dark-mode) .custom-tooltip::after {
 		border-color: #333 transparent transparent transparent;
