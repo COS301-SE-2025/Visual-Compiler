@@ -178,9 +178,9 @@
 
 			const data = await response.json();
 			
-			if (data.message === "Retrieved users project details" && data.translation) {
+			if (data.message === "Retrieved users project details" && data.results?.translating?.code) {
 				// Populate the text editor with the translation code
-				code_text = data.translation;
+				code_text = data.results.translating.code.join('\n'); // Join array of code lines into string
 				isDefaultInput = false;
 				AddToast('Project code loaded successfully!', 'success');
 			} else {
