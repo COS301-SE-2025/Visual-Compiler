@@ -21,12 +21,12 @@ func TestRouterRoutes(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := routers.SetupUserRouter()
 	endpoints := router.Routes()
-	if len(endpoints) != 9 {
-		t.Errorf("Expected routes to be registered")
+	if len(endpoints) != 10 {
+		t.Errorf("Expected number of routes not registered")
 	}
 }
 
-// create mock requests
+// create mock contexts
 func createTestContext(t *testing.T) (*gin.Context, *httptest.ResponseRecorder) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()

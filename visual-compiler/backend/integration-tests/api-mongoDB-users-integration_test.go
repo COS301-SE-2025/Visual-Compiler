@@ -187,7 +187,7 @@ func TestRegister_ExistingUsername(t *testing.T) {
 
 }
 
-func TestLogin_ExistingUser(t *testing.T) {
+func TestLogin_Success(t *testing.T) {
 	server := startServer(t)
 	defer closeServer(server)
 
@@ -224,6 +224,77 @@ func TestLogin_ExistingUser(t *testing.T) {
 
 		t.Logf("Login working: %s", body_array["message"])
 		user_id = body_array["id"]
+	}
+}
+
+func TestEditUser_NoAdmin(t *testing.T) {
+	server := startServer(t)
+	defer closeServer(server)
+
+	user_data := map[string]string{
+		"login":    "jasmine1",
+		"password": "jazzy1234$$",
+	}
+	req, err := json.Marshal(user_data)
+	if err != nil {
+		t.Errorf("converting data to json failed")
+	}
+
+	res, err := http.NewRequest("PATCH",
+		"http://localhost:8080/api/users/update",
+		bytes.NewBuffer(req),
+	)
+	if err != nil {
+		t.Errorf("User editing failed")
+	}
+	res.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+
+	response, err := client.Do(res)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusBadRequest {
+		body_bytes, _ := io.ReadAll(response.Body)
+		t.Errorf("User edit failed: %s", string(body_bytes))
+	}
+}
+
+func TestEditUser_NotAdmin(t *testing.T) {
+	server := startServer(t)
+	defer closeServer(server)
+
+	user_data := map[string]string{
+		"users_id": test_user_id,
+		"admin_id": test_user_id,
+		"username": "jasmine1",
+	}
+	req, err := json.Marshal(user_data)
+	if err != nil {
+		t.Errorf("converting data to json failed")
+	}
+
+	res, err := http.NewRequest("PATCH",
+		"http://localhost:8080/api/users/update",
+		bytes.NewBuffer(req),
+	)
+	if err != nil {
+		t.Errorf("User editing failed")
+	}
+	res.Header.Set("Content-Type", "application/json")
+	client := &http.Client{}
+
+	response, err := client.Do(res)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusForbidden {
+		body_bytes, _ := io.ReadAll(response.Body)
+		t.Errorf("User edit failed: %s", string(body_bytes))
 	}
 }
 
