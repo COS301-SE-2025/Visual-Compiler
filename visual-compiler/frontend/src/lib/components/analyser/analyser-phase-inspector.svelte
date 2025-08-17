@@ -149,7 +149,7 @@
     function handleSubmit() {
         // Validate Scope Rules
         if (scope_rules.some((rule) => rule.Start.trim() === '' || rule.End.trim() === '')) {
-            AddToast('Please fill out all Scope Rule fields before submitting.', 'error');
+            AddToast('Incomplete scope rules: Please fill in all Start and End fields for scope analysis', 'error');
             return;
         }
 
@@ -159,14 +159,14 @@
             rule.Assignment.trim() === '' ||
             rule.LHSData.trim() === ''
         )) {
-            AddToast('Please fill out all Type Rule fields before submitting.', 'error');
+            AddToast('Incomplete type rules: Please fill in all Result, Assignment, and LHS fields for type checking', 'error');
             return;
         }
 
         // Validate Grammar Rules (check if any field is empty)
         const grammarRuleFields = Object.values(grammar_rules);
         if (grammarRuleFields.some(field => typeof field === 'string' && field.trim() === '')) {
-            AddToast('Please fill out all Grammar Rule fields before submitting.', 'error');
+            AddToast('Incomplete grammar rules: Please fill in all grammar constraint fields', 'error');
             return;
         }
 
@@ -176,7 +176,7 @@
         submitted_grammar_rules = JSON.parse(JSON.stringify(grammar_rules));
 
         rules_submitted = true;
-        AddToast('All rules submitted successfully!', 'success');
+        AddToast('Semantic rules saved successfully! Ready to generate symbol table and perform analysis', 'success');
     }
 
     // Universal Reset Logic
@@ -202,7 +202,7 @@
 
         rules_submitted = false;
         dispatch('reset');
-        AddToast('All rules have been reset.', 'info');
+        AddToast('Rules reset: All semantic analysis rules have been cleared', 'info');
     }
 
     function insertDefaultRules() {
@@ -238,11 +238,11 @@
         const user_id = localStorage.getItem('user_id');
 		const project = get(projectName);
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+			AddToast('Authentication required: Please log in to generate symbol table', 'error');
 			return;
 		}
 		if (!project) {
-            AddToast('No project selected.', 'error');
+            AddToast('No project selected: Please select or create a project first', 'error');
             return;
         }
         is_loading = true;
@@ -284,14 +284,14 @@
         show_symbol_table = true;
 
         if (result.error) {
-            AddToast('Semantic error found!', 'error');
+            AddToast('Semantic error detected! Check the analysis results for details', 'error');
             dispatch('generate',{
                 symbol_table: symbols,
                 error: result.error,
                 error_details: result.details
             });
         }else {
-            AddToast('Symbol table generated successfully!', 'success');
+            AddToast('Semantic analysis complete! Symbol table generated successfully', 'success');
             dispatch('generate',{
                 symbol_table: symbols
             });
@@ -310,7 +310,7 @@
             status: err.response?.status
         });
         console.error('Error generating symbol table:', error);
-        AddToast(err.message || 'Failed to generate symbol table', 'error');
+        AddToast('Analysis failed: ' + (err.message || 'Unable to generate symbol table. Please check your connection'), 'error');
     } finally {
         is_loading = false;
     }

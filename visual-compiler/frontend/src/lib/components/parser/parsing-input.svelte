@@ -139,12 +139,12 @@
         const project = get(projectName);
 
         if (!user_id) {
-            AddToast('User not logged in.', 'error');
+            AddToast('Authentication required: Please log in to save grammar rules', 'error');
             return;
         }
 
         if (!project) {
-            AddToast('No project selected.', 'error');
+            AddToast('No project selected: Please select or create a project first', 'error');
             return;
         }
 
@@ -156,7 +156,7 @@
 
         if (cleaned_rules.length === 0) {
             // If all rules were cleared, show an error and add a new blank rule for convenience.
-            AddToast('Grammar is empty. Please define at least one rule.', 'error');
+            AddToast('Empty grammar: Please define at least one production rule to continue', 'error');
             addNewRule();
             return;
         }
@@ -184,7 +184,7 @@
             const non_terminal = rule.nonTerminal.trim();
             // This check is slightly redundant due to the filter, but good for safety.
             if (!non_terminal) {
-                AddToast('All rules must have a non-terminal (left-hand side).', 'error');
+                AddToast('Missing non-terminal: Every production rule must have a left-hand side symbol', 'error');
                 return;
             }
             if (!variable_list.includes(non_terminal)) {
@@ -197,7 +197,7 @@
 
             const has_at_least_one_production = rule.translations.some((t) => t.value.trim() !== '');
             if (!has_at_least_one_production) {
-                AddToast(`Rule for '${non_terminal}' must have at least one production.`, 'error');
+                AddToast(`Empty production: Rule for '${non_terminal}' needs at least one production on the right-hand side`, 'error');
                 return;
             }
 
@@ -249,11 +249,11 @@
             }
 
             const result = await response.json();
-            AddToast(result.message || 'Grammar submitted successfully!', 'success');
+            AddToast('Grammar saved successfully! Your parsing rules are ready for syntax analysis', 'success');
             is_grammar_submitted = true;
         } catch (error) {
             console.error('Submit Grammar Error:', error);
-            AddToast(String(error), 'error');
+            AddToast('Grammar save failed: ' + String(error), 'error');
             is_grammar_submitted = false;
         }
     }
@@ -298,7 +298,7 @@
         const project = get(projectName);
 
         if (!user_id || !project) {
-            AddToast('Missing user ID or project', 'error');
+            AddToast('Authentication error: Missing user credentials or project information', 'error');
             return;
         }
 
@@ -317,7 +317,7 @@
             });
 
             if (!tokensResponse.ok) {
-                AddToast('Please generate tokens first', 'error');
+                AddToast('Tokens required: Please complete lexical analysis and generate tokens first', 'error');
                 return;
             }
 
@@ -345,7 +345,7 @@
             }
 
             if (data.tree) {
-                AddToast('Syntax tree generated successfully!', 'success');
+                AddToast('Parse tree generated successfully! Your syntax analysis is complete', 'success');
                 dispatch('treereceived', data.tree);
             } else {
                 throw new Error('No tree data in response');

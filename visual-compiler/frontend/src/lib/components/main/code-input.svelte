@@ -54,7 +54,7 @@
 		const file = input.files?.[0];
 		if (!file) return;
 		if (!file.name.toLowerCase().endsWith('.txt')) {
-			AddToast('Only .txt files are allowed. Please upload a valid plain text file.', 'error');
+			AddToast('Invalid file type: Only .txt files are supported. Please upload a plain text file', 'error');
 			input.value = '';
 			return;
 		}
@@ -62,10 +62,10 @@
 		const reader = new FileReader();
 		reader.onload = () => {
 			code_text = reader.result as string;
-			AddToast('File uploaded successfully!', 'success');
+			AddToast('File uploaded successfully! Your source code is ready to use', 'success');
 		};
 		reader.onerror = () => {
-			AddToast('Failed to read file.', 'error');
+			AddToast('Upload failed: Unable to read the selected file. Please try again', 'error');
 		};
 		reader.readAsText(file);
 	}
@@ -75,11 +75,11 @@
 		const user_id = localStorage.getItem('user_id');
 		const project = get(projectName);
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+			AddToast('Authentication required: Please log in to save source code', 'error');
 			return;
 		}
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
@@ -94,13 +94,13 @@
 				})
 			});
 			if (!res.ok) throw new Error();
-			AddToast('Code confirmed and saved!', 'success');
+			AddToast('Source code saved successfully! Ready to begin lexical analysis', 'success');
 			confirmedSourceCode.set(code_text);
 			isConfirmed = true;
 			onCodeSubmitted(code_text);
 			await tick();
 		} catch {
-			AddToast('Failed to save source code', 'error');
+			AddToast('Save failed: Unable to save source code. Please check your connection and try again', 'error');
 		}
 	}
 

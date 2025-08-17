@@ -91,11 +91,11 @@
 		const user_id = localStorage.getItem('user_id');
 		const project = get(projectName);
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+			AddToast('Authentication required: Please log in to save lexical rules', 'error');
 			return;
 		}
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
@@ -121,7 +121,7 @@
 				submissionStatus = { show: true, success: true, message: 'Rules stored successfully!' };
 				showRegexActionButtons = true;
 			} catch (error) {
-				AddToast('Failed to save rules', 'error');
+				AddToast('Save failed: Unable to store lexical rules. Please check your connection and try again', 'error');
 			}
 			return;
 		}
@@ -150,7 +150,7 @@
 			showGenerateButton = true;
 		} catch (error) {
 			console.error('Store error:', error);
-			AddToast('Cannot connect to server. Please ensure the backend is running.', 'error');
+			AddToast('Connection error: Cannot reach server. Please ensure the backend is running and try again', 'error');
 		}
 
 		// Show regex action buttons after successful submit in REGEX mode
@@ -164,11 +164,11 @@
 			const user_id = localStorage.getItem('user_id');
 			const project = get(projectName);
 			if (!user_id) {
-				AddToast('User not logged in.', 'error');
+				AddToast('Authentication required: Please log in to generate tokens', 'error');
 				return;
 			}
 			if (!project) {
-                AddToast('No project selected.', 'error');
+                AddToast('No project selected: Please select or create a project first', 'error');
                 return;
             }
 
@@ -210,7 +210,7 @@
 			};
 		} catch (error) {
 			console.error('Generate tokens error:', error);
-			AddToast('Error generating tokens', 'error');
+			AddToast('Tokenization failed: Unable to generate tokens from your lexical rules', 'error');
 		}
 	}
 
@@ -220,12 +220,12 @@
 		const project = get(projectName); 
 
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+			AddToast('Authentication required: Please log in to save automata data', 'error');
 			return;
 		}
 
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
@@ -265,12 +265,12 @@
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
-				AddToast('Failed to save DFA: ' + errorText, 'error');
+				AddToast('Save failed: Unable to save DFA - ' + errorText, 'error');
 				return false;
 			}
 			return true;
 		} catch (error) {
-			AddToast('Failed to save DFA: ' + error, 'error');
+			AddToast('Save error: Failed to save DFA - ' + error, 'error');
 			return false;
 		}
 	}
@@ -283,12 +283,12 @@
 		const project = get(projectName); 
 
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+			AddToast('Authentication required: Please log in to perform tokenization', 'error');
 			return;
 		}
 
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
@@ -310,9 +310,9 @@
 				tokens: data.tokens,
 				unexpected_tokens: data.tokens_unidentified
 			});
-			AddToast('Tokenisation successful!', 'success');
+			AddToast('Tokenization complete! Your source code has been successfully tokenized', 'success');
 		} catch (error) {
-			AddToast('Tokenisation failed: ' + error, 'error');
+			AddToast('Tokenization failed: ' + error, 'error');
 		}
 	}
 

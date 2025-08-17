@@ -147,17 +147,17 @@
 				// Check if source node exists
 				const sourceNode = findNodeByType('source');
 				if (!sourceNode) {
-					AddToast('Please add a Source Code node before accessing the Lexer.', 'error');
+					AddToast('Missing Source Code: Add a Source Code node from the toolbox to begin lexical analysis', 'error');
 					return false;
 				}
 				// Check if source code has been submitted
 				if (!source_code.trim()) {
-					AddToast('Source Code must be submitted before proceeding to Lexer.', 'error');
+					AddToast('No source code provided: Please enter and submit your source code before proceeding to lexical analysis', 'error');
 					return false;
 				}
 				// Check for physical connection between source and lexer
 				if (!hasPhysicalConnection('source', 'lexer')) {
-					AddToast('Please connect the Source Code node to the Lexer node with an edge before proceeding.', 'error');
+					AddToast('Missing connection: Connect the Source Code node to the Lexer node to establish data flow', 'error');
 					return false;
 				}
 				return true;
@@ -166,33 +166,33 @@
 				// First check if source node exists
 				const sourceNodeForParser = findNodeByType('source');
 				if (!sourceNodeForParser) {
-					AddToast('Please add a Source Code node first before accessing the Parser.', 'error');
+					AddToast('Missing Source Code: Add a Source Code node from the toolbox to begin parsing', 'error');
 					return false;
 				}
 				// Check if source code has been submitted
 				if (!source_code.trim()) {
-					AddToast('Please enter source code first before accessing the Parser.', 'error');
+					AddToast('No source code provided: Please enter and submit your source code before accessing the Parser', 'error');
 					return false;
 				}
 				// Check if lexer node exists
 				const lexerNode = findNodeByType('lexer');
 				if (!lexerNode) {
-					AddToast('Please add a Lexer node and complete lexical analysis before accessing the Parser.', 'error');
+					AddToast('Missing Lexer: Add and complete lexical analysis before parsing your code', 'error');
 					return false;
 				}
 				// Check for physical connection between source and lexer
 				if (!hasPhysicalConnection('source', 'lexer')) {
-					AddToast('Please connect the Source Code node to the Lexer node with an edge first.', 'error');
+					AddToast('Missing Source→Lexer connection: Connect these nodes to enable data flow', 'error');
 					return false;
 				}
 				// Check if lexer phase has been completed
 				if (!phase_completion_status.lexer) {
-					AddToast('Please complete the lexical analysis phase before proceeding to parsing.', 'error');
+					AddToast('Lexical analysis incomplete: Complete tokenization in the Lexer before parsing', 'error');
 					return false;
 				}
 				// Check for physical connection between lexer and parser
 				if (!hasPhysicalConnection('lexer', 'parser')) {
-					AddToast('Please connect the Lexer node to the Parser node with an edge before proceeding.', 'error');
+					AddToast('Missing Lexer→Parser connection: Connect these nodes to enable parsing', 'error');
 					return false;
 				}
 				return true;
@@ -201,49 +201,49 @@
 				// First check if source node exists
 				const sourceNodeForAnalyser = findNodeByType('source');
 				if (!sourceNodeForAnalyser) {
-					AddToast('Please add a Source Code node first before accessing the Analyser.', 'error');
+					AddToast('Missing Source Code: Add a Source Code node from the toolbox to begin semantic analysis', 'error');
 					return false;
 				}
 				// Check if source code has been submitted
 				if (!source_code.trim()) {
-					AddToast('Please enter source code first before accessing the Analyser.', 'error');
+					AddToast('No source code provided: Please enter and submit your source code before accessing the Analyser', 'error');
 					return false;
 				}
 				// Check if lexer node exists
 				const lexerNodeForAnalyser = findNodeByType('lexer');
 				if (!lexerNodeForAnalyser) {
-					AddToast('Please add a Lexer node and complete lexical analysis before accessing the Analyser.', 'error');
+					AddToast('Missing Lexer: Complete lexical analysis before running semantic analysis', 'error');
 					return false;
 				}
 				// Check for physical connection between source and lexer
 				if (!hasPhysicalConnection('source', 'lexer')) {
-					AddToast('Please connect the Source Code node to the Lexer node with an edge first.', 'error');
+					AddToast('Missing Source→Lexer connection: Connect these nodes to establish data flow', 'error');
 					return false;
 				}
 				// Check if lexer phase has been completed
 				if (!phase_completion_status.lexer) {
-					AddToast('Please complete the lexical analysis phase before accessing the Analyser.', 'error');
+					AddToast('Lexical analysis incomplete: Complete tokenization before semantic analysis', 'error');
 					return false;
 				}
 				// Check if parser node exists
 				const parserNode = findNodeByType('parser');
 				if (!parserNode) {
-					AddToast('Please add a Parser node and complete parsing before accessing the Analyser.', 'error');
+					AddToast('Missing Parser: Add and complete parsing before semantic analysis', 'error');
 					return false;
 				}
 				// Check for physical connection between lexer and parser
 				if (!hasPhysicalConnection('lexer', 'parser')) {
-					AddToast('Please connect the Lexer node to the Parser node with an edge first.', 'error');
+					AddToast('Missing Lexer→Parser connection: Connect these nodes to enable parsing', 'error');
 					return false;
 				}
 				// Check if parser phase has been completed
 				if (!phase_completion_status.parser) {
-					AddToast('Please complete the parsing phase before proceeding to analysis.', 'error');
+					AddToast('Parsing incomplete: Complete syntax analysis before semantic analysis', 'error');
 					return false;
 				}
 				// Check for physical connection between parser and analyser
 				if (!hasPhysicalConnection('parser', 'analyser')) {
-					AddToast('Please connect the Parser node to the Analyser node with an edge before proceeding.', 'error');
+					AddToast('Missing Parser→Analyser connection: Connect these nodes to enable semantic analysis', 'error');
 					return false;
 				}
 				return true;
@@ -252,65 +252,65 @@
 				// First check if source node exists
 				const sourceNodeForTranslator = findNodeByType('source');
 				if (!sourceNodeForTranslator) {
-					AddToast('Please add a Source Code node first before accessing the Translator.', 'error');
+					AddToast('Missing Source Code: Add a Source Code node from the toolbox to begin translation', 'error');
 					return false;
 				}
 				// Check if source code has been submitted
 				if (!source_code.trim()) {
-					AddToast('Please enter source code first before accessing the Translator.', 'error');
+					AddToast('No source code provided: Please enter and submit your source code before accessing the Translator', 'error');
 					return false;
 				}
 				// Check if lexer node exists
 				const lexerNodeForTranslator = findNodeByType('lexer');
 				if (!lexerNodeForTranslator) {
-					AddToast('Please add a Lexer node and complete lexical analysis before accessing the Translator.', 'error');
+					AddToast('Missing Lexer: Complete lexical analysis before code translation', 'error');
 					return false;
 				}
 				// Check for physical connection between source and lexer
 				if (!hasPhysicalConnection('source', 'lexer')) {
-					AddToast('Please connect the Source Code node to the Lexer node with an edge first.', 'error');
+					AddToast('Missing Source→Lexer connection: Connect these nodes to establish data flow', 'error');
 					return false;
 				}
 				// Check if lexer phase has been completed
 				if (!phase_completion_status.lexer) {
-					AddToast('Please complete the lexical analysis phase before accessing the Translator.', 'error');
+					AddToast('Lexical analysis incomplete: Complete tokenization before translation', 'error');
 					return false;
 				}
 				// Check if parser node exists
 				const parserNodeForTranslator = findNodeByType('parser');
 				if (!parserNodeForTranslator) {
-					AddToast('Please add a Parser node and complete parsing before accessing the Translator.', 'error');
+					AddToast('Missing Parser: Complete parsing before code translation', 'error');
 					return false;
 				}
 				// Check for physical connection between lexer and parser
 				if (!hasPhysicalConnection('lexer', 'parser')) {
-					AddToast('Please connect the Lexer node to the Parser node with an edge first.', 'error');
+					AddToast('Missing Lexer→Parser connection: Connect these nodes to enable parsing', 'error');
 					return false;
 				}
 				// Check if parser phase has been completed
 				if (!phase_completion_status.parser) {
-					AddToast('Please complete the parsing phase before accessing the Translator.', 'error');
+					AddToast('Parsing incomplete: Complete syntax analysis before translation', 'error');
 					return false;
 				}
 				// Check if analyser node exists
 				const analyserNode = findNodeByType('analyser');
 				if (!analyserNode) {
-					AddToast('Please add an Analyser node and complete analysis before accessing the Translator.', 'error');
+					AddToast('Missing Analyser: Complete semantic analysis before code translation', 'error');
 					return false;
 				}
 				// Check for physical connection between parser and analyser
 				if (!hasPhysicalConnection('parser', 'analyser')) {
-					AddToast('Please connect the Parser node to the Analyser node with an edge first.', 'error');
+					AddToast('Missing Parser→Analyser connection: Connect these nodes to enable analysis', 'error');
 					return false;
 				}
 				// Check if analyser phase has been completed
 				if (!phase_completion_status.analyser) {
-					AddToast('Please complete the analysis phase before proceeding to translation.', 'error');
+					AddToast('Analysis incomplete: Complete semantic analysis before translation', 'error');
 					return false;
 				}
 				// Check for physical connection between analyser and translator
 				if (!hasPhysicalConnection('analyser', 'translator')) {
-					AddToast('Please connect the Analyser node to the Translator node with an edge before proceeding.', 'error');
+					AddToast('Missing Analyser→Translator connection: Connect these nodes to enable translation', 'error');
 					return false;
 				}
 				return true;
@@ -332,7 +332,7 @@
 		// For now, we'll just log it. Later, you can send this to your backend.
 		console.log('Project Saved:', JSON.stringify(savedProjectData, null, 2));
 
-		AddToast(`Project "${currentProjectName}" saved!`, 'success');
+		AddToast(`💾 Project "${currentProjectName}" saved successfully!`, 'success');
 	}
 
 	// --- TOOLTIPS AND LABELS ---
@@ -395,7 +395,7 @@
 		} else {
 			selected_phase = type;
 			if (!source_code.trim()) {
-				AddToast('Please enter source code before proceeding', 'error');
+				AddToast('Source code required: Please add source code to begin the compilation process', 'error');
 				selected_phase = null;
 				return;
 			}
