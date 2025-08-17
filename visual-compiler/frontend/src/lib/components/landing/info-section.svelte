@@ -4,27 +4,32 @@
 	const team_members = [
 		{
 			name: 'Sashen Inder Gajai',
-			role: 'Project Manager & Services Engineer',
+			role1: 'Project Manager',
+			role2: 'Services Engineer',
 			image_url: '/sashen.jpg'
 		},
 		{
 			name: 'Shinn-Ru Hung',
-			role: 'UI Engineer & Integration Engineer',
+			role1: 'UI Engineer',
+			role2: 'Integration Engineer',
 			image_url: '/shinn-ru.jpg'
 		},
 		{
 			name: 'Yuthika Harripersad',
-			role: 'Services Engineer & Testing Engineer',
+			role1: 'Services Engineer',
+			role2: 'Testing Engineer',
 			image_url: '/tia.jpg'
 		},
 		{
 			name: 'Keanu Ellary',
-			role: 'Integration Engineer & DevOps Engineer',
+			role1: 'Integration Engineer',
+			role2: 'DevOps Engineer',
 			image_url: '/keanu.jpg'
 		},
 		{
 			name: 'Devan de Wet',
-			role: 'UI Engineer & Data Engineer',
+			role1: 'UI Engineer',
+			role2: 'Data Engineer',
 			image_url: '/devan.jpg'
 		}
 	];
@@ -76,7 +81,8 @@
 						<div class="team_card">
 							<img src={member.image_url} alt="Photo of {member.name}" class="team_photo" />
 							<h4 class="member_name">{member.name}</h4>
-							<p class="member_role">{member.role}</p>
+							<p class="member_role">{member.role1}</p>
+							<p class="member_role">{member.role2}</p>
 						</div>
 					{/each}
 				</div>
@@ -179,6 +185,7 @@
 	}
 
 	.member_role {
+		margin:0;
 		font-size: 0.9rem;
 		opacity: 0.8;
 		text-align: center;

@@ -11,6 +11,16 @@ vi.mock('$lib/stores/toast', () => ({
 }));
 import { AddToast } from '$lib/stores/toast';
 
+// Mock the project store
+vi.mock('$lib/stores/project', () => ({
+	projectName: {
+		subscribe: vi.fn((callback) => {
+			callback('test-project');
+			return { unsubscribe: vi.fn() };
+		})
+	}
+}));
+
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
@@ -122,7 +132,10 @@ describe('PhaseInspector Component', () => {
 			);
 		});
 
-		expect(await screen.findByRole('button', { name: 'Generate Tokens' })).toBeInTheDocument();
+		// Wait for the Generate Tokens button to appear after successful submission
+		await waitFor(() => {
+			expect(screen.getByRole('button', { name: 'Generate Tokens' })).toBeInTheDocument();
+		});
 	});
 
 	it('TestHandleSubmit_Failure_ServerError: Shows error toast on fetch failure', async () => {
@@ -145,7 +158,7 @@ describe('PhaseInspector Component', () => {
 
 		await waitFor(() => {
 			// The component shows this specific error on fetch failure
-			expect(AddToast).toHaveBeenCalledWith('Failed to save rules', 'error');
+			expect(AddToast).toHaveBeenCalledWith('Save failed: Unable to store lexical rules. Please check your connection and try again', 'error');
 		});
 	});
 
