@@ -12,12 +12,13 @@
 	}
 
 	export let nodes: Writable<CanvasNode[]>;
+	export let initialConnections: NodeConnection[] = [];
 
 	export let onPhaseSelect: (type: NodeType) => void = () => {};
 	export let onConnectionChange: (connections: NodeConnection[]) => void = () => {};
 
 	// Track physical connections between nodes
-	let nodeConnections: NodeConnection[] = [];
+	let nodeConnections: NodeConnection[] = [...initialConnections];
 
 	let canvas_el: any;
 	let last_click = -Infinity;
@@ -97,8 +98,23 @@
 		<Svelvet 
 			bind:this={canvas_el} 
 			theme={'custom-theme'}
+			edges={nodeConnections.map(conn => ({
+				source: conn.sourceNodeId,
+				target: conn.targetNodeId,
+				id: conn.id
+			}))}
 			on:connection={handleConnection}
 			on:disconnection={handleDisconnection}
+			on:nodeMove={(event) => {
+				const { node, position } = event.detail;
+				const nodeId = node.id.replace('N-', '');
+				const updatedNodes = $nodes.map(n => 
+					n.id === nodeId 
+						? { ...n, position: { x: position.x, y: position.y } }
+						: n
+				);
+				nodes.set(updatedNodes);
+			}}
 		>
 			{#each $nodes as node (node.id)}
 				<Node
