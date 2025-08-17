@@ -25,3 +25,13 @@ export interface SymbolTable {
     symbols: Symbol[];
 }
 
+export interface NodeConnection {
+    id: string;
+    sourceNodeId: string;
+    targetNodeId: string;
+    sourceType: NodeType;
+    targetType: NodeType;
+    sourceAnchor?: string;
+    targetAnchor?: string;
+}
+

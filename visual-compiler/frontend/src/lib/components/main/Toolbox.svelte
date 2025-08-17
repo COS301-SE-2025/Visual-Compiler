@@ -41,7 +41,7 @@
 			// If the node type has already been created, the button is disabled.
 			if (!hasShownDisabledToast) {
 				// Show a toast notification only the first time.
-				AddToast('You can only have one node of each type.');
+				AddToast('Duplicate node: Only one node of each type is allowed in the pipeline', 'info');
 				hasShownDisabledToast = true;
 			}
 		} else {

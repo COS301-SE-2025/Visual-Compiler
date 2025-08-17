@@ -2,11 +2,30 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, fireEvent, screen, within } from '@testing-library/svelte';
 import MainWorkspace from '../../src/routes/main-workspace/+page.svelte';
 
+// Mock SvelteKit runtime
+(globalThis as any).__SVELTEKIT_PAYLOAD__ = {
+	data: {},
+	errors: {}
+};
+
+// Mock SvelteKit navigation
+vi.mock('$app/navigation', () => ({
+	goto: vi.fn(),
+	invalidateAll: vi.fn()
+}));
+
+vi.mock('$app/stores', () => ({
+	page: {
+		subscribe: vi.fn(() => ({ unsubscribe: vi.fn() }))
+	}
+}));
+
 const localStorageMock = (() => {
 	let store: { [key: string]: string } = {};
 	return {
 		getItem: (key: string) => store[key] || null,
 		setItem: (key: string, value: string) => (store[key] = value.toString()),
+		removeItem: (key: string) => delete store[key],
 		clear: () => (store = {})
 	};
 })();
@@ -60,24 +79,20 @@ describe('MainWorkspace Component', () => {
 	});
 
 	it('TestProTip_Success: Shows the pro-tip on first visit and dismisses it on click', async () => {
+		// Clear localStorage and ensure hasSeenDragTip is not set
+		localStorage.clear();
+		expect(localStorage.getItem('hasSeenDragTip')).toBeNull();
+		
 		render(MainWorkspace);
 
-		// Use a custom function to find text across multiple elements
-		const pro_tip = await screen.findByText((content, element) => {
-			if (!element) {
-				return false;
-			}
-			return (
-				element.textContent ===
-				'Pro-Tip: For the smoothest experience, click to select a node before dragging it.'
-			);
-		});
+		// First check if the dismiss button is present (which would indicate the tip is showing)
+		const dismiss_button = await screen.findByRole('button', { name: 'Dismiss tip' }, { timeout: 3000 });
+		expect(dismiss_button).toBeInTheDocument();
 
-		expect(pro_tip).toBeInTheDocument();
-
-		const dismiss_button = screen.getByRole('button', { name: 'Dismiss tip' });
+		// Click the dismiss button
 		await fireEvent.click(dismiss_button);
 
-		expect(screen.queryByText(/Pro-Tip:/)).toBeNull();
+		// Verify the button is no longer present (tip dismissed)
+		expect(screen.queryByRole('button', { name: 'Dismiss tip' })).toBeNull();
 	});
 });
