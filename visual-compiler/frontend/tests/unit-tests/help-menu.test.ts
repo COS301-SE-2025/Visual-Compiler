@@ -32,7 +32,7 @@ describe('HelpMenu Component', () => {
 		expect(screen.getByText('How do I move a node?')).toBeInTheDocument();
 		expect(screen.getByText('How do I connect two nodes?')).toBeInTheDocument();
 		expect(screen.getByText('How do I delete a node or connection?')).toBeInTheDocument();
-		expect(screen.getByText('Why can\'t I configure a Lexer or Parser node?')).toBeInTheDocument();
+		expect(screen.getByText(/Why can.t I configure a Lexer or Parser node/)).toBeInTheDocument();
 	});
 
 	it('TestQuestionToggle_Success: Expands and collapses FAQ answers', async () => {
@@ -109,13 +109,16 @@ describe('HelpMenu Component', () => {
 				answerPart: 'To delete a node, right-click'
 			},
 			{
-				question: 'Why can\'t I configure a Lexer or Parser node?',
+				question: "Why can't I configure a Lexer or Parser node?",
 				answerPart: 'You must first add and submit code'
 			}
 		];
 
 		for (const { question, answerPart } of questions) {
-			const questionButton = screen.getByRole('button', { name: new RegExp(question.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')) });
+			// Handle special characters - use partial matching for button names
+			const questionButton = screen.getByRole('button', { 
+				name: new RegExp(question.replace(/['']/g, ".").replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '.*')
+			});
 			
 			await fireEvent.click(questionButton);
 			expect(screen.getByText(new RegExp(answerPart))).toBeInTheDocument();

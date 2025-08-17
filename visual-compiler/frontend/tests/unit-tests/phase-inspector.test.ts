@@ -158,7 +158,7 @@ describe('PhaseInspector Component', () => {
 
 		await waitFor(() => {
 			// The component shows this specific error on fetch failure
-			expect(AddToast).toHaveBeenCalledWith('Failed to save rules', 'error');
+			expect(AddToast).toHaveBeenCalledWith('Save failed: Unable to store lexical rules. Please check your connection and try again', 'error');
 		});
 	});
 
