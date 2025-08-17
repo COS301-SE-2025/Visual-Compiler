@@ -17,12 +17,38 @@ describe('Lexer Test', ()=> {
 
         cy.wait(1000);
 
-        cy.get('button').contains('Source Code').click();
-        cy.get('.canvas-container').contains('Source Code').dblclick();
-        cy.get('.code-input-header-row button').click();
-        cy.get('.confirm-btn').click();
+        const project_name = `canvas_project`;
+        //delete project
+        cy.get('.section-heading').should('contain', 'Start a new project');
+        cy.get('.project-block').contains(project_name).get('.delete-button').click();
+        cy.get('.delete-confirm-button').click();
+        cy.wait(500);
 
+        //select project
+        cy.get('.section-heading').should('contain', 'Start a new project');
+        cy.get('.project-button').contains('New Blank').click();
+        cy.wait(500);
+        cy.get('#project-name-input').type(project_name);
+        cy.get('#confirm-project-name').click();
+        cy.wait(500);
+
+        //source code node
+        cy.get('button').should('contain', 'Source Code');
+        cy.get('button').contains('Source Code').click();
+        cy.get('.canvas-container').should('contain','Source Code');
+        cy.get('.canvas-container').contains('Source Code').dblclick();
+        cy.get('.code-input-container').should('contain', 'Source Code Input');
+        cy.get('.code-input-header-row button').click();
+        cy.get('.confirm-btn').contains('Confirm Code');
+        cy.get('.confirm-btn').click();
+        cy.contains('Source code saved');
+
+        //lexer node
+        cy.get('button').should('contain', 'Lexer');
         cy.get('button').contains('Lexer').click();
+        cy.get('.canvas-container').should('contain','Lexer');
+        cy.get('#A-1\\/N-source-1').trigger('mousedown', { which: 1, force: true });
+        cy.get('#A-1\\/N-lexer-2').trigger('mousemove', { force: true }).trigger('mouseup', { force: true });
         cy.get('.canvas-container').contains('Lexer').dblclick();
 
         cy.get('.phase-inspector').should('contain','LEXING');
@@ -43,9 +69,11 @@ describe('Lexer Test', ()=> {
         cy.get('.token-table').should('contain','INTEGER');
         cy.get('.token-table').should('contain','13');
         cy.get('.token-table').should('contain','OPERATOR');
-        cy.get('.token-table').should('contain','22');
+        cy.get('.token-table').should('contain','5');
         cy.get('.token-table').should('contain','SEPARATOR');
         cy.get('.token-table').should('contain',';');
+
+        cy.contains('Successfully tokenised');
   
     })
 

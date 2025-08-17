@@ -25,7 +25,7 @@ describe('Registration Test', () => {
 
         cy.get('.icon-submit-btn').click();
 
-        cy.contains('Successfully registered user', {timeout: 1000});
+        cy.contains('Account created successfully', {timeout: 1000});
 
     })
 
@@ -55,7 +55,7 @@ describe('Registration Test', () => {
 
         cy.get('.icon-submit-btn').click();
 
-        cy.contains('Registration failed', {timeout: 1000});
+        cy.contains('Registration error', {timeout: 1000});
 
     })
 })

@@ -18,7 +18,7 @@ describe('Login Test', () => {
 
         cy.get('.icon-submit-btn').click();
 
-        cy.contains('Login successful!');
+        cy.contains('Welcome');
 
     })
 

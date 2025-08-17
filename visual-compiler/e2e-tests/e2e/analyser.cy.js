@@ -17,24 +17,54 @@ describe('Analyser Test', ()=> {
 
         cy.wait(1000);
 
-        //source code
+        const project_name = `canvas_project`;
+        //delete project
+        cy.get('.section-heading').should('contain', 'Start a new project');
+        cy.get('.project-block').contains(project_name).get('.delete-button').click();
+        cy.get('.delete-confirm-button').click();
+        cy.wait(500);
+
+        //select project
+        cy.get('.section-heading').should('contain', 'Start a new project');
+        cy.get('.project-button').contains('New Blank').click();
+        cy.wait(500);
+        cy.get('#project-name-input').type(project_name);
+        cy.get('#confirm-project-name').click();
+        cy.wait(500);
+
+        //source code node
+        cy.get('button').should('contain', 'Source Code');
         cy.get('button').contains('Source Code').click();
+        cy.get('.canvas-container').should('contain','Source Code');
         cy.get('.canvas-container').contains('Source Code').dblclick();
+        cy.get('.code-input-container').should('contain', 'Source Code Input');
         cy.get('.code-input-header-row button').click();
+        cy.get('.confirm-btn').contains('Confirm Code');
         cy.get('.confirm-btn').click();
-        //lexer
+        cy.contains('Source code saved');
+
+        //lexer node
+        cy.get('button').should('contain', 'Lexer');
         cy.get('button').contains('Lexer').click();
+        cy.get('.canvas-container').should('contain','Lexer');
+        cy.get('#A-1\\/N-source-1').trigger('mousedown', { which: 1, force: true });
+        cy.get('#A-1\\/N-lexer-2').trigger('mousemove', { force: true }).trigger('mouseup', { force: true });
         cy.get('.canvas-container').contains('Lexer').dblclick();
+        cy.get('.phase-inspector').should('contain','LEXING');
         cy.get('.automaton-btn').contains('Regular Expression').click();
         cy.get('.default-toggle-btn').click();
         cy.get('.submit-button').contains('Submit').click();
         cy.get('.generate-button').contains('Generate Tokens').click();
         cy.get('button').contains('Return to Canvas').click();
-        //parser
+
+        //parser node
         cy.get('button').should('contain', 'Parser');
         cy.get('button').contains('Parser').click();
+        cy.get('#A-2\\/N-lexer-2').trigger('mousedown', {which: 1, force: true});
+        cy.get('#A-1\\/N-parser-3').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
         cy.get('.canvas-container').contains('Parser').dblclick();
-        cy.get('.grammar-header').contains('Context-Free Grammar').click();
+        cy.get('.phase-inspector').should('contain','PARSING');
+        cy.get('.grammar-header').should('contain','Context-Free Grammar');
         cy.get('.default-toggle-btn').click();
         cy.get('.submit-button').contains('Submit Grammar').click();
         cy.get('.submit-button').contains('Generate Syntax Tree').click();
@@ -43,20 +73,36 @@ describe('Analyser Test', ()=> {
         //analyser
         cy.get('button').should('contain', 'Analyser');
         cy.get('button').contains('Analyser').click();
-
         cy.get('.canvas-container').should('contain','Analyser');
+
+        cy.get('#A-2\\/N-parser-3').trigger('mousedown', {which: 1, force: true});
+        cy.get('#A-1\\/N-analyser-4').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
         cy.get('.canvas-container').contains('Analyser').dblclick();
 
-         cy.get('.heading').should('contain','ANALYSING');
-        cy.get('.grammar-header').contains('Context-Free Grammar').click();
+        cy.get('.analyser-heading').should('contain','ANALYSING');
         cy.get('.default-toggle-btn').click();
 
         cy.get('.submit-button').contains('Submit All Rules').click();
         cy.get('.generate-button').contains('Generate Symbol Table').click();
 
-        cy.get('.artifact-viewer').should('contain','Syntax Tree');
-        cy.get('.artifact-viewer').should('not.have.class','empty-state');
+        cy.get('.artifact-viewer').should('contain','Symbols');
+        cy.get('.symbol-table').should('contain','Type');
+        cy.get('.symbol-table').should('contain','Name');
+        cy.get('.symbol-table').should('contain','Scope');
+        cy.get('.symbol-table').should('contain','int');
+        cy.get('.symbol-table').should('contain','blue');
+        cy.get('.symbol-table').should('contain','0');
+        cy.get('.symbol-table').should('contain','int');
+        cy.get('.symbol-table').should('contain','red');
+        cy.get('.symbol-table').should('contain','1');
+        cy.get('.symbol-table').should('contain','int');
+        cy.get('.symbol-table').should('contain','function_name');
+        cy.get('.symbol-table').should('contain','0');
+        cy.get('.symbol-table').should('contain','int');
+        cy.get('.symbol-table').should('contain','green');
+        cy.get('.symbol-table').should('contain','1');
 
+        cy.contains('Symbol table generated successfully');
   
     })
 

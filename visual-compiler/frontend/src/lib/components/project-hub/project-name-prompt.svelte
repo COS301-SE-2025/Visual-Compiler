@@ -40,6 +40,7 @@
 					bind:value={projectName}
 					placeholder="e.g., My First Compiler"
 					class="project-name-input"
+					id="project-name-input"
 					aria-label="Project Name"
 				/>
 			</div>
@@ -50,6 +51,7 @@
 					class="create-button"
 					on:click={handleConfirm}
 					disabled={!projectName.trim()}
+					id="confirm-project-name"
 				>
 					Create Project
 				</button>
