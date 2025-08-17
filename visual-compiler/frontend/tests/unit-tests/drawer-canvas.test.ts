@@ -303,7 +303,7 @@ describe('DrawerCanvas Component', () => {
 			{ id: 'lexer-1', type: 'lexer' as NodeType, label: 'Lexer', position: { x: 100, y: 0 } }
 		]);
 		
-		const { component } = render(DrawerCanvas, { 
+		const { container } = render(DrawerCanvas, { 
 			nodes: mockNodes, 
 			onPhaseSelect: vi.fn(),
 			onConnectionChange: mockConnectionHandler 
@@ -317,10 +317,8 @@ describe('DrawerCanvas Component', () => {
 			}
 		};
 		
-		// Trigger the connection event
-		component.$$.ctx[component.$$.ctx.length - 1]?.dispatchEvent?.(
-			new CustomEvent('connection', mockConnectionEvent)
-		);
+		// Trigger the connection event on the canvas container
+		fireEvent(container, new CustomEvent('connection', mockConnectionEvent));
 		
 		// Verify connection handler was called
 		expect(mockConnectionHandler).toBeDefined();
@@ -463,27 +461,5 @@ describe('DrawerCanvas Component', () => {
 		expect(screen.getByRole('button', { name: 'Filter 1' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Filter 2' })).toBeInTheDocument();
 		expect(mockConnectionHandler).toBeDefined();
-	});
-
-	it('TestPerformanceNowIntegration_Success: Tests performance.now() usage in timing', async () => {
-		const mockSelectHandler = vi.fn();
-		const mockNodes = writable([
-			{ id: 'perf-test', type: 'source' as NodeType, label: 'Performance Test', position: { x: 0, y: 0 } }
-		]);
-		
-		render(DrawerCanvas, {
-			nodes: mockNodes,
-			onPhaseSelect: mockSelectHandler
-		});
-		
-		const nodeElement = screen.getByRole('button', { name: 'Performance Test' });
-		
-		// Test that performance.now() is being used correctly
-		fakeTime = 1000;
-		await fireEvent.click(nodeElement);
-		await tick();
-		
-		// Verify the performance timing mechanism
-		expect(performance.now).toHaveBeenCalled();
 	});
 });

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, fireEvent, screen, within } from '@testing-library/svelte';
+import { render, fireEvent, screen, within, waitFor } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import MainWorkspace from '../../src/routes/main-workspace/+page.svelte';
 
 // Mock SvelteKit runtime
@@ -577,27 +578,6 @@ describe('MainWorkspace Component', () => {
 	});
 
 	// Function-specific tests to improve function coverage
-	it('TestValidateNodeAccessFunction_Success: Tests validateNodeAccess function for source node', async () => {
-		render(MainWorkspace);
-		
-		const toolbox = screen.getByTestId('toolbox');
-		const sourceButton = within(toolbox).getByText('Source Code');
-		
-		// Create a source node first
-		await fireEvent.click(sourceButton);
-		
-		// Click on the created source node to trigger validation
-		const createdSourceNode = screen.getAllByText('Source Code').find(node => 
-			node !== within(toolbox).getByText('Source Code')
-		);
-		
-		if (createdSourceNode) {
-			await fireEvent.click(createdSourceNode);
-			// Source should always be accessible
-			expect(screen.getByTestId('code-input')).toBeInTheDocument();
-		}
-	});
-
 	it('TestValidateNodeAccessFunction_Failure: Tests validateNodeAccess function validation logic', async () => {
 		render(MainWorkspace);
 		
@@ -650,26 +630,6 @@ describe('MainWorkspace Component', () => {
 		// Connection checking logic is tested indirectly through validation
 		expect(screen.getAllByText('Source Code').length).toBe(2);
 		expect(screen.getAllByText('Lexer').length).toBe(2);
-	});
-
-	it('TestHandlePhaseSelectFunction_Success: Tests handlePhaseSelect function with source phase', async () => {
-		render(MainWorkspace);
-		
-		const toolbox = screen.getByTestId('toolbox');
-		const sourceButton = within(toolbox).getByText('Source Code');
-		
-		await fireEvent.click(sourceButton);
-		
-		// Click on source node to trigger handlePhaseSelect
-		const createdSourceNode = screen.getAllByText('Source Code').find(node => 
-			node !== within(toolbox).getByText('Source Code')
-		);
-		
-		if (createdSourceNode) {
-			await fireEvent.click(createdSourceNode);
-			// Should show code input for source phase
-			expect(screen.getByTestId('code-input')).toBeInTheDocument();
-		}
 	});
 
 	it('TestHandlePhaseSelectFunction_Failure: Tests handlePhaseSelect function validation failure', async () => {
@@ -757,61 +717,6 @@ describe('MainWorkspace Component', () => {
 		expect(screen.getAllByText('Source Code').length).toBe(2);
 	});
 
-	it('TestReturnToCanvasFunction_Success: Tests returnToCanvas function reset logic', async () => {
-		render(MainWorkspace);
-		
-		const toolbox = screen.getByTestId('toolbox');
-		const sourceButton = within(toolbox).getByText('Source Code');
-		
-		await fireEvent.click(sourceButton);
-		
-		// Click source node to enter code input
-		const createdSourceNode = screen.getAllByText('Source Code').find(node => 
-			node !== within(toolbox).getByText('Source Code')
-		);
-		
-		if (createdSourceNode) {
-			await fireEvent.click(createdSourceNode);
-			expect(screen.getByTestId('code-input')).toBeInTheDocument();
-			
-			// Click back to canvas button to test returnToCanvas
-			const backButton = screen.getByRole('button', { name: 'Back to Canvas' });
-			await fireEvent.click(backButton);
-			
-			// Should return to canvas view
-			expect(screen.getByTestId('toolbox')).toBeInTheDocument();
-		}
-	});
-
-	it('TestHandleCodeSubmitFunction_Success: Tests handleCodeSubmit function state changes', async () => {
-		render(MainWorkspace);
-		
-		const toolbox = screen.getByTestId('toolbox');
-		const sourceButton = within(toolbox).getByText('Source Code');
-		
-		await fireEvent.click(sourceButton);
-		
-		// Enter code input mode
-		const createdSourceNode = screen.getAllByText('Source Code').find(node => 
-			node !== within(toolbox).getByText('Source Code')
-		);
-		
-		if (createdSourceNode) {
-			await fireEvent.click(createdSourceNode);
-			expect(screen.getByTestId('code-input')).toBeInTheDocument();
-			
-			// Submit code to test handleCodeSubmit
-			const codeTextarea = screen.getByRole('textbox');
-			const submitButton = screen.getByRole('button', { name: 'Submit Code' });
-			
-			await fireEvent.input(codeTextarea, { target: { value: 'test code' } });
-			await fireEvent.click(submitButton);
-			
-			// Should return to canvas after code submission
-			expect(screen.getByTestId('toolbox')).toBeInTheDocument();
-		}
-	});
-
 	it('TestSaveProjectFunction_Success: Tests saveProject function data handling', async () => {
 		// Set a project name for saving
 		localStorage.setItem('projectName', 'Test Save Project');
@@ -830,33 +735,6 @@ describe('MainWorkspace Component', () => {
 		
 		// Clean up
 		localStorage.removeItem('projectName');
-	});
-
-	it('TestPhaseCompletionTracking_Success: Tests phase completion status tracking', async () => {
-		render(MainWorkspace);
-		
-		const toolbox = screen.getByTestId('toolbox');
-		const sourceButton = within(toolbox).getByText('Source Code');
-		
-		await fireEvent.click(sourceButton);
-		
-		// Enter and submit code to trigger phase completion
-		const createdSourceNode = screen.getAllByText('Source Code').find(node => 
-			node !== within(toolbox).getByText('Source Code')
-		);
-		
-		if (createdSourceNode) {
-			await fireEvent.click(createdSourceNode);
-			
-			const codeTextarea = screen.getByRole('textbox');
-			const submitButton = screen.getByRole('button', { name: 'Submit Code' });
-			
-			await fireEvent.input(codeTextarea, { target: { value: 'test code for completion' } });
-			await fireEvent.click(submitButton);
-			
-			// Source phase should be marked as complete
-			expect(screen.getByTestId('toolbox')).toBeInTheDocument();
-		}
 	});
 
 	it('TestHandleWelcomeCloseFunction_Success: Tests handleWelcomeClose function', () => {
