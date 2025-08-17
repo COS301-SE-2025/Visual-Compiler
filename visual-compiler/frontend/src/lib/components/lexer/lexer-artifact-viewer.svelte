@@ -92,8 +92,8 @@
     }
 
     .token-table th {
-        background: #041a47;
-        color: white;
+        background: #BED2E6;
+        color: 000000;
         font-weight: 500;
         transition: background-color 0.3s ease, color 0.3s ease;
     }
@@ -171,7 +171,8 @@
     }
 
     :global(html.dark-mode) .token-table th {
-        background: #1a202c;
+        background: #001A6E;
+        color: #ffffff; 
     }
 
     :global(html.dark-mode) .unexpected-tokens-container {

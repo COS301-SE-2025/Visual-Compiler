@@ -2,41 +2,164 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
+	import { pipelineStore } from '$lib/stores/pipeline';
 	import ProjectNamePrompt from './project-name-prompt.svelte';
 	import DeleteConfirmPrompt from './delete-confirmation.svelte'; 
 
+	const dispatch = createEventDispatcher();
+
 	export let show = false;
+
+	// Watch for changes to the 'show' prop and refresh projects when modal opens
+	$: if (show) {
+		fetchProjects();
+	}
 
 	let userName = '';
 	let showProjectNamePrompt = false;
 	let showDeleteConfirmPrompt = false; // State for the delete confirmation
 	let projectToDelete = ''; // State to hold the name of the project to be deleted
+	let hasExistingProject = false; // Track if a project is already loaded
+	let currentProjectName = ''; // Track the current project name
 
-	let recentProjects = [
-		{ name: 'Lexer', dateModified: 'August 4, 2025' },
-		{ name: 'Pascal Parser', dateModified: 'July 28, 2025' },
-		{ name: 'x86 Generator', dateModified: 'July 15, 2025' },
-		{ name: 'Semantic Rules', dateModified: 'June 30, 2025' },
-		{ name: 'AST Viewer', dateModified: 'June 21, 2025' },
-		{ name: 'Java-Python', dateModified: 'June 15, 2025' }
-	];
+	interface Project {
+		name: string;
+		dateModified: string;
+	}
 
-	const dispatch = createEventDispatcher();
+	let recentProjects: Project[] = [];
+	
+	async function fetchProjects() {
+		const userId = localStorage.getItem('user_id');
+		if (!userId) return;
+
+		try {
+			const response = await fetch(`http://localhost:8080/api/users/getProjects?users_id=${userId}`, {
+				method: 'GET',
+				headers: {
+					'accept': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			
+			if (data.all_projects) {
+				// Transform projects into the required format
+				recentProjects = data.all_projects.map((projectName: string) => ({
+					name: projectName,
+					dateModified: new Date().toLocaleDateString('en-US', {
+						year: 'numeric',
+						month: 'long',
+						day: 'numeric'
+					})
+				}));
+			}
+		} catch (error) {
+			console.error('Error fetching projects:', error);
+			recentProjects = []; // Reset to empty array on error
+		}
+	}
 
 	function handleClose() {
-		dispatch('close');
+		if (hasExistingProject) {
+			dispatch('close');
+		}
 	}
 
 	function createNewProject() {
 		showProjectNamePrompt = true;
 	}
 
-	function handleProjectNameConfirm(event: CustomEvent<string>) {
+	async function selectProject(selectedProjectName: string) {
+		const userId = localStorage.getItem('user_id');
+		if (!userId) {
+			AddToast('Please log in to select a project', 'error');
+			return;
+		}
+
+		try {
+			const response = await fetch(
+				`http://localhost:8080/api/users/getProject?project_name=${selectedProjectName}&users_id=${userId}`, {
+				method: 'GET',
+				headers: {
+					'accept': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			
+			if (data.message === "Retrieved users project details") {
+				// Check if there's pipeline data
+				if (data.results && data.results.pipeline) {
+					// Update the pipeline store with the saved pipeline data
+					pipelineStore.set(data.results.pipeline);
+					console.log('Restored pipeline:', data.results.pipeline);
+					AddToast('Pipeline restored successfully', 'success');
+				} else {
+					// If no pipeline data, initialize with empty state
+					pipelineStore.set({
+						nodes: [],
+						lastSaved: null
+					});
+					console.log('No saved pipeline found, initialized empty state');
+				}
+
+				// Store the selected project name in the store
+				projectName.set(selectedProjectName);
+				
+				// Close the project hub modal
+				handleClose();
+			} else {
+				console.error('Failed to retrieve project details');
+				AddToast('Failed to retrieve project details', 'error');
+			}
+		} catch (error: any) {
+			console.error('Error verifying project selection:', error);
+			const errorMessage = error.message || 'Unknown error occurred';
+			AddToast(`Error loading project: ${errorMessage}`, 'error');
+		}
+	}
+
+	async function handleProjectNameConfirm(event: CustomEvent<string>) {
 		const newProjectName = event.detail;
-		projectName.set(newProjectName);
-		console.log(`Project created with name: ${newProjectName}`); // For verification
-		showProjectNamePrompt = false;
-		handleClose(); // This closes the ProjectHub overlay
+		const userId = localStorage.getItem('user_id');
+		if (!userId) return;
+
+		try {
+			const response = await fetch('http://localhost:8080/api/users/save', {
+				method: 'POST',
+				headers: {
+					'accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					project_name: newProjectName,
+					users_id: userId
+				})
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+
+			// Update UI and close modal
+			projectName.set(newProjectName);
+			showProjectNamePrompt = false;
+			await fetchProjects(); // Refresh the project list
+			handleClose();
+		} catch (error) {
+			console.error('Error saving project:', error);
+		}
 	}
 
 	/**
@@ -55,25 +178,75 @@
 	 * @function confirmDelete
 	 * @description Proceeds with the deletion after user confirmation.
 	 */
-	function confirmDelete() {
+	async function confirmDelete() {
 		console.log(`Confirmed deletion of project: ${projectToDelete}`);
-		// This is where you will later add the logic to call your backend API to delete the project.
-		// For now, we'll also filter it from the UI list as a visual confirmation.
-		recentProjects = recentProjects.filter((p) => p.name !== projectToDelete);
-		showDeleteConfirmPrompt = false;
-		projectToDelete = '';
+		const userId = localStorage.getItem('user_id');
+		if (!userId) return;
+
+		try {
+			const response = await fetch('http://localhost:8080/api/users/deleteProject', {
+				method: 'DELETE',
+				headers: {
+					'accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					project_name: projectToDelete,
+					users_id: userId
+				})
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			console.log('Project deleted successfully:', data);
+
+			// Remove from UI list after successful deletion
+			recentProjects = recentProjects.filter((p) => p.name !== projectToDelete);
+			
+			// If the deleted project is the currently loaded project, clear it
+			if (projectToDelete === currentProjectName) {
+				projectName.set('');
+				currentProjectName = '';
+				hasExistingProject = false;
+			}
+			
+			showDeleteConfirmPrompt = false;
+			projectToDelete = '';
+		} catch (error) {
+			console.error('Error deleting project:', error);
+			// Still close the modal even if delete fails
+			showDeleteConfirmPrompt = false;
+			projectToDelete = '';
+		}
 	}
 
 	onMount(() => {
 		const storedUserId = localStorage.getItem('user_id');
 		userName = storedUserId || 'Guest';
+		
+		// Check if there's already a project loaded
+		const unsubscribe = projectName.subscribe(value => {
+			hasExistingProject = value.trim() !== '';
+			currentProjectName = value;
+		});
+		
+		fetchProjects(); // Fetch projects when component mounts
+		
+		// Clean up subscription when component is destroyed
+		return () => {
+			unsubscribe();
+		};
 	});
 </script>
 
 {#if show}
-	<div class="backdrop" transition:fly={{ y: -50, duration: 300, opacity: 0.5 }} on:click={handleClose}>
+	<div class="backdrop" transition:fly={{ y: -50, duration: 300, opacity: 0.5 }} on:click={hasExistingProject ? handleClose : undefined}>
 		<div class="modal" on:click|stopPropagation>
-			<button class="close-button" on:click={handleClose}>
+			{#if hasExistingProject}
+			<button class="close-button" on:click={handleClose} aria-label="Close project hub">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					class="close-icon"
@@ -85,6 +258,7 @@
 					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
 				</svg>
 			</button>
+			{/if}
 
 			<h3 class="section-heading">Start a new project</h3>
 			<div class="start-project-buttons">
@@ -129,7 +303,7 @@
 			<div class="project-list-container">
 				<div class="project-grid">
 					{#each recentProjects as project}
-						<div class="project-block">
+						<div class="project-block" on:click={() => selectProject(project.name)}>
 							<button
 								class="delete-button"
 								on:click={(event) => handleDeleteClick(project.name, event)}

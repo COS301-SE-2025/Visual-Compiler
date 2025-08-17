@@ -15,11 +15,13 @@ import (
 // Specifies the JSON body response after successful fetching
 type UserPublic struct {
 	// User's auto-generated ID
-	ID string `json:"id"`
+	ID bson.ObjectID `json:"users_id"`
 	// User's Username
 	Username string `json:"username"`
 	// User's Email
 	Email string `json:"email"`
+	// User's projects
+	Projects bson.A `json:"projects"`
 }
 
 // @Summary Get all users
@@ -52,15 +54,28 @@ func GetAllUsers(c *gin.Context) {
 			return
 		}
 
-		id := raw["_id"].(bson.ObjectID).Hex()
+		id := raw["_id"].(bson.ObjectID)
 		username := raw["username"].(string)
 		email := raw["email"].(string)
+
+		var projects bson.A
+		if raw["projects"] != nil {
+			projects = raw["projects"].(bson.A)
+		} else {
+			projects = bson.A{}
+		}
 
 		all_users_public = append(all_users_public, UserPublic{
 			ID:       id,
 			Username: username,
 			Email:    email,
+			Projects: projects,
 		})
+	}
+
+	if err := pointer.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error iterating users: " + err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{

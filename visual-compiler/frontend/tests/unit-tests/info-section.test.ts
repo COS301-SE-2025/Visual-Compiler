@@ -49,11 +49,10 @@ describe('InfoSection Component', () => {
 		// 3. Assert that the button has the 'active' class.
 		expect(teamButton).toHaveClass('active');
 
-		// 4. Assert that the team content is now visible by checking for a team member's name.
-		expect(screen.getByText('Devan de Wet')).toBeInTheDocument();
-		expect(screen.getByText('UI Engineer & Data Engineer')).toBeInTheDocument();
-
-		// 5. Assert that the content from the default "About" tab is now hidden.
+  // 4. Assert that the team content is now visible by checking for a team member's name.
+  expect(screen.getByText('Devan de Wet')).toBeInTheDocument();
+  expect(screen.getAllByText('UI Engineer')).toHaveLength(2); // There are 2 people with this role
+  expect(screen.getByText('Data Engineer')).toBeInTheDocument();		// 5. Assert that the content from the default "About" tab is now hidden.
 		expect(screen.queryByText('An Educational Tool for a Complex World')).toBeNull();
 	});
 });

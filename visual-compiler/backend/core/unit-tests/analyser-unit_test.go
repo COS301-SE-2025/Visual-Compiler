@@ -2221,7 +2221,7 @@ func TestTraverseSyntaxTree_NilNode(t *testing.T) {
 	}
 
 	syntax_tree := services.SyntaxTree{
-		Root: &services.TreeNode{},
+		Root: nil,
 	}
 
 	symbol_table := &services.SymbolTable{
@@ -3012,126 +3012,706 @@ func TestAnalyse_ValidTest2(t *testing.T) {
 	}
 }
 
-func TestTraverseSyntaxTree_DefaultExample(t *testing.T) {
-	scope_rules := []*services.ScopeRule{
-		{Start: "{", End: "}"},
+func TestHandleAssignment_NoResultData(t *testing.T) {
+
+	err := services.HandleAssignment(services.AssignmentData{}, services.SymbolTable{}, []services.TypeRule{})
+	if err == nil {
+		t.Errorf("Error expected")
+	}
+	if err.Error() != fmt.Errorf("error: no result data specified").Error() {
+		t.Errorf("Incorrect error: %v", err)
+	}
+}
+
+func TestHandleAssignment_NoAssignment(t *testing.T) {
+
+	result_data := services.Symbol{
+		Type: "int",
+	}
+	term := services.Symbol{
+		Type: "int",
+	}
+	operator := services.Symbol{
+		Type: "+",
+	}
+	assignment := services.Symbol{}
+	assignment_data := services.AssignmentData{
+		ResultData: result_data,
+		Terms:      []services.Symbol{term, term},
+		Operator:   operator,
+		Assignment: assignment,
 	}
 
-	syntax_tree := services.SyntaxTree{
-		Root: &services.TreeNode{
-			Symbol: "STATEMENT",
-			Value:  "",
-			Children: []*services.TreeNode{
-				{
-					Symbol: "DECLARATION",
-					Value:  "",
-					Children: []*services.TreeNode{
-						{
-							Symbol: "TYPE",
-							Value:  "",
-							Children: []*services.TreeNode{
-								{
-									Symbol: "KEYWORD",
-									Value:  "int",
-								},
+	err := services.HandleAssignment(assignment_data, services.SymbolTable{}, []services.TypeRule{})
+	if err == nil {
+		t.Errorf("Error expected")
+	}
+	if err.Error() != fmt.Errorf("error: no assignment symbol used: ").Error() {
+		t.Errorf("Incorrect error: %v", err)
+	}
+}
+
+func TestHandleAssignment_NoOperator(t *testing.T) {
+
+	result_data := services.Symbol{
+		Type: "int",
+	}
+	term := services.Symbol{
+		Type: "int",
+	}
+	operator := services.Symbol{}
+	assignment := services.Symbol{
+		Type: "=",
+	}
+	assignment_data := services.AssignmentData{
+		ResultData: result_data,
+		Terms:      []services.Symbol{term, term},
+		Operator:   operator,
+		Assignment: assignment,
+	}
+
+	err := services.HandleAssignment(assignment_data, services.SymbolTable{}, []services.TypeRule{})
+	if err == nil {
+		t.Errorf("Error expected")
+	}
+	if err.Error() != fmt.Errorf("error: No operator indicated for multiple terms in assignment: ").Error() {
+		t.Errorf("Incorrect error: %v", err)
+	}
+}
+
+func TestHandleAssignment_NoTerms(t *testing.T) {
+
+	result_data := services.Symbol{
+		Type: "int",
+	}
+	operator := services.Symbol{
+		Type: "+",
+	}
+	assignment := services.Symbol{
+		Type: "=",
+	}
+	assignment_data := services.AssignmentData{
+		ResultData: result_data,
+		Terms:      []services.Symbol{},
+		Operator:   operator,
+		Assignment: assignment,
+	}
+
+	err := services.HandleAssignment(assignment_data, services.SymbolTable{}, []services.TypeRule{})
+	if err == nil {
+		t.Errorf("Error expected")
+	}
+	if err.Error() != fmt.Errorf("error: no terms identified for assignment: ").Error() {
+		t.Errorf("Incorrect error: %v", err)
+	}
+}
+
+func TestHandleAssignment_NotEnoughTerms(t *testing.T) {
+
+	result_data := services.Symbol{
+		Type: "int",
+	}
+	term := services.Symbol{
+		Type: "int",
+	}
+	operator := services.Symbol{
+		Type: "+",
+	}
+	assignment := services.Symbol{
+		Type: "=",
+	}
+	assignment_data := services.AssignmentData{
+		ResultData: result_data,
+		Terms:      []services.Symbol{term},
+		Operator:   operator,
+		Assignment: assignment,
+	}
+
+	err := services.HandleAssignment(assignment_data, services.SymbolTable{}, []services.TypeRule{})
+	if err == nil {
+		t.Errorf("Error expected")
+	}
+	if err.Error() != fmt.Errorf("error: not enough terms identified for operator in assignment: ").Error() {
+		t.Errorf("Incorrect error: %v", err)
+	}
+}
+
+func TestHandleAssignment_Success(t *testing.T) {
+
+	result_data := services.Symbol{
+		Type: "int",
+	}
+	term := services.Symbol{
+		Type: "blue",
+	}
+	operator := services.Symbol{
+		Type: "+",
+	}
+	assignment := services.Symbol{
+		Type: "=",
+	}
+	assignment_data := services.AssignmentData{
+		ResultData: result_data,
+		Terms:      []services.Symbol{term, term},
+		Operator:   operator,
+		Assignment: assignment,
+	}
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
+	}
+	type_rules := []services.TypeRule{
+		{
+			ResultData: "int",
+			Assignment: "=",
+			LHSData:    "int",
+			Operator:   []string{"+"},
+			RHSData:    "int",
+		},
+		{
+			ResultData: "int",
+			Assignment: "=",
+			LHSData:    "int",
+		},
+	}
+
+	err := services.HandleAssignment(assignment_data, *symbol_table, type_rules)
+	if err != nil {
+		t.Errorf("Error occurred")
+	}
+}
+
+func TestHandleVariablesScope_SuccessVariable(t *testing.T) {
+
+	child := &services.TreeNode{
+		Symbol: "IDENTIFIER",
+		Value:  "",
+		Children: []*services.TreeNode{
+			{
+				Symbol: "EXPRESSION",
+				Value:  "",
+				Children: []*services.TreeNode{
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "ID",
+								Value:  "Blue",
 							},
 						},
-						{
-							Symbol: "IDENTIFIER",
-							Value:  "blue",
+					},
+					{
+						Symbol: "OPERATOR",
+						Value:  "+",
+					},
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "INTEGER",
+								Value:  "89",
+							},
 						},
-						{
-							Symbol: "ASSIGNMENT",
-							Value:  "=",
+					},
+				},
+			},
+			{
+				Symbol: "SEPARATOR",
+				Value:  ";",
+			},
+		},
+	}
+
+	err := services.HandleVariableScope(&services.Symbol{}, child, "TYPE", "IDENTIFIER")
+	if err != nil {
+		t.Fatalf("Error not expected")
+	}
+}
+
+func TestHandleVariablesScope_SuccessType(t *testing.T) {
+
+	child := &services.TreeNode{
+		Symbol: "TYPE",
+		Value:  "",
+		Children: []*services.TreeNode{
+			{
+				Symbol: "EXPRESSION",
+				Value:  "",
+				Children: []*services.TreeNode{
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "KEYWORD",
+								Value:  "int",
+							},
 						},
-						{
-							Symbol: "EXPRESSION",
-							Value:  "",
-							Children: []*services.TreeNode{
-								{
-									Symbol: "TERM",
-									Value:  "",
-									Children: []*services.TreeNode{
-										{
-											Symbol: "INTEGER",
-											Value:  "13",
-										},
-									},
-								},
-								{
-									Symbol: "OPERATOR",
-									Value:  "+",
-								},
-								{
-									Symbol: "TERM",
-									Value:  "",
-									Children: []*services.TreeNode{
-										{
-											Symbol: "INTEGER",
-											Value:  "89",
-										},
+					},
+					{
+						Symbol: "OPERATOR",
+						Value:  "+",
+					},
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "INTEGER",
+								Value:  "89",
+							},
+						},
+					},
+				},
+			},
+			{
+				Symbol: "SEPARATOR",
+				Value:  ";",
+			},
+		},
+	}
+
+	err := services.HandleVariableScope(&services.Symbol{}, child, "TYPE", "IDENTIFIER")
+	if err != nil {
+		t.Fatalf("Error not expected")
+	}
+}
+
+func TestHandleVariablesScope_SuccessType_2(t *testing.T) {
+
+	child := &services.TreeNode{
+		Symbol: "TYPE",
+		Value:  "int",
+		Children: []*services.TreeNode{
+			{
+				Symbol: "EXPRESSION",
+				Value:  "",
+				Children: []*services.TreeNode{
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "KEYWORD",
+								Value:  "int",
+							},
+						},
+					},
+					{
+						Symbol: "OPERATOR",
+						Value:  "+",
+					},
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "INTEGER",
+								Value:  "89",
+							},
+						},
+					},
+				},
+			},
+			{
+				Symbol: "SEPARATOR",
+				Value:  ";",
+			},
+		},
+	}
+
+	err := services.HandleVariableScope(&services.Symbol{}, child, "TYPE", "IDENTIFIER")
+	if err != nil {
+		t.Fatalf("Error not expected")
+	}
+}
+
+func TestHandleVariablesScope_SuccessType_3(t *testing.T) {
+
+	child := &services.TreeNode{
+		Symbol: "TYPE",
+		Value:  "",
+	}
+
+	err := services.HandleVariableScope(&services.Symbol{}, child, "TYPE", "IDENTIFIER")
+	if err != nil {
+		t.Fatalf("Error not expected")
+	}
+}
+
+func TestHandleFunctionScope_Success(t *testing.T) {
+
+	child := &services.TreeNode{
+		Symbol: "IDENTIFIER",
+		Value:  "",
+		Children: []*services.TreeNode{
+			{
+				Symbol: "EXPRESSION",
+				Value:  "",
+				Children: []*services.TreeNode{
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "ID",
+								Value:  "blue",
+							},
+						},
+					},
+					{
+						Symbol: "OPERATOR",
+						Value:  "+",
+					},
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "INTEGER",
+								Value:  "89",
+							},
+						},
+					},
+				},
+			},
+			{
+				Symbol: "SEPARATOR",
+				Value:  ";",
+			},
+		},
+	}
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
+	}
+	symbol_table_artefact := &services.SymbolTableArtefact{
+		SymbolScopes: []services.Symbol{
+			{Name: "blue", Type: "int", Scope: 0},
+		},
+	}
+	rules := services.GrammarRules{
+		VariableRule:  "IDENTIFIER",
+		TypeRule:      "TYPE",
+		ParameterRule: "PARAMETER",
+		FunctionRule:  "FUNCTION",
+	}
+
+	err := services.HandleFunctionScope(&services.Symbol{}, child, symbol_table, symbol_table_artefact, rules)
+	if err != nil {
+		t.Fatalf("Error not expected")
+	}
+}
+
+func TestHandleFunctionScope_SuccessType(t *testing.T) {
+
+	child := &services.TreeNode{
+		Symbol: "TYPE",
+		Value:  "",
+		Children: []*services.TreeNode{
+			{
+				Symbol: "EXPRESSION",
+				Value:  "",
+				Children: []*services.TreeNode{
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "KEYWORD",
+								Value:  "int",
+							},
+						},
+					},
+					{
+						Symbol: "OPERATOR",
+						Value:  "+",
+					},
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "INTEGER",
+								Value:  "89",
+							},
+						},
+					},
+				},
+			},
+			{
+				Symbol: "SEPARATOR",
+				Value:  ";",
+			},
+		},
+	}
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
+	}
+	symbol_table_artefact := &services.SymbolTableArtefact{
+		SymbolScopes: []services.Symbol{
+			{Name: "blue", Type: "int", Scope: 0},
+		},
+	}
+	rules := services.GrammarRules{
+		VariableRule:  "IDENTIFIER",
+		TypeRule:      "TYPE",
+		ParameterRule: "PARAMETER",
+		FunctionRule:  "FUNCTION",
+	}
+
+	err := services.HandleFunctionScope(&services.Symbol{}, child, symbol_table, symbol_table_artefact, rules)
+	if err != nil {
+		t.Fatalf("Error not expected")
+	}
+}
+
+func TestHandleFunctionScope_SuccessType2(t *testing.T) {
+
+	child := &services.TreeNode{
+		Symbol: "TYPE",
+		Value:  "int",
+	}
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
+	}
+	symbol_table_artefact := &services.SymbolTableArtefact{
+		SymbolScopes: []services.Symbol{
+			{Name: "blue", Type: "int", Scope: 0},
+		},
+	}
+	rules := services.GrammarRules{
+		VariableRule:  "IDENTIFIER",
+		TypeRule:      "TYPE",
+		ParameterRule: "PARAMETER",
+		FunctionRule:  "FUNCTION",
+	}
+
+	err := services.HandleFunctionScope(&services.Symbol{}, child, symbol_table, symbol_table_artefact, rules)
+	if err != nil {
+		t.Fatalf("Error not expected")
+	}
+}
+
+func TestHandleFunctionScope_SuccessType3(t *testing.T) {
+
+	child := &services.TreeNode{
+		Symbol: "TYPE",
+		Value:  "",
+	}
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
+	}
+	symbol_table_artefact := &services.SymbolTableArtefact{
+		SymbolScopes: []services.Symbol{
+			{Name: "blue", Type: "int", Scope: 0},
+		},
+	}
+	rules := services.GrammarRules{
+		VariableRule:  "IDENTIFIER",
+		TypeRule:      "TYPE",
+		ParameterRule: "PARAMETER",
+		FunctionRule:  "FUNCTION",
+	}
+
+	err := services.HandleFunctionScope(&services.Symbol{}, child, symbol_table, symbol_table_artefact, rules)
+	if err != nil {
+		t.Fatalf("Error not expected")
+	}
+}
+
+func TestHandleFunctionScope_SuccessParameter(t *testing.T) {
+
+	child := &services.TreeNode{
+		Symbol: "PARAMETER",
+		Value:  "",
+		Children: []*services.TreeNode{
+			{
+				Symbol: "TYPE",
+				Value:  "",
+				Children: []*services.TreeNode{
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "KEYWORD",
+								Value:  "",
+								Children: []*services.TreeNode{
+									{
+										Symbol: "KEYWORD",
+										Value:  "int",
 									},
 								},
 							},
 						},
 					},
+					{
+						Symbol: "OPERATOR",
+						Value:  "+",
+					},
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "INTEGER",
+								Value:  "89",
+							},
+						},
+					},
 				},
-				{
-					Symbol: "SEPARATOR",
-					Value:  ";",
+			},
+			{
+				Symbol: "IDENTIFIER",
+				Value:  "",
+				Children: []*services.TreeNode{
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "KEYWORD",
+								Value:  "",
+								Children: []*services.TreeNode{
+									{
+										Symbol: "Name",
+										Value:  "blue",
+									},
+								},
+							},
+						},
+					},
+					{
+						Symbol: "OPERATOR",
+						Value:  "+",
+					},
+					{
+						Symbol: "TERM",
+						Value:  "",
+						Children: []*services.TreeNode{
+							{
+								Symbol: "INTEGER",
+								Value:  "89",
+							},
+						},
+					},
 				},
 			},
 		},
 	}
-
-	expected_res := []services.Symbol{
-		{Name: "blue", Type: "int", Scope: 0},
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
 	}
-
-	type_rules := []services.TypeRule{
-		{
-			ResultData: "int",
-			Assignment: "=",
-			LHSData:    "INTEGER",
-			Operator:   []string{"+"},
-			RHSData:    "INTEGER",
+	symbol_table_artefact := &services.SymbolTableArtefact{
+		SymbolScopes: []services.Symbol{
+			{Name: "blue", Type: "int", Scope: 0},
 		},
 	}
 	rules := services.GrammarRules{
-		VariableRule:   "IDENTIFIER",
-		TypeRule:       "TYPE",
-		ParameterRule:  "PARAMETER",
-		FunctionRule:   "FUNCTION",
-		AssignmentRule: "ASSIGNMENT",
-		OperatorRule:   "OPERATOR",
-		TermRule:       "TERM",
+		VariableRule:  "IDENTIFIER",
+		TypeRule:      "TYPE",
+		ParameterRule: "PARAMETER",
+		FunctionRule:  "FUNCTION",
 	}
 
-	symbol_table_artefact, _, err := services.Analyse(scope_rules, syntax_tree, rules, type_rules)
-
+	err := services.HandleFunctionScope(&services.Symbol{}, child, symbol_table, symbol_table_artefact, rules)
 	if err != nil {
-		t.Errorf("Error: %v", err)
-	} else {
+		t.Fatalf("Error not expected")
+	}
+}
 
-		if len(symbol_table_artefact.SymbolScopes) != len(expected_res) {
-			t.Errorf("not enough symbols identified")
-		} else {
+func TestHandleFunctionScope_SuccessParameter_NoType(t *testing.T) {
 
-			for i, symbol := range symbol_table_artefact.SymbolScopes {
-				if symbol.Name != expected_res[i].Name || symbol.Type != expected_res[i].Type || symbol.Scope != expected_res[i].Scope {
-					t.Errorf("Symbol is incorrect: %v %v %v", symbol.Name, symbol.Scope, symbol.Type)
-				} else {
-					if len(symbol.Parameters) != len(expected_res[i].Parameters) {
-						t.Errorf("not enough function parameters")
-					}
-					for p, param := range symbol.Parameters {
-						if param.Name != expected_res[i].Parameters[p].Name || param.Type != expected_res[i].Parameters[p].Type {
-							t.Errorf("Function parameter is incorrect: %v", param)
-						}
-					}
-				}
-			}
+	child := &services.TreeNode{
+		Symbol: "PARAMETER",
+		Value:  "",
+		Children: []*services.TreeNode{
+			{
+				Symbol:   "TYPE",
+				Value:    "",
+				Children: []*services.TreeNode{},
+			},
+			{
+				Symbol:   "IDENTIFIER",
+				Value:    "",
+				Children: []*services.TreeNode{},
+			},
+		},
+	}
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{
+				"blue": {
+					Name:  "blue",
+					Type:  "int",
+					Scope: 0,
+				},
+			},
+		},
+	}
+	symbol_table_artefact := &services.SymbolTableArtefact{
+		SymbolScopes: []services.Symbol{
+			{Name: "blue", Type: "int", Scope: 0},
+		},
+	}
+	rules := services.GrammarRules{
+		VariableRule:  "IDENTIFIER",
+		TypeRule:      "TYPE",
+		ParameterRule: "PARAMETER",
+		FunctionRule:  "FUNCTION",
+	}
 
-		}
+	err := services.HandleFunctionScope(&services.Symbol{}, child, symbol_table, symbol_table_artefact, rules)
+	if err == nil {
+		t.Fatalf("Error expected")
 	}
 }

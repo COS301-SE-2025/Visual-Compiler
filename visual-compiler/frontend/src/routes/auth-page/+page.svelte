@@ -32,7 +32,7 @@
 		event.preventDefault();
 
 		if (reg_password !== reg_confirm_password) {
-			AddToast("Passwords don't match!", 'error');
+			AddToast('� Passwords don\'t match - please make sure both password fields are identical', 'error');
 			return;
 		}
 
@@ -52,11 +52,11 @@
 			const data = await response.json();
 
 			if (!response.ok) {
-				AddToast(`Registration failed: ${data.error || response.statusText}`, 'error');
+				AddToast(`Registration failed: ${data.error || 'Please check your information and try again'}`, 'error');
 				return;
 			}
 
-			AddToast(data.message || 'Registration successful!', 'success');
+			AddToast('Account created successfully! Please log in with your new credentials', 'success');
 
 			// Reset the form
 			reg_email = '';
@@ -66,7 +66,7 @@
 
 			active_tab = 'login';
 		} catch (error) {
-			AddToast(`Something went wrong: ${(error as Error).message}`, 'error');
+			AddToast(`Registration error: ${(error as Error).message}. Please check your connection and try again`, 'error');
 		}
 	}
 
@@ -93,7 +93,7 @@
 			const data = await response.json();
 
 			if (!response.ok) {
-				AddToast(`Login failed: ${data.error || response.statusText}`, 'error');
+				AddToast(`Login failed: ${data.error || 'Please check your username and password'}`, 'error');
 				return;
 			}
 
@@ -103,7 +103,7 @@
 				localStorage.setItem('is_admin', data.is_admin ? 'true' : 'false');
 			}
 
-			AddToast('Login successful!', 'success');
+			AddToast('Welcome back! Redirecting to your workspace...', 'success');
 
 			sessionStorage.setItem('showWelcomeOverlay', 'true');
 
@@ -111,7 +111,7 @@
 
 			await goto('/main-workspace');
 		} catch (error) {
-			AddToast(`Something went wrong: ${(error as Error).message}`, 'error');
+			AddToast(`Login error: ${(error as Error).message}. Please check your connection and try again`, 'error');
 		}
 	}
 

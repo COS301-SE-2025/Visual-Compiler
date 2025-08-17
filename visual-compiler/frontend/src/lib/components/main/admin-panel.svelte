@@ -13,16 +13,44 @@
     let editError = '';
     let editSuccess = '';
 
+    let adminId = localStorage.getItem('user_id');
+
+    interface User {
+        users_id: string;
+        username: string;
+        email: string;
+        projects: any[];
+    }
+
     async function fetchUsers() {
         loading = true;
-        const res = await fetch('http://localhost:8080/api/users/getUsers');
-        const data = await res.json();
-        users = (data.users || []).map(u => ({
-            ...u,
-            ID: u.id 
-        }));
-        console.log('All user IDs:', users.map(u => u.ID));
-        loading = false;
+        try {
+            const res = await fetch('http://localhost:8080/api/users/getUsers', {
+                method: 'GET',
+                headers: {
+                    'accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || 'Failed to fetch users');
+            }
+
+            const data = await res.json();
+            users = (data.users || []).map((u: User) => ({
+                ...u,
+                ID: u.users_id, // Map the MongoDB ObjectID string to ID
+                username: u.username,
+                email: u.email,
+                projects: u.projects || []
+            }));
+            loading = false;
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            loading = false;
+        }
     }
 
     onMount(fetchUsers);
@@ -54,49 +82,76 @@
     async function saveEdit() {
         editError = '';
         editSuccess = '';
+        
+        if (!adminId) {
+            editError = 'Admin privileges required';
+            return;
+        }
+
         const user = users[selectedUserIdx];
-        const res = await fetch(`http://localhost:8080/api/users/updateUser`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                id: user.ID,
-                username: editUsername,
-                email: editEmail
-            })
-        });
-        const data = await res.json();
-        if (res.ok) {
-            editSuccess = 'User updated successfully!';
-            users[selectedUserIdx].username = editUsername;
-            users[selectedUserIdx].email = editEmail;
-        } else {
-            editError = data.error || 'Failed to update user.';
+        try {
+            const res = await fetch('http://localhost:8080/api/users/update', {
+                method: 'PATCH',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    admin_id: adminId,
+                    users_id: user.ID,
+                    username: editUsername,
+                    email: editEmail
+                })
+            });
+
+            const data = await res.json();
+            if (res.ok) {
+                editSuccess = 'User updated successfully!';
+                users[selectedUserIdx].username = editUsername;
+                users[selectedUserIdx].email = editEmail;
+            } else {
+                editError = data.error || 'Failed to update user.';
+            }
+        } catch (error) {
+            editError = 'Failed to connect to server';
+            console.error('Error updating user:', error);
         }
     }
 
     async function deleteUser() {
         editError = '';
         editSuccess = '';
-        const user = users[selectedUserIdx];
-        console.log('Deleting user with ID:', user.ID); // Add this line
-        const res = await fetch(`http://localhost:8080/api/users/delete`, {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: user.ID })
-        });
-        let data = {};
-        try {
-            data = await res.json();
-        } catch (e) {
-            editError = 'Server error: Could not parse response.';
+
+        if (!adminId) {
+            editError = 'Admin privileges required';
             return;
         }
-        if (res.ok) {
+
+        const user = users[selectedUserIdx];
+        try {
+            const res = await fetch('http://localhost:8080/api/users/delete', {
+                method: 'DELETE',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'accept': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    admin_id: adminId,
+                    users_id: user.ID 
+                })
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Failed to delete user');
+            }
+
             editSuccess = 'User deleted successfully!';
-            users.splice(selectedUserIdx, 1);
+            users = users.filter((_, idx) => idx !== selectedUserIdx);
             selectedUserIdx = -1;
-        } else {
-            editError = data.error || 'Failed to delete user.';
+        } catch (error) {
+            editError = error.message || 'Failed to delete user';
+            console.error('Error deleting user:', error);
         }
     }
 </script>

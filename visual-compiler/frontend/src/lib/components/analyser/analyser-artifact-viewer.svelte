@@ -35,17 +35,34 @@
                 </tbody>
             </table>
         {:else}
-            <div class="no-symbols">No symbols generated yet</div>
+            <div class="no-symbols">No symbols generated</div>
         {/if}
 
         {#if analyser_error && analyser_error.length > 0}
-            <div class="error-container">
-                <h4>Error</h4>
-                    <div class="error">
-                        {analyser_error} <br>
-                        {analyser_error_details}
-                    </div>
-            </div>
+            <div class="error-state">
+				<div class="error-icon">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="48"
+						height="48"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<circle cx="12" cy="12" r="10" />
+						<line x1="12" y1="8" x2="12" y2="12" />
+						<line x1="12" y1="16" x2="12.01" y2="16" />
+					</svg>
+				</div>
+				<h4>Semantic Error Found</h4>
+				<p class="error-message">
+					The source code could not be analysed with the provided scope rules and type rules. Please check your input again.<br>
+				</p>
+				<pre class="error-details">{analyser_error_details}</pre>
+			</div>
         {/if}
     {:else if phase === 'analyser'}
         <div class="empty-state">Symbols will appear here after generation</div>
@@ -93,8 +110,8 @@
     }
 
     .symbol-table th {
-        background: #041a47;
-        color: white;
+        background: #BED2E6;
+        color: 000000;
         font-weight: 500;
         transition: background-color 0.3s ease, color 0.3s ease;
     }
@@ -106,36 +123,46 @@
         transition: color 0.3s ease;
     }
 
-    .error-container {
-        margin-top: 1.5rem;
-        padding: 1.2rem;
-        background: #f8f9fa;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        transition: background-color 0.3s ease, border-color 0.3s ease;
-    }
+    .error-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		padding: 2rem;
+		flex-grow: 1;
+		background-color: #fff5f5;
+		border: 1px solid #e53e3e;
+		border-radius: 8px;
+		color: #9b2c2c;
+	}
+	.error-icon {
+		color: #e53e3e;
+		margin-bottom: 1rem;
+	}
+	.error-state h4 {
+		margin: 0 0 0.5rem 0;
+		font-size: 1.25rem;
+		color: #c53030;
+	}
+	.error-message {
+		margin: 0 0 1rem 0;
+		max-width: 450px;
+		line-height: 1.6;
+	}
+	.error-details {
+		background-color: #fed7d7;
+		padding: 0.75rem 1rem;
+		border-radius: 6px;
+		font-family: 'Fira Code', monospace;
+		font-size: 0.85rem;
+		white-space: pre-wrap;
+		word-wrap: break-word;
+		max-width: 100%;
+		text-align: left;
+		color: #742a2a;
+	}
 
-    .error-container h4 {
-        color: #041a47;
-        font-size: 1.1rem;
-        margin: 0 0 1rem 0;
-        padding-bottom: 0.6rem;
-        border-bottom: 1px solid #e5e7eb;
-        transition: color 0.3s ease, border-bottom-color 0.3s ease;
-    }
-
-    .error {
-        padding: 0.5rem 1rem;
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        color: #041a47;
-        font-family: monospace;
-        font-size: 0.9rem;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-    }
 
     .empty-state,
     .no-symbols {
@@ -168,24 +195,30 @@
     }
 
     :global(html.dark-mode) .symbol-table th {
-        background: #1a202c;
+        background: #001A6E;
+        color: #ffffff;
     }
 
-     :global(html.dark-mode) .error-container {
+    :global(html.dark-mode) .symbol-table {
         background: #2d3748;
-        border-color: #4a5568;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 
-    :global(html.dark-mode) .error-container h4 {
-        color: #90cdf4;
-        border-bottom-color: #4a5568;
-    }
-
-   :global(html.dark-mode) .error {
-        background: #4a5568;
-        border-color: #718096;
-        color: #e2e8f0;
-    }
+    :global(html.dark-mode) .error-state {
+		background-color: #2d3748;
+		border-color: #e53e3e;
+		color: #fca5a5;
+	}
+	:global(html.dark-mode) .error-icon {
+		color: #fca5a5;
+	}
+	:global(html.dark-mode) .error-state h4 {
+		color: #fc8181;
+	}
+	:global(html.dark-mode) .error-details {
+		background-color: #4a2d2d;
+		color: #fed7d7;
+	}
 
     :global(html.dark-mode) .empty-state,
     :global(html.dark-mode) .no-symbols {

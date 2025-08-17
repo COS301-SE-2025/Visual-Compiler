@@ -16,11 +16,11 @@
 			navigator.clipboard
 				.writeText(code_as_string)
 				.then(() => {
-					AddToast('Code copied to clipboard!', 'success');
+					AddToast('Code copied! Your translated code is now in the clipboard', 'success');
 				})
 				.catch((err) => {
 					console.error('Failed to copy text: ', err);
-					AddToast('Failed to copy code.', 'error');
+					AddToast('Copy failed: Unable to copy code to clipboard', 'error');
 				});
 		}
 	}
