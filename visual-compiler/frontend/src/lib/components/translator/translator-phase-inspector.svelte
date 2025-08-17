@@ -105,11 +105,11 @@
 		const user_id = localStorage.getItem('user_id');
 		const project = get(projectName);
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+			AddToast('Authentication required: Please log in to save translation rules', 'error');
 			return;
 		}
 		if (!project) {
-            AddToast('No project selected.', 'error');
+            AddToast('No project selected: Please select or create a project first', 'error');
             return;
         }
 
@@ -118,7 +118,7 @@
 		);
 
 		if (!isValid) {
-			AddToast('Please fill out all token sequences and lines before submitting.', 'error');
+			AddToast('Incomplete rules: Please fill in all token sequence and translation line fields', 'error');
 			return;
 		}
 
@@ -132,7 +132,7 @@
 		};
 
 		if (apiPayload.translation_rules.length === 0) {
-			AddToast('No rules to submit. Please add at least one rule.', 'error');
+			AddToast('No translation rules: Please add at least one translation rule before submitting', 'error');
 			return;
 		}
 
@@ -151,11 +151,11 @@
 			}
 
 			const result = await response.json();
-			AddToast('Translation rules submitted successfully!', 'success');
+			AddToast('Translation rules saved successfully! Ready to translate your code', 'success');
 			isSubmitted = true;
 		} catch (error: any) {
 			console.error('Rule submission Error:', error);
-			AddToast(error.message || 'An unknown error occurred.', 'error');
+			AddToast('Rule submission failed: ' + (error.message || 'Please check your connection and try again'), 'error');
 		}
 	}
 
@@ -169,11 +169,11 @@
 		const user_id = localStorage.getItem('user_id');
 		const project = get(projectName);
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+			AddToast('Authentication required: Please log in to perform translation', 'error');
 			return;
 		}
 		if (!project) {
-            AddToast('No project selected.', 'error');
+            AddToast('No project selected: Please select or create a project first', 'error');
             return;
         }
 
@@ -192,7 +192,7 @@
 			}
 
 			const result = await response.json();
-			AddToast(result.message || 'Code translated successfully!', 'success');
+			AddToast('Translation complete! Your code has been successfully translated', 'success');
 			translationSuccessful = true;
 
 			// Dispatch the translated code to the parent component
@@ -201,7 +201,7 @@
 			console.error('Translation Error:', error);
 			// Dispatch a new event for the error
 			dispatch('translationerror', error);
-			AddToast(error.message || 'An unknown error occurred during translation.', 'error');
+			AddToast('Translation failed: ' + (error.message || 'Unable to translate code. Please check your rules and try again'), 'error');
 		}
 	}
 </script>
