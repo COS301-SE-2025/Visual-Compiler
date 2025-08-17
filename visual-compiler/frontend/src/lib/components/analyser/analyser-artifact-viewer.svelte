@@ -110,8 +110,8 @@
     }
 
     .symbol-table th {
-        background: #041a47;
-        color: white;
+        background: #BED2E6;
+        color: 000000;
         font-weight: 500;
         transition: background-color 0.3s ease, color 0.3s ease;
     }
@@ -195,7 +195,13 @@
     }
 
     :global(html.dark-mode) .symbol-table th {
-        background: #1a202c;
+        background: #001A6E;
+        color: #ffffff;
+    }
+
+    :global(html.dark-mode) .symbol-table {
+        background: #2d3748;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 
     :global(html.dark-mode) .error-state {
