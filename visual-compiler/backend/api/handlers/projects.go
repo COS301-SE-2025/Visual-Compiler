@@ -308,6 +308,7 @@ func GetProject(c *gin.Context) {
 	mongo_cli := db.ConnectClient()
 	database := "visual-compiler"
 
+	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	db_collections := []string{"lexing", "parsing", "analysing", "translating"}
 	res := make(map[string]any)
 
@@ -323,6 +324,39 @@ func GetProject(c *gin.Context) {
 	filters := bson.M{
 		"users_id":     id,
 		"project_name": project_name,
+	}
+
+	var user_doc bson.M
+
+	users_filters := bson.M{
+		"_id":           id,
+		"projects.name": bson.M{"$eq": project_name},
+	}
+	users_options := options.FindOne().SetProjection(bson.M{
+		"projects.$": 1,
+	})
+
+	if err := users_collection.FindOne(ctx, users_filters, users_options).Decode(&user_doc); err != nil {
+		if err != mongo.ErrNoDocuments {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading user's collection " + err.Error()})
+			return
+		}
+	} else {
+		if projects, ok := user_doc["projects"].(bson.A); ok && len(projects) > 0 {
+			if project, ok := projects[0].(bson.D); ok {
+				var pipeline interface{} = nil
+
+				for _, f := range project {
+					if f.Key == "pipeline" {
+						pipeline = f.Value
+						break
+					}
+				}
+				if pipeline != nil {
+					res["pipeline"] = pipeline
+				}
+			}
+		}
 	}
 
 	for _, col := range db_collections {
