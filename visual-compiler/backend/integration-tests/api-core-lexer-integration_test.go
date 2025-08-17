@@ -18,10 +18,14 @@ import (
 
 var test_user_id string
 var no_input_user string
+var project_name string
 
 func startServerCore(t *testing.T) *http.Server {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+
+	no_input_user = "689e5c3b2b0a249a86761244"
+	project_name = "project1"
 
 	// Attach CORS middleware
 	router.Use(cors.New(cors.Config{
@@ -48,6 +52,18 @@ func startServerCore(t *testing.T) *http.Server {
 	router.Any("/api/parsing/*any", func(c *gin.Context) {
 		c.Request.URL.Path = c.Param("any")
 		parser_router.HandleContext(c)
+	})
+
+	analyser_router := routers.SetupAnalysingRouter()
+	router.Any("/api/analysing/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		analyser_router.HandleContext(c)
+	})
+
+	translator_router := routers.SetupTranslatorRouter()
+	router.Any("/api/translating/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		translator_router.HandleContext(c)
 	})
 
 	server := &http.Server{
@@ -79,7 +95,7 @@ func get_id(t *testing.T) {
 
 	req, err := json.Marshal(user_data)
 	if err != nil {
-		t.Errorf("converting data to json failed")
+		t.Fatalf("converting data to json failed")
 	}
 
 	res, err := http.Post(
@@ -87,27 +103,28 @@ func get_id(t *testing.T) {
 		bytes.NewBuffer(req),
 	)
 	if err != nil {
-		t.Errorf("Login failed: %v", err)
+		t.Fatalf("Login failed: %v", err)
 	}
 
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
 		body_bytes, _ := io.ReadAll(res.Body)
-		t.Errorf("Login failed: %s", string(body_bytes))
+		t.Fatalf("Login failed: %s", string(body_bytes))
 	}
 
 	body_bytes, err := io.ReadAll(res.Body)
 	if err != nil {
-		t.Errorf("Error: %v", err)
+		t.Fatalf("Error: %v", err)
 	}
 	var body_array map[string]string
-	err = json.Unmarshal(body_bytes, &body_array)
+	_ = json.Unmarshal(body_bytes, &body_array)
 	if err != nil {
 		t.Errorf("Error: %v", err)
 	}
 
 	t.Logf("Login working: %s", body_array["message"])
 	test_user_id = body_array["id"]
+	project_name = "project1"
 
 }
 
@@ -117,8 +134,55 @@ func TestStoreSourceCode_Valid(t *testing.T) {
 
 	get_id(t)
 	re_data := map[string]interface{}{
-		"source_code": "int x = 2 ;",
-		"users_id":    test_user_id,
+		"source_code":  "int x = 2 ;",
+		"users_id":     test_user_id,
+		"project_name": project_name,
+	}
+
+	req, err := json.Marshal(re_data)
+
+	if err != nil {
+		t.Errorf("converting data to json failed")
+	}
+
+	res, err := http.Post(
+		"http://localhost:8080/api/lexing/code", "application/json",
+		bytes.NewBuffer(req),
+	)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	defer res.Body.Close()
+
+	if err != nil {
+		t.Errorf("Lexing integration error: %v", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		body_bytes, _ := io.ReadAll(res.Body)
+		t.Errorf("Lexer not working: %s", string(body_bytes))
+	}
+
+	if res.StatusCode == http.StatusOK {
+		body_bytes, _ := io.ReadAll(res.Body)
+		if string(body_bytes) == `{"message":"Code is ready for further processing"}` {
+			t.Logf("ReadDFAFromUser: success")
+		} else {
+			t.Errorf("Error: %v", string(body_bytes))
+		}
+	}
+
+}
+
+func TestStoreSourceCode_Valid2(t *testing.T) {
+	server := startServerCore(t)
+	defer closeServerCore(t, server)
+
+	loginUser(t)
+	re_data := map[string]interface{}{
+		"source_code":  "int x = 2 ;",
+		"users_id":     test_user_id,
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(re_data)
@@ -162,7 +226,75 @@ func TestCreateRulesFromCode_Valid(t *testing.T) {
 
 	get_id(t)
 	data := map[string]interface{}{
-		"users_id": test_user_id,
+		"users_id":     test_user_id,
+		"project_name": project_name,
+		"pairs": []map[string]string{
+			{
+				"Type":  "KEYWORD",
+				"Regex": "\\b(if|else|int)\\b",
+			},
+			{
+				"Type":  "IDENTIFIER",
+				"Regex": "[a-zA-Z_]\\w*",
+			},
+			{
+				"Type":  "NUMBER",
+				"Regex": "\\d+(\\.\\d+)?",
+			},
+			{
+				"Type":  "OPERATOR",
+				"Regex": "=",
+			},
+			{
+				"Type":  "PUNCTUATION",
+				"Regex": ";",
+			},
+		},
+	}
+
+	req, err := json.Marshal(data)
+
+	if err != nil {
+		t.Errorf("converting data to json failed")
+	}
+
+	res, err := http.Post(
+		"http://localhost:8080/api/lexing/rules", "application/json",
+		bytes.NewBuffer(req),
+	)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	defer res.Body.Close()
+
+	if err != nil {
+		t.Errorf("Lexing integration error: %v", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		body_bytes, _ := io.ReadAll(res.Body)
+		t.Errorf("Lexer not working: %s", string(body_bytes))
+	}
+
+	if res.StatusCode == http.StatusOK {
+		body_bytes, _ := io.ReadAll(res.Body)
+		if string(body_bytes) == `{"message":"Rules successfully created."}` {
+			t.Logf("CreateRulesFromCode: success")
+		} else {
+			t.Errorf("Error: %v", string(body_bytes))
+		}
+	}
+
+}
+
+func TestCreateRulesFromCode_Valid2(t *testing.T) {
+	server := startServerCore(t)
+	defer closeServerCore(t, server)
+
+	loginUser(t)
+	data := map[string]interface{}{
+		"users_id":     test_user_id,
+		"project_name": project_name,
 		"pairs": []map[string]string{
 			{
 				"Type":  "KEYWORD",
@@ -226,10 +358,14 @@ func TestCreateRulesFromCode_CoreError(t *testing.T) {
 	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	no_input_user = "685c5f116aae29d323dc6a7c"
+	getNoInputUserId(t)
+	deleteNoInputUser(t)
+	registerNoInputUser(t)
+	getNoInputUserId(t)
 
 	data := map[string]interface{}{
-		"users_id": no_input_user,
+		"users_id":     no_input_user,
+		"project_name": project_name,
 		"pairs": []map[string]string{
 			{
 				"Type":  "KEYWORD",
@@ -274,8 +410,9 @@ func TestCreateRulesFromCode_Val(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	data := map[string]interface{}{
-		"users_id": "6834279e18addf82669c9acd",
-		"pairs":    []map[string]string{},
+		"users_id":     "6834279e18addf82669c9acd",
+		"project_name": project_name,
+		"pairs":        []map[string]string{},
 	}
 
 	req, err := json.Marshal(data)
@@ -319,7 +456,40 @@ func TestLexing_Valid(t *testing.T) {
 
 	get_id(t)
 	reg_expr_data := map[string]interface{}{
-		"users_id": test_user_id,
+		"users_id":     test_user_id,
+		"project_name": project_name,
+	}
+
+	req, err := json.Marshal(reg_expr_data)
+
+	if err != nil {
+		t.Errorf("converting data to json failed")
+	}
+
+	res, err := http.Post(
+		"http://localhost:8080/api/lexing/lexer", "application/json",
+		bytes.NewBuffer(req),
+	)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		body_bytes, _ := io.ReadAll(res.Body)
+		t.Errorf("Lexer not working: %s", string(body_bytes))
+	}
+
+}
+
+func TestLexing_Valid2(t *testing.T) {
+	server := startServerCore(t)
+	defer closeServerCore(t, server)
+
+	loginUser(t)
+	reg_expr_data := map[string]interface{}{
+		"users_id":     test_user_id,
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(reg_expr_data)
@@ -349,7 +519,8 @@ func TestLexing_NoSourceCode(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	reg_expr_data := map[string]interface{}{
-		"users_id": no_input_user,
+		"users_id":     no_input_user,
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(reg_expr_data)
@@ -396,8 +567,9 @@ func TestLexing_CoreError(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	re_data := map[string]interface{}{
-		"source_code": "int x = 2 ;",
-		"users_id":    "6834279e18addf82669c9acd",
+		"source_code":  "int x = 2 ;",
+		"users_id":     "6834279e18addf82669c9acd",
+		"project_name": project_name,
 	}
 	code_req, err := json.Marshal(re_data)
 	if err != nil {
@@ -421,7 +593,8 @@ func TestLexing_CoreError(t *testing.T) {
 	}
 
 	reg_expr_data := map[string]interface{}{
-		"users_id": "6834279e18addf82669c9acd",
+		"users_id":     "6834279e18addf82669c9acd",
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(reg_expr_data)
@@ -471,6 +644,7 @@ func TestReadDFAFromUser_Valid(t *testing.T) {
 
 	get_id(t)
 	data := map[string]interface{}{
+		"project_name": project_name,
 		"states": []string{
 			"START",
 			"S1",
@@ -574,6 +748,7 @@ func TestReadDFAFromUser_TestUser(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	data := map[string]interface{}{
+		"project_name": project_name,
 		"states": []string{
 			"START",
 			"S1",
@@ -640,9 +815,12 @@ func TestTokensFromDFA_Valid(t *testing.T) {
 	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
+	//loginUser(t)
 	get_id(t)
+
 	data := map[string]interface{}{
-		"users_id": test_user_id,
+		"users_id":     test_user_id,
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -685,7 +863,8 @@ func TestTokensFromDFA_NoSourceCode(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	data := map[string]interface{}{
-		"users_id": no_input_user,
+		"users_id":     no_input_user,
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -729,7 +908,8 @@ func TestTokensFromDFA_CoreError(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	data := map[string]interface{}{
-		"users_id": "6834279e18addf82669c9acd",
+		"users_id":     "6834279e18addf82669c9acd",
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -774,7 +954,8 @@ func TestConvertDFAToRG_Valid(t *testing.T) {
 
 	get_id(t)
 	data := map[string]interface{}{
-		"users_id": test_user_id,
+		"users_id":     test_user_id,
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -822,7 +1003,8 @@ func TestConvertDFAToRG_NoDFA(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	data := map[string]interface{}{
-		"users_id": no_input_user,
+		"users_id":     no_input_user,
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -869,7 +1051,8 @@ func TestConvertDFAToRG_CoreError(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	data := map[string]interface{}{
-		"users_id": "6834279e18addf82669c9acd",
+		"users_id":     "6834279e18addf82669c9acd",
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -917,7 +1100,8 @@ func TestConvertRGToNFA_Valid(t *testing.T) {
 
 	get_id(t)
 	data := map[string]interface{}{
-		"users_id": test_user_id,
+		"users_id":     test_user_id,
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -965,7 +1149,8 @@ func TestConvertRGToNFA_NoRegexRules(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	data := map[string]interface{}{
-		"users_id": no_input_user,
+		"users_id":     no_input_user,
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -1013,7 +1198,8 @@ func TestConvertRGToNFA_CoreError(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	data := map[string]interface{}{
-		"users_id": "6834279e18addf82669c9acd",
+		"users_id":     "6834279e18addf82669c9acd",
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -1062,7 +1248,8 @@ func TestConvertRGToDFA_Valid(t *testing.T) {
 
 	get_id(t)
 	data := map[string]interface{}{
-		"users_id": test_user_id,
+		"users_id":     test_user_id,
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -1110,7 +1297,8 @@ func TestConvertRGToDFA_NoRegexRules(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	data := map[string]interface{}{
-		"users_id": no_input_user,
+		"users_id":     no_input_user,
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -1158,7 +1346,8 @@ func TestConvertRGToDFA_CoreError(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	data := map[string]interface{}{
-		"users_id": "6834279e18addf82669c9acd",
+		"users_id":     "6834279e18addf82669c9acd",
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -1207,7 +1396,8 @@ func TestConvertNFAToDFA_Valid(t *testing.T) {
 
 	get_id(t)
 	data := map[string]interface{}{
-		"users_id": test_user_id,
+		"users_id":     test_user_id,
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -1255,7 +1445,8 @@ func TestConvertNFAToDFA_NoNFA(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	data := map[string]interface{}{
-		"users_id": no_input_user,
+		"users_id":     no_input_user,
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -1303,7 +1494,8 @@ func TestConvertNFAToDFA_CoreError(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	data := map[string]interface{}{
-		"users_id": "6834279e18addf82669c9acd",
+		"users_id":     "6834279e18addf82669c9acd",
+		"project_name": project_name,
 	}
 
 	req, err := json.Marshal(data)

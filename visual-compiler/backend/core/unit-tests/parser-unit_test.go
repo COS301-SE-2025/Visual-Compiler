@@ -299,20 +299,20 @@ func TestCreateSyntaxTree_Valid_Complex(t *testing.T) {
 		{Type: "SEPARATOR", Value: ";"},
 		{Type: "KEYWORD", Value: "int"},
 		{Type: "IDENTIFIER", Value: "function_do"},
-		{Type: "BRACKETS", Value: "("},
-		{Type: "BRACKETS", Value: ")"},
-
+		{Type: "OPEN_BRACKETS", Value: "("},
+		{Type: "CLOSE_BRACKETS", Value: ")"},
 	}
 
 	grammar := services.Grammar{
-		Variables: []string{"STATEMENT", "DECLARATION", "EXPRESSION", "TYPE", "TERM"},
-		Terminals: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "OPERATOR", "SEPARATOR", "STRING"},
-		Start:     "STATEMENT",
+		Variables: []string{"STATEMENT", "DECLARATION", "EXPRESSION", "TYPE", "TERM", "PROGRAM"},
+		Terminals: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "OPERATOR", "SEPARATOR", "STRING", "OPEN_BRACKETS", "CLOSE_BRACKETS"},
+		Start:     "PROGRAM",
 		Rules: []services.ParsingRule{
+			{Input: "PROGRAM", Output: []string{"STATEMENT", "FUNCTION"}},
 			{Input: "STATEMENT", Output: []string{"DECLARATION", "SEPARATOR"}},
+			{Input: "FUNCTION", Output: []string{"TYPE", "IDENTIFIER", "OPEN_BRACKETS", "CLOSE_BRACKETS"}},
 			{Input: "DECLARATION", Output: []string{"TYPE", "IDENTIFIER", "ASSIGNMENT", "EXPRESSION"}},
 			{Input: "EXPRESSION", Output: []string{"TERM", "OPERATOR", "TERM"}},
-			{Input: "TERM", Output: []string{"STRING"}},
 			{Input: "TERM", Output: []string{"INTEGER"}},
 			{Input: "TYPE", Output: []string{"KEYWORD"}},
 		},
