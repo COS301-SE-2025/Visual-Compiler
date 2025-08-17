@@ -573,13 +573,14 @@
 
 	const DEFAULT_INPUT_ROWS = [
 		{ type: 'KEYWORD', regex: 'int|return', error: '' },
+		{ type: 'CONTROL', regex: 'for|range', error: '' },
 		{ type: 'IDENTIFIER', regex: '[a-zA-Z_]+', error: '' },
 		{ type: 'INTEGER', regex: '[0-9]+', error: '' },
 		{ type: 'ASSIGNMENT', regex: '=', error: '' },
 		{ type: 'OPERATOR', regex: '[+\\-*/%]', error: '' },
-		{ type: 'SEPARATOR', regex: ';', error: '' },
-        { type: 'OPEN_BRACKETS', regex: '\\(', error: '' },
-        { type: 'CLOSE_BRACKETS', regex: '\\)', error: '' },
+		{ type: 'DELIMITER', regex: ';', error: '' },
+        { type: 'OPEN_BRACKET', regex: '\\(', error: '' },
+        { type: 'CLOSE_BRACKET', regex: '\\)', error: '' },
         { type: 'OPEN_SCOPE', regex: '\{', error: '' },
         { type: 'CLOSE_SCOPE', regex: '\}', error: '' }
 	];
