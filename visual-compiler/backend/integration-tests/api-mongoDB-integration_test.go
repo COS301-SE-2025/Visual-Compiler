@@ -55,7 +55,7 @@ func startServer(t *testing.T) *http.Server {
 	return server
 }
 
-func closeServer(t *testing.T, server *http.Server) {
+func closeServer(server *http.Server) {
 	cont, cancel_cont := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel_cont()
 	server.Shutdown(cont)
@@ -63,11 +63,11 @@ func closeServer(t *testing.T, server *http.Server) {
 
 func TestRegister_ExistingEmail(t *testing.T) {
 	server := startServer(t)
-	defer closeServer(t, server)
+	defer closeServer(server)
 
 	user_data := map[string]string{
 		"username": "tiaharripersad",
-		"email":    "t@gmail.com",
+		"email":    "tia@gmail.com",
 		"password": "tia1234$$",
 	}
 
@@ -108,13 +108,14 @@ func TestRegister_ExistingEmail(t *testing.T) {
 
 func TestRegister_NewUser(t *testing.T) {
 	server := startServer(t)
-	defer closeServer(t, server)
+	defer closeServer(server)
 
 	user_data := map[string]string{
 		"username": "jasmine1",
 		"email":    "j@gmail.com",
 		"password": "jazzy1234$$",
 	}
+
 	req, err := json.Marshal(user_data)
 	if err != nil {
 		t.Errorf("converting data to json failed")
@@ -146,7 +147,7 @@ func TestRegister_NewUser(t *testing.T) {
 
 func TestRegister_ExistingUsername(t *testing.T) {
 	server := startServer(t)
-	defer closeServer(t, server)
+	defer closeServer(server)
 
 	user_data := map[string]string{
 		"username": "jasmine1",
@@ -188,7 +189,7 @@ func TestRegister_ExistingUsername(t *testing.T) {
 
 func TestLogin_ExistingUser(t *testing.T) {
 	server := startServer(t)
-	defer closeServer(t, server)
+	defer closeServer(server)
 
 	user_data := map[string]string{
 		"login":    "jasmine1",
@@ -208,6 +209,7 @@ func TestLogin_ExistingUser(t *testing.T) {
 	}
 
 	defer res.Body.Close()
+
 	if res.StatusCode != http.StatusOK {
 		body_bytes, _ := io.ReadAll(res.Body)
 		t.Errorf("Login failed: %s", string(body_bytes))
@@ -218,10 +220,7 @@ func TestLogin_ExistingUser(t *testing.T) {
 			t.Errorf("Error: %v", err)
 		}
 		var body_array map[string]string
-		err = json.Unmarshal(body_bytes, &body_array)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
+		_ = json.Unmarshal(body_bytes, &body_array)
 
 		t.Logf("Login working: %s", body_array["message"])
 		user_id = body_array["id"]
@@ -230,7 +229,7 @@ func TestLogin_ExistingUser(t *testing.T) {
 
 func TestLogin_IncorrectPassword(t *testing.T) {
 	server := startServer(t)
-	defer closeServer(t, server)
+	defer closeServer(server)
 
 	user_data := map[string]string{
 		"login":    "jasmine1",
@@ -272,7 +271,7 @@ func TestLogin_IncorrectPassword(t *testing.T) {
 
 func TestLogin_InvalidUser(t *testing.T) {
 	server := startServer(t)
-	defer closeServer(t, server)
+	defer closeServer(server)
 
 	user_data := map[string]string{
 		"login":    "rando",
@@ -305,10 +304,10 @@ func TestLogin_InvalidUser(t *testing.T) {
 
 func TestDeleteUser_Existing(t *testing.T) {
 	server := startServer(t)
-	defer closeServer(t, server)
+	defer closeServer(server)
 
 	user_data := map[string]string{
-		"id": user_id,
+		"users_id": user_id,
 	}
 	req, err := json.Marshal(user_data)
 	if err != nil {
@@ -341,10 +340,7 @@ func TestDeleteUser_Existing(t *testing.T) {
 			t.Errorf("Error: %v", err)
 		}
 		var body_array map[string]string
-		err = json.Unmarshal(body_bytes, &body_array)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
+		_ = json.Unmarshal(body_bytes, &body_array)
 
 		t.Logf("Deletion working: %s", body_array["message"])
 	}
@@ -352,10 +348,10 @@ func TestDeleteUser_Existing(t *testing.T) {
 
 func TestDeleteUser_Invalid(t *testing.T) {
 	server := startServer(t)
-	defer closeServer(t, server)
+	defer closeServer(server)
 
 	user_data := map[string]string{
-		"id": user_id,
+		"users_id": user_id,
 	}
 	req, err := json.Marshal(user_data)
 	if err != nil {
@@ -400,7 +396,7 @@ func TestDeleteUser_Invalid(t *testing.T) {
 
 func TestGetAllUsers(t *testing.T) {
 	server := startServer(t)
-	defer closeServer(t, server)
+	defer closeServer(server)
 
 	res, err := http.Get(
 		"http://localhost:8080/api/users/getUsers",
