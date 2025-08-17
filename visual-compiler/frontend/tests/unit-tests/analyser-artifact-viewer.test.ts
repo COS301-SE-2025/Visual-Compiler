@@ -82,8 +82,8 @@ describe('AnalyserArtifactViewer Component', () => {
 
 		// Check first symbol
 		expect(screen.getByText('x')).toBeInTheDocument();
-		expect(screen.getByText('int')).toBeInTheDocument();
-		expect(screen.getByText('0')).toBeInTheDocument();
+		expect(screen.getAllByText('int')).toHaveLength(2); // There are 2 int types
+		expect(screen.getAllByText('0')).toHaveLength(2); // There are 2 scope 0 values
 
 		// Check second symbol
 		expect(screen.getByText('y')).toBeInTheDocument();

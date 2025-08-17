@@ -115,9 +115,17 @@ describe('HelpMenu Component', () => {
 		];
 
 		for (const { question, answerPart } of questions) {
-			// Handle special characters - use partial matching for button names
+			// Handle the special question with curly apostrophe  
+			let searchPattern: string | RegExp;
+			if (question.includes("can't")) {
+				// Use a more flexible pattern for the special case
+				searchPattern = /Why can.t I configure a Lexer or Parser node.*▼/;
+			} else {
+				searchPattern = new RegExp(question.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '.*▼');
+			}
+			
 			const questionButton = screen.getByRole('button', { 
-				name: new RegExp(question.replace(/['']/g, ".").replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '.*')
+				name: searchPattern
 			});
 			
 			await fireEvent.click(questionButton);
