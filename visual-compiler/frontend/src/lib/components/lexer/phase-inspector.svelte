@@ -5,6 +5,8 @@
 	import { onMount } from 'svelte';
 	import { DataSet, Network } from 'vis-network/standalone';
 	import { fade, scale } from 'svelte/transition';
+	import { projectName } from '$lib/stores/project';
+	import { get } from 'svelte/store'; 
 
 	export let source_code = '';
 	export let onGenerateTokens: (data: {
@@ -87,14 +89,20 @@
 		}
 
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName);
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+			AddToast('Authentication required: Please log in to save lexical rules', 'error');
+			return;
+		}
+		if (!project) {
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
 		if (selectedType === 'REGEX') {
 			const requestData = {
 				users_id: user_id,
+				project_name: project,
 				pairs: nonEmptyRows.map((row) => ({
 					Type: row.type.toUpperCase(),
 					Regex: row.regex
@@ -113,13 +121,14 @@
 				submissionStatus = { show: true, success: true, message: 'Rules stored successfully!' };
 				showRegexActionButtons = true;
 			} catch (error) {
-				AddToast('Failed to save rules', 'error');
+				AddToast('Save failed: Unable to store lexical rules. Please check your connection and try again', 'error');
 			}
 			return;
 		}
 
 		const requestData = {
 			users_id: user_id,
+			project_name: project,
 			source_code: showDefault ? DEFAULT_SOURCE_CODE : userSourceCode,
 			pairs: nonEmptyRows.map((row) => ({
 				Type: row.type.toUpperCase(),
@@ -141,7 +150,7 @@
 			showGenerateButton = true;
 		} catch (error) {
 			console.error('Store error:', error);
-			AddToast('Cannot connect to server. Please ensure the backend is running.', 'error');
+			AddToast('Connection error: Cannot reach server. Please ensure the backend is running and try again', 'error');
 		}
 
 		// Show regex action buttons after successful submit in REGEX mode
@@ -153,13 +162,20 @@
 	async function generateTokens() {
 		try {
 			const user_id = localStorage.getItem('user_id');
+			const project = get(projectName);
 			if (!user_id) {
-				AddToast('User not logged in.', 'error');
+				AddToast('Authentication required: Please log in to generate tokens', 'error');
 				return;
 			}
+			if (!project) {
+                AddToast('No project selected: Please select or create a project first', 'error');
+                return;
+            }
+
 			const requestData = {
 				users_id: user_id,
 				source_code: source_code,
+				project_name: project,
 				pairs: (showDefault ? editableDefaultRows : userInputRows).map((row) => ({
 					Type: row.type.toUpperCase(),
 					Regex: row.regex
@@ -194,16 +210,23 @@
 			};
 		} catch (error) {
 			console.error('Generate tokens error:', error);
-			AddToast('Error generating tokens', 'error');
+			AddToast('Tokenization failed: Unable to generate tokens from your lexical rules', 'error');
 		}
 	}
 
 	// Helper: Save DFA to backend
 	async function saveDfaToBackend() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
-			return false;
+			AddToast('Authentication required: Please log in to save automata data', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected: Please select or create a project first', 'error');
+			return;
 		}
 
 		const dfa = {
@@ -214,7 +237,8 @@
 			transitions: [],
 			start_state: startState.trim(),
 			accepting_states: parseAcceptedStates(acceptedStates),
-			users_id: user_id
+			users_id: user_id,
+			project_name: project
 		};
 
 		// Parse transitions
@@ -241,12 +265,12 @@
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
-				AddToast('Failed to save DFA: ' + errorText, 'error');
+				AddToast('Save failed: Unable to save DFA - ' + errorText, 'error');
 				return false;
 			}
 			return true;
 		} catch (error) {
-			AddToast('Failed to save DFA: ' + error, 'error');
+			AddToast('Save error: Failed to save DFA - ' + error, 'error');
 			return false;
 		}
 	}
@@ -256,13 +280,20 @@
 		if (!saved) return;
 
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+			AddToast('Authentication required: Please log in to perform tokenization', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
 		// Only need to send users_id, backend loads DFA from DB
-		const body = { users_id: user_id };
+		const body = { users_id: user_id, project_name: project };
 
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/dfaToTokens', {
@@ -279,9 +310,9 @@
 				tokens: data.tokens,
 				unexpected_tokens: data.tokens_unidentified
 			});
-			AddToast('Tokenisation successful!', 'success');
+			AddToast('Tokenization complete! Your source code has been successfully tokenized', 'success');
 		} catch (error) {
-			AddToast('Tokenisation failed: ' + error, 'error');
+			AddToast('Tokenization failed: ' + error, 'error');
 		}
 	}
 
@@ -411,8 +442,15 @@
 
 	async function showNfaDiagram() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 
@@ -425,7 +463,7 @@
 			const dfaToRegexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!dfaToRegexRes.ok) {
 				const errorText = await dfaToRegexRes.text();
@@ -437,7 +475,7 @@
 			const regexToNfaRes = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!regexToNfaRes.ok) {
 				const errorText = await regexToNfaRes.text();
@@ -494,12 +532,37 @@
 		showDefault = true;
 		editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
 		inputRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
-		states = 'S0, S1, S2, S3, S4, S5, S6, S7, S8';
+		states = 'S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17';
 		startState = 'S0';
 		acceptedStates =
-			'S3->KEYWORD, S4->IDENTIFIER, S5->ASSIGNMENT, S6->OPERATOR, S7->INTEGER, S8->SEPARATOR';
-		transitions =
-			'S0,i->S1\nS1,n->S2\nS2,t->S3\nS0,[a-zA-Z_]->S4\nS4,[a-zA-Z_]->S4\nS0,=->S5\nS0,[+-*/%]->S6\nS0,[0-9]->S7\nS7,[0-9]->S7\nS0,;->S8';
+			'S3->KEYWORD, S14->KEYWORD, S4->IDENTIFIER, S5->ASSIGNMENT, S6->OPERATOR, S7->INTEGER, S8->SEPARATOR, S15->OPEN_BRACKETS, S16->CLOSE_BRACKETS, S17->OPEN_SCOPE, S18->CLOSE_SCOPE ';
+		transitions ='S0,i->S1\n';
+        transitions +='S1,n->S2\n';
+        transitions +='S2,t->S3\n';
+
+        transitions += 'S0,r->S9\n';
+        transitions += 'S9,e->S10\n';
+        transitions += 'S10,t->S11\n';
+        transitions += 'S11,u->S12\n';
+        transitions += 'S12,r->S13\n';
+        transitions += 'S13,n->S14\n';
+
+        transitions +='S0,[a-zA-Z_]->S4\n';
+        transitions +='S4,[a-zA-Z_]->S4\n';
+
+        transitions +='S0,=->S5\n';
+        transitions +='S0,[+\\-*/%]->S6\n';
+
+        transitions +='S0,[0-9]->S7\n';
+        transitions +='S7,[0-9]->S7\n';
+
+        transitions +='S0,;->S8\n';
+
+        transitions += 'S0,(->S15\n';
+        transitions += 'S0,)->S16\n';
+
+        transitions += 'S0,{->S17\n';
+        transitions += 'S0,}->S18\n';
 	}
 
 	function removeDefault() {
@@ -509,12 +572,16 @@
 	}
 
 	const DEFAULT_INPUT_ROWS = [
-		{ type: 'keyword', regex: 'int|str|if', error: '' },
-		{ type: 'identifier', regex: '[a-zA-Z]+', error: '' },
-		{ type: 'integer', regex: '[0-9]+', error: '' },
-		{ type: 'assignment', regex: '=', error: '' },
-		{ type: 'operator', regex: '[+\\-*/%]', error: '' },
-		{ type: 'separator', regex: ';', error: '' }
+		{ type: 'KEYWORD', regex: 'int|return', error: '' },
+		{ type: 'IDENTIFIER', regex: '[a-zA-Z_]+', error: '' },
+		{ type: 'INTEGER', regex: '[0-9]+', error: '' },
+		{ type: 'ASSIGNMENT', regex: '=', error: '' },
+		{ type: 'OPERATOR', regex: '[+\\-*/%]', error: '' },
+		{ type: 'SEPARATOR', regex: ';', error: '' },
+        { type: 'OPEN_BRACKETS', regex: '\\(', error: '' },
+        { type: 'CLOSE_BRACKETS', regex: '\\)', error: '' },
+        { type: 'OPEN_SCOPE', regex: '\{', error: '' },
+        { type: 'CLOSE_SCOPE', regex: '\}', error: '' }
 	];
 
 	let editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
@@ -546,8 +613,15 @@
 	// Show DFA button handler
 	async function handleShowDfa() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 
@@ -560,7 +634,7 @@
 			const regexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!regexRes.ok) {
 				const errorText = await regexRes.text();
@@ -572,7 +646,7 @@
 			const dfaRes = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!dfaRes.ok) {
 				const errorText = await dfaRes.text();
@@ -600,8 +674,15 @@
 		if (!saved) return;
 
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 
@@ -609,7 +690,7 @@
 			const response = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -635,15 +716,22 @@
 
 	async function handleRegexToNFA() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -666,15 +754,22 @@
 
 	async function handleRegexToDFA() {
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName); 
+
 		if (!user_id) {
 			AddToast('User not logged in.', 'error');
+			return;
+		}
+
+		if (!project) {
+			AddToast('No project selected.', 'error');
 			return;
 		}
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id })
+				body: JSON.stringify({ users_id: user_id, project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -858,6 +953,36 @@
 			networkInstance.fit();
 		}
 	}
+
+	// Zoom functionality for expanded view
+	function zoomIn() {
+		if (networkInstance && isExpanded) {
+			const scale = networkInstance.getScale();
+			networkInstance.moveTo({
+				scale: Math.min(scale * 1.2, 3) // Max zoom level of 3x
+			});
+		}
+	}
+
+	function zoomOut() {
+		if (networkInstance && isExpanded) {
+			const scale = networkInstance.getScale();
+			networkInstance.moveTo({
+				scale: Math.max(scale * 0.8, 0.1) // Min zoom level of 0.1x
+			});
+		}
+	}
+
+	function resetZoom() {
+		if (networkInstance && isExpanded) {
+			networkInstance.fit({
+				animation: {
+					duration: 500,
+					easingFunction: 'easeInOutCubic'
+				}
+			});
+		}
+	}
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -869,6 +994,15 @@
 		</div>
 		<h3 class="source-code-header">Source Code</h3>
 		<pre class="source-display">{source_code || 'no source code available'}</pre>
+	</div>
+
+	<div class="instructions-section">
+		<div class="instructions-content">
+			<h4 class="instructions-header">Instructions</h4>
+			<p class="instructions-text">
+				Mock Data
+			</p>
+		</div>
 	</div>
 
 	<div class="automaton-btn-row">
@@ -1235,20 +1369,64 @@
 			on:introend={fitGraphToModal}
 		>
 			<div class="modal-header">
-				<h3>Expanded Automaton View</h3>
-				<button on:click={toggleExpand} class="modal-close-btn" aria-label="Close expanded view">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="24"
-						height="24"
-						fill="currentColor"
-						viewBox="0 0 16 16"
-					>
-						<path
-							d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"
-						/>
-					</svg>
-				</button>
+				<div class="header-left">
+					<h3>Expanded Automaton View</h3>
+				</div>
+				<div class="header-center">
+					<div class="zoom-controls">
+						<button 
+							on:click={zoomOut} 
+							class="zoom-btn" 
+							title="Zoom Out"
+							aria-label="Zoom out"
+						>
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<circle cx="11" cy="11" r="8"/>
+								<path d="m21 21-4.35-4.35"/>
+								<line x1="8" y1="11" x2="14" y2="11"/>
+							</svg>
+						</button>
+						<button 
+							on:click={resetZoom} 
+							class="zoom-btn reset-btn" 
+							title="Reset Zoom"
+							aria-label="Reset zoom to fit"
+						>
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+								<circle cx="12" cy="12" r="3"/>
+							</svg>
+						</button>
+						<button 
+							on:click={zoomIn} 
+							class="zoom-btn" 
+							title="Zoom In"
+							aria-label="Zoom in"
+						>
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<circle cx="11" cy="11" r="8"/>
+								<path d="m21 21-4.35-4.35"/>
+								<line x1="11" y1="8" x2="11" y2="14"/>
+								<line x1="8" y1="11" x2="14" y2="11"/>
+							</svg>
+						</button>
+					</div>
+				</div>
+				<div class="header-right">
+					<button on:click={toggleExpand} class="modal-close-btn" aria-label="Close expanded view">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="24"
+							height="24"
+							fill="currentColor"
+							viewBox="0 0 16 16"
+						>
+							<path
+								d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"
+							/>
+						</svg>
+					</button>
+				</div>
 			</div>
 			<div class="modal-body" bind:this={expandedVisContainer}>
 
@@ -1276,6 +1454,34 @@
 
 	.source-code-section {
 		margin-bottom: 2rem;
+	}
+
+	.instructions-section {
+		margin: 1.5rem 0 2rem 0;
+		background: #f8f9fa;
+		border-radius: 8px;
+		border-left: 4px solid #007acc;
+		transition: background-color 0.3s ease, border-color 0.3s ease;
+	}
+
+	.instructions-content {
+		padding: 1.25rem 1.5rem;
+	}
+
+	.instructions-header {
+		margin: 0 0 0.75rem 0;
+		font-size: 1rem;
+		font-weight: 600;
+		color: #333;
+		transition: color 0.3s ease;
+	}
+
+	.instructions-text {
+		margin: 0;
+		font-size: 0.9rem;
+		line-height: 1.5;
+		color: #555;
+		transition: color 0.3s ease;
 	}
 
 	.source-display {
@@ -1714,6 +1920,19 @@
 		color: #e2e8f0;
 	}
 
+	:global(html.dark-mode) .instructions-section {
+		background: #2d3748;
+		border-left-color: #4da9ff;
+	}
+
+	:global(html.dark-mode) .instructions-header {
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .instructions-text {
+		color: #cbd5e0;
+	}
+
 	:global(html.dark-mode) .source-display,
 	:global(html.dark-mode) .shared-block,
 	:global(html.dark-mode) .pretty-vis-box,
@@ -1937,7 +2156,6 @@
 
 	.modal-header {
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
 		border-bottom: 1px solid #e0e0e0;
 		padding-bottom: 1rem;
@@ -1945,6 +2163,81 @@
 	}
 	:global(html.dark-mode) .modal-header {
 		border-bottom-color: #4a5568;
+	}
+
+	.header-left,
+	.header-right {
+		flex: 1;
+		display: flex;
+		align-items: center;
+	}
+
+	.header-left {
+		justify-content: flex-start;
+	}
+
+	.header-center {
+		flex: 0 0 auto;
+		display: flex;
+		justify-content: center;
+	}
+
+	.header-right {
+		justify-content: flex-end;
+	}
+
+	.zoom-controls {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		background: #f8f9fa;
+		border: 1px solid #dee2e6;
+		border-radius: 8px;
+		padding: 0.25rem;
+	}
+	:global(html.dark-mode) .zoom-controls {
+		background: #4a5568;
+		border-color: #6b7280;
+	}
+
+	.zoom-btn {
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: #374151;
+		padding: 0.5rem;
+		border-radius: 4px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s ease;
+		min-width: 32px;
+		min-height: 32px;
+	}
+	.zoom-btn:hover {
+		background-color: #e9ecef;
+		color: #1f2937;
+	}
+	.zoom-btn:active {
+		transform: scale(0.95);
+	}
+	:global(html.dark-mode) .zoom-btn {
+		color: #f9fafb;
+	}
+	:global(html.dark-mode) .zoom-btn:hover {
+		background-color: #5a6578;
+		color: #ffffff;
+	}
+
+	.reset-btn {
+		border-left: 1px solid #dee2e6;
+		border-right: 1px solid #dee2e6;
+		margin: 0 0.25rem;
+		border-radius: 4px;
+	}
+	:global(html.dark-mode) .reset-btn {
+		border-left-color: #6b7280;
+		border-right-color: #6b7280;
 	}
 
 	.modal-header h3 {
@@ -1982,6 +2275,7 @@
 		flex-grow: 1;
 		width: 100%;
 		height: 100%;
-		overflow: hidden; 
+		overflow: hidden;
+		position: relative;
 	}
 </style>

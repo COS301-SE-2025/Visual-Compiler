@@ -2,7 +2,9 @@
 	import { AddToast } from '$lib/stores/toast';
 	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import { tick } from 'svelte';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { projectName } from '$lib/stores/project';
+	import { get } from 'svelte/store';  
 
 	let code_text = '';
 	
@@ -12,14 +14,52 @@
 	let textareaEl: HTMLTextAreaElement;
 	export let onCodeSubmitted: (code: string) => void = () => {};
 
-	// --- NEW MOCK DATA FOR PROJECTS ---
-	const mockProjects = [
-		{ name: 'Select a project...', code: '' },
-		{ name: 'Lexer Project', code: '// Mock translated code for Lexer Project\n\nfunction lexer(code) {\n  // ...\n}' },
-		{ name: 'Parser Project', code: '// Mock translated code for Parser Project\n\nfunction parser(tokens) {\n  // ...\n}' },
-		{ name: 'Translator Project', code: '// Mock translated code for Translator Project\n\nfunction translator(ast) {\n  // ...\n}' }
+	// --- REAL PROJECTS DATA ---
+	let projects: Array<{ name: string; code: string }> = [
+		{ name: 'Select a project...', code: '' }
 	];
-	let selectedProject = mockProjects[0];
+	let selectedProject = projects[0];
+
+	// Fetch projects from backend
+	async function fetchProjects() {
+		const userId = localStorage.getItem('user_id');
+		if (!userId) return;
+
+		try {
+			const response = await fetch(`http://localhost:8080/api/users/getProjects?users_id=${userId}`, {
+				method: 'GET',
+				headers: {
+					'accept': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			
+			if (data.all_projects && Array.isArray(data.all_projects)) {
+				// Transform project names into the required format
+				const fetchedProjects = data.all_projects.map((projectName: string) => ({
+					name: projectName,
+					code: '' // We'll fetch individual project code when selected
+				}));
+				
+				// Keep the default "Select a project..." option at the beginning
+				projects = [
+					{ name: 'Select a project...', code: '' },
+					...fetchedProjects
+				];
+				
+				// Reset selected project to default
+				selectedProject = projects[0];
+			}
+		} catch (error) {
+			console.error('Error fetching projects:', error);
+			AddToast('Failed to load projects. Please try again later.', 'error');
+		}
+	}
 
 	// Sync with global store
 	let confirmed_code = '';
@@ -28,14 +68,23 @@
 		if (!code_text) code_text = value; // Auto fill input if empty
 	});
 
+	onDestroy(() => {
+		unsubscribe(); // clean up store subscription
+	});
+
+	// Load projects when component mounts
 	onMount(() => {
-		return () => unsubscribe(); // clean up store subscription
+		fetchProjects();
 	});
 
 	function handleDefaultInput() {
 		if (!isDefaultInput) {
 			previous_code_text = code_text;
-			code_text = 'int blue = 13 + 22;';
+			code_text = 'int blue = 13 + 5;\n';
+			code_text += 'int function_name(int red) {\n';
+			code_text += '    int green = red;\n';
+			code_text += '    return green;\n';
+			code_text += '}\n';
 			isDefaultInput = true;
 		} else {
 			code_text = previous_code_text;
@@ -48,7 +97,7 @@
 		const file = input.files?.[0];
 		if (!file) return;
 		if (!file.name.toLowerCase().endsWith('.txt')) {
-			AddToast('Only .txt files are allowed. Please upload a valid plain text file.', 'error');
+			AddToast('Invalid file type: Only .txt files are supported. Please upload a plain text file', 'error');
 			input.value = '';
 			return;
 		}
@@ -56,10 +105,10 @@
 		const reader = new FileReader();
 		reader.onload = () => {
 			code_text = reader.result as string;
-			AddToast('File uploaded successfully!', 'success');
+			AddToast('File uploaded successfully! Your source code is ready to use', 'success');
 		};
 		reader.onerror = () => {
-			AddToast('Failed to read file.', 'error');
+			AddToast('Upload failed: Unable to read the selected file. Please try again', 'error');
 		};
 		reader.readAsText(file);
 	}
@@ -67,8 +116,13 @@
 	async function submitCode() {
 		if (!code_text.trim()) return;
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName);
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+			AddToast('Authentication required: Please log in to save source code', 'error');
+			return;
+		}
+		if (!project) {
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
@@ -78,25 +132,67 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					users_id: user_id,
+					project_name:project,
 					source_code: code_text
 				})
 			});
 			if (!res.ok) throw new Error();
-			AddToast('Code confirmed and saved!', 'success');
+			AddToast('Source code saved successfully! Ready to begin lexical analysis', 'success');
 			confirmedSourceCode.set(code_text);
 			isConfirmed = true;
 			onCodeSubmitted(code_text);
 			await tick();
 		} catch {
-			AddToast('Failed to save source code', 'error');
+			AddToast('Save failed: Unable to save source code. Please check your connection and try again', 'error');
 		}
 	}
 
 	// --- NEW FUNCTION TO HANDLE PROJECT SELECTION ---
-	function handleProjectSelect() {
-		if (selectedProject) {
-			code_text = selectedProject.code;
-			isDefaultInput = false; 
+	async function handleProjectSelect() {
+		if (!selectedProject || selectedProject.name === 'Select a project...') {
+			code_text = '';
+			isDefaultInput = false;
+			return;
+		}
+
+		const userId = localStorage.getItem('user_id');
+		if (!userId) {
+			AddToast('Authentication required: Please log in to load project data', 'error');
+			return;
+		}
+
+		try {
+			const response = await fetch(
+				`http://localhost:8080/api/users/getProject?project_name=${encodeURIComponent(selectedProject.name)}&users_id=${userId}`, 
+				{
+					method: 'GET',
+					headers: {
+						'accept': 'application/json'
+					}
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			
+			if (data.message === "Retrieved users project details" && data.translation) {
+				// Populate the text editor with the translation code
+				code_text = data.translation;
+				isDefaultInput = false;
+				AddToast('Project code loaded successfully!', 'success');
+			} else {
+				// If no translation code exists, just clear the text area
+				code_text = '';
+				AddToast('Project loaded, but no translator code found', 'info');
+			}
+		} catch (error) {
+			console.error('Error fetching project details:', error);
+			AddToast('Failed to load project code. Please try again.', 'error');
+			// Reset to empty if there's an error
+			code_text = '';
 		}
 	}
 
@@ -140,7 +236,7 @@
 		<div class="control-item project-selector">
 			<label for="project-select">Import from Project</label>
 			<select id="project-select" bind:value={selectedProject} on:change={handleProjectSelect}>
-				{#each mockProjects as project}
+				{#each projects as project}
 					<option value={project}>{project.name}</option>
 				{/each}
 			</select>
