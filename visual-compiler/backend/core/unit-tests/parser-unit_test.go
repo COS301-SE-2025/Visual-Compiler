@@ -245,6 +245,95 @@ func TestCreateSyntaxTree_Valid(t *testing.T) {
 	}
 }
 
+func TestCreateSyntaxTree_Valid_MoreComplex(t *testing.T) {
+
+	tokens := []services.TypeValue{
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "blue"},
+		{Type: "ASSIGNMENT", Value: "="},
+		{Type: "INTEGER", Value: "13"},
+		{Type: "OPERATOR", Value: "+"},
+		{Type: "INTEGER", Value: "89"},
+		{Type: "SEPARATOR", Value: ";"},
+	}
+
+	grammar := services.Grammar{
+		Variables: []string{"STATEMENT", "DECLARATION", "EXPRESSION", "TYPE", "TERM"},
+		Terminals: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "OPERATOR", "SEPARATOR", "STRING"},
+		Start:     "STATEMENT",
+		Rules: []services.ParsingRule{
+			{Input: "STATEMENT", Output: []string{"DECLARATION", "SEPARATOR"}},
+			{Input: "DECLARATION", Output: []string{"TYPE", "IDENTIFIER", "ASSIGNMENT", "EXPRESSION"}},
+			{Input: "EXPRESSION", Output: []string{"TERM", "OPERATOR", "TERM"}},
+			{Input: "TERM", Output: []string{"STRING"}},
+			{Input: "TERM", Output: []string{"INTEGER"}},
+			{Input: "TYPE", Output: []string{"KEYWORD"}},
+		},
+	}
+	syntax_tree, err := services.CreateSyntaxTree(tokens, grammar)
+
+	if err != nil {
+		t.Errorf("Error not supposed to occur for not tokens: %v", err)
+	} else {
+		if syntax_tree.Root == nil {
+			t.Errorf("No root")
+		}
+		if syntax_tree.Root.Children == nil {
+			t.Errorf("No children")
+		}
+		if syntax_tree.Root.Symbol == "" {
+			t.Errorf("No symbol")
+		}
+	}
+}
+
+func TestCreateSyntaxTree_Valid_Complex(t *testing.T) {
+
+	tokens := []services.TypeValue{
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "blue"},
+		{Type: "ASSIGNMENT", Value: "="},
+		{Type: "INTEGER", Value: "13"},
+		{Type: "OPERATOR", Value: "+"},
+		{Type: "INTEGER", Value: "89"},
+		{Type: "SEPARATOR", Value: ";"},
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "function_do"},
+		{Type: "BRACKETS", Value: "("},
+		{Type: "BRACKETS", Value: ")"},
+
+	}
+
+	grammar := services.Grammar{
+		Variables: []string{"STATEMENT", "DECLARATION", "EXPRESSION", "TYPE", "TERM"},
+		Terminals: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "OPERATOR", "SEPARATOR", "STRING"},
+		Start:     "STATEMENT",
+		Rules: []services.ParsingRule{
+			{Input: "STATEMENT", Output: []string{"DECLARATION", "SEPARATOR"}},
+			{Input: "DECLARATION", Output: []string{"TYPE", "IDENTIFIER", "ASSIGNMENT", "EXPRESSION"}},
+			{Input: "EXPRESSION", Output: []string{"TERM", "OPERATOR", "TERM"}},
+			{Input: "TERM", Output: []string{"STRING"}},
+			{Input: "TERM", Output: []string{"INTEGER"}},
+			{Input: "TYPE", Output: []string{"KEYWORD"}},
+		},
+	}
+	syntax_tree, err := services.CreateSyntaxTree(tokens, grammar)
+
+	if err != nil {
+		t.Errorf("Error not supposed to occur for not tokens: %v", err)
+	} else {
+		if syntax_tree.Root == nil {
+			t.Errorf("No root")
+		}
+		if syntax_tree.Root.Children == nil {
+			t.Errorf("No children")
+		}
+		if syntax_tree.Root.Symbol == "" {
+			t.Errorf("No symbol")
+		}
+	}
+}
+
 func TestParseSymbol_NoTokens(t *testing.T) {
 	tokens := []services.TypeValue{}
 
@@ -594,6 +683,124 @@ func TestTryRule_True(t *testing.T) {
 	}
 	if new_position != 7 {
 		t.Errorf("Expected position to be : %v", new_position)
+	}
+}
+
+func TestEliminateLeftRecursion_NoLeftRecursion(t *testing.T) {
+	grammar := services.Grammar{
+		Variables: []string{"STATEMENT", "DECLARATION"},
+		Terminals: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "SEPARATOR"},
+		Start:     "STATEMENT",
+		Rules: []services.ParsingRule{
+			{Input: "STATEMENT", Output: []string{"DECLARATION", "SEPARATOR"}},
+			{Input: "DECLARATION", Output: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER"}},
+		},
+	}
+
+	result := services.EliminateLeftRecursion(grammar)
+
+	if len(result.Rules) != len(grammar.Rules) {
+		t.Errorf("Expected %d rules but received %d", len(grammar.Rules), len(result.Rules))
+	}
+
+	if len(result.Variables) != len(grammar.Variables) {
+		t.Errorf("Expected %d variables but received %d", len(grammar.Variables), len(result.Variables))
+	}
+
+	for i, rule := range result.Rules {
+		if rule.Input != grammar.Rules[i].Input {
+			t.Errorf("Rule %d input changed", i)
+		}
+	}
+}
+
+func TestEliminateLeftRecursion_SingleLeftRecursion(t *testing.T) {
+	grammar := services.Grammar{
+		Variables: []string{"A", "B", "C"},
+		Terminals: []string{"X", "Y", "Z"},
+		Start:     "A",
+		Rules: []services.ParsingRule{
+			{Input: "A", Output: []string{"A", "B", "C"}},
+			{Input: "A", Output: []string{"X"}},
+			{Input: "B", Output: []string{"Y"}},
+			{Input: "C", Output: []string{"Z"}},
+		},
+	}
+
+	result := services.EliminateLeftRecursion(grammar)
+
+	if len(result.Variables) != 4 {
+		t.Errorf("Expected 4 variables but received %d", len(result.Variables))
+	}
+
+	found := false
+	for _, variable := range result.Variables {
+		if variable == "A'" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Errorf("Expected new variable A' after left recursion elimination")
+	}
+
+	if len(result.Rules) <= len(grammar.Rules) {
+		t.Errorf("Expected more rules after left recursion elimination")
+	}
+
+	for _, rule := range result.Rules {
+		if len(rule.Output) > 0 && rule.Output[0] == rule.Input {
+			t.Errorf("Left recursion still exists in the rule: %s -> %v", rule.Input, rule.Output)
+		}
+	}
+}
+
+func TestEliminateLeftRecursion_MultipleLeftRecursion(t *testing.T) {
+	grammar := services.Grammar{
+		Variables: []string{"A", "B", "C"},
+		Terminals: []string{"X", "Y", "Z"},
+		Start:     "A",
+		Rules: []services.ParsingRule{
+			{Input: "A", Output: []string{"A", "B"}},
+			{Input: "A", Output: []string{"A", "C"}},
+			{Input: "A", Output: []string{"X"}},
+			{Input: "B", Output: []string{"Y"}},
+			{Input: "C", Output: []string{"Z"}},
+		},
+	}
+
+	result := services.EliminateLeftRecursion(grammar)
+
+	if len(result.Variables) != 4 {
+		t.Errorf("Expected 4 variables but received %d", len(result.Variables))
+	}
+
+	found_prime := false
+	for _, variable := range result.Variables {
+		if variable == "A'" {
+			found_prime = true
+			break
+		}
+	}
+	if !found_prime {
+		t.Errorf("Expected new variable A' after left recursion elimination")
+	}
+
+	for _, rule := range result.Rules {
+		if len(rule.Output) > 0 && rule.Output[0] == rule.Input {
+			t.Errorf("Left recursion still exists in the rule: %s -> %v", rule.Input, rule.Output)
+		}
+	}
+
+	found_epsilon := false
+	for _, rule := range result.Rules {
+		if rule.Input == "A'" && len(rule.Output) == 0 {
+			found_epsilon = true
+			break
+		}
+	}
+	if !found_epsilon {
+		t.Errorf("Expected epsilon rule for A' after left recursion elimination")
 	}
 }
 

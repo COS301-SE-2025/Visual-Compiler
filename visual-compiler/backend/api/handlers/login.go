@@ -21,13 +21,17 @@ type LoginReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
-// Name: Login
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Logs in a valid user into the system. Any issues (incorrect email/password) will be notfied to the user. If successful login, the user's ID is returned and will be used for authentication and storage purposes for many of the functions.
+// @Summary Login User
+// @Description Login user with correct credentials
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Param request body LoginReq true "Login User"
+// @Success 200 {object} map[string]string "User login successful"
+// @Failure 400 {object} map[string]string "Invalid input or ID format"
+// @Failure 404 {object} map[string]string "User not found/Invalid credentials"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /users/login [post]
 func Login(c *gin.Context) {
 	var req LoginReq
 
@@ -56,6 +60,8 @@ func Login(c *gin.Context) {
 		Email    string        `bson:"email"`
 		Password string        `bson:"password"`
 		ID       bson.ObjectID `bson:"_id"`
+		Is_Admin bool          `bson:"is_admin"`
+		Projects []bson.M      `bson:"projects"`
 	}
 
 	err := users_collection.FindOne(ctx, filter_login).Decode(&db_user)
@@ -74,7 +80,9 @@ func Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Login Successful. Welcome " + db_user.Username,
-		"id":      db_user.ID,
+		"message":  "Login Successful. Welcome " + db_user.Username,
+		"id":       db_user.ID,
+		"is_admin": db_user.Is_Admin,
+		"projects": db_user.Projects,
 	})
 }
