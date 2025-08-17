@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Svelvet, Node } from 'svelvet';
+	import { Svelvet, Node, Anchor } from 'svelvet';
 	import type { Writable } from 'svelte/store';
-	import type { NodeType } from '$lib/types';
+	import type { NodeType, NodeConnection } from '$lib/types';
 	import { theme } from '../../stores/theme';
 
 	interface CanvasNode {
@@ -14,10 +14,62 @@
 	export let nodes: Writable<CanvasNode[]>;
 
 	export let onPhaseSelect: (type: NodeType) => void = () => {};
+	export let onConnectionChange: (connections: NodeConnection[]) => void = () => {};
+
+	// Track physical connections between nodes
+	let nodeConnections: NodeConnection[] = [];
 
 	let canvas_el: any;
 	let last_click = -Infinity;
 	const DOUBLE_CLICK_MILLISECONDS = 300;
+
+	// Handle new edge connections
+	function handleConnection(event: CustomEvent) {
+		console.log('Connection created:', event.detail);
+		const { sourceNode, targetNode } = event.detail;
+		
+		// Extract node IDs from the node objects
+		const sourceNodeId = sourceNode.id.replace('N-', '');
+		const targetNodeId = targetNode.id.replace('N-', '');
+		
+		console.log('Parsed node IDs:', { sourceNodeId, targetNodeId });
+		
+		// Find the node types for source and target
+		const sourceCanvasNode = $nodes.find(node => node.id === sourceNodeId);
+		const targetCanvasNode = $nodes.find(node => node.id === targetNodeId);
+		
+		console.log('Found canvas nodes:', { sourceCanvasNode, targetCanvasNode });
+		
+		if (sourceCanvasNode && targetCanvasNode) {
+			const newConnection: NodeConnection = {
+				id: `${sourceNodeId}-${targetNodeId}`,
+				sourceNodeId: sourceCanvasNode.id,
+				targetNodeId: targetCanvasNode.id,
+				sourceType: sourceCanvasNode.type,
+				targetType: targetCanvasNode.type
+			};
+			
+			nodeConnections = [...nodeConnections, newConnection];
+			onConnectionChange(nodeConnections);
+			console.log('Updated connections:', nodeConnections);
+		}
+	}
+
+	// Handle edge disconnections
+	function handleDisconnection(event: CustomEvent) {
+		console.log('Connection removed:', event.detail);
+		const { sourceNode, targetNode } = event.detail;
+		
+		// Extract node IDs from the node objects
+		const sourceNodeId = sourceNode.id.replace('N-', '');
+		const targetNodeId = targetNode.id.replace('N-', '');
+		
+		nodeConnections = nodeConnections.filter(conn => 
+			!(conn.sourceNodeId === sourceNodeId && conn.targetNodeId === targetNodeId)
+		);
+		onConnectionChange(nodeConnections);
+		console.log('Updated connections after removal:', nodeConnections);
+	}
 
 	// onNodeClick
 	// Return type: void
@@ -42,16 +94,24 @@
 
 <div class="drawer-canvas">
 	<div class="canvas-container" class:dark-mode={$theme === 'dark'}>
-		<Svelvet bind:this={canvas_el} theme={'custom-theme'}>
+		<Svelvet 
+			bind:this={canvas_el} 
+			theme={'custom-theme'}
+			on:connection={handleConnection}
+			on:disconnection={handleDisconnection}
+		>
 			{#each $nodes as node (node.id)}
 				<Node
 					id={node.id}
-					label={node.label}
 					position={node.position}
 					drop="center"
-					useDefaults
-					bgColor={$theme === 'dark' ? '#041a47' : '#041a47'}
-					textColor="#fff"
+					bgColor={$theme === 'dark' ? '#001A6E' : '#BED2E6'}
+					textColor={$theme === 'dark' ? '#ffffff' : '#000000'}
+					borderColor={$theme === 'dark' ? '#374151' : '#FFFFFF'}
+					label={node.label}
+					editable={false}
+					inputs={node.type !== 'source' ? 1 : 0}
+					outputs={node.type !== 'translator' ? 1 : 0}
 					on:nodeClicked={() => onNodeClick(node.type)}
 				/>
 			{/each}
@@ -63,9 +123,9 @@
 	:root[svelvet-theme='custom-theme'] {
 		--background-color: transparent;
 		--dot-color: transparent;
-		--node-color: #041a47;
-		--node-text-color: #ffffff;
-		--node-border-color: #374151;
+		--node-color: #BED2E6;
+		--node-text-color: #000000;
+		--node-border-color: #FFFFFF;
 		--node-selection-color: #3b82f6;
 	}
 

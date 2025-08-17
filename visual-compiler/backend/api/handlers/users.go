@@ -57,6 +57,7 @@ func GetAllUsers(c *gin.Context) {
 		id := raw["_id"].(bson.ObjectID)
 		username := raw["username"].(string)
 		email := raw["email"].(string)
+
 		var projects bson.A
 		if raw["projects"] != nil {
 			projects = raw["projects"].(bson.A)
@@ -70,6 +71,11 @@ func GetAllUsers(c *gin.Context) {
 			Email:    email,
 			Projects: projects,
 		})
+	}
+
+	if err := pointer.Err(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error iterating users: " + err.Error()})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{

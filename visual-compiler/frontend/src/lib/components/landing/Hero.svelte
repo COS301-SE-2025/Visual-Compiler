@@ -19,10 +19,9 @@
 	<div class="hero_content">
 		<h1 class="main_headline">Demystifying Compilers, One Block at a Time.</h1>
 		<p class="sub_headline">
-			An educational platform to construct, visualize, and understand the core phases of compilation
-			using an intuitive, block-based interface.
+			An educational platform to construct, configure, visualise and understand the core phases of compilation.
 		</p>
-		<button class="cta_button" on:click={launch}> Launch Application </button>
+		<button class="cta_button" on:click={launch}> Get Started </button>
 	</div>
 </section>
 
@@ -84,7 +83,7 @@
 		color: #041a47;
 		border: none;
 		padding: 1rem 2rem;
-		font-size: 1rem;
+		font-size: 1.25rem;
 		font-weight: 600;
 		border-radius: 8px;
 		cursor: pointer;

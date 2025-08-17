@@ -2,7 +2,9 @@
 	import { AddToast } from '$lib/stores/toast';
 	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import { tick } from 'svelte';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
+	import { projectName } from '$lib/stores/project';
+	import { get } from 'svelte/store';  
 
 	let code_text = '';
 	
@@ -12,6 +14,53 @@
 	let textareaEl: HTMLTextAreaElement;
 	export let onCodeSubmitted: (code: string) => void = () => {};
 
+	// --- REAL PROJECTS DATA ---
+	let projects: Array<{ name: string; code: string }> = [
+		{ name: 'Select a project...', code: '' }
+	];
+	let selectedProject = projects[0];
+
+	// Fetch projects from backend
+	async function fetchProjects() {
+		const userId = localStorage.getItem('user_id');
+		if (!userId) return;
+
+		try {
+			const response = await fetch(`http://localhost:8080/api/users/getProjects?users_id=${userId}`, {
+				method: 'GET',
+				headers: {
+					'accept': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			
+			if (data.all_projects && Array.isArray(data.all_projects)) {
+				// Transform project names into the required format
+				const fetchedProjects = data.all_projects.map((projectName: string) => ({
+					name: projectName,
+					code: '' // We'll fetch individual project code when selected
+				}));
+				
+				// Keep the default "Select a project..." option at the beginning
+				projects = [
+					{ name: 'Select a project...', code: '' },
+					...fetchedProjects
+				];
+				
+				// Reset selected project to default
+				selectedProject = projects[0];
+			}
+		} catch (error) {
+			console.error('Error fetching projects:', error);
+			AddToast('Failed to load projects. Please try again later.', 'error');
+		}
+	}
+
 	// Sync with global store
 	let confirmed_code = '';
 	const unsubscribe = confirmedSourceCode.subscribe(value => {
@@ -19,14 +68,23 @@
 		if (!code_text) code_text = value; // Auto fill input if empty
 	});
 
+	onDestroy(() => {
+		unsubscribe(); // clean up store subscription
+	});
+
+	// Load projects when component mounts
 	onMount(() => {
-		return () => unsubscribe(); // clean up store subscription
+		fetchProjects();
 	});
 
 	function handleDefaultInput() {
 		if (!isDefaultInput) {
 			previous_code_text = code_text;
-			code_text = 'int blue = 13 + 22;';
+			code_text = 'int blue = 13 + 5;\n';
+			code_text += 'int function_name(int red) {\n';
+			code_text += '    int green = red;\n';
+			code_text += '    return green;\n';
+			code_text += '}\n';
 			isDefaultInput = true;
 		} else {
 			code_text = previous_code_text;
@@ -38,9 +96,8 @@
 		const input = event.target as HTMLInputElement;
 		const file = input.files?.[0];
 		if (!file) return;
-
 		if (!file.name.toLowerCase().endsWith('.txt')) {
-			AddToast('Only .txt files are allowed. Please upload a valid plain text file.', 'error');
+			AddToast('Invalid file type: Only .txt files are supported. Please upload a plain text file', 'error');
 			input.value = '';
 			return;
 		}
@@ -48,10 +105,10 @@
 		const reader = new FileReader();
 		reader.onload = () => {
 			code_text = reader.result as string;
-			AddToast('File uploaded successfully!', 'success');
+			AddToast('File uploaded successfully! Your source code is ready to use', 'success');
 		};
 		reader.onerror = () => {
-			AddToast('Failed to read file.', 'error');
+			AddToast('Upload failed: Unable to read the selected file. Please try again', 'error');
 		};
 		reader.readAsText(file);
 	}
@@ -59,8 +116,13 @@
 	async function submitCode() {
 		if (!code_text.trim()) return;
 		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName);
 		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+			AddToast('Authentication required: Please log in to save source code', 'error');
+			return;
+		}
+		if (!project) {
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
@@ -70,18 +132,67 @@
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					users_id: user_id,
+					project_name:project,
 					source_code: code_text
 				})
 			});
 			if (!res.ok) throw new Error();
-
-			AddToast('Code confirmed and saved!', 'success');
+			AddToast('Source code saved successfully! Ready to begin lexical analysis', 'success');
 			confirmedSourceCode.set(code_text);
 			isConfirmed = true;
 			onCodeSubmitted(code_text);
 			await tick();
 		} catch {
-			AddToast('Failed to save source code', 'error');
+			AddToast('Save failed: Unable to save source code. Please check your connection and try again', 'error');
+		}
+	}
+
+	// --- NEW FUNCTION TO HANDLE PROJECT SELECTION ---
+	async function handleProjectSelect() {
+		if (!selectedProject || selectedProject.name === 'Select a project...') {
+			code_text = '';
+			isDefaultInput = false;
+			return;
+		}
+
+		const userId = localStorage.getItem('user_id');
+		if (!userId) {
+			AddToast('Authentication required: Please log in to load project data', 'error');
+			return;
+		}
+
+		try {
+			const response = await fetch(
+				`http://localhost:8080/api/users/getProject?project_name=${encodeURIComponent(selectedProject.name)}&users_id=${userId}`, 
+				{
+					method: 'GET',
+					headers: {
+						'accept': 'application/json'
+					}
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			
+			if (data.message === "Retrieved users project details" && data.translation) {
+				// Populate the text editor with the translation code
+				code_text = data.translation;
+				isDefaultInput = false;
+				AddToast('Project code loaded successfully!', 'success');
+			} else {
+				// If no translation code exists, just clear the text area
+				code_text = '';
+				AddToast('Project loaded, but no translator code found', 'info');
+			}
+		} catch (error) {
+			console.error('Error fetching project details:', error);
+			AddToast('Failed to load project code. Please try again.', 'error');
+			// Reset to empty if there's an error
+			code_text = '';
 		}
 	}
 
@@ -114,14 +225,26 @@
 		placeholder="Paste or type your source code here…"
 	></textarea>
 
+	<div class="controls-grid">
+		<div class="control-item">
+			<label class="upload-btn">
+				Upload File
+				<input type="file" accept=".txt" on:change={handleFileChange} />
+			</label>
+		</div>
+
+		<div class="control-item project-selector">
+			<label for="project-select">Import from Project</label>
+			<select id="project-select" bind:value={selectedProject} on:change={handleProjectSelect}>
+				{#each projects as project}
+					<option value={project}>{project.name}</option>
+				{/each}
+			</select>
+		</div>
+	</div>
 
 
 	<div class="controls">
-		<label class="upload-btn">
-			Upload File
-			<input type="file" accept=".txt" on:change={handleFileChange} />
-		</label>
-
 		<button
 			type="button"
 			class="confirm-btn"
@@ -142,11 +265,11 @@
 </div>
 
 <style>
-
-	.current{
+	.current {
 		margin-top: 0;
 		margin-bottom: 0.25rem;
 	}
+
 	.code-input-container {
 		display: flex;
 		flex-direction: column;
@@ -174,6 +297,45 @@
 		justify-content: center;
 	}
 
+	.controls-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1rem;
+		align-items: flex-end; /* Align items to the bottom */
+		margin-bottom: 1rem;
+	}
+
+	.control-item {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.project-selector label {
+		font-size: 0.9rem;
+		font-weight: 500;
+		margin-bottom: 0.5rem;
+		color: #333;
+	}
+
+	.project-selector select {
+		padding: 0.5rem 0.8rem;
+		border-radius: 4px;
+		border: 1px solid #ccc;
+		background-color: white;
+		font-size: 0.95rem;
+		cursor: pointer;
+		-webkit-appearance: none;
+		appearance: none;
+		background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+		background-repeat: no-repeat;
+		background-position: right 0.7rem center;
+		background-size: 1em;
+	}
+	
+	.project-selector select:hover {
+		border-color: #888;
+	}
+	
 	.upload-btn {
 		position: relative;
 		overflow: hidden;
@@ -184,7 +346,9 @@
 		border-radius: 4px;
 		font-size: 0.95rem;
 		cursor: pointer;
+		text-align: center;
 	}
+
 	.upload-btn input[type='file'] {
 		position: absolute;
 		left: 0;
@@ -194,14 +358,15 @@
 		opacity: 0;
 		cursor: pointer;
 	}
+
 	.upload-btn:hover {
 		background: #838386;
 	}
 
 	.confirm-btn {
 		padding: 0.5rem 1.5rem;
-		background: #001a6e;
-		color: white;
+		background: #BED2E6;
+		color: 000000;
 		border: none;
 		border-radius: 4px;
 		font-size: 0.95rem;
@@ -211,13 +376,17 @@
 		align-items: center;
 		gap: 0.3rem;
 	}
+
 	.confirm-btn:disabled {
-		background: #ccc;
+		background: #e6e6e6;
+		color: #666666;
 		cursor: not-allowed;
 	}
+
 	.confirm-btn:not(:disabled):hover {
-		background: #074799;
+		background: #a8bdd1;
 	}
+
 	.tick {
 		font-size: 1.2rem;
 		line-height: 1;
@@ -239,6 +408,7 @@
 		align-items: center;
 		justify-content: center;
 	}
+
 	.default-source-btn:hover,
 	.default-source-btn:focus {
 		background: #d0d9ff;
@@ -264,6 +434,30 @@
 		border-color: #4a5568;
 	}
 
+	:global(html.dark-mode) .project-selector label {
+		color: #ccc;
+	}
+
+	:global(html.dark-mode) .project-selector select {
+		background: #2d3748;
+		color: #ccc;
+		border-color: #4a5568;
+		background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23cccccc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+	}
+
+	:global(html.dark-mode) .project-selector select:hover {
+		border-color: #6b7280;
+	}
+	
+	:global(html.dark-mode) select option {
+		background-color: #2d3748;
+		color: #ccc;
+	}
+	
+	:global(html.dark-mode) select option:hover {
+		background-color: #4a5568;
+	}
+
 	 :global(html.dark-mode) .default-source-btn  {
         background-color: #2d3748;
         border-color: #4a5568;
@@ -275,8 +469,25 @@
         border-color: #60a5fa;
         color: #e0e7ff;
     }
+
     :global(html.dark-mode) .default-source-btn:not(.selected):hover {
         background-color: #374151;
         border-color: #6b7280;
     }
+
+	:global(html.dark-mode) .confirm-btn {
+		background: #001A6E;
+		color: #ffffff;
+		border: 1px solid #374151;
+	}
+
+	:global(html.dark-mode) .confirm-btn:not(:disabled):hover {
+		background: #002a8e;
+	}
+
+	:global(html.dark-mode) .confirm-btn:disabled {
+		background: #2d3748;
+		color: #a0aec0;
+		border-color: #4a5568;
+	}
 </style>
