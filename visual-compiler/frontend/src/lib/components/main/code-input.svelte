@@ -14,14 +14,52 @@
 	let textareaEl: HTMLTextAreaElement;
 	export let onCodeSubmitted: (code: string) => void = () => {};
 
-	// --- NEW MOCK DATA FOR PROJECTS ---
-	const mockProjects = [
-		{ name: 'Select a project...', code: '' },
-		{ name: 'Lexer Project', code: '// Mock translated code for Lexer Project\n\nfunction lexer(code) {\n  // ...\n}' },
-		{ name: 'Parser Project', code: '// Mock translated code for Parser Project\n\nfunction parser(tokens) {\n  // ...\n}' },
-		{ name: 'Translator Project', code: '// Mock translated code for Translator Project\n\nfunction translator(ast) {\n  // ...\n}' }
+	// --- REAL PROJECTS DATA ---
+	let projects: Array<{ name: string; code: string }> = [
+		{ name: 'Select a project...', code: '' }
 	];
-	let selectedProject = mockProjects[0];
+	let selectedProject = projects[0];
+
+	// Fetch projects from backend
+	async function fetchProjects() {
+		const userId = localStorage.getItem('user_id');
+		if (!userId) return;
+
+		try {
+			const response = await fetch(`http://localhost:8080/api/users/getProjects?users_id=${userId}`, {
+				method: 'GET',
+				headers: {
+					'accept': 'application/json'
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			
+			if (data.all_projects && Array.isArray(data.all_projects)) {
+				// Transform project names into the required format
+				const fetchedProjects = data.all_projects.map((projectName: string) => ({
+					name: projectName,
+					code: '' // We'll fetch individual project code when selected
+				}));
+				
+				// Keep the default "Select a project..." option at the beginning
+				projects = [
+					{ name: 'Select a project...', code: '' },
+					...fetchedProjects
+				];
+				
+				// Reset selected project to default
+				selectedProject = projects[0];
+			}
+		} catch (error) {
+			console.error('Error fetching projects:', error);
+			AddToast('Failed to load projects. Please try again later.', 'error');
+		}
+	}
 
 	// Sync with global store
 	let confirmed_code = '';
@@ -32,6 +70,11 @@
 
 	onDestroy(() => {
 		unsubscribe(); // clean up store subscription
+	});
+
+	// Load projects when component mounts
+	onMount(() => {
+		fetchProjects();
 	});
 
 	function handleDefaultInput() {
@@ -105,10 +148,51 @@
 	}
 
 	// --- NEW FUNCTION TO HANDLE PROJECT SELECTION ---
-	function handleProjectSelect() {
-		if (selectedProject) {
-			code_text = selectedProject.code;
-			isDefaultInput = false; 
+	async function handleProjectSelect() {
+		if (!selectedProject || selectedProject.name === 'Select a project...') {
+			code_text = '';
+			isDefaultInput = false;
+			return;
+		}
+
+		const userId = localStorage.getItem('user_id');
+		if (!userId) {
+			AddToast('Authentication required: Please log in to load project data', 'error');
+			return;
+		}
+
+		try {
+			const response = await fetch(
+				`http://localhost:8080/api/users/getProject?project_name=${encodeURIComponent(selectedProject.name)}&users_id=${userId}`, 
+				{
+					method: 'GET',
+					headers: {
+						'accept': 'application/json'
+					}
+				}
+			);
+
+			if (!response.ok) {
+				throw new Error(`HTTP error! status: ${response.status}`);
+			}
+
+			const data = await response.json();
+			
+			if (data.message === "Retrieved users project details" && data.translation) {
+				// Populate the text editor with the translation code
+				code_text = data.translation;
+				isDefaultInput = false;
+				AddToast('Project code loaded successfully!', 'success');
+			} else {
+				// If no translation code exists, just clear the text area
+				code_text = '';
+				AddToast('Project loaded, but no translator code found', 'info');
+			}
+		} catch (error) {
+			console.error('Error fetching project details:', error);
+			AddToast('Failed to load project code. Please try again.', 'error');
+			// Reset to empty if there's an error
+			code_text = '';
 		}
 	}
 
@@ -152,7 +236,7 @@
 		<div class="control-item project-selector">
 			<label for="project-select">Import from Project</label>
 			<select id="project-select" bind:value={selectedProject} on:change={handleProjectSelect}>
-				{#each mockProjects as project}
+				{#each projects as project}
 					<option value={project}>{project.name}</option>
 				{/each}
 			</select>

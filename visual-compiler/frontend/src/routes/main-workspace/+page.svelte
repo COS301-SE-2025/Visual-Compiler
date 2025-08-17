@@ -332,7 +332,7 @@
 		// For now, we'll just log it. Later, you can send this to your backend.
 		console.log('Project Saved:', JSON.stringify(savedProjectData, null, 2));
 
-		AddToast(`💾 Project "${currentProjectName}" saved successfully!`, 'success');
+		AddToast(`Project "${currentProjectName}" saved successfully!`, 'success');
 	}
 
 	// --- TOOLTIPS AND LABELS ---
