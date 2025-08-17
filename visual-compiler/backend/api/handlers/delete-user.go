@@ -41,7 +41,7 @@ func DeleteUser(c *gin.Context) {
 	parsing_collection := client.Database("visual-compiler").Collection("parsing")
 	analysing_collection := client.Database("visual-compiler").Collection("analysing")
 	// optimising_collection := client.Database("visual-compiler").Collection("optimising")
-	// translating_collection := client.Database("visual-compiler").Collection("translating")
+	translating_collection := client.Database("visual-compiler").Collection("translating")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -57,29 +57,36 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
-	lexing_res, err := lexing_collection.DeleteOne(ctx, bson.M{"user_id": req.ID})
+	lexing_res, err := lexing_collection.DeleteOne(ctx, bson.M{"users_id": req.ID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user's related lexing data: " + err.Error()})
 		return
 	}
 
-	parsing_res, err := parsing_collection.DeleteOne(ctx, bson.M{"user_id": req.ID})
+	parsing_res, err := parsing_collection.DeleteOne(ctx, bson.M{"users_id": req.ID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user's related parsing data: " + err.Error()})
 		return
 	}
 
-	analysing_res, err := analysing_collection.DeleteOne(ctx, bson.M{"user_id": req.ID})
+	analysing_res, err := analysing_collection.DeleteOne(ctx, bson.M{"users_id": req.ID})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user's related analysing data: " + err.Error()})
 		return
 	}
 
+	translating_res, err := translating_collection.DeleteOne(ctx, bson.M{"users_id": req.ID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user's related translating data: " + err.Error()})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message":           "User deleted successfully",
-		"user":              res.DeletedCount,
-		"lexing_deleted":    lexing_res.DeletedCount,
-		"parsing_deleted":   parsing_res.DeletedCount,
-		"analysing_deleted": analysing_res.DeletedCount,
+		"message":             "User deleted successfully",
+		"user":                res.DeletedCount,
+		"lexing_deleted":      lexing_res.DeletedCount,
+		"parsing_deleted":     parsing_res.DeletedCount,
+		"analysing_deleted":   analysing_res.DeletedCount,
+		"translating_deleted": translating_res.DeletedCount,
 	})
 }
