@@ -779,11 +779,12 @@
 			opacity 0.2s ease;
 	}
 	.submit-button {
-		background-color: #001a6e;
-		color: white;
+		background-color: #BED2E6;
+		color: #000000;
 	}
 	.submit-button:hover:not(:disabled) {
-		background-color: #074799;
+		background-color: #a8bdd1;
+        transform: translateY(-2px);
 	}
 	.submit-button:disabled {
 		opacity: 0.5;
@@ -880,9 +881,12 @@
 	}
 	:global(html.dark-mode) .submit-button,
 	:global(html.dark-mode) .generate-button {
-		background-color: #cccccc;
-		color: #041a47;
+		background-color: #001A6E;
+		color: #ffffff;
 	}
+    :global(html.dark-mode) .submit-button:hover:not(:disabled) {
+        background-color: #002a8e;
+    }
 	:global(html.dark-mode) .reset-button {
 		color: #9ca3af;
 	}

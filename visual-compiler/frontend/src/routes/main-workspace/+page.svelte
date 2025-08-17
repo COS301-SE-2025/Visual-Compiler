@@ -321,18 +321,51 @@
 	}
 
 	// --- SAVE PROJECT FUNCTIONALITY ---
-	function saveProject() {
+	async function saveProject() {
+		const user_id = localStorage.getItem('user_id');
+		if (!user_id) {
+			AddToast('Please log in to save your project.', 'error');
+			return;
+		}
+
+		if (!currentProjectName) {
+			AddToast('Please select a project first.', 'error');
+			return;
+		}
+
+		// Prepare the pipeline data
 		const canvasNodes = get(nodes);
-		const projectData = {
-			projectName: currentProjectName,
-			nodes: canvasNodes
+		const pipeline = {
+			nodes: canvasNodes,
+			lastSaved: new Date().toISOString()
 		};
 
-		savedProjectData = projectData;
-		// For now, we'll just log it. Later, you can send this to your backend.
-		console.log('Project Saved:', JSON.stringify(savedProjectData, null, 2));
+		try {
+			const response = await fetch('http://localhost:8080/api/users/savePipeline', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					users_id: user_id,
+					project_name: currentProjectName,
+					pipeline: pipeline
+				})
+			});
 
-		AddToast(`Project "${currentProjectName}" saved successfully!`, 'success');
+			if (!response.ok) {
+				const error = await response.text();
+				throw new Error(error);
+			}
+
+			const data = await response.json();
+			console.log('Project Saved:', data);
+			savedProjectData = pipeline;
+			AddToast(`Project "${currentProjectName}" saved successfully!`, 'success');
+		} catch (error) {
+			console.error('Failed to save project:', error);
+			AddToast(`Failed to save project: ${error.message}`, 'error');
+		}
 	}
 
 	// --- TOOLTIPS AND LABELS ---

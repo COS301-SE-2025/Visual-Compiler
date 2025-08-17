@@ -2,6 +2,7 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
+	import { pipelineStore } from '$lib/stores/pipeline';
 	import ProjectNamePrompt from './project-name-prompt.svelte';
 	import DeleteConfirmPrompt from './delete-confirmation.svelte'; 
 
@@ -75,7 +76,10 @@
 
 	async function selectProject(selectedProjectName: string) {
 		const userId = localStorage.getItem('user_id');
-		if (!userId) return;
+		if (!userId) {
+			AddToast('Please log in to select a project', 'error');
+			return;
+		}
 
 		try {
 			const response = await fetch(
@@ -93,15 +97,34 @@
 			const data = await response.json();
 			
 			if (data.message === "Retrieved users project details") {
+				// Check if there's pipeline data
+				if (data.results && data.results.pipeline) {
+					// Update the pipeline store with the saved pipeline data
+					pipelineStore.set(data.results.pipeline);
+					console.log('Restored pipeline:', data.results.pipeline);
+					AddToast('Pipeline restored successfully', 'success');
+				} else {
+					// If no pipeline data, initialize with empty state
+					pipelineStore.set({
+						nodes: [],
+						lastSaved: null
+					});
+					console.log('No saved pipeline found, initialized empty state');
+				}
+
 				// Store the selected project name in the store
 				projectName.set(selectedProjectName);
+				
 				// Close the project hub modal
 				handleClose();
 			} else {
 				console.error('Failed to retrieve project details');
+				AddToast('Failed to retrieve project details', 'error');
 			}
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Error verifying project selection:', error);
+			const errorMessage = error.message || 'Unknown error occurred';
+			AddToast(`Error loading project: ${errorMessage}`, 'error');
 		}
 	}
 
