@@ -124,4 +124,168 @@ describe('CodeInput Component', () => {
 			expect(mockHandler).toHaveBeenCalledWith(test_code);
 		});
 	});
+
+	it('TestFetchProjects_Success: Fetches and displays projects on mount', async () => {
+		const mockProjectsResponse = {
+			ok: true,
+			json: () => Promise.resolve({
+				all_projects: ['Project 1', 'Project 2', 'Project 3']
+			})
+		};
+		mockFetch.mockResolvedValue(mockProjectsResponse);
+
+		render(CodeInput);
+
+		await waitFor(() => {
+			const select = screen.getByLabelText(/import from project/i);
+			expect(select).toBeInTheDocument();
+		});
+
+		// Verify fetch was called with correct parameters
+		expect(mockFetch).toHaveBeenCalledWith(
+			'http://localhost:8080/api/users/getProjects?users_id=test-user-123',
+			expect.objectContaining({
+				method: 'GET',
+				headers: { 'accept': 'application/json' }
+			})
+		);
+	});
+
+	it('TestFetchProjects_Error: Handles project fetch errors gracefully', async () => {
+		mockFetch.mockRejectedValue(new Error('Network error'));
+
+		render(CodeInput);
+
+		await waitFor(() => {
+			expect(AddToast).toHaveBeenCalledWith(
+				'Failed to load projects. Please try again later.',
+				'error'
+			);
+		});
+	});
+
+	it('TestProjectSelect_Success: Loads translation code when project is selected', async () => {
+		// First mock projects fetch
+		const mockProjectsResponse = {
+			ok: true,
+			json: () => Promise.resolve({
+				all_projects: ['Test Project']
+			})
+		};
+		
+		// Then mock project details fetch
+		const mockProjectDetailsResponse = {
+			ok: true,
+			json: () => Promise.resolve({
+				message: "Retrieved users project details",
+				translation: "console.log('translated code');"
+			})
+		};
+
+		mockFetch
+			.mockResolvedValueOnce(mockProjectsResponse)
+			.mockResolvedValueOnce(mockProjectDetailsResponse);
+
+		render(CodeInput);
+
+		// Wait for component to mount and projects to load
+		await waitFor(() => {
+			const select = screen.getByLabelText(/import from project/i);
+			expect(select).toBeInTheDocument();
+		});
+
+		// Select a project
+		const select = screen.getByLabelText(/import from project/i);
+		await fireEvent.change(select, { target: { value: 'Test Project' } });
+
+		await waitFor(() => {
+			expect(AddToast).toHaveBeenCalledWith('Project code loaded successfully!', 'success');
+		});
+	});
+
+	it('TestProjectSelect_NoTranslation: Handles project with no translation code', async () => {
+		// Mock projects fetch
+		const mockProjectsResponse = {
+			ok: true,
+			json: () => Promise.resolve({
+				all_projects: ['Empty Project']
+			})
+		};
+		
+		// Mock project details fetch with no translation
+		const mockProjectDetailsResponse = {
+			ok: true,
+			json: () => Promise.resolve({
+				message: "Retrieved users project details"
+			})
+		};
+
+		mockFetch
+			.mockResolvedValueOnce(mockProjectsResponse)
+			.mockResolvedValueOnce(mockProjectDetailsResponse);
+
+		render(CodeInput);
+
+		await waitFor(() => {
+			const select = screen.getByLabelText(/import from project/i);
+			expect(select).toBeInTheDocument();
+		});
+
+		const select = screen.getByLabelText(/import from project/i);
+		await fireEvent.change(select, { target: { value: 'Empty Project' } });
+
+		await waitFor(() => {
+			expect(AddToast).toHaveBeenCalledWith('Project loaded, but no translator code found', 'info');
+		});
+	});
+
+	it('TestProjectSelect_Error: Handles project selection errors', async () => {
+		// Mock projects fetch success
+		const mockProjectsResponse = {
+			ok: true,
+			json: () => Promise.resolve({
+				all_projects: ['Error Project']
+			})
+		};
+		
+		mockFetch
+			.mockResolvedValueOnce(mockProjectsResponse)
+			.mockRejectedValueOnce(new Error('Failed to fetch project'));
+
+		render(CodeInput);
+
+		await waitFor(() => {
+			const select = screen.getByLabelText(/import from project/i);
+			expect(select).toBeInTheDocument();
+		});
+
+		const select = screen.getByLabelText(/import from project/i);
+		await fireEvent.change(select, { target: { value: 'Error Project' } });
+
+		await waitFor(() => {
+			expect(AddToast).toHaveBeenCalledWith('Failed to load project code. Please try again.', 'error');
+		});
+	});
+
+	it('TestDefaultInputToggle_Success: Toggles between default and custom input', async () => {
+		render(CodeInput);
+
+		const textarea = screen.getByPlaceholderText(/paste or type your source code here…/i) as HTMLTextAreaElement;
+		const defaultButton = screen.getByRole('button', { name: /insert default source code/i });
+
+		// Initially empty
+		expect(textarea.value).toBe('');
+
+		// Set custom text
+		await fireEvent.input(textarea, { target: { value: 'custom code' } });
+		expect(textarea.value).toBe('custom code');
+
+		// Click default button to insert default code
+		await fireEvent.click(defaultButton);
+		expect(textarea.value).toContain('int blue = 13 + 5;');
+
+		// Click again to restore custom code
+		await fireEvent.click(defaultButton);
+		expect(textarea.value).toBe('custom code');
+	});
 });
