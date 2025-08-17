@@ -123,7 +123,7 @@ describe('ParsingInput Component', () => {
 				'http://localhost:8080/api/parsing/grammar',
 				expect.any(Object)
 			);
-			expect(AddToast).toHaveBeenCalledWith('Grammar submitted successfully!', 'success');
+			expect(AddToast).toHaveBeenCalledWith('Grammar saved successfully! Your parsing rules are ready for syntax analysis', 'success');
 		});
 
 		expect(await screen.findByRole('button', { name: 'Generate Syntax Tree' })).toBeInTheDocument();

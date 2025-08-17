@@ -88,7 +88,7 @@ describe('login page', () => {
 			})
 		});
 		await waitFor(() => {
-			expect(screen.getByText('Login successful!')).toBeInTheDocument();
+			expect(screen.getByText('Welcome back! Redirecting to your workspace...')).toBeInTheDocument();
 		});
 	});
 
@@ -207,7 +207,7 @@ describe('register page', () => {
 		});
 		render(toasts);
 		await waitFor(() => {
-			expect(screen.getByText('Success')).toBeInTheDocument();
+			expect(screen.getByText(/Account created successfully/)).toBeInTheDocument();
 		});
 	});
 
