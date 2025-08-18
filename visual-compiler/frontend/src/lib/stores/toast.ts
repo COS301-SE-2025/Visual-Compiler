@@ -17,7 +17,7 @@ let counter = 0;
 // Return type: void
 // Parameter type(s): string, ToastType, number
 // Adds a new toast notification to the store and sets a timer to remove it.
-export function AddToast(message: string, type: ToastType = 'info', duration = 2000) {
+export function AddToast(message: string, type: ToastType = 'info', duration = 4000) {
 	const id = counter++;
 	toasts.update((all) => [...all, { id, message, type, duration }]);
 
