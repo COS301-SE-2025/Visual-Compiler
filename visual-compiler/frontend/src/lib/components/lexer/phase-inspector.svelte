@@ -702,16 +702,15 @@
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
-				AddToast('DFA→Regex failed: ' + errorText, 'error');
+				AddToast('DFA→Regex failed: Please check your DFA input.','error');
 				return;
 			}
 			const data = await response.json();
-			console.log('dfaToRegex response:', JSON.stringify(data, null, 2));
 			regexRules = Array.isArray(data.rules) ? data.rules : [];
 			showRegexOutput = true;
 			AddToast('DFA converted to Regex successfully!', 'success');
 		} catch (error) {
-			AddToast('DFA→Regex failed: ' + error, 'error');
+			AddToast('DFA→Regex failed: Please check your internet connection.', 'error');
 		}
 	}
 
@@ -743,11 +742,10 @@
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
-				AddToast('Regex→NFA failed: ' + errorText, 'error');
+				AddToast('Regex→NFA failed: Please check your regex rules', 'error');
 				return;
 			}
 			const data = await response.json();
-			console.log('NFA from backend:', JSON.stringify(data.nfa, null, 2));
 			regexNfa = adaptAutomatonForVis(data.nfa);
 			currentAutomatonForModal = { data: regexNfa, isDfa: false }; 
 			showRegexNfaVis = true;
@@ -1226,17 +1224,9 @@
 					class="action-btn"
 					type="button"
 					on:click={() => {
-						showNfaDiagram();
-						automataDisplay = 'NFA';
-					}}>Show NFA</button
-				>
-				<button
-					class="action-btn"
-					type="button"
-					on:click={() => {
 						handleShowDfa();
 						automataDisplay = 'DFA';
-					}}>Show DFA</button
+					}}>Show Automata</button
 				>
 				<button
 					class="action-btn"

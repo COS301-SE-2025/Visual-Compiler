@@ -15,6 +15,37 @@
         <div class="tokens-heading">
             <h3>Tokens</h3>
         </div>
+        {#if unexpected_tokens && unexpected_tokens.length > 0}
+            <div class="error-state">
+				<div class="error-icon">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="48"
+						height="48"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<circle cx="12" cy="12" r="10" />
+						<line x1="12" y1="8" x2="12" y2="12" />
+						<line x1="12" y1="16" x2="12.01" y2="16" />
+					</svg>
+				</div>
+				<h4>Unidentified Token(s) Found</h4>
+				<p class="error-message">
+					The source code could not be completely tokenised with the provided regex/DFA. <br>
+                    Please check your input again.<br>
+				</p>
+                <div class="token-list">
+                    {#each unexpected_tokens as token}
+                        <span class="error-details">{token}</span>
+                    {/each}
+                </div>
+			</div>
+        {/if}
         {#if tokens && tokens.length > 0}
             <table class="token-table">
                 <thead>
@@ -36,16 +67,7 @@
             <div class="no-tokens">No tokens generated yet</div>
         {/if}
 
-        {#if unexpected_tokens && unexpected_tokens.length > 0}
-            <div class="unexpected-tokens-container">
-                <h4>Unidentified Input</h4>
-                <div class="token-list">
-                    {#each unexpected_tokens as token}
-                        <span class="unexpected-token">{token}</span>
-                    {/each}
-                </div>
-            </div>
-        {/if}
+        
     {:else if phase === 'lexer'}
         <div class="empty-state">Tokens will appear here after generation</div>
     {/if}
@@ -149,6 +171,46 @@
         transition: color 0.3s ease;
     }
 
+    .error-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		padding: 2rem;
+		flex-grow: 1;
+		background-color: #fff5f5;
+		border: 1px solid #e53e3e;
+		border-radius: 8px;
+		color: #9b2c2c;
+	}
+	.error-icon {
+		color: #e53e3e;
+		margin-bottom: 1rem;
+	}
+	.error-state h4 {
+		margin: 0 0 0.5rem 0;
+		font-size: 1.25rem;
+		color: #c53030;
+	}
+	.error-message {
+		margin: 0 0 1rem 0;
+		max-width: 450px;
+		line-height: 1.6;
+	}
+	.error-details {
+		background-color: #fed7d7;
+		padding: 0.75rem 1rem;
+		border-radius: 6px;
+		font-family: 'Fira Code', monospace;
+		font-size: 0.85rem;
+		white-space: pre-wrap;
+		word-wrap: break-word;
+		max-width: 100%;
+		text-align: left;
+		color: #742a2a;
+	}
+
     /* --- Dark Mode Styles --- */
     :global(html.dark-mode) .artifact-viewer {
         background: #1a2a4a;
@@ -195,4 +257,20 @@
     :global(html.dark-mode) .no-tokens {
         color: #a0aec0;
     }
+
+    :global(html.dark-mode) .error-state {
+		background-color: #2d3748;
+		border-color: #e53e3e;
+		color: #fca5a5;
+	}
+	:global(html.dark-mode) .error-icon {
+		color: #fca5a5;
+	}
+	:global(html.dark-mode) .error-state h4 {
+		color: #fc8181;
+	}
+	:global(html.dark-mode) .error-details {
+		background-color: #4a2d2d;
+		color: #fed7d7;
+	}
 </style>

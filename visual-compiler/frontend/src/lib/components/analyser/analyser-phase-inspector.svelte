@@ -313,7 +313,7 @@
             status: err.response?.status
         });
         console.error('Error generating symbol table:', error);
-        AddToast('Analysis failed: ' + (err.message || 'Unable to generate symbol table. Please check your connection'), 'error');
+        AddToast('Analysis failed: ' + ('Unable to generate symbol table. Please check your connection'), 'error');
     } finally {
         is_loading = false;
     }
