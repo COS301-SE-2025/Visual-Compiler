@@ -1000,63 +1000,78 @@ func (c *Converter) parseStar(regex string, position int) (*Fragment, int) {
 // Handles the characters and groups regex fragments
 func (c *Converter) parseAtom(regex string, position int) (*Fragment, int) {
 
-	if position >= len(regex) {
+    if position >= len(regex) {
 
-		start := c.newState()
-		return &Fragment{start: start, end: start}, position
-	}
+        start := c.newState()
+        return &Fragment{start: start, end: start}, position
+    }
 
-	switch regex[position] {
+    if regex[position] == '\\' && position+1 < len(regex) {
 
-	case '(':
+        start := c.newState()
+        end := c.newState()
 
-		level := 1
-		i := position + 1
+        c.addTransition(start, end, string(regex[position+1]))
 
-		for i < len(regex) && level > 0 {
+        return &Fragment{start: start, end: end}, position + 2
+    }
 
-			if regex[i] == '(' {
-				level++
-			} else if regex[i] == ')' {
-				level--
-			}
+    switch regex[position] {
 
-			i++
+    case '(':
+
+        level := 1
+        i := position + 1
+
+        for i < len(regex) && level > 0 {
+
+            if regex[i] == '\\' {
+                i += 2
+                continue
+            } else if regex[i] == '(' {
+                level++
+            } else if regex[i] == ')' {
+                level--
+            }
+
+            i++
+        }
+
+        if level != 0 {
+    		return fmt.Errorf("unmatched parentheses")
 		}
 
-		inner := regex[position+1 : i-1]
-		fragment := c.parseRegex(inner)
+        inner := regex[position+1 : i-1]
+        fragment := c.parseRegex(inner)
 
-		return fragment, i
+        return fragment, i
 
-	case '[':
+    case '[':
 
-		end := strings.Index(regex[position:], "]")
+        end := strings.Index(regex[position:], "]")
 
-		if end == -1 {
+        if end == -1 {
 
-			start := c.newState()
-			end := c.newState()
+            start := c.newState()
+            end := c.newState()
+            c.addTransition(start, end, string(regex[position]))
+            return &Fragment{start: start, end: end}, position + 1
+        }
 
-			c.addTransition(start, end, string(regex[position]))
+        range_str := regex[position+1 : position+end]
+        fragment := c.parseRange(range_str)
 
-			return &Fragment{start: start, end: end}, position + 1
-		}
+        return fragment, position + end + 1
 
-		range_str := regex[position+1 : position+end]
-		fragment := c.parseRange(range_str)
+    default:
 
-		return fragment, position + end + 1
+        start := c.newState()
+        end := c.newState()
 
-	default:
+        c.addTransition(start, end, string(regex[position]))
 
-		start := c.newState()
-		end := c.newState()
-
-		c.addTransition(start, end, string(regex[position]))
-
-		return &Fragment{start: start, end: end}, position + 1
-	}
+        return &Fragment{start: start, end: end}, position + 1
+    }
 }
 
 // Name: parseRange (for Converter)
