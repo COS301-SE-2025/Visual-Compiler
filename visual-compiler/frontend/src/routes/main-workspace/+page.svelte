@@ -597,7 +597,7 @@
 <div class="main">
 	<WelcomeOverlay bind:show={showWelcomeOverlay} on:close={handleWelcomeClose} />
 
-	<Toolbox {handleCreateNode} {tooltips} />
+	<Toolbox {handleCreateNode} {tooltips} nodes={$nodes} />
 	<div class="workspace" bind:this={workspace_el} tabindex="-1">
 		{#if currentProjectName}
 			<div class="project-header">
