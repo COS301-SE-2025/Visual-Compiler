@@ -757,17 +757,18 @@
 		bottom: 20px;
 		right: 20px;
 		padding: 0.5rem 1rem;
-		background: #001a6e;
-		color: white;
+		background: #bed2e6;
+		color: black;
 		border: none;
 		border-radius: 4px;
 		cursor: pointer;
 		z-index: 1000;
 		margin-right: 1rem;
 		margin-bottom: 1rem;
+		font-weight: bold;
 	}
 	.return-button:hover {
-		background: #074799;
+		background: #a8bdd1;
 	}
 	.code-input-overlay {
 		position: fixed;
