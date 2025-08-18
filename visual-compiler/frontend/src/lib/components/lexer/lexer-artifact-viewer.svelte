@@ -11,10 +11,15 @@
 </script>
 
 <div class="artifact-viewer">
-    {#if phase === 'lexer' && show_tokens}
-        <div class="tokens-heading">
-            <h3>Tokens</h3>
+    <div class="artefact-heading">
+            <h2 class="artifact-title">Lexer Artefact</h2>
         </div>
+
+        <div class="tokens-heading">
+                    <h3>Tokens</h3>
+		</div>
+    {#if phase === 'lexer' && show_tokens}
+
         {#if unexpected_tokens && unexpected_tokens.length > 0}
             <div class="error-state">
 				<div class="error-icon">
@@ -38,6 +43,8 @@
 				<p class="error-message">
 					The source code could not be completely tokenised with the provided regex/DFA. <br>
                     Please check your input again.<br>
+                    <br>
+                    Unidentified Token(s):
 				</p>
                 <div class="token-list">
                     {#each unexpected_tokens as token}
@@ -75,24 +82,29 @@
 
 <style>
     .artifact-viewer {
-        padding: 2rem 1.5rem 1.5rem;
         transition: background-color 0.3s ease;
+        padding: 2rem 1.5rem 1.5rem;
+		background-color: #f8f9fa;
+		border-radius: 8px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		height: 100%;
     }
 
     h3 {
-        color: #041a47;
-        font-size: 1.25rem;
-        margin: 0 0 1.5rem 0;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid #e5e7eb;
-        transition: color 0.3s ease, border-bottom-color 0.3s ease;
-    }
+		color: #001a6e;
+		font-size: 1.5rem;
+		margin: 0;
+		font-family: 'Times New Roman', serif;
+	}
 
     .token-table {
         width: 100%;
         table-layout: fixed;
         border-collapse: collapse;
-        margin: 1.5rem 0 2rem 0;
+         margin: 0rem 0 1rem 0;
         background: white;
         border-radius: 10px; 
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -120,47 +132,29 @@
         transition: background-color 0.3s ease, color 0.3s ease;
     }
 
-    .unexpected-tokens-container {
-        margin-top: 1.5rem;
-        padding: 1.2rem;
-        background: #f8f9fa;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-        transition: background-color 0.3s ease, border-color 0.3s ease;
-    }
-
-    .unexpected-tokens-container h4 {
-        color: #041a47;
-        font-size: 1.1rem;
-        margin: 0 0 1rem 0;
-        padding-bottom: 0.6rem;
-        border-bottom: 1px solid #e5e7eb;
-        transition: color 0.3s ease, border-bottom-color 0.3s ease;
-    }
-
     .token-list {
         display: flex;
         flex-wrap: wrap;
         gap: 1rem;
     }
 
-    .tokens-heading {
-        color: #041a47;
-        transition: color 0.3s ease;
+    .artefact-heading {
+        border-bottom: 1px solid #e5e7eb;
+		padding-bottom: 0.75rem;
     }
 
-    .unexpected-token {
-        padding: 0.5rem 1rem;
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 6px;
-        color: #041a47;
-        font-family: monospace;
-        font-size: 0.9rem;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
-    }
+    .tokens-heading {
+		border-bottom: none;
+		padding-bottom: 0;
+		text-align: center;
+	}
+
+    .artifact-title {
+		margin: 0;
+		color: #001a6e;
+		font-family: 'Times New Roman', serif;
+		font-size: 1.25rem;
+	}
 
     .empty-state,
     .no-tokens {
@@ -216,11 +210,13 @@
         background: #1a2a4a;
     }
 
-    :global(html.dark-mode) h3,
     :global(html.dark-mode) .tokens-heading {
-        color: #e2e8f0;
-        border-bottom-color: #4a5568;
-    }
+		border-bottom-color: #4a5568;
+	}
+    :global(html.dark-mode) .artifact-title,
+	:global(html.dark-mode) h3 {
+		color: #ebeef1;
+	}
 
     :global(html.dark-mode) .token-table {
         background: #2d3748;
@@ -235,22 +231,6 @@
     :global(html.dark-mode) .token-table th {
         background: #001A6E;
         color: #ffffff; 
-    }
-
-    :global(html.dark-mode) .unexpected-tokens-container {
-        background: #2d3748;
-        border-color: #4a5568;
-    }
-
-    :global(html.dark-mode) .unexpected-tokens-container h4 {
-        color: #90cdf4;
-        border-bottom-color: #4a5568;
-    }
-
-    :global(html.dark-mode) .unexpected-token {
-        background: #4a5568;
-        border-color: #718096;
-        color: #e2e8f0;
     }
 
     :global(html.dark-mode) .empty-state,

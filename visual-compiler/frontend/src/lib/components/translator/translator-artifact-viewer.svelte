@@ -28,7 +28,7 @@
 
 <div class="artifact-container">
 	<div class="artifact-header">
-		<h2 class="artifact-title">Translator Artifact</h2>
+		<h2 class="artifact-title">Translator Artefact</h2>
 		{#if translated_code && translated_code.length > 0}
 			<button class="copy-button" on:click={copy_to_clipboard} title="Copy to clipboard">
 				<svg

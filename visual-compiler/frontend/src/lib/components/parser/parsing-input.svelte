@@ -324,6 +324,7 @@
 
             if (!tokensResponse.ok) {
                 AddToast('Tokens required: Please complete lexical analysis and generate tokens first', 'error');
+                dispatch('parsingerror', {parsing_error: true,parsing_error_details: 'Tokens required: Please complete lexical analysis and generate tokens first'});
                 return;
             }
 
@@ -345,7 +346,7 @@
 
             if (!response.ok) {
                 if (data.error) {
-                    throw new Error(data.error);
+                    throw new Error(data.details);
                 }
                 throw new Error('Failed to generate syntax tree');
             }
@@ -354,9 +355,11 @@
                 AddToast('Parse tree generated successfully! Your syntax analysis is complete', 'success');
                 dispatch('treereceived', data.tree);
             } else {
+                dispatch('parsingerror',{parsing_error: true,parsing_error_details: 'A'});
                 throw new Error('No tree data in response');
             }
         } catch (error) {
+            dispatch('parsingerror',{parsing_error: true,parsing_error_details: error});
             console.error('Full error details:', error); // Debug log
             AddToast(
                 `Failed to generate syntax tree: ${error.message}. Please ensure tokens and grammar are valid.`,
@@ -493,7 +496,8 @@
         background: #f5f5f5;
         padding: 1rem;
         border-radius: 4px;
-        overflow-x: auto;
+        max-height: 250px;
+		overflow: auto;
         font-family: monospace;
         white-space: pre-wrap;
         margin: 0;
@@ -643,6 +647,7 @@
         font-family: monospace;
         min-width: 100px;
         transition: border-color 0.2s, box-shadow 0.2s;
+        width: 140px;
     }
     .translation-input:focus {
         outline: none;

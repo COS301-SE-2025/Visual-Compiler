@@ -1152,9 +1152,9 @@
 					</div>
 					{#if (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).type && 
       (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).regex}
-    <button class="add-button" on:click={addNewRow} title="Add new expression">
-        <span>+</span>
-    </button>
+    
+	<button class="add-rule-btn" on:click={addNewRow}>+ Add New Rule</button>
+
 {/if}
 				</div>
 				{#if formError}
@@ -1486,7 +1486,8 @@
 		background: #f5f5f5;
 		padding: 1rem;
 		border-radius: 4px;
-		overflow-x: auto;
+		max-height: 250px;
+		overflow: auto;
 		font-family: monospace;
 		white-space: pre-wrap;
 		margin: 0;
@@ -1582,28 +1583,6 @@
 		text-align: center;
 		margin: 0.5rem 0;
 		font-size: 0.9rem;
-	}
-
-	.add-button {
-		position: absolute;
-		right: -16px;
-		bottom: -16px;
-		width: 32px;
-		height: 32px;
-		border-radius: 50%;
-		background: #BED2E6;
-		color: 000000;
-		border: none;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 1.2rem;
-		transition: background-color 0.2s;
-	}
-
-	.add-button:hover {
-		background: #27548a;
 	}
 
 	.submit-button {
@@ -1907,6 +1886,18 @@
 		transition: background-color 0.3s ease, color 0.3s ease;
 	}
 
+	.add-rule-btn {
+        display: block;
+        margin: 1.5rem auto 0;
+        padding: 0.5rem 1rem;
+        border: 1px dashed #001a6e;
+        background: transparent;
+        color: #001a6e;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
 	/* --- Dark Mode Styles --- */
 	:global(html.dark-mode) .phase-inspector {
 		background: #1a2a4a;
@@ -1967,15 +1958,6 @@
 		border-color: #60a5fa;
 		background-color: #2d3748;
 		box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.2);
-	}
-
-	:global(html.dark-mode) .add-button {
-		background: #001A6E;
-		color: #ffffff;
-	}
-
-	:global(html.dark-mode) .add-button:hover {
-		background: #002a8e;
 	}
 
 	:global(html.dark-mode) .submit-button {
@@ -2060,6 +2042,11 @@
 		background: #4a5568;
 		color: #e2e8f0;
 	}
+
+	:global(html.dark-mode) .add-rule-btn {
+        border-color: #60a5fa;
+        color: #60a5fa;
+    }
 
 	::-webkit-scrollbar {
 		width: 11px;
@@ -2276,4 +2263,5 @@
 		overflow: hidden;
 		position: relative;
 	}
+
 </style>

@@ -983,7 +983,8 @@
 		background: #f5f5f5;
 		padding: 1rem;
 		border-radius: 4px;
-		overflow-x: auto;
+		max-height: 250px;
+		overflow: auto;
 		font-family: monospace;
 		white-space: pre-wrap;
 		margin: 0;

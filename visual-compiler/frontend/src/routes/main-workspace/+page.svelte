@@ -421,7 +421,7 @@
 		}
 
 		syntaxTreeData = null;
-		parsingError = null;
+		parsing_error = false;
 		translationError = null;
 		if (type === 'source') {
 			show_code_input = true;
@@ -503,6 +503,7 @@
 		artifactData = event.detail;
 		// Mark parser phase as complete when syntax tree is received
 		phase_completion_status.parser = true;
+		parsing_error = false;
 	}
 
 	let tokens: Token[] = [];
@@ -510,10 +511,12 @@
 	let translated_code: string[] = [];
 
 	let artifactData: SyntaxTree | null = null;
-	let parsingError: any = null;
+	let parsing_error: boolean=false;
+	let parsing_error_details: string="";
 
-	function handleParsingError(event: CustomEvent) {
-		parsingError = event.detail;
+	function handleParsingError(data: { parsing_error?: boolean; parsing_error_details?: string }) {
+		parsing_error = true;
+		parsing_error_details = data.parsing_error_details || '';
 		syntaxTreeData = null;
 	}
 </script>
@@ -605,7 +608,7 @@
 							on:treereceived={handleTreeReceived}
 							on:parsingerror={handleParsingError}
 						/>
-						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} {parsingError} />
+						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} {parsing_error}{parsing_error_details} />
 					{/if}
 
 					{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}

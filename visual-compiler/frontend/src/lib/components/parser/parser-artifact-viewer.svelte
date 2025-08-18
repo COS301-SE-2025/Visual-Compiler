@@ -12,7 +12,8 @@
 	import type { SyntaxTree, SyntaxTreeNode } from '$lib/types';
 	import { fade, scale } from 'svelte/transition';
 
-	export let parsingError: any = null;
+	export let parsing_error: boolean ;
+	export let parsing_error_details: string;
 
 	// Exported prop for the syntax tree data, following PascalCase convention.
 	export let syntaxTree: SyntaxTree | null = null;
@@ -206,11 +207,11 @@
 
 <div class="artifact-container">
 	<div class="artifact-header">
-		<h2 class="artifact-title">Parser Artifact</h2>
+		<h2 class="artifact-title">Parser Artefact</h2>
 	</div>
 
 	<div class="artifact-viewer">
-		{#if parsingError}
+		{#if parsing_error}
 			<!-- Error state is shown, no header needed here -->
 			<div class="error-state">
 				<div class="error-icon">
@@ -230,12 +231,11 @@
 						<line x1="12" y1="16" x2="12.01" y2="16" />
 					</svg>
 				</div>
-				<h4>Parsing Failed</h4>
+				<h4>Syntax Error</h4>
 				<p class="error-message">
 					The source code could not be parsed with the provided tokens and grammar. Please check your
 					input again.
 				</p>
-				<pre class="error-details">{parsingError.message || String(parsingError)}</pre>
 			</div>
 		{:else}
 			<!-- No error, so show the header and then the tree or empty state -->

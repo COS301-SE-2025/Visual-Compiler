@@ -468,6 +468,8 @@
 		white-space: pre-wrap;
 		word-wrap: break-word;
 		margin: 0;
+		max-height: 250px;
+		overflow: auto;
 	}
 
 	.rules-container {
