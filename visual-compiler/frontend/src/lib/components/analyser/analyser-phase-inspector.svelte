@@ -5,6 +5,7 @@
     import type { SymbolTable } from '$lib/types';
     import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
+	import { error } from '@sveltejs/kit';
 
     const dispatch = createEventDispatcher();
 
@@ -288,9 +289,10 @@
             AddToast('Semantic error detected! Check the analysis results for details', 'error');
             dispatch('generate',{
                 symbol_table: symbols,
-                error: result.error,
-                error_details: result.details
+                analyser_error: true,
+                analyser_error_details: result.details
             });
+            console.log(result)
         }else {
             AddToast('Semantic analysis complete! Symbol table generated successfully', 'success');
             dispatch('generate',{

@@ -86,6 +86,7 @@
 			code_text += '    red = red + 1;\n';
 			code_text += '    return red;\n';
 			code_text += '}\n\n';
+			code_text += 'int _i = 0;\n';
 			code_text += 'for _i range(12)\n';
 			code_text += '{\n';
 			code_text += '    blue = new(blue);\n';

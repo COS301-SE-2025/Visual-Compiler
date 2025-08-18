@@ -5,12 +5,13 @@
     export let phase: string;
     export let symbol_table: Symbol[] = [];
     export let show_symbol_table = false;
-    export let analyser_error: string;
+    export let analyser_error: boolean ;
     export let analyser_error_details: string;
 
 </script>
 
 <div class="artifact-viewer">
+
     {#if phase === 'analyser' && show_symbol_table}
         <div class="symbol-heading">
             <h3>Symbols</h3>
@@ -38,7 +39,9 @@
             <div class="no-symbols">No symbols generated</div>
         {/if}
 
-        {#if analyser_error && analyser_error.length > 0}
+    {:else if phase === 'analyser'}
+        <div class="empty-state">Symbols will appear here after generation</div>
+        {#if analyser_error}
             <div class="error-state">
 				<div class="error-icon">
 					<svg
@@ -64,8 +67,6 @@
 				<pre class="error-details">{analyser_error_details}</pre>
 			</div>
         {/if}
-    {:else if phase === 'analyser'}
-        <div class="empty-state">Symbols will appear here after generation</div>
     {/if}
 </div>
 

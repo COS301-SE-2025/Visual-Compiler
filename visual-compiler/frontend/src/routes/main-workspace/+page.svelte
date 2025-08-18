@@ -442,28 +442,28 @@
 
 	let show_symbol_table = false;
 	let symbol_table: Symbol[] = [];
-	let analyser_error = '';
+	let analyser_error = false;
 	let analyser_error_details = '';
 
 	function handleReset() {
 		show_symbol_table = false;
 		symbol_table = [];
-		analyser_error = '';
+		analyser_error = false;
 		analyser_error_details = '';
 	}
 
-	function handleSymbolGeneration(data: { symbol_table: Symbol[]; error?: string; error_details?: string }) {
+	function handleSymbolGeneration(data: { symbol_table: Symbol[]; analyser_error?: boolean; analyser_error_details?: string }) {
 		if (data.symbol_table && data.symbol_table.length > 0) {
 			show_symbol_table = true;
 			symbol_table = data.symbol_table;
-			analyser_error = '';
+			analyser_error = false;
 			analyser_error_details = '';
 			// Mark analyser phase as complete when symbol table is generated successfully
 			phase_completion_status.analyser = true;
 		} else {
 			show_symbol_table = false;
-			analyser_error = data.error || 'Analysis failed';
-			analyser_error_details = data.error_details || '';
+			analyser_error = true;
+			analyser_error_details = data.analyser_error_details || '';
 		}
 	}
 
