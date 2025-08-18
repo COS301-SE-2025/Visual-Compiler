@@ -1056,7 +1056,7 @@ func (c *Converter) parseAtom(regex string, position int) (*Fragment, int) {
 		}
 
 		if level != 0 {
-			return nil, 0 //,fmt.Errorf("unmatched parentheses")
+			return nil, 0
 		}
 
 		inner := regex[position+1 : i-1]
