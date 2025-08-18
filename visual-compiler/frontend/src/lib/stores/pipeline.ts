@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import type { NodeConnection as TypesNodeConnection, NodeType } from '../types';
 
 // Define interfaces for pipeline data
 export interface Position {
@@ -6,14 +7,12 @@ export interface Position {
     y: number;
 }
 
-export interface NodeConnection {
-    sourceNodeId: string;
-    targetNodeId: string;
-}
+// Use the NodeConnection from types.ts for consistency
+export type NodeConnection = TypesNodeConnection;
 
 export interface PipelineNode {
     id: string;
-    type: string;
+    type: NodeType;
     label: string;
     position: Position;
 }

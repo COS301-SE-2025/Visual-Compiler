@@ -108,6 +108,7 @@
 					// If no pipeline data, initialize with empty state
 					pipelineStore.set({
 						nodes: [],
+						connections: [],
 						lastSaved: null
 					});
 					console.log('No saved pipeline found, initialized empty state');
