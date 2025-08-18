@@ -78,18 +78,19 @@
     ];
 
     const DEFAULT_TYPE_RULES = [
-        { id: 0, ResultData: 'int', Assignment: '=', LHSData: 'INTEGER', Operator: ['+'], RHSData: 'INTEGER' },
-        { id: 1, ResultData: 'int', Assignment: '=', LHSData: 'int', Operator: [], RHSData: '' }
+        { id: 0, ResultData: 'int', Assignment: '=', LHSData: 'INTEGER', Operator: [], RHSData: '' },
+        { id: 1, ResultData: 'int', Assignment: '=', LHSData: 'int', Operator: [], RHSData: '' },
+        { id: 2, ResultData: 'int', Assignment: '=', LHSData: 'int', Operator: ['+'], RHSData: 'INTEGER' }
     ];
 
     const DEFAULT_GRAMMAR_RULES: GrammarRule = {
         VariableRule: 'IDENTIFIER',
         TypeRule: 'TYPE',
-        FunctionRule: 'FUNCTION_DECLARATION',
-        ParameterRule: 'PARAM',
+        FunctionRule: 'FUNCTION_DEFINITION',
+        ParameterRule: 'PARAMETER',
         AssignmentRule: 'ASSIGNMENT',
         OperatorRule: 'OPERATOR',
-        TermRule: 'TERM'
+        TermRule: 'ELEMENT'
     };
     let show_default_rules = false;
 
