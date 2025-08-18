@@ -376,6 +376,9 @@
 			lastSaved: new Date().toISOString()
 		};
 
+		// Update the pipeline store to keep it in sync
+		pipelineStore.set(pipeline);
+
 		try {
 			const response = await fetch('http://localhost:8080/api/users/savePipeline', {
 				method: 'POST',
