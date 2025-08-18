@@ -533,44 +533,43 @@
 		editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
 		inputRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
 		
-		states = 'S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19, S20, S21, S22, S23, S24, S25';
+		states = 'S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19, S20, S21, S22, S23, S24, S25, S26, S27, S28, S29, S30';
 		startState = 'S0';
-		acceptedStates = 'S19->KEYWORD, S25->KEYWORD, S20->CONTROL, S6->IDENTIFIER, S7->INTEGER, S8->ASSIGNMENT, S3->OPERATOR, S12->DELIMITER, S9->OPEN_BRACKET, S1->CLOSE_BRACKET, S4->OPEN_SCOPE, S2->CLOSE_SCOPE';
+		acceptedStates = 'S1->ASSIGNMENT, S2->DELIMITER, S3->KEYWORD, S4->OPEN_BRACKET, S5->KEYWORD, S6->IDENTIFIER, S7->INTEGER, S8->CLOSE_SCOPE, S9->CONTROL, S10->OPERATOR, S11->CLOSE_BRACKET, S12->OPEN_SCOPE, S13->CONTROL, S14->KEYWORD, S15->KEYWORD, S16->KEYWORD, S17->KEYWORD, S18->KEYWORD, S19->KEYWORD, S20->CONTROL, S21->KEYWORD, S22->KEYWORD, S23->CONTROL, S24->KEYWORD, S25->KEYWORD, S26->CONTROL, S27->KEYWORD, S28->KEYWORD, S29->CONTROL, S30->KEYWORD';
 
 		transitions = '';
-
-		transitions += 'S0,i->S10\n';
-		transitions += 'S10,n->S15\n';
-		transitions += 'S15,t->S19\n';
-
-		transitions += 'S0,r->S5\n';
-		transitions += 'S5,e->S14\n';
-		transitions += 'S14,t->S18\n';
-		transitions += 'S18,u->S22\n';
-		transitions += 'S22,r->S24\n';
-		transitions += 'S24,n->S25\n';
-
-		transitions += 'S0,f->S11\n';
-		transitions += 'S11,o->S16\n';
-		transitions += 'S16,r->S20\n';
-
+		transitions += 'S0,i->S3\n';
+		transitions += 'S0,r->S9\n';
+		transitions += 'S0,f->S13\n';
+		transitions += 'S0,p->S5\n';
 		transitions += 'S0,[a-zA-Z_]->S6\n';
-		transitions += 'S6,[a-zA-Z_]->S6\n';
-
 		transitions += 'S0,[0-9]->S7\n';
+		transitions += 'S0,+/%->S10\n';
+		transitions += 'S0,=->S1\n';
+		transitions += 'S0,;->S2\n';
+		transitions += 'S0,(->S4\n';
+		transitions += 'S0,)->S11\n';
+		transitions += 'S0,{->S12\n';
+		transitions += 'S0,}->S8\n';
+		transitions += 'S3,n->S14\n';
+		transitions += 'S5,r->S15\n';
+		transitions += 'S6,[a-zA-Z_]->S6\n';
 		transitions += 'S7,[0-9]->S7\n';
-
-		transitions += 'S0,=->S8\n';
-
-		transitions += 'S0,+-/%->S3\n';
-
-		transitions += 'S0,;->S12\n';
-
-		transitions += 'S0,(->S9\n';
-		transitions += 'S0,)->S1\n';
-
-		transitions += 'S0,{->S4\n';
-		transitions += 'S0,}->S2\n';
+		transitions += 'S9,e->S16\n';
+		transitions += 'S9,a->S17\n';
+		transitions += 'S13,o->S18\n';
+		transitions += 'S14,t->S19\n';
+		transitions += 'S15,i->S20\n';
+		transitions += 'S16,t->S21\n';
+		transitions += 'S17,n->S22\n';
+		transitions += 'S18,r->S23\n';
+		transitions += 'S20,n->S24\n';
+		transitions += 'S21,u->S25\n';
+		transitions += 'S22,g->S26\n';
+		transitions += 'S24,t->S27\n';
+		transitions += 'S25,r->S28\n';
+		transitions += 'S26,e->S29\n';
+		transitions += 'S28,n->S30\n';
 	}
 
 	function removeDefault() {
@@ -580,7 +579,7 @@
 	}
 
 	const DEFAULT_INPUT_ROWS = [
-		{ type: 'KEYWORD', regex: 'int|return', error: '' },
+		{ type: 'KEYWORD', regex: 'int|return|print', error: '' },
 		{ type: 'CONTROL', regex: 'for|range', error: '' },
 		{ type: 'IDENTIFIER', regex: '[a-zA-Z_]+', error: '' },
 		{ type: 'INTEGER', regex: '[0-9]+', error: '' },
