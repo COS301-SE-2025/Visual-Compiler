@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { writable, get, type Writable } from 'svelte/store';
 	import type { NodeType, Token, SyntaxTree, NodeConnection } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
@@ -45,6 +45,27 @@
 	let show_drag_tip = false;
 	let showClearCanvasModal = false;
 
+	// --- UNSAVED CHANGES TRACKING ---
+	let lastSavedState: string | null = null;
+
+	// Function to handle beforeunload event
+	const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+		// Get current pipeline state
+		const currentNodes = get(nodes);
+		const currentState = JSON.stringify({
+			nodes: currentNodes,
+			connections: physicalConnections
+		});
+
+		// Compare with last saved state
+		if (lastSavedState && currentState !== lastSavedState) {
+			// There are unsaved changes
+			event.preventDefault();
+			event.returnValue = '';
+			return '';
+		}
+	};
+
 	// Subscribe to the project name store
 	let currentProjectName = '';
 	projectName.subscribe((value) => {
@@ -72,6 +93,12 @@
 					});
 					physicalConnections = validConnections;
 				}
+
+				// Update last saved state when project is loaded
+				lastSavedState = JSON.stringify({
+					nodes: pipeline.nodes,
+					connections: physicalConnections
+				});
 			}
 		}
 	});
@@ -124,6 +151,31 @@
 			// // Important: Remove the flag so the overlay doesn't reappear on refresh.
 			// sessionStorage.removeItem('showWelcomeOverlay');
 		}
+	});
+
+	// --- UNSAVED CHANGES PROTECTION ---
+	onMount(() => {
+		// Add the event listener
+		window.addEventListener('beforeunload', handleBeforeUnload);
+
+		// Initialize lastSavedState for blank canvas
+		if (!lastSavedState) {
+			lastSavedState = JSON.stringify({
+				nodes: [],
+				connections: []
+			});
+		}
+
+		// Return cleanup function
+		return () => {
+			window.removeEventListener('beforeunload', handleBeforeUnload);
+		};
+	});
+
+	// Use onDestroy as additional cleanup
+	onDestroy(() => {
+		// This ensures cleanup even if the onMount return function doesn't run
+		window.removeEventListener('beforeunload', handleBeforeUnload);
 	});
 
 	function handleWelcomeClose() {
@@ -402,6 +454,13 @@
 			const data = await response.json();
 			console.log('Project Saved:', data);
 			savedProjectData = pipeline;
+			
+			// Update last saved state for unsaved changes tracking
+			lastSavedState = JSON.stringify({
+				nodes: canvasNodes,
+				connections: physicalConnections
+			});
+			
 			AddToast(`Project "${currentProjectName}" saved successfully!`, 'success');
 		} catch (error) {
 			console.error('Failed to save project:', error);
@@ -433,6 +492,12 @@
 		// We'll trigger a custom event that the Toolbox component will listen to
 		const event = new CustomEvent('resetToolbox');
 		document.dispatchEvent(event);
+
+		// Reset last saved state to reflect the cleared canvas
+		lastSavedState = JSON.stringify({
+			nodes: [],
+			connections: []
+		});
 
 		showClearCanvasModal = false;
 		AddToast('Canvas cleared successfully!', 'success');
