@@ -1,14 +1,24 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
+	import { AddToast } from '$lib/stores/toast';
 
 	export let show: boolean;
+	export let recentProjects: { name: string }[] = [];
 	let projectName = '';
 
 	const dispatch = createEventDispatcher();
 
 	function handleConfirm() {
 		if (projectName.trim()) {
+			// Check for duplicates before proceeding
+			const isDuplicate = recentProjects.some(p => p.name === projectName.trim());
+			
+			if (isDuplicate) {
+				AddToast('Project name already exists. Please choose a different name.', 'error');
+				return;
+			}
+			
 			dispatch('confirm', projectName.trim());
 		}
 	}

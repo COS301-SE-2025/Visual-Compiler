@@ -103,14 +103,8 @@
 		}
 	});
 
-	onMount(() => {
-		return () => {
-			// Cleanup subscriptions
-			unsubscribePipeline();
-		};
-	});
-
 	onMount(async () => {
+		// Load dynamic components
 		LexerPhaseTutorial = (await import('$lib/components/lexer/lexer-phase-tutorial.svelte')).default;
 		LexerPhaseInspector = (await import('$lib/components/lexer/phase-inspector.svelte')).default;
 		LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte'))
@@ -140,6 +134,7 @@
 			await import('$lib/components/translator/translator-artifact-viewer.svelte')
 		).default;
 
+		// Setup theme and UI state
 		document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
 		if (!localStorage.getItem('hasSeenDragTip')) {
 			show_drag_tip = true;
@@ -147,35 +142,41 @@
 
 		if (sessionStorage.getItem('showWelcomeOverlay') === 'true') {
 			showWelcomeOverlay = true; // Trigger the overlay to show.
-
-			// // Important: Remove the flag so the overlay doesn't reappear on refresh.
-			// sessionStorage.removeItem('showWelcomeOverlay');
 		}
-	});
 
-	// --- UNSAVED CHANGES PROTECTION ---
-	onMount(() => {
-		// Add the event listener
-		window.addEventListener('beforeunload', handleBeforeUnload);
+		// --- UNSAVED CHANGES PROTECTION ---
+		// Only add event listener if we're in the browser
+		if (typeof window !== 'undefined') {
+			window.addEventListener('beforeunload', handleBeforeUnload);
 
-		// Initialize lastSavedState for blank canvas
-		if (!lastSavedState) {
-			lastSavedState = JSON.stringify({
-				nodes: [],
-				connections: []
-			});
+			// Initialize lastSavedState for blank canvas
+			if (!lastSavedState) {
+				lastSavedState = JSON.stringify({
+					nodes: [],
+					connections: []
+				});
+			}
 		}
 
 		// Return cleanup function
 		return () => {
-			window.removeEventListener('beforeunload', handleBeforeUnload);
+			// Cleanup subscriptions
+			unsubscribePipeline();
+			
+			// Cleanup event listener if in browser
+			if (typeof window !== 'undefined') {
+				window.removeEventListener('beforeunload', handleBeforeUnload);
+			}
 		};
 	});
 
 	// Use onDestroy as additional cleanup
 	onDestroy(() => {
 		// This ensures cleanup even if the onMount return function doesn't run
-		window.removeEventListener('beforeunload', handleBeforeUnload);
+		// Only remove event listener if we're in the browser
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('beforeunload', handleBeforeUnload);
+		}
 	});
 
 	function handleWelcomeClose() {
