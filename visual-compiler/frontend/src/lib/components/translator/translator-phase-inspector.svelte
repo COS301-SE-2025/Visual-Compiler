@@ -15,9 +15,17 @@
 	// --- DEFAULT RULES DATA ---
 	const DEFAULT_TRANSLATION_RULES = [
 		{
-			tokenSequence: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, INTEGER, SEPARATOR',
-			lines: ['mov \t rax, {INTEGER}', 'add \t rax, {INTEGER}', 'mov \t [{IDENTIFIER}], rax']
-		}
+			tokenSequence: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, DELIMITER',
+			lines: ['add     rax, {INTEGER}', 'mov     [{IDENTIFIER}], rax']
+		},
+		{
+			tokenSequence: 'KEYWORD, IDENTIFIER, OPEN_BRACKET, KEYWORD, IDENTIFIER, CLOSE_BRACKET, OPEN_SCOPE, IDENTIFIER, ASSIGNMENT, IDENTIFIER, OPERATOR, INTEGER, DELIMITER, KEYWORD, IDENTIFIER, DELIMITER, CLOSE_SCOPE',
+			lines: ['func {IDENTIFIER}:', '     mov     rbx, [{IDENTIFIER}]', '     add     rbx, {INTEGER}', '     mov     [{IDENTIFIER}], rbx', '     return']
+		},
+		{
+			tokenSequence: 'CONTROL, IDENTIFIER, CONTROL, OPEN_BRACKET, INTEGER, CLOSE_BRACKET, OPEN_SCOPE, IDENTIFIER, ASSIGNMENT, IDENTIFIER, OPEN_BRACKET, IDENTIFIER, CLOSE_BRACKET, DELIMITER, KEYWORD, OPEN_BRACKET, IDENTIFIER, CLOSE_BRACKET, DELIMITER, CLOSE_SCOPE',
+			lines: ['func {CONTROL}:', '     jump    [{IDENTIFIER}], {INTEGER}', '     param   rcx, [{IDENTIFIER}]', '     call    {IDENTIFIER}', '     print   [{IDENTIFIER}]']
+		},
 	];
 
 	/**
