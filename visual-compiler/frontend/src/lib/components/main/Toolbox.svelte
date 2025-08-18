@@ -90,10 +90,11 @@
 <aside class="toolbox" data-testid="toolbox">
 	<h2 class="toolbox-heading">Blocks</h2>
 	<h2 class="toolbox-instruction">Click a block to add it to the canvas.</h2>
-	{#each node_types as n}
+	{#each node_types as n, i}
 		<!-- Wrapper div to capture clicks even when the button is disabled -->
 		<div on:click={() => handleClick(n.id)}>
 			<button class="phase-btn" disabled={createdNodeTypes.has(n.id)}>
+				<span class="button-number-corner">{i + 1}</span>
 				{n.label}
 				<span class="custom-tooltip">{tooltips[n.id]}</span>
 			</button>
@@ -178,6 +179,17 @@
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
+	}
+
+	.button-number-corner {
+		position: absolute;
+		top: 6px;
+		left: 6px;
+		color: rgba(4, 26, 71);
+		font-size: 0.65rem;
+		font-weight: 600;
+		line-height: 1;
+		z-index: 2;
 	}
 
 	.phase-btn:hover {
@@ -282,6 +294,10 @@
 		background-color: #001A6E;
 		color: #ffffff;
 		border: 1px solid #374151;
+	}
+
+	:global(html.dark-mode) .button-number-corner {
+		color: rgba(255, 255, 255, 0.4);
 	}
 
 	:global(html.dark-mode) .phase-btn:hover {
