@@ -4,13 +4,28 @@
 	import { theme } from '../../stores/theme';
 	import { AddToast } from '../../stores/toast';
 
+	// Define CanvasNode interface to match the one from main-workspace
+	interface CanvasNode {
+		id: string;
+		type: NodeType;
+		label: string;
+		position: { x: number; y: number };
+	}
+
 	export let handleCreateNode: (type: NodeType) => void;
 	export let tooltips: Record<NodeType, string>;
+	export let nodes: CanvasNode[] = [];
 
 	// A set to keep track of the node types that have been created.
 	let createdNodeTypes = new Set<NodeType>();
 	// A flag to ensure the toast is only shown once.
 	let hasShownDisabledToast = false;
+
+	// Reactive statement to synchronize createdNodeTypes with nodes from canvas
+	$: {
+		const typesOnCanvas = new Set(nodes.map(node => node.type));
+		createdNodeTypes = typesOnCanvas;
+	}
 
 	const node_types: { id: NodeType; label: string }[] = [
 		{ id: 'source', label: 'Source Code' },
