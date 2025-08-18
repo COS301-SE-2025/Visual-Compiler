@@ -468,7 +468,7 @@
 		white-space: pre-wrap;
 		word-wrap: break-word;
 		margin: 0;
-		max-height: 250px;
+		max-height: 260px;
 		overflow: auto;
 	}
 

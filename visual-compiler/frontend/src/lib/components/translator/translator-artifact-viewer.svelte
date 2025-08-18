@@ -78,6 +78,9 @@
 				<pre class="error-details">{translationError.message || String(translationError)}</pre>
 			</div>
 		{:else if translated_code && translated_code.length > 0}
+			<div class="artifact-subheader">
+				<h3>Target Code</h3>
+			</div>
 			<div class="code-wrapper">
 				<div class="line-numbers">
 					{#each translated_code as _, i}
@@ -131,11 +134,25 @@
 		padding-bottom: 0.75rem;
 	}
 
+	.artifact-viewer .artifact-subheader {
+		border-bottom: none;
+		padding-bottom: 0;
+		margin-bottom: 1.5rem;
+		text-align: center;
+	}
+
 	.artifact-title {
 		margin: 0;
 		color: #001a6e;
 		font-family: 'Times New Roman', serif;
 		font-size: 1.25rem;
+	}
+
+	h3 {
+		color: #001a6e;
+		font-size: 1.5rem;
+		margin: 0;
+		font-family: 'Times New Roman', serif;
 	}
 
 	.copy-button {

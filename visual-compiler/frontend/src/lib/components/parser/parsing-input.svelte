@@ -496,7 +496,7 @@
         background: #f5f5f5;
         padding: 1rem;
         border-radius: 4px;
-        max-height: 250px;
+        max-height: 260px;
 		overflow: auto;
         font-family: monospace;
         white-space: pre-wrap;
