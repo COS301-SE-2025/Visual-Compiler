@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import type { NodeType } from '$lib/types';
 	import { theme } from '../../stores/theme';
 	import { AddToast } from '../../stores/toast';
@@ -49,6 +50,26 @@
 			createNode(type);
 		}
 	}
+
+	// Reset function to clear created node types
+	function resetCreatedNodeTypes() {
+		createdNodeTypes.clear();
+		createdNodeTypes = createdNodeTypes; // Trigger reactivity
+		hasShownDisabledToast = false; // Reset the toast flag
+	}
+
+	// Listen for reset events from the main workspace
+	onMount(() => {
+		const handleReset = () => {
+			resetCreatedNodeTypes();
+		};
+		
+		document.addEventListener('resetToolbox', handleReset);
+		
+		return () => {
+			document.removeEventListener('resetToolbox', handleReset);
+		};
+	});
 </script>
 
 <aside class="toolbox" data-testid="toolbox">
