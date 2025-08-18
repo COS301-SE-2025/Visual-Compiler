@@ -469,6 +469,7 @@
 
 	function handleTranslationReceived(event: CustomEvent<string[]>) {
 		translated_code = event.detail;
+		translationError = null;
 		// Mark translator phase as complete when translation is received
 		if (event.detail && event.detail.length > 0) {
 			phase_completion_status.translator = true;
