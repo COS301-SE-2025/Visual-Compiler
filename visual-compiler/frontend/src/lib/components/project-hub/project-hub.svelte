@@ -344,6 +344,7 @@
 	bind:show={showProjectNamePrompt}
 	on:confirm={handleProjectNameConfirm}
 	on:cancel={() => (showProjectNamePrompt = false)}
+	recentProjects={recentProjects}
 />
 
 <DeleteConfirmPrompt
