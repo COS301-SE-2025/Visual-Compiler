@@ -323,9 +323,24 @@
             });
 
             if (!tokensResponse.ok) {
-                AddToast('Tokens required: Please complete lexical analysis and generate tokens first', 'error');
-                dispatch('parsingerror', {parsing_error: true,parsing_error_details: 'Tokens required: Please complete lexical analysis and generate tokens first'});
-                return;
+
+                 const dfa_token_response = await fetch(`http://localhost:8080/api/lexing/dfaToTokens`, {
+                    method: 'POST',
+                    headers: {
+                        'accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        users_id: user_id,
+                        project_name: project
+                    })
+                });
+
+                if (!dfa_token_response) {
+                    AddToast('Tokens required: Please complete lexical analysis and generate tokens first', 'error');
+                    dispatch('parsingerror', {parsing_error: true,parsing_error_details: 'Tokens required: Please complete lexical analysis and generate tokens first'});
+                    return;
+                }
             }
 
             // Now try to generate syntax tree
