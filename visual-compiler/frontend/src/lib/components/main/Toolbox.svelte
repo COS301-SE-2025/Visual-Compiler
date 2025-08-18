@@ -116,6 +116,26 @@
 		border-radius: 12px;
 		border: 1px solid #e0e0e0;
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+		overflow-y: auto;
+		min-height: 0;
+	}
+
+	/* Minimalistic scrollbar styling */
+	.toolbox::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	.toolbox::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.toolbox::-webkit-scrollbar-thumb {
+		background-color: rgba(0, 0, 0, 0.2);
+		border-radius: 3px;
+	}
+
+	.toolbox::-webkit-scrollbar-thumb:hover {
+		background-color: rgba(0, 0, 0, 0.3);
 	}
 
 	.toolbox-heading {
@@ -140,8 +160,8 @@
 	}
 
 	.phase-btn {
-		height: 90px;
-		width: 200px;
+		height: 85px;
+		width: 190px;
 		background-color: #BED2E6;
 		color: #000000;
 		border-radius: 8px;
@@ -157,6 +177,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		flex-shrink: 0;
 	}
 
 	.phase-btn:hover {
@@ -229,6 +250,24 @@
 		background: #1b1d2a;
 		border-color: #374151;
 		box-shadow: none;
+	}
+
+	/* Dark mode scrollbar styling */
+	:global(html.dark-mode) .toolbox::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	:global(html.dark-mode) .toolbox::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	:global(html.dark-mode) .toolbox::-webkit-scrollbar-thumb {
+		background-color: rgba(255, 255, 255, 0.2);
+		border-radius: 3px;
+	}
+
+	:global(html.dark-mode) .toolbox::-webkit-scrollbar-thumb:hover {
+		background-color: rgba(255, 255, 255, 0.3);
 	}
 
 	:global(html.dark-mode) .toolbox-heading {
