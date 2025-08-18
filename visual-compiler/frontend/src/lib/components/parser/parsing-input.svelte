@@ -33,22 +33,28 @@
 
     // --- DEFAULT GRAMMAR DATA ---
     const DEFAULT_GRAMMAR = {
-        variables: 'PROGRAM, CODE, STATEMENT, DECLARATION, EXPRESSION, TYPE, TERM, FUNCTION, PARAM, FUNCTION_DECLARATION, FUNC_BLOCK, RETURN_S',
-        terminals: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, SEPARATOR, OPEN_BRACKETS, CLOSE_BRACKETS ,OPEN_SCOPE, CLOSE_SCOPE,STRING',
+        variables: 'PROGRAM, STATEMENT, FUNCTION, ITERATION, DECLARATION, ELEMENT, TYPE, EXPRESSION, FUNCTION_DEFINITION, FUNCTION_BLOCK, RETURN, ITERATION_DEFINITION, ITERATION_BLOCK, PARAMETER, PRINT',
+        terminals: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, DELIMITER, OPEN_BRACKET, CLOSE_BRACKET, OPEN_SCOPE, CLOSE_SCOPE, CONTROL',
         rules: [
-            { nonTerminal: 'PROGRAM', translations: ['STATEMENT','FUNCTION'] },
-            { nonTerminal: 'FUNCTION', translations: ['FUNCTION_DECLARATION', 'FUNC_BLOCK'] },
-            { nonTerminal: 'FUNCTION_DECLARATION', translations: ['TYPE', 'IDENTIFIER', 'PARAM'] },
-            { nonTerminal: 'PARAM', translations: ['OPEN_BRACKETS', 'TYPE', 'IDENTIFIER', 'CLOSE_BRACKETS'] },
-            { nonTerminal: 'FUNC_BLOCK', translations: ['OPEN_SCOPE', 'STATEMENT', 'RETURN_S','CLOSE_SCOPE'] },
-            { nonTerminal: 'RETURN_S', translations: ['KEYWORD', 'TERM', 'SEPARATOR'] },
-            { nonTerminal: 'STATEMENT', translations: ['DECLARATION', 'SEPARATOR'] },
-            { nonTerminal: 'DECLARATION',translations: ['TYPE', 'IDENTIFIER', 'ASSIGNMENT', 'EXPRESSION']},
-            { nonTerminal: 'EXPRESSION', translations: ['TERM', 'OPERATOR', 'TERM'] },
-            { nonTerminal: 'EXPRESSION', translations: ['TERM'] },
-            { nonTerminal: 'TERM', translations: ['INTEGER'] },
-            { nonTerminal: 'TERM', translations: ['IDENTIFIER'] },
-            { nonTerminal: 'TYPE', translations: ['KEYWORD'] }
+            { nonTerminal: 'PROGRAM', translations: ['STATEMENT', 'FUNCTION', 'ITERATION'] },
+            { nonTerminal: 'STATEMENT', translations: ['DECLARATION', 'DELIMITER'] },
+            { nonTerminal: 'DECLARATION', translations: ['TYPE', 'IDENTIFIER', 'ASSIGNMENT', 'ELEMENT'] },
+            { nonTerminal: 'DECLARATION', translations: ['IDENTIFIER', 'ASSIGNMENT', 'EXPRESSION'] },
+            { nonTerminal: 'DECLARATION', translations: ['IDENTIFIER', 'ASSIGNMENT', 'IDENTIFIER', 'PARAMETER'] },
+            { nonTerminal: 'TYPE', translations: ['KEYWORD'] },
+            { nonTerminal: 'EXPRESSION', translations: ['ELEMENT', 'OPERATOR', 'ELEMENT'] },
+            { nonTerminal: 'ELEMENT', translations: ['INTEGER'] },
+            { nonTerminal: 'ELEMENT', translations: ['IDENTIFIER'] },
+            { nonTerminal: 'FUNCTION', translations: ['FUNCTION_DEFINITION', 'FUNCTION_BLOCK'] },
+            { nonTerminal: 'FUNCTION_DEFINITION', translations: ['TYPE', 'IDENTIFIER', 'PARAMETER'] },
+            { nonTerminal: 'FUNCTION_BLOCK', translations: ['OPEN_SCOPE', 'STATEMENT', 'RETURN', 'CLOSE_SCOPE'] },
+            { nonTerminal: 'RETURN', translations: ['KEYWORD', 'ELEMENT', 'DELIMITER'] },
+            { nonTerminal: 'ITERATION', translations: ['ITERATION_DEFINITION', 'ITERATION_BLOCK'] },
+            { nonTerminal: 'ITERATION_DEFINITION', translations: ['CONTROL', 'IDENTIFIER', 'CONTROL', 'PARAMETER'] },
+            { nonTerminal: 'ITERATION_BLOCK', translations: ['OPEN_SCOPE', 'STATEMENT', 'PRINT', 'CLOSE_SCOPE'] },
+            { nonTerminal: 'PARAMETER', translations: ['OPEN_BRACKET', 'ELEMENT', 'CLOSE_BRACKET'] },
+            { nonTerminal: 'PARAMETER', translations: ['OPEN_BRACKET', 'TYPE', 'IDENTIFIER', 'CLOSE_BRACKET'] },
+            { nonTerminal: 'PRINT', translations: ['KEYWORD', 'OPEN_BRACKET', 'ELEMENT', 'CLOSE_BRACKET', 'DELIMITER'] }
         ]
     };
 
