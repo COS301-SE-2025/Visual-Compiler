@@ -5,6 +5,7 @@
     import type { SymbolTable } from '$lib/types';
     import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
+	import { error } from '@sveltejs/kit';
 
     const dispatch = createEventDispatcher();
 
@@ -78,18 +79,19 @@
     ];
 
     const DEFAULT_TYPE_RULES = [
-        { id: 0, ResultData: 'int', Assignment: '=', LHSData: 'INTEGER', Operator: ['+'], RHSData: 'INTEGER' },
-        { id: 1, ResultData: 'int', Assignment: '=', LHSData: 'int', Operator: [], RHSData: '' }
+        { id: 0, ResultData: 'int', Assignment: '=', LHSData: 'INTEGER', Operator: [], RHSData: '' },
+        { id: 1, ResultData: 'int', Assignment: '=', LHSData: 'int', Operator: [], RHSData: '' },
+        { id: 2, ResultData: 'int', Assignment: '=', LHSData: 'int', Operator: ['+'], RHSData: 'INTEGER' }
     ];
 
     const DEFAULT_GRAMMAR_RULES: GrammarRule = {
         VariableRule: 'IDENTIFIER',
         TypeRule: 'TYPE',
-        FunctionRule: 'FUNCTION_DECLARATION',
-        ParameterRule: 'PARAM',
+        FunctionRule: 'FUNCTION_DEFINITION',
+        ParameterRule: 'PARAMETER',
         AssignmentRule: 'ASSIGNMENT',
         OperatorRule: 'OPERATOR',
-        TermRule: 'TERM'
+        TermRule: 'ELEMENT'
     };
     let show_default_rules = false;
 
@@ -209,7 +211,7 @@
         scope_rules = DEFAULT_SCOPE_RULES.map(r => ({ ...r }));
         next_scope_id = 1;
         type_rules = DEFAULT_TYPE_RULES.map(r => ({ ...r }));
-        next_type_id = 1;
+        next_type_id = 3;
         grammar_rules = { ...DEFAULT_GRAMMAR_RULES };
         show_default_rules = true;
         rules_submitted = false;
@@ -287,9 +289,10 @@
             AddToast('Semantic error detected! Check the analysis results for details', 'error');
             dispatch('generate',{
                 symbol_table: symbols,
-                error: result.error,
-                error_details: result.details
+                analyser_error: true,
+                analyser_error_details: result.details
             });
+            console.log(result)
         }else {
             AddToast('Semantic analysis complete! Symbol table generated successfully', 'success');
             dispatch('generate',{
@@ -310,7 +313,7 @@
             status: err.response?.status
         });
         console.error('Error generating symbol table:', error);
-        AddToast('Analysis failed: ' + (err.message || 'Unable to generate symbol table. Please check your connection'), 'error');
+        AddToast('Analysis failed: ' + ('Unable to generate symbol table. Please check your connection'), 'error');
     } finally {
         is_loading = false;
     }
@@ -500,7 +503,7 @@
                             <input type="text" bind:value={rule.ResultData} placeholder="Result Type" aria-label="Result type" class="scope-input" on:input={handleTypeRuleInput} />
                             <input type="text" bind:value={rule.Assignment} placeholder="Assignment" aria-label="Assignment" class="scope-input" on:input={handleTypeRuleInput} />
                             <input type="text" bind:value={rule.LHSData} placeholder="LHS" aria-label="LHS" class="scope-input" on:input={handleTypeRuleInput} />
-                            <input type="text" value={rule.Operator.join(',')} on:input={(e) =>{if (!e.target) return; updateTypeOperator(rule, (e.target as HTMLInputElement).value)}} placeholder="Operator(s)" aria-label="Operator(s)" class="scope-input"/>
+                            <input type="text" value={rule.Operator.join(',')} on:input={(e) =>{if (!e.target) return; updateTypeOperator(rule, (e.target as HTMLInputElement).value)}} placeholder="Operator" aria-label="Operator(s)" class="scope-input"/>
                             <input type="text" bind:value={rule.RHSData} placeholder="RHS" aria-label="RHS" class="scope-input" on:input={handleTypeRuleInput} />
                         </div>
                         <button
@@ -608,7 +611,7 @@
 		display: flex;
 		flex-direction: column;
 		padding: 1.5rem 1rem;
-		height: 100%; /* Important for flexbox to work correctly */
+		height: auto;
 	}
 
 	.header {
@@ -647,11 +650,11 @@
 
 	/* Scrollable Content Area */
 	.scrollable-content {
-		flex-grow: 1; /* Allows this div to take up available vertical space */
-		overflow-y: auto; /* Enables vertical scrolling */
-		padding-right: 0.5rem; /* Space for the scrollbar */
-		margin-right: -0.5rem; /* Compensate for scrollbar padding */
-		padding-bottom: 1rem; /* Padding before the actions container */
+        flex: 0 0 auto;
+        overflow-y: visible;
+        padding-right: 0;
+        margin-right: 0;
+        padding-bottom: 1rem;
 	}
 
 	/* Rules List (for Scope & Type rules) */
@@ -670,7 +673,8 @@
 		display: flex;
 	}
 	.scope-input {
-		flex: 1;
+		flex: 0;
+        width: 180px; 
 		padding: 0.6rem 0.8rem;
 		font-size: 0.9rem;
 		border: 1px solid #d0d7e0;
@@ -698,12 +702,12 @@
 	.type-rule-inputs {
 		flex: 1;
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+		grid-template-columns: repeat(5, auto);
 		gap: 0.75rem;
 	}
 
 	.type-rule-inputs .scope-input {
-		width: auto;
+		width: 70px;
 	}
 
 	.grammar-rules-grid {
@@ -772,8 +776,8 @@
 		font-size: 0.92em;
 	}
 	.actions-container {
-		padding-top: 1rem;
-		margin-top: auto; /* Pushes to the bottom */
+		padding-top: 0rem;
+		margin-top: 0rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
@@ -1018,7 +1022,8 @@
 		background: #f5f5f5;
 		padding: 1rem;
 		border-radius: 4px;
-		overflow-x: auto;
+		max-height: 260px;
+		overflow: auto;
 		font-family: monospace;
 		white-space: pre-wrap;
 		margin: 0;
