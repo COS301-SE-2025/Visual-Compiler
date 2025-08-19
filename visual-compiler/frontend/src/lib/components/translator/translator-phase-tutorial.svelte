@@ -434,11 +434,11 @@ h3 {
     --heading-color: #90cdf4;
     --subheading-color: #a0aec0;
     --separator-color: #4a5568;
-    --block-background: #2d3748;
+    --block-background: #1a2a4a;
     --code-background: #2d3748;
     --code-text-color: #e2e8f0;
     --code-highlight-color: #63b3ed;
-    --navigation-background: #2d3748;
+    --navigation-background: #1a2a4a;
     --button-background: #3182ce;
     --button-hover-background: #2b6cb0;
     --button-text-color: #e2e8f0;
