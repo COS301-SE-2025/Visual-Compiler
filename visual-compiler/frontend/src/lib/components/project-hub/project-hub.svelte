@@ -128,26 +128,27 @@
 
 			if (data.message === "Retrieved users project details") {
 				if (data.results) {
-					// Update lexer and parser state with proper structure
+					// Update lexer and parser state
 					updateLexerStateFromProject({
 						lexing: data.results.lexing,
-						parsing: {
-							grammar: data.results.parsing?.grammar || null,
-							tree: data.results.parsing?.tree || null
-						}
+						parsing: data.results.parsing
 					});
 
-					// Update phase completion status
-					const hasTokens = !!(data.results.lexing.tokens && data.results.lexing.tokens.length > 0);
-					const hasCode = !!data.results.lexing.code;
-					const hasTree = !!(data.results.parsing?.tree);
+					// Update phase completion status with all phases
+					const hasTokens = !!(data.results.lexing?.tokens && data.results.lexing.tokens.length > 0);
+					const hasCode = !!data.results.lexing?.code;
+					// More specific check for parser completion
+					const hasTree = !!(data.results.parsing?.tree?.root);
+					const hasSymbolTable = !!(data.results.lexing?.symbol_table);
+					const hasAnalysis = hasSymbolTable && !data.results.lexing?.analyser_error;
 					
+					// Update the phase completion status store directly
 					phase_completion_status.set({
 						source: hasCode,
 						lexer: hasTokens,
-						parser: hasTree,
-						analyser: !!(data.results.lexing.symbol_table && !data.results.lexing.analyser_error),
-						translator: !!(data.results.lexing.translated_code && data.results.lexing.translated_code.length > 0)
+						parser: hasTree,  // This needs to be true when a valid tree exists
+						analyser: hasAnalysis,
+						translator: !!(data.results.lexing?.translated_code && data.results.lexing.translated_code.length > 0)
 					});
 
 					// Handle source code if it exists
