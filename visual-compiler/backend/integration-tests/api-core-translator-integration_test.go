@@ -52,6 +52,61 @@ func TestReadRules_Failed(t *testing.T) {
 	}
 }
 
+func TestReadRules_RegexFailed(t *testing.T) {
+	server := startServerCore(t)
+	defer closeServerCore(t, server)
+
+	loginUser(t)
+
+	data := map[string]interface{}{
+		"users_id":     test_user_id,
+		"project_name": project_name,
+		"translation_rules": []map[string]interface{}{
+			{
+				"sequence": []string{
+					"KEYWORD OPERATOR NUMBER PUNCTUATION",
+				},
+				"translation": []string{
+					"MOVE REGISTER {IDENTIFIER}",
+					"ADDI REGISTER {NUMBER}",
+					"MOVE {IDENTIFIER} REGISTER",
+				},
+			},
+			{
+				"sequence": []string{
+					"KEYWORD  ASSIGNMENT INTEGER OPERATOR INTEGER SEPARATOR",
+				},
+				"translation": []string{
+					"MOVE REGISTER {IDENTIFIER}",
+					"ADDI REGISTER {INTEGER}",
+					"ADDI REGISTER {INTEGER}",
+					"MOVE {IDENTIFIER} REGISTER",
+				},
+			},
+		},
+	}
+
+	req, err := json.Marshal(data)
+
+	if err != nil {
+		t.Errorf("converting data to json failed")
+	}
+
+	res, err := http.Post(
+		"http://localhost:8080/api/translating/readRules", "application/json",
+		bytes.NewBuffer(req),
+	)
+	if err != nil {
+		t.Errorf("Error not expected")
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusBadRequest {
+		body_bytes, _ := io.ReadAll(res.Body)
+		t.Errorf("Translator not working: %s", string(body_bytes))
+	}
+}
+
 func TestReadRules_Success(t *testing.T) {
 	server := startServerCore(t)
 	defer closeServerCore(t, server)
