@@ -1,3 +1,6 @@
+//go:build !coverage
+// +build !coverage
+
 // Package Main for the main entry into the API.
 package main
 
@@ -7,7 +10,6 @@ import (
 
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/routers"
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/db"
-	_ "github.com/COS301-SE-2025/Visual-Compiler/backend/docs"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
