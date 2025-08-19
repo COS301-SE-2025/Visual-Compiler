@@ -370,6 +370,15 @@
         <pre class="source-display">{source_code || 'No source code available'}</pre>
     </div>
 
+    <div class="instructions-section">
+		<div class="instructions-content">
+			<h4 class="instructions-header">Instructions</h4>
+			<p class="instructions-text">
+				Enter a grammar to parse your tokens and link the terminals of your grammar to your token types.
+			</p>
+		</div>
+	</div>
+
     <div class="grammar-editor">
         <div class="grammar-header">
             <h3>Context-Free Grammar</h3>
@@ -466,7 +475,7 @@
         padding: 1.5rem;
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 0rem;
     }
     .parser-heading-h1 {
         color: black;
@@ -476,7 +485,7 @@
         margin-bottom: 0;
     }
     .source-code-section {
-        margin-bottom: 1rem;
+        margin-top: 0rem;
     }
     .source-code-header {
         color: #444;
@@ -492,6 +501,36 @@
         white-space: pre-wrap;
         margin: 0;
     }
+    
+    .instructions-section {
+		margin: 1.5rem 0 2rem 0;
+        margin-top: 2rem;
+		background: #f8f9fa;
+		border-radius: 8px;
+		border-left: 4px solid #bed2e6;
+		transition: background-color 0.3s ease, border-color 0.3s ease;
+	}
+
+	.instructions-content {
+		padding: 1.25rem 1.5rem;
+	}
+
+	.instructions-header {
+		margin: 0 0 0.75rem 0;
+		font-size: 1rem;
+		font-weight: 600;
+		color: #333;
+		transition: color 0.3s ease;
+	}
+
+	.instructions-text {
+		margin: 0;
+		font-size: 0.9rem;
+		line-height: 1.5;
+		color: #555;
+		transition: color 0.3s ease;
+	}
+    
     .grammar-editor {
         background: #f8f9fa;
         padding: 1.5rem;

@@ -1000,7 +1000,7 @@
 		<div class="instructions-content">
 			<h4 class="instructions-header">Instructions</h4>
 			<p class="instructions-text">
-				Mock Data
+				Enter regular expressions or an automata to tokenise your source code. The type that you choose for each token is important.
 			</p>
 		</div>
 	</div>
@@ -1460,7 +1460,7 @@
 		margin: 1.5rem 0 2rem 0;
 		background: #f8f9fa;
 		border-radius: 8px;
-		border-left: 4px solid #007acc;
+		border-left: 4px solid #bed2e6;
 		transition: background-color 0.3s ease, border-color 0.3s ease;
 	}
 
