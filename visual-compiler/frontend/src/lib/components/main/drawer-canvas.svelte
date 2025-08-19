@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Svelvet, Node, Anchor } from 'svelvet';
+	import { Svelvet, Node, Anchor, Edge } from 'svelvet';
 	import type { Writable } from 'svelte/store';
 	import type { NodeType, NodeConnection } from '$lib/types';
 	import { theme } from '../../stores/theme';
@@ -18,10 +18,31 @@
 	export let onConnectionChange: (connections: NodeConnection[]) => void = () => {};
 
 	// Track physical connections between nodes
-	let nodeConnections: NodeConnection[] = [...initialConnections];
+	let nodeConnections: NodeConnection[] = [];
+	
+	// Separate array for edges to render (delayed restoration)
+	let edgesToRender: NodeConnection[] = [];
 
-	// Make nodeConnections reactive to changes in initialConnections
-	$: nodeConnections = [...initialConnections];
+	// Handle initial connections with delayed edge rendering
+	$: if (initialConnections && initialConnections.length > 0) {
+		console.log('✅ Initial connections received:', initialConnections);
+		nodeConnections = [...initialConnections];
+		onConnectionChange(nodeConnections);
+		
+		// Delay edge rendering to ensure nodes are ready
+		setTimeout(() => {
+			console.log('🔗 Rendering edges after delay');
+			edgesToRender = [...initialConnections];
+		}, 500);
+	}
+
+	// Clear connections when initialConnections is empty
+	$: if (initialConnections && initialConnections.length === 0 && nodeConnections.length > 0) {
+		console.log('🧹 Clearing connections');
+		nodeConnections = [];
+		edgesToRender = [];
+		onConnectionChange(nodeConnections);
+	}
 
 	// Function to restore nodes to their original saved positions
 	function restoreOriginalPositions(nodesList: CanvasNode[]): CanvasNode[] {
@@ -105,6 +126,7 @@
 			};
 			
 			nodeConnections = [...nodeConnections, newConnection];
+			edgesToRender = [...edgesToRender, newConnection];
 			onConnectionChange(nodeConnections);
 			console.log('Updated connections:', nodeConnections);
 		}
@@ -120,6 +142,9 @@
 		const targetNodeId = targetNode.id.replace('N-', '');
 		
 		nodeConnections = nodeConnections.filter(conn => 
+			!(conn.sourceNodeId === sourceNodeId && conn.targetNodeId === targetNodeId)
+		);
+		edgesToRender = edgesToRender.filter(conn => 
 			!(conn.sourceNodeId === sourceNodeId && conn.targetNodeId === targetNodeId)
 		);
 		onConnectionChange(nodeConnections);
@@ -153,11 +178,6 @@
 		<Svelvet 
 			bind:this={canvas_el} 
 			theme={'custom-theme'}
-			edges={nodeConnections.map(conn => ({
-				source: conn.sourceNodeId,
-				target: conn.targetNodeId,
-				id: conn.id
-			}))}
 			on:connection={handleConnection}
 			on:disconnection={handleDisconnection}
 			on:nodeMove={(event) => {
@@ -184,6 +204,14 @@
 					inputs={node.type !== 'source' ? 1 : 0}
 					outputs={node.type !== 'translator' ? 1 : 0}
 					on:nodeClicked={() => onNodeClick(node.type)}
+				/>
+			{/each}
+			
+			{#each edgesToRender as connection (connection.id)}
+				<Edge
+					source={connection.sourceNodeId}
+					target={connection.targetNodeId}
+					id={connection.id}
 				/>
 			{/each}
 		</Svelvet>
