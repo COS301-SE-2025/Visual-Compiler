@@ -31,6 +31,11 @@ export default defineConfig(({ mode }) => ({
 				'src/lib/types.ts',
 				'src/lib/index.ts',
 				
+				// Empty or unused files
+				'src/lib/stores/navigation.ts',
+				'src/lib/components/main/unsaved-changes-confirmation.svelte',
+				'src/lib/components/main/unsaved-changes-confirmation-new.svelte',
+				
 				// Test utilities and mocks
 				'tests/**/*.svelte',
 				'**/*{.,_}{test,spec,mock}.{js,ts,svelte}',
