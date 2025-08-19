@@ -6,12 +6,14 @@
 	import { theme } from '../../lib/stores/theme';
 	import { projectName } from '$lib/stores/project';
 	import { pipelineStore } from '$lib/stores/pipeline';
+	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import NavBar from '$lib/components/main/nav-bar.svelte';
 	import Toolbox from '$lib/components/main/Toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 	import WelcomeOverlay from '$lib/components/project-hub/project-hub.svelte';
 	import ClearCanvasConfirmation from '$lib/components/main/clear-canvas-confirmation.svelte';
+	import { phase_completion_status } from '$lib/stores/pipeline';
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -192,14 +194,6 @@
 	let translationError: any = null;
 	let savedProjectData: object | null = null;
 
-	// --- CONNECTION TRACKING STATE ---
-	let phase_completion_status = {
-		source: false,
-		lexer: false,
-		parser: false,
-		analyser: false,
-		translator: false
-	};
 
 	// Handle physical connection changes from canvas
 	function handleConnectionChange(connections: NodeConnection[]) {
@@ -226,8 +220,18 @@
 		return currentNodes.find(node => node.type === nodeType) || null;
 	}
 
+
+
+	// Add subscription to phase completion status
+	let completion_status;
+	phase_completion_status.subscribe(value => {
+	    completion_status = value;
+	});
+
 	function validateNodeAccess(nodeType: NodeType): boolean {
 		const currentNodes = get(nodes);
+		const confirmedCode = get(confirmedSourceCode);
+		source_code = confirmedCode; // Keep local variable in sync
 		
 		switch (nodeType) {
 			case 'source':
@@ -240,8 +244,8 @@
 					AddToast('Missing Source Code: Add a Source Code node from the toolbox to begin lexical analysis', 'error');
 					return false;
 				}
-				// Check if source code has been submitted
-				if (!source_code.trim()) {
+				// Check if source code has been submitted using the confirmedSourceCode store
+				if (!confirmedCode.trim()) {
 					AddToast('No source code provided: Please enter and submit your source code before proceeding to lexical analysis', 'error');
 					return false;
 				}
@@ -275,8 +279,8 @@
 					AddToast('Missing Source→Lexer connection: Connect these nodes to enable data flow', 'error');
 					return false;
 				}
-				// Check if lexer phase has been completed
-				if (!phase_completion_status.lexer) {
+				// Check if lexer phase has been completed using the store value
+				if (!completion_status.lexer) {
 					AddToast('Lexical analysis incomplete: Complete tokenization in the Lexer before parsing', 'error');
 					return false;
 				}
@@ -570,7 +574,8 @@
 			show_code_input = true;
 		} else {
 			selected_phase = type;
-			if (!source_code.trim()) {
+			const confirmedCode = get(confirmedSourceCode);
+			if (!confirmedCode.trim()) {
 				AddToast('Source code required: Please add source code to begin the compilation process', 'error');
 				selected_phase = null;
 				return;
@@ -627,6 +632,7 @@
 	function handleCodeSubmit(code: string) {
 		show_tokens = false;
 		source_code = code;
+		confirmedSourceCode.set(code); // Update the store
 		show_code_input = false;
 		// Mark source phase as complete when code is submitted
 		phase_completion_status.source = true;

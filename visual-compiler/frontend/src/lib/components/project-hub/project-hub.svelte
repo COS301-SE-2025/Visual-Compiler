@@ -7,6 +7,8 @@
 	import ProjectNamePrompt from './project-name-prompt.svelte';
 	import DeleteConfirmPrompt from './delete-confirmation.svelte'; 
 	import { AddToast } from '$lib/stores/toast';
+	import { updateLexerStateFromProject } from '$lib/stores/lexer';
+	import { phase_completion_status } from '$lib/stores/pipeline';
 
 	const dispatch = createEventDispatcher();
 
@@ -123,40 +125,54 @@
 				pipelineData: data.results?.pipeline,
 				fullResponse: data
 			});
-			
+
 			if (data.message === "Retrieved users project details") {
-				// Handle source code if it exists
-				if (data.results?.lexing?.code) {
-					confirmedSourceCode.set(data.results.lexing.code);
-					AddToast('Source code restored from project', 'success');
-				} else {
-					confirmedSourceCode.set('');
-				}
+				if (data.results?.lexing) {
+					// Update lexer state
+					updateLexerStateFromProject(data.results);
 
-				// Check if there's pipeline data
-				if (data.results && data.results.pipeline) {
-					// Update the pipeline store with the saved pipeline data
-					pipelineStore.set(data.results.pipeline);
-					console.log('Restored pipeline:', data.results.pipeline);
-					AddToast('Pipeline restored successfully', 'success');
-
-					await tick();
-					connectNode(data.results.pipeline); 
-				} else {
-					// If no pipeline data, initialize with empty state
-					pipelineStore.set({
-						nodes: [],
-						connections: [],
-						lastSaved: null
+					// Update phase completion status directly using the store
+					const hasTokens = !!(data.results.lexing.tokens && data.results.lexing.tokens.length > 0);
+					const hasCode = !!data.results.lexing.code;
+					
+					phase_completion_status.set({
+						source: hasCode,
+						lexer: hasTokens,
+						parser: !!(data.results.lexing.tree && !data.results.lexing.parsing_error),
+						analyser: !!(data.results.lexing.symbol_table && !data.results.lexing.analyser_error),
+						translator: !!(data.results.lexing.translated_code && data.results.lexing.translated_code.length > 0)
 					});
-					console.log('No saved pipeline found, initialized empty state');
-				}
 
-				// Store the selected project name in the store
-				projectName.set(selectedProjectName);
-				
-				// Close the project hub modal
-				handleClose();
+					// Handle source code if it exists
+					if (hasCode) {
+						confirmedSourceCode.set(data.results.lexing.code);
+					}
+
+					// Check if there's pipeline data
+					if (data.results && data.results.pipeline) {
+						// Update the pipeline store with the saved pipeline data
+						pipelineStore.set(data.results.pipeline);
+						console.log('Restored pipeline:', data.results.pipeline);
+						AddToast('Pipeline restored successfully', 'success');
+
+						await tick();
+						connectNode(data.results.pipeline); 
+					} else {
+						// If no pipeline data, initialize with empty state
+						pipelineStore.set({
+							nodes: [],
+							connections: [],
+							lastSaved: null
+						});
+						console.log('No saved pipeline found, initialized empty state');
+					}
+
+					// Store the selected project name in the store
+					projectName.set(selectedProjectName);
+					
+					// Close the project hub modal
+					handleClose();
+				}
 			} else {
 				console.error('Failed to retrieve project details');
 				AddToast('Failed to retrieve project details', 'error');
