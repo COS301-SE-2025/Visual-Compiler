@@ -1,13 +1,27 @@
 <script lang="ts">
-    // This script defines the component's props, which receive data from the parent.
-    // It expects the current compiler phase, a list of generated tokens,
-    // a list of any unexpected tokens, and a boolean to control visibility.
     import type { Token } from '$lib/types';
+    import { lexerState } from '$lib/stores/lexer';
+    import { onDestroy } from 'svelte';
 
     export let phase: string;
     export let tokens: Token[] = [];
     export let unexpected_tokens: string[] = [];
     export let show_tokens = false;
+
+    // Subscribe to lexer state to show saved tokens
+    let unsubscribeLexer = lexerState.subscribe(state => {
+        if (state.tokens) {
+            tokens = state.tokens;
+            show_tokens = true;
+        }
+        if (state.tokens_unidentified) {
+            unexpected_tokens = state.tokens_unidentified;
+        }
+    });
+
+    onDestroy(() => {
+        unsubscribeLexer();
+    });
 </script>
 
 <div class="artifact-viewer">

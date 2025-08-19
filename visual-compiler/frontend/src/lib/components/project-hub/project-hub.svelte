@@ -123,14 +123,14 @@
 				pipelineData: data.results?.pipeline,
 				fullResponse: data
 			});
-			
+
 			if (data.message === "Retrieved users project details") {
 				// Handle source code if it exists
 				if (data.results?.lexing?.code) {
-					confirmedSourceCode.set(data.results.lexing.code);
-					AddToast('Source code restored from project', 'success');
-				} else {
-					confirmedSourceCode.set('');
+						confirmedSourceCode.set(data.results.lexing.code);
+						AddToast('Source code restored from project', 'success');
+					} else {
+						confirmedSourceCode.set('');
 				}
 
 				// Check if there's pipeline data

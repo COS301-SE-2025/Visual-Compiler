@@ -6,6 +6,7 @@
 	import { theme } from '../../lib/stores/theme';
 	import { projectName } from '$lib/stores/project';
 	import { pipelineStore } from '$lib/stores/pipeline';
+	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import NavBar from '$lib/components/main/nav-bar.svelte';
 	import Toolbox from '$lib/components/main/Toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
@@ -228,6 +229,8 @@
 
 	function validateNodeAccess(nodeType: NodeType): boolean {
 		const currentNodes = get(nodes);
+		const confirmedCode = get(confirmedSourceCode);
+		source_code = confirmedCode; // Keep local variable in sync
 		
 		switch (nodeType) {
 			case 'source':
@@ -240,8 +243,8 @@
 					AddToast('Missing Source Code: Add a Source Code node from the toolbox to begin lexical analysis', 'error');
 					return false;
 				}
-				// Check if source code has been submitted
-				if (!source_code.trim()) {
+				// Check if source code has been submitted using the confirmedSourceCode store
+				if (!confirmedCode.trim()) {
 					AddToast('No source code provided: Please enter and submit your source code before proceeding to lexical analysis', 'error');
 					return false;
 				}
@@ -570,7 +573,8 @@
 			show_code_input = true;
 		} else {
 			selected_phase = type;
-			if (!source_code.trim()) {
+			const confirmedCode = get(confirmedSourceCode);
+			if (!confirmedCode.trim()) {
 				AddToast('Source code required: Please add source code to begin the compilation process', 'error');
 				selected_phase = null;
 				return;
@@ -627,6 +631,7 @@
 	function handleCodeSubmit(code: string) {
 		show_tokens = false;
 		source_code = code;
+		confirmedSourceCode.set(code); // Update the store
 		show_code_input = false;
 		// Mark source phase as complete when code is submitted
 		phase_completion_status.source = true;
