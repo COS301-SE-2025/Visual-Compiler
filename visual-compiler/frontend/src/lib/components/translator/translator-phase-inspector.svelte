@@ -15,8 +15,16 @@
 	// --- DEFAULT RULES DATA ---
 	const DEFAULT_TRANSLATION_RULES = [
 		{
-			tokenSequence: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, INTEGER, SEPARATOR',
-			lines: ['mov \t rax, {INTEGER}', 'add \t rax, {INTEGER}', 'mov \t [{IDENTIFIER}], rax']
+			tokenSequence: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, DELIMITER',
+			lines: ['add     rax, {INTEGER}', 'mov     [{IDENTIFIER}], rax']
+		},
+		{
+			tokenSequence: 'KEYWORD, IDENTIFIER, OPEN_BRACKET, KEYWORD, IDENTIFIER, CLOSE_BRACKET, OPEN_SCOPE, IDENTIFIER, ASSIGNMENT, IDENTIFIER, OPERATOR, INTEGER, DELIMITER, KEYWORD, IDENTIFIER, DELIMITER, CLOSE_SCOPE',
+			lines: ['func {IDENTIFIER}:', '     mov     rbx, [{IDENTIFIER}]', '     add     rbx, {INTEGER}', '     mov     [{IDENTIFIER}], rbx', '     return']
+		},
+		{
+			tokenSequence: 'CONTROL, IDENTIFIER, CONTROL, OPEN_BRACKET, INTEGER, CLOSE_BRACKET, OPEN_SCOPE, IDENTIFIER, ASSIGNMENT, IDENTIFIER, OPEN_BRACKET, IDENTIFIER, CLOSE_BRACKET, DELIMITER, KEYWORD, OPEN_BRACKET, IDENTIFIER, CLOSE_BRACKET, DELIMITER, CLOSE_SCOPE',
+			lines: ['func {CONTROL}:', '     jump    [{IDENTIFIER}], {INTEGER}', '     param   rcx, [{IDENTIFIER}]', '     call    {IDENTIFIER}', '     print   [{IDENTIFIER}]']
 		}
 	];
 
@@ -227,6 +235,15 @@
 		</div>
 	</div>
 
+	<div class="instructions-section">
+		<div class="instructions-content">
+			<h4 class="instructions-header">Instructions</h4>
+			<p class="instructions-text">
+				Enter translation rules with a sequence of tokens and their corresponding target code. Link the token types in the target code using &#123; and &#125; on either side.
+			</p>
+		</div>
+	</div>
+
 	<div class="section">
 		<h2 class="section-heading">Translation Rules</h2>
 		<div class="rules-container">
@@ -347,6 +364,35 @@
 		position: relative;
 	}
 
+    .instructions-section {
+		margin-top: 0.8rem;
+		margin-bottom: 0.5rem;
+		background: #f8f9fa;
+		border-radius: 8px;
+		border-left: 4px solid #bed2e6;
+		transition: background-color 0.3s ease, border-color 0.3s ease;
+	}
+
+	.instructions-content {
+		padding: 1.25rem 1.5rem;
+	}
+
+	.instructions-header {
+		margin: 0 0 0.75rem 0;
+		font-size: 1rem;
+		font-weight: 600;
+		color: #333;
+		transition: color 0.3s ease;
+	}
+
+	.instructions-text {
+		margin: 0;
+		font-size: 0.9rem;
+		line-height: 1.5;
+		color: #555;
+		transition: color 0.3s ease;
+	}
+
 	.default-toggle-btn {
 		position: absolute;
 		right: 0;
@@ -460,6 +506,8 @@
 		white-space: pre-wrap;
 		word-wrap: break-word;
 		margin: 0;
+		max-height: 260px;
+		overflow: auto;
 	}
 
 	.rules-container {

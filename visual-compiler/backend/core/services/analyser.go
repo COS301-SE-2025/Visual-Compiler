@@ -471,9 +471,6 @@ func HandleAssignment(assignment_data AssignmentData, symbol_table SymbolTable, 
 						lhs_term_found = true
 					}
 
-					/*current_scope := symbol_table.SymbolScopes[len(symbol_table.SymbolScopes)-1]
-					symbol, term_found := current_scope[term.Type]
-					fmt.Printf("%v", current_scope)*/
 					symbol, err := LookupName(&symbol_table, term.Type)
 					if err == nil {
 						if symbol.Type == rule.LHSData {
@@ -580,9 +577,7 @@ func TraverseSyntaxTree(scope_rules []*ScopeRule, current_tree_node *TreeNode, s
 		if err != nil {
 			return fmt.Errorf("variable not declared within it's scope: %v", new_symbol.Name)
 		}
-	}
-
-	if new_symbol.Assign {
+	} else if new_symbol.Assign {
 		err := HandleAssignment(assignment_data, *symbol_table, type_rules)
 		if err != nil {
 			return fmt.Errorf("%v", err)

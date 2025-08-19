@@ -561,7 +561,7 @@
 		}
 
 		syntaxTreeData = null;
-		parsingError = null;
+		parsing_error = false;
 		translationError = null;
 		if (type === 'source') {
 			show_code_input = true;
@@ -582,33 +582,34 @@
 
 	let show_symbol_table = false;
 	let symbol_table: Symbol[] = [];
-	let analyser_error = '';
+	let analyser_error = false;
 	let analyser_error_details = '';
 
 	function handleReset() {
 		show_symbol_table = false;
 		symbol_table = [];
-		analyser_error = '';
+		analyser_error = false;
 		analyser_error_details = '';
 	}
 
-	function handleSymbolGeneration(data: { symbol_table: Symbol[]; error?: string; error_details?: string }) {
+	function handleSymbolGeneration(data: { symbol_table: Symbol[]; analyser_error?: boolean; analyser_error_details?: string }) {
 		if (data.symbol_table && data.symbol_table.length > 0) {
 			show_symbol_table = true;
 			symbol_table = data.symbol_table;
-			analyser_error = '';
+			analyser_error = false;
 			analyser_error_details = '';
 			// Mark analyser phase as complete when symbol table is generated successfully
 			phase_completion_status.analyser = true;
 		} else {
 			show_symbol_table = false;
-			analyser_error = data.error || 'Analysis failed';
-			analyser_error_details = data.error_details || '';
+			analyser_error = true;
+			analyser_error_details = data.analyser_error_details || '';
 		}
 	}
 
 	function handleTranslationReceived(event: CustomEvent<string[]>) {
 		translated_code = event.detail;
+		translationError = null;
 		// Mark translator phase as complete when translation is received
 		if (event.detail && event.detail.length > 0) {
 			phase_completion_status.translator = true;
@@ -643,6 +644,7 @@
 		artifactData = event.detail;
 		// Mark parser phase as complete when syntax tree is received
 		phase_completion_status.parser = true;
+		parsing_error = false;
 	}
 
 	let tokens: Token[] = [];
@@ -650,10 +652,12 @@
 	let translated_code: string[] = [];
 
 	let artifactData: SyntaxTree | null = null;
-	let parsingError: any = null;
+	let parsing_error: boolean=false;
+	let parsing_error_details: string="";
 
-	function handleParsingError(event: CustomEvent) {
-		parsingError = event.detail;
+	function handleParsingError(data: { parsing_error?: boolean; parsing_error_details?: string }) {
+		parsing_error = true;
+		parsing_error_details = data.parsing_error_details || '';
 		syntaxTreeData = null;
 	}
 </script>
@@ -763,7 +767,7 @@
 							on:treereceived={handleTreeReceived}
 							on:parsingerror={handleParsingError}
 						/>
-						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} {parsingError} />
+						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} {parsing_error}{parsing_error_details} />
 					{/if}
 
 					{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}
@@ -939,17 +943,18 @@
 		bottom: 20px;
 		right: 20px;
 		padding: 0.5rem 1rem;
-		background: #001a6e;
-		color: white;
+		background: #bed2e6;
+		color: black;
 		border: none;
 		border-radius: 4px;
 		cursor: pointer;
 		z-index: 1000;
 		margin-right: 1rem;
 		margin-bottom: 1rem;
+		font-weight: bold;
 	}
 	.return-button:hover {
-		background: #074799;
+		background: #a8bdd1;
 	}
 	.code-input-overlay {
 		position: fixed;

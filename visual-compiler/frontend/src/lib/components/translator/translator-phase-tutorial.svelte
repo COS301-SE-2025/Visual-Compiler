@@ -69,16 +69,16 @@
             <div class="tutorial-content-area">
                 {#if reactive_step === 1}
                     <div class="tutorial-step">
-                        <h3>1️⃣ Complete Lexing and Parsing</h3>
+                        <h3>1. Complete Lexing and Parsing</h3>
                         <div class="step-content">
-                            <p>🔄 Before using the translator, you must complete the lexing and parsing phases:</p>
+                            <p> Before using the translator, you must complete the lexing and parsing phases:</p>
                             <div class="token-list">
                                 <div class="token-item">
-                                    <span class="token-type">🔍 Lexing</span>
+                                    <span class="token-type">Lexing</span>
                                     <span class="token-desc">Break your source code into tokens</span>
                                 </div>
                                 <div class="token-item">
-                                    <span class="token-type">🌳 Parsing</span>
+                                    <span class="token-type">Parsing</span>
                                     <span class="token-desc">Use the tokens to create a syntax tree</span>
                                 </div>
                             </div>
@@ -89,20 +89,20 @@
                     </div>
                 {:else if reactive_step === 2}
                     <div class="tutorial-step">
-                        <h3>2️⃣ Define Translation Rules</h3>
+                        <h3>2. Define Translation Rules</h3>
                         <div class="step-content">
                             <p>📝 Click "+ Add New Rule" for each pattern you want to translate:</p>
                             <div class="example-block">
                                 <div class="example-header">
-                                    <span>📌 Example Rule for Addition</span>
+                                    <span>Example Rule for Addition</span>
                                 </div>
                                 <div class="example-content">
                                     <div class="type-pair">
-                                        <span class="type">🔗 Sequence:</span>
+                                        <span class="type">Sequence:</span>
                                         <code class="pattern-code">NUMBER, PLUS, NUMBER</code>
                                     </div>
                                     <div class="type-pair">
-                                        <span class="type">🔄 Translation:</span>
+                                        <span class="type">Translation:</span>
                                         <code class="pattern-code">ADD {NUMBER}, {NUMBER}</code>
                                     </div>
                                     <div class="output-section">
@@ -115,15 +115,16 @@
                     </div>
                 {:else if reactive_step === 3}
                     <div class="tutorial-step">
-                        <h3>3️⃣ Submit and Generate</h3>
+                        <h3>3. Submit and Generate</h3>
                         <div class="step-content">
-                            <p>📤 Click "Submit Rules" to generate your output:</p>
+                            <p> Click "Submit Rules" to generate your output:</p>
                             <div class="code-sample">
                                 <div class="code-header">
-                                    <span>🎯 Example Output for <code>10 + 5</code>:</span>
+                                    <span>-- Example Output for <code>10 + 5</code>:</span>
                                 </div>
                                 <pre class="code-output">
 📝 Assembly Output:
+
 ADD 10, 5
 MOV [result], RAX</pre>
                             </div>
@@ -131,9 +132,9 @@ MOV [result], RAX</pre>
                     </div>
                 {:else if reactive_step === 4}
                     <div class="tutorial-step">
-                        <h3>4️⃣ Token Types Reference</h3>
+                        <h3>4. Token Types Reference</h3>
                         <div class="step-content">
-                            <p>🔍 Use these token types to define your rules:</p>
+                            <p>Use these token types to define your rules:</p>
                             <div class="token-list">
                                 {#each token_types as { type, desc }}
                                     <div class="token-item">
@@ -146,21 +147,21 @@ MOV [result], RAX</pre>
                     </div>
                 {:else if reactive_step === 5}
                     <div class="tutorial-step">
-                        <h3>5️⃣ Ready-to-Use Examples</h3>
+                        <h3>5. Ready-to-Use Examples</h3>
                         <div class="step-content">
-                            <p>✨ Here are some examples to get you started:</p>
+                            <p> Here are some examples to get you started:</p>
                             {#each example_rules as { sequence, translation, source, output }}
                                 <div class="example-block">
                                     <div class="example-header">
-                                        <span>📌 Source Code: <code>{source}</code></span>
+                                        <span>Source Code: <code>{source}</code></span>
                                     </div>
                                     <div class="example-content">
                                         <div class="type-pair">
-                                            <span class="type">🔗 Sequence:</span>
+                                            <span class="type">Sequence:</span>
                                             <code class="pattern-code">{sequence}</code>
                                         </div>
                                         <div class="type-pair">
-                                            <span class="type">🔄 Translation:</span>
+                                            <span class="type">Translation:</span>
                                             <code class="pattern-code">{translation}</code>
                                         </div>
                                         <div class="output-section">
@@ -174,13 +175,13 @@ MOV [result], RAX</pre>
                     </div>
                 {:else if reactive_step === 6}
                     <div class="tutorial-step">
-                        <h3>6️⃣ Critical "Don'ts" and Warnings</h3>
+                        <h3>6. Critical "Don'ts" and Warnings</h3>
                         <div class="step-content">
-                            <p>⚠️ Avoid these common mistakes:</p>
+                            <p>Avoid these common mistakes:</p>
                             {#each critical_donts as { mistake, wrong, right }}
                                 <div class="example-block">
                                     <div class="example-header">
-                                        <span>🚫 {mistake}</span>
+                                        <span>{mistake}</span>
                                     </div>
                                     <div class="example-content">
                                         <div class="type-pair">
@@ -271,15 +272,6 @@ h3 {
 .tutorial-step {
     margin-bottom: 2rem;
     background-color: var(--block-background, #ffffff); /* Light mode default */
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for better aesthetics */
-    padding: 1rem;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.tutorial-step:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Hover effect */
 }
 
 .code-sample {
@@ -442,11 +434,11 @@ h3 {
     --heading-color: #90cdf4;
     --subheading-color: #a0aec0;
     --separator-color: #4a5568;
-    --block-background: #2d3748;
+    --block-background: #1a2a4a;
     --code-background: #2d3748;
     --code-text-color: #e2e8f0;
     --code-highlight-color: #63b3ed;
-    --navigation-background: #2d3748;
+    --navigation-background: #1a2a4a;
     --button-background: #3182ce;
     --button-hover-background: #2b6cb0;
     --button-text-color: #e2e8f0;
