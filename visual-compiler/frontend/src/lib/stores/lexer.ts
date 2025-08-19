@@ -41,6 +41,15 @@ export interface LexerState {
         regex: string;
         error: string;
     }>;
+    parser_data?: {
+        tree?: {
+            root: {
+                symbol: string;
+                value: string;
+                children: any[];
+            }
+        }
+    };
 }
 
 export const lexerState = writable<LexerState>({
@@ -60,6 +69,8 @@ export function updateLexerStateFromProject(projectData: any) {
     if (!projectData?.lexing) return;
 
     const lexingData = projectData.lexing;
+    const parsingData = projectData.parsing;
+
     lexerState.update(state => ({
         ...state,
         mode: lexingData.dfa ? 'AUTOMATA' : (lexingData.pairs ? 'REGEX' : null),
@@ -78,15 +89,11 @@ export function updateLexerStateFromProject(projectData: any) {
         transitions: lexingData.dfa?.transitions?.map((t: any) => 
             `${t.from},${t.label}->${t.to}`
         ).join('\n') || '',
-        // Update tokens and rules
         tokens: lexingData.tokens || null,
         tokens_unidentified: lexingData.tokens_unidentified || [],
-        userInputRows: lexingData.rules ? 
-            lexingData.rules.map((rule: any) => ({
-                type: rule.type,
-                regex: rule.regex,
-                error: ''
-            })) : 
-            [{ type: '', regex: '', error: '' }]
+        parser_data: parsingData ? {
+            tree: parsingData.tree,
+            grammar: parsingData.grammar
+        } : undefined
     }));
 }
