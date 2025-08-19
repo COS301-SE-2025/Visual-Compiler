@@ -211,7 +211,7 @@
         scope_rules = DEFAULT_SCOPE_RULES.map(r => ({ ...r }));
         next_scope_id = 1;
         type_rules = DEFAULT_TYPE_RULES.map(r => ({ ...r }));
-        next_type_id = 1;
+        next_type_id = 3;
         grammar_rules = { ...DEFAULT_GRAMMAR_RULES };
         show_default_rules = true;
         rules_submitted = false;
