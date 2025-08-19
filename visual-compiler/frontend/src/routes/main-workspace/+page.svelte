@@ -366,7 +366,7 @@
 					return false;
 				}
 				// Check if lexer phase has been completed
-				if (!phase_completion_status.lexer) {
+				if (!completion_status.lexer) {
 					AddToast('Lexical analysis incomplete: Complete tokenization before translation', 'error');
 					return false;
 				}
@@ -382,7 +382,7 @@
 					return false;
 				}
 				// Check if parser phase has been completed
-				if (!phase_completion_status.parser) {
+				if (!completion_status.parser) {
 					AddToast('Parsing incomplete: Complete syntax analysis before translation', 'error');
 					return false;
 				}
@@ -398,7 +398,7 @@
 					return false;
 				}
 				// Check if analyser phase has been completed
-				if (!phase_completion_status.analyser) {
+				if (!completion_status.analyser) {
 					AddToast('Analysis incomplete: Complete semantic analysis before translation', 'error');
 					return false;
 				}
