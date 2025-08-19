@@ -13,6 +13,7 @@
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 	import WelcomeOverlay from '$lib/components/project-hub/project-hub.svelte';
 	import ClearCanvasConfirmation from '$lib/components/main/clear-canvas-confirmation.svelte';
+	import { phase_completion_status } from '$lib/stores/pipeline';
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -193,14 +194,6 @@
 	let translationError: any = null;
 	let savedProjectData: object | null = null;
 
-	// --- CONNECTION TRACKING STATE ---
-	let phase_completion_status = {
-		source: false,
-		lexer: false,
-		parser: false,
-		analyser: false,
-		translator: false
-	};
 
 	// Handle physical connection changes from canvas
 	function handleConnectionChange(connections: NodeConnection[]) {
@@ -226,6 +219,14 @@
 		const currentNodes = get(nodes);
 		return currentNodes.find(node => node.type === nodeType) || null;
 	}
+
+
+
+	// Add subscription to phase completion status
+	let completion_status;
+	phase_completion_status.subscribe(value => {
+	    completion_status = value;
+	});
 
 	function validateNodeAccess(nodeType: NodeType): boolean {
 		const currentNodes = get(nodes);
@@ -278,8 +279,8 @@
 					AddToast('Missing Source→Lexer connection: Connect these nodes to enable data flow', 'error');
 					return false;
 				}
-				// Check if lexer phase has been completed
-				if (!phase_completion_status.lexer) {
+				// Check if lexer phase has been completed using the store value
+				if (!completion_status.lexer) {
 					AddToast('Lexical analysis incomplete: Complete tokenization in the Lexer before parsing', 'error');
 					return false;
 				}
