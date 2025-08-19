@@ -6,12 +6,14 @@
 	import { theme } from '../../lib/stores/theme';
 	import { projectName } from '$lib/stores/project';
 	import { pipelineStore } from '$lib/stores/pipeline';
+	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import NavBar from '$lib/components/main/nav-bar.svelte';
 	import Toolbox from '$lib/components/main/Toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 	import WelcomeOverlay from '$lib/components/project-hub/project-hub.svelte';
 	import ClearCanvasConfirmation from '$lib/components/main/clear-canvas-confirmation.svelte';
+	import { phase_completion_status } from '$lib/stores/pipeline';
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -199,14 +201,6 @@
 	let translationError: any = null;
 	let savedProjectData: object | null = null;
 
-	// --- CONNECTION TRACKING STATE ---
-	let phase_completion_status = {
-		source: false,
-		lexer: false,
-		parser: false,
-		analyser: false,
-		translator: false
-	};
 
 	// Handle physical connection changes from canvas
 	
@@ -252,6 +246,8 @@
 	// Validates if a node type can be accessed based on compilation pipeline requirements
 	function validateNodeAccess(nodeType: NodeType): boolean {
 		const currentNodes = get(nodes);
+		const confirmedCode = get(confirmedSourceCode);
+		source_code = confirmedCode; // Keep local variable in sync
 		
 		switch (nodeType) {
 			case 'source':
@@ -264,8 +260,8 @@
 					AddToast('Missing Source Code: Add a Source Code node from the toolbox to begin lexical analysis', 'error');
 					return false;
 				}
-				// Check if source code has been submitted
-				if (!source_code.trim()) {
+				// Check if source code has been submitted using the confirmedSourceCode store
+				if (!confirmedCode.trim()) {
 					AddToast('No source code provided: Please enter and submit your source code before proceeding to lexical analysis', 'error');
 					return false;
 				}
@@ -299,8 +295,8 @@
 					AddToast('Missing Source→Lexer connection: Connect these nodes to enable data flow', 'error');
 					return false;
 				}
-				// Check if lexer phase has been completed
-				if (!phase_completion_status.lexer) {
+				// Check if lexer phase has been completed using the store value
+				if (!completion_status.lexer) {
 					AddToast('Lexical analysis incomplete: Complete tokenization in the Lexer before parsing', 'error');
 					return false;
 				}
@@ -453,6 +449,7 @@
 
 		// Prepare the pipeline data
 		const canvasNodes = get(nodes);
+
 		const pipeline = {
 			nodes: canvasNodes,
 			connections: physical_connections,
@@ -461,6 +458,8 @@
 
 		// Update the pipeline store to keep it in sync
 		pipelineStore.set(pipeline);
+
+		console.log('Pipeline saved with anchors:', get(pipelineStore));
 
 		try {
 			const response = await fetch('http://localhost:8080/api/users/savePipeline', {
@@ -613,13 +612,14 @@
 		}
 
 		syntaxTreeData = null;
-		parsingError = null;
+		parsing_error = false;
 		translationError = null;
 		if (type === 'source') {
 			show_code_input = true;
 		} else {
 			selected_phase = type;
-			if (!source_code.trim()) {
+			const confirmedCode = get(confirmedSourceCode);
+			if (!confirmedCode.trim()) {
 				AddToast('Source code required: Please add source code to begin the compilation process', 'error');
 				selected_phase = null;
 				return;
@@ -638,7 +638,7 @@
 
 	let show_symbol_table = false;
 	let symbol_table: Symbol[] = [];
-	let analyser_error = '';
+	let analyser_error = false;
 	let analyser_error_details = '';
 
 	// handleReset
@@ -648,26 +648,22 @@
 	function handleReset() {
 		show_symbol_table = false;
 		symbol_table = [];
-		analyser_error = '';
+		analyser_error = false;
 		analyser_error_details = '';
 	}
 
-	// handleSymbolGeneration
-	// Return type: void
-	// Parameter type: { symbol_table: Symbol[]; error?: string; error_details?: string }
-	// Handles the generation of symbol table data and updates analysis state accordingly
-	function handleSymbolGeneration(data: { symbol_table: Symbol[]; error?: string; error_details?: string }) {
+	function handleSymbolGeneration(data: { symbol_table: Symbol[]; analyser_error?: boolean; analyser_error_details?: string }) {
 		if (data.symbol_table && data.symbol_table.length > 0) {
 			show_symbol_table = true;
 			symbol_table = data.symbol_table;
-			analyser_error = '';
+			analyser_error = false;
 			analyser_error_details = '';
 			// Mark analyser phase as complete when symbol table is generated successfully
 			phase_completion_status.analyser = true;
 		} else {
 			show_symbol_table = false;
-			analyser_error = data.error || 'Analysis failed';
-			analyser_error_details = data.error_details || '';
+			analyser_error = true;
+			analyser_error_details = data.analyser_error_details || '';
 		}
 	}
 
@@ -677,6 +673,7 @@
 	// Handles received translation data and updates the translator phase completion status
 	function handleTranslationReceived(event: CustomEvent<string[]>) {
 		translated_code = event.detail;
+		translationError = null;
 		// Mark translator phase as complete when translation is received
 		if (event.detail && event.detail.length > 0) {
 			phase_completion_status.translator = true;
@@ -699,6 +696,7 @@
 	function handleCodeSubmit(code: string) {
 		show_tokens = false;
 		source_code = code;
+		confirmedSourceCode.set(code); // Update the store
 		show_code_input = false;
 		// Mark source phase as complete when code is submitted
 		phase_completion_status.source = true;
@@ -727,6 +725,7 @@
 		artifactData = event.detail;
 		// Mark parser phase as complete when syntax tree is received
 		phase_completion_status.parser = true;
+		parsing_error = false;
 	}
 
 	let tokens: Token[] = [];
@@ -734,14 +733,12 @@
 	let translated_code: string[] = [];
 
 	let artifactData: SyntaxTree | null = null;
-	let parsingError: any = null;
+	let parsing_error: boolean=false;
+	let parsing_error_details: string="";
 
-	// handleParsingError
-	// Return type: void
-	// Parameter type: CustomEvent
-	// Handles parsing errors by storing error details and clearing syntax tree data
-	function handleParsingError(event: CustomEvent) {
-		parsingError = event.detail;
+	function handleParsingError(data: { parsing_error?: boolean; parsing_error_details?: string }) {
+		parsing_error = true;
+		parsing_error_details = data.parsing_error_details || '';
 		syntaxTreeData = null;
 	}
 </script>
@@ -851,7 +848,7 @@
 							on:treereceived={handleTreeReceived}
 							on:parsingerror={handleParsingError}
 						/>
-						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} {parsingError} />
+						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} {parsing_error}{parsing_error_details} />
 					{/if}
 
 					{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}
@@ -1027,17 +1024,18 @@
 		bottom: 20px;
 		right: 20px;
 		padding: 0.5rem 1rem;
-		background: #001a6e;
-		color: white;
+		background: #bed2e6;
+		color: black;
 		border: none;
 		border-radius: 4px;
 		cursor: pointer;
 		z-index: 1000;
 		margin-right: 1rem;
 		margin-bottom: 1rem;
+		font-weight: bold;
 	}
 	.return-button:hover {
-		background: #074799;
+		background: #a8bdd1;
 	}
 	.code-input-overlay {
 		position: fixed;

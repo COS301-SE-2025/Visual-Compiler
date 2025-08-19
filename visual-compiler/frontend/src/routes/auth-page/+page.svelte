@@ -52,7 +52,13 @@
 			const data = await response.json();
 
 			if (!response.ok) {
-				AddToast(`Registration failed: ${data.error || 'Please check your information and try again'}`, 'error');
+				if ((data.error).includes("Password")) {
+					AddToast(`Registration error: Password must be atleast 8 characters`, 'error');
+				}else if ((data.error).includes("Username")) {
+					AddToast(`Registration error: Username must be atleast 6 characters`, 'error');
+				}else{
+					AddToast(`Registration failed: ${data.error || 'Please check your information and try again'}`, 'error');
+				}
 				return;
 			}
 

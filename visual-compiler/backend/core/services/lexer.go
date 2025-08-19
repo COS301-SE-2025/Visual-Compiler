@@ -142,7 +142,7 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 				i++
 				r = rune(source[i])
 
-				if !(unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) || r == '-' || r == ')') {
+				if !(unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsSpace(r) || r == ';' || r == '_' || r == '.' || r == '-' || r == ')') {
 
 					builder.WriteRune(r)
 
@@ -176,6 +176,15 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 			tokens_unidentified = append(tokens_unidentified, word)
 		}
 	}
+
+	for current_token := 0; current_token < len(tokens_unidentified); current_token++ {
+		for other_token := current_token + 1; other_token < len(tokens_unidentified); other_token++ {
+			if tokens_unidentified[current_token] == tokens_unidentified[other_token] {
+				tokens_unidentified = append(tokens_unidentified[:other_token], tokens_unidentified[other_token+1:]...)
+				other_token--
+			}
+    }
+}
 
 	return tokens, tokens_unidentified, nil
 }
@@ -287,6 +296,15 @@ func CreateTokensFromDFA(source_code string, dfa Automata) ([]TypeValue, []strin
 			unidentified_token := source_code[source_pos:unexpected_pos]
 			tokens_unidentified = append(tokens_unidentified, unidentified_token)
 			source_pos = unexpected_pos
+		}
+	}
+
+	for current_token := 0; current_token < len(tokens_unidentified); current_token++ {
+			for other_token := current_token + 1; other_token < len(tokens_unidentified); other_token++ {
+				if tokens_unidentified[current_token] == tokens_unidentified[other_token] {
+					tokens_unidentified = append(tokens_unidentified[:other_token], tokens_unidentified[other_token+1:]...)
+					other_token--
+				}
 		}
 	}
 
@@ -1006,6 +1024,16 @@ func (c *Converter) parseAtom(regex string, position int) (*Fragment, int) {
 		return &Fragment{start: start, end: start}, position
 	}
 
+	if regex[position] == '\\' && position+1 < len(regex) {
+
+		start := c.newState()
+		end := c.newState()
+
+		c.addTransition(start, end, string(regex[position+1]))
+
+		return &Fragment{start: start, end: end}, position + 2
+	}
+
 	switch regex[position] {
 
 	case '(':
@@ -1015,13 +1043,20 @@ func (c *Converter) parseAtom(regex string, position int) (*Fragment, int) {
 
 		for i < len(regex) && level > 0 {
 
-			if regex[i] == '(' {
+			if regex[i] == '\\' {
+				i += 2
+				continue
+			} else if regex[i] == '(' {
 				level++
 			} else if regex[i] == ')' {
 				level--
 			}
 
 			i++
+		}
+
+		if level != 0 {
+			return nil, 0
 		}
 
 		inner := regex[position+1 : i-1]
@@ -1037,9 +1072,7 @@ func (c *Converter) parseAtom(regex string, position int) (*Fragment, int) {
 
 			start := c.newState()
 			end := c.newState()
-
 			c.addTransition(start, end, string(regex[position]))
-
 			return &Fragment{start: start, end: end}, position + 1
 		}
 

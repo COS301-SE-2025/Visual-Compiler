@@ -15,7 +15,7 @@
 			image_url: '/shinn-ru.jpg'
 		},
 		{
-			name: 'Yuthika Harripersad',
+			name: 'Tia Harripersad',
 			role1: 'Services Engineer',
 			role2: 'Testing Engineer',
 			image_url: '/tia.jpg'
