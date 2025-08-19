@@ -854,3 +854,14 @@ func TestConvertTreeToString_Valid(t *testing.T) {
 		}
 	}
 }
+
+func TestConvertTreeToString_NilNode(t *testing.T) {
+
+	expected_res := ""
+
+	tree_string := services.ConvertTreeToString(nil, "", true)
+	if strings.TrimSpace(tree_string) != strings.TrimSpace(expected_res) {
+		t.Errorf("Incorrect tree: \n%v", tree_string)
+	}
+
+}

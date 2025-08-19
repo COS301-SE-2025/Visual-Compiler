@@ -22,7 +22,7 @@ func TestReadRules_InvalidInput(t *testing.T) {
 	res.Header.Set("Content-Type", "application/json")
 	contxt.Request = res
 
-	handlers.StoreSourceCode(contxt)
+	handlers.ReadRules(contxt)
 
 	if rec.Code != http.StatusBadRequest {
 		var mess map[string]string
@@ -54,7 +54,7 @@ func TestTranslateCode_InvalidInput(t *testing.T) {
 	res.Header.Set("Content-Type", "application/json")
 	contxt.Request = res
 
-	handlers.StoreSourceCode(contxt)
+	handlers.TranslateCode(contxt)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("BadRequest status code expected")
