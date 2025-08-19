@@ -7,6 +7,7 @@
 	import ProjectNamePrompt from './project-name-prompt.svelte';
 	import DeleteConfirmPrompt from './delete-confirmation.svelte'; 
 	import { AddToast } from '$lib/stores/toast';
+	import { updateLexerStateFromProject } from '$lib/stores/lexer';
 
 	const dispatch = createEventDispatcher();
 
@@ -125,6 +126,11 @@
 			});
 
 			if (data.message === "Retrieved users project details") {
+				if (data.results) {
+					// Pass the entire results object to updateLexerStateFromProject
+					updateLexerStateFromProject(data.results);
+				}
+
 				// Handle source code if it exists
 				if (data.results?.lexing?.code) {
 						confirmedSourceCode.set(data.results.lexing.code);

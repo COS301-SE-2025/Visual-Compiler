@@ -36,6 +36,11 @@ export interface LexerState {
     startState: string;
     acceptedStates: string;
     transitions: string;
+    userInputRows: Array<{ 
+        type: string;
+        regex: string;
+        error: string;
+    }>;
 }
 
 export const lexerState = writable<LexerState>({
@@ -47,7 +52,8 @@ export const lexerState = writable<LexerState>({
     states: '',
     startState: '',
     acceptedStates: '',
-    transitions: ''
+    transitions: '',
+    userInputRows: [{ type: '', regex: '', error: '' }]
 });
 
 export function updateLexerStateFromProject(projectData: any) {
@@ -72,8 +78,15 @@ export function updateLexerStateFromProject(projectData: any) {
         transitions: lexingData.dfa?.transitions?.map((t: any) => 
             `${t.from},${t.label}->${t.to}`
         ).join('\n') || '',
-        rules: lexingData.rules || null,
+        // Update tokens and rules
         tokens: lexingData.tokens || null,
-        tokens_unidentified: lexingData.tokens_unidentified || null
+        tokens_unidentified: lexingData.tokens_unidentified || [],
+        userInputRows: lexingData.rules ? 
+            lexingData.rules.map((rule: any) => ({
+                type: rule.type,
+                regex: rule.regex,
+                error: ''
+            })) : 
+            [{ type: '', regex: '', error: '' }]
     }));
 }

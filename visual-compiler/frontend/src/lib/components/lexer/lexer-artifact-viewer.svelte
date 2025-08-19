@@ -1,26 +1,38 @@
 <script lang="ts">
     import type { Token } from '$lib/types';
     import { lexerState } from '$lib/stores/lexer';
-    import { onDestroy } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
 
     export let phase: string;
     export let tokens: Token[] = [];
     export let unexpected_tokens: string[] = [];
     export let show_tokens = false;
 
-    // Subscribe to lexer state to show saved tokens
-    let unsubscribeLexer = lexerState.subscribe(state => {
+    // Subscribe to lexer state
+    const unsubscribe = lexerState.subscribe(state => {
         if (state.tokens) {
             tokens = state.tokens;
             show_tokens = true;
         }
         if (state.tokens_unidentified) {
-            unexpected_tokens = state.tokens_unidentified;
+            unexpected_tokens = state.tokens_unidentified || [];
+        }
+    });
+
+    onMount(() => {
+        // Check initial lexer state for tokens
+        const state = get(lexerState);
+        if (state.tokens) {
+            tokens = state.tokens;
+            show_tokens = true;
+        }
+        if (state.tokens_unidentified) {
+            unexpected_tokens = state.tokens_unidentified || [];
         }
     });
 
     onDestroy(() => {
-        unsubscribeLexer();
+        unsubscribe();
     });
 </script>
 
