@@ -65,7 +65,10 @@
 	let confirmed_code = '';
 	const unsubscribe = confirmedSourceCode.subscribe(value => {
 		confirmed_code = value;
-		if (!code_text) code_text = value; // Auto fill input if empty
+		// Always update code_text when confirmed code changes
+		code_text = value;
+		// Set isConfirmed based on whether there is confirmed code
+		isConfirmed = !!value;
 	});
 
 	onDestroy(() => {

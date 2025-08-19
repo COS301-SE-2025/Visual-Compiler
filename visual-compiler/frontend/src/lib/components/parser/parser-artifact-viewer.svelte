@@ -1,6 +1,7 @@
 <script lang="ts">
 	// @ts-nocheck
 	import { onMount, afterUpdate } from 'svelte';
+	import { lexerState } from '$lib/stores/lexer';
 	import {
 		Network,
 		DataSet,
@@ -68,11 +69,11 @@
 		// Return type: void
 		// Parameter type(s): node (SyntaxTreeNode), parent_id (IdType | null)
 		// Recursively traverses the tree data to build nodes and edges for vis-network.
-		function buildNodesAndEdges(node: SyntaxTreeNode, parent_id: IdType | null) {
+		function buildNodesAndEdges(node: any, parent_id: IdType | null) {
 			const current_id = node_id_counter++;
 
 			let label_text = node.symbol;
-			if (node.value) {
+			if (node.value && node.value !== '') {
 				label_text += `\n(${node.value})`;
 			}
 
@@ -201,6 +202,19 @@
 			});
 		}
 	}
+
+	// Add a subscription to lexerState
+	lexerState.subscribe(state => {
+		if (state.parser_data?.tree) {
+			syntaxTree = state.parser_data.tree;
+			parsing_error = false;
+			parsing_error_details = "";
+			// Force re-render of the tree
+			if (tree_container) {
+				renderTree();
+			}
+		}
+	});
 </script>
 
 <svelte:window on:keydown={handleKeydown} />

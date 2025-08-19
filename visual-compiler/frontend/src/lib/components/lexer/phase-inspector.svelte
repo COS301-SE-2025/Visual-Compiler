@@ -7,6 +7,7 @@
 	import { fade, scale } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
+	import { lexerState } from '$lib/stores/lexer';
 
 	export let source_code = '';
 	export let onGenerateTokens: (data: {
@@ -321,6 +322,12 @@
 		showGenerateButton = false;
 		showRegexActionButtons = false;
 		submissionStatus = { show: false, success: false, message: '' };
+		
+		// Update the store when inputs change
+		lexerState.update(state => ({
+			...state,
+			userInputRows: [...userInputRows]
+		}));
 	}
 
 	$: {
@@ -505,10 +512,9 @@
 
 	function selectType(type: 'AUTOMATA' | 'REGEX') {
 		selectedType = type;
-		resetInputs();
 		showRegexActionButtons = false;
 		
-		// Reset visualization states
+		// Reset visualization states only
 		showNfaVis = false;
 		showDfaVis = false;
 		showRegexNfaVis = false;
@@ -518,13 +524,10 @@
 		currentAutomatonForModal = null;
 
 		if (type === 'REGEX') {
-			showDefault = false;
-			userInputRows = [{ type: '', regex: '', error: '' }];
-			inputRows = [{ type: '', regex: '', error: '' }];
-			editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
-			formError = '';
-			submissionStatus = { show: false, success: false, message: '' };
-			showGenerateButton = false;
+			// Use stored inputs if they exist
+			userInputRows = $lexerState.userInputRows.length > 0 
+				? [...$lexerState.userInputRows]
+				: [{ type: '', regex: '', error: '' }];
 		}
 	}
 
@@ -988,6 +991,67 @@
 				}
 			});
 		}
+	}
+
+	// Add a new function to format transitions
+	function formatTransitions(transitions: Array<{from: string, to: string, label: string}>): string {
+	    return transitions.map(t => `${t.from},${t.label}->${t.to}`).join('\n');
+	}
+
+	// Add a new function to format accepting states
+	function formatAcceptingStates(accepting: Array<{state: string, type: string}>): string {
+	    return accepting.map(a => `${a.state}->${a.type}`).join(', ');
+	}
+
+	// Add a watch on projectName store to update inputs when project changes
+	$: $projectName && updateInputsFromProject();
+
+	// Add function to update inputs from project data
+	async function updateInputsFromProject() {
+	    const userId = localStorage.getItem('user_id');
+	    const project = get(projectName);
+	    
+	    if (!userId || !project) return;
+
+	    try {
+	        const response = await fetch(
+	            `http://localhost:8080/api/users/getProject?project_name=${project}&users_id=${userId}`,
+	            {
+	                method: 'GET',
+	                headers: { 'accept': 'application/json' }
+	            }
+	        );
+
+	        if (!response.ok) return;
+
+	        const data = await response.json();
+	        
+	        if (data.results?.lexing) {
+	            // Update automata inputs if DFA exists
+	            if (data.results.lexing.dfa) {
+	                states = data.results.lexing.dfa.states.join(', ');
+	                startState = data.results.lexing.dfa.start;
+	                acceptedStates = formatAcceptingStates(data.results.lexing.dfa.accepting);
+	                transitions = formatTransitions(data.results.lexing.dfa.transitions);
+	            }
+
+	            // Update regex inputs if rules exist
+	            if (data.results.lexing.rules) {
+	                userInputRows = data.results.lexing.rules.map(rule => ({
+	                    type: rule.type,
+	                    regex: rule.regex,
+	                    error: ''
+	                }));
+	            }
+
+	            // If there's no input rows, add one empty row
+	            if (userInputRows.length === 0) {
+	                userInputRows = [{ type: '', regex: '', error: '' }];
+	            }
+	        }
+	    } catch (error) {
+	        console.error('Error updating inputs:', error);
+	    }
 	}
 </script>
 

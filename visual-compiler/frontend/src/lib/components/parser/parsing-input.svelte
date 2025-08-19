@@ -3,6 +3,7 @@
     import { AddToast } from '$lib/stores/toast';
     import { projectName } from '$lib/stores/project';
     import { get } from 'svelte/store';
+    import { lexerState } from '$lib/stores/lexer';
 
     export let source_code = '';
 
@@ -380,6 +381,33 @@
                 `Failed to generate syntax tree: ${error.message}. Please ensure tokens and grammar are valid.`,
                 'error'
             );
+        }
+    }
+
+    // Add this reactive statement to handle project data
+    $: if ($lexerState?.parser_data?.grammar) {
+        const parserData = $lexerState.parser_data.grammar;
+        
+        // Safely handle variables and terminals with null checks
+        variables_string = parserData.variables ? parserData.variables.join(', ') : '';
+        terminals_string = parserData.terminals ? parserData.terminals.join(', ') : '';
+        
+        // Safely handle rules
+        if (parserData.rules && Array.isArray(parserData.rules)) {
+            grammar_rules = parserData.rules.map((rule, index) => {
+                rule_id_counter = index + 1;
+                return {
+                    id: rule_id_counter,
+                    nonTerminal: rule.input || '',
+                    translations: Array.isArray(rule.output) ? rule.output.map((output, tIndex) => ({
+                        id: ++translation_id_counter,
+                        value: output
+                    })) : []
+                };
+            });
+
+            show_default_grammar = false;
+            is_grammar_submitted = true;
         }
     }
 </script>

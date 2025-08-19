@@ -195,6 +195,7 @@
 
 	.line-numbers span {
 		display: block;
+		line-height: 1.5;
 	}
 
 	.code-block {

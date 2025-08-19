@@ -1,16 +1,19 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { writable, get, type Writable } from 'svelte/store';
 	import type { NodeType, Token, SyntaxTree, NodeConnection } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
 	import { projectName } from '$lib/stores/project';
 	import { pipelineStore } from '$lib/stores/pipeline';
+	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import NavBar from '$lib/components/main/nav-bar.svelte';
 	import Toolbox from '$lib/components/main/Toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 	import WelcomeOverlay from '$lib/components/project-hub/project-hub.svelte';
+	import ClearCanvasConfirmation from '$lib/components/main/clear-canvas-confirmation.svelte';
+	import { phase_completion_status } from '$lib/stores/pipeline';
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -42,6 +45,28 @@
 	let showWelcomeOverlay = false;
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
+	let showClearCanvasModal = false;
+
+	// --- UNSAVED CHANGES TRACKING ---
+	let lastSavedState: string | null = null;
+
+	// Function to handle beforeunload event
+	const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+		// Get current pipeline state
+		const currentNodes = get(nodes);
+		const currentState = JSON.stringify({
+			nodes: currentNodes,
+			connections: physicalConnections
+		});
+
+		// Compare with last saved state
+		if (lastSavedState && currentState !== lastSavedState) {
+			// There are unsaved changes
+			event.preventDefault();
+			event.returnValue = '';
+			return '';
+		}
+	};
 
 	// Subscribe to the project name store
 	let currentProjectName = '';
@@ -70,18 +95,18 @@
 					});
 					physicalConnections = validConnections;
 				}
+
+				// Update last saved state when project is loaded
+				lastSavedState = JSON.stringify({
+					nodes: pipeline.nodes,
+					connections: physicalConnections
+				});
 			}
 		}
 	});
 
-	onMount(() => {
-		return () => {
-			// Cleanup subscriptions
-			unsubscribePipeline();
-		};
-	});
-
 	onMount(async () => {
+		// Load dynamic components
 		LexerPhaseTutorial = (await import('$lib/components/lexer/lexer-phase-tutorial.svelte')).default;
 		LexerPhaseInspector = (await import('$lib/components/lexer/phase-inspector.svelte')).default;
 		LexerArtifactViewer = (await import('$lib/components/lexer/lexer-artifact-viewer.svelte'))
@@ -111,6 +136,7 @@
 			await import('$lib/components/translator/translator-artifact-viewer.svelte')
 		).default;
 
+		// Setup theme and UI state
 		document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
 		if (!localStorage.getItem('hasSeenDragTip')) {
 			show_drag_tip = true;
@@ -118,9 +144,40 @@
 
 		if (sessionStorage.getItem('showWelcomeOverlay') === 'true') {
 			showWelcomeOverlay = true; // Trigger the overlay to show.
+		}
 
-			// // Important: Remove the flag so the overlay doesn't reappear on refresh.
-			// sessionStorage.removeItem('showWelcomeOverlay');
+		// --- UNSAVED CHANGES PROTECTION ---
+		// Only add event listener if we're in the browser
+		if (typeof window !== 'undefined') {
+			window.addEventListener('beforeunload', handleBeforeUnload);
+
+			// Initialize lastSavedState for blank canvas
+			if (!lastSavedState) {
+				lastSavedState = JSON.stringify({
+					nodes: [],
+					connections: []
+				});
+			}
+		}
+
+		// Return cleanup function
+		return () => {
+			// Cleanup subscriptions
+			unsubscribePipeline();
+			
+			// Cleanup event listener if in browser
+			if (typeof window !== 'undefined') {
+				window.removeEventListener('beforeunload', handleBeforeUnload);
+			}
+		};
+	});
+
+	// Use onDestroy as additional cleanup
+	onDestroy(() => {
+		// This ensures cleanup even if the onMount return function doesn't run
+		// Only remove event listener if we're in the browser
+		if (typeof window !== 'undefined') {
+			window.removeEventListener('beforeunload', handleBeforeUnload);
 		}
 	});
 
@@ -137,14 +194,6 @@
 	let translationError: any = null;
 	let savedProjectData: object | null = null;
 
-	// --- CONNECTION TRACKING STATE ---
-	let phase_completion_status = {
-		source: false,
-		lexer: false,
-		parser: false,
-		analyser: false,
-		translator: false
-	};
 
 	// Handle physical connection changes from canvas
 	function handleConnectionChange(connections: NodeConnection[]) {
@@ -171,8 +220,18 @@
 		return currentNodes.find(node => node.type === nodeType) || null;
 	}
 
+
+
+	// Add subscription to phase completion status
+	let completion_status;
+	phase_completion_status.subscribe(value => {
+	    completion_status = value;
+	});
+
 	function validateNodeAccess(nodeType: NodeType): boolean {
 		const currentNodes = get(nodes);
+		const confirmedCode = get(confirmedSourceCode);
+		source_code = confirmedCode; // Keep local variable in sync
 		
 		switch (nodeType) {
 			case 'source':
@@ -185,8 +244,8 @@
 					AddToast('Missing Source Code: Add a Source Code node from the toolbox to begin lexical analysis', 'error');
 					return false;
 				}
-				// Check if source code has been submitted
-				if (!source_code.trim()) {
+				// Check if source code has been submitted using the confirmedSourceCode store
+				if (!confirmedCode.trim()) {
 					AddToast('No source code provided: Please enter and submit your source code before proceeding to lexical analysis', 'error');
 					return false;
 				}
@@ -220,8 +279,8 @@
 					AddToast('Missing Source→Lexer connection: Connect these nodes to enable data flow', 'error');
 					return false;
 				}
-				// Check if lexer phase has been completed
-				if (!phase_completion_status.lexer) {
+				// Check if lexer phase has been completed using the store value
+				if (!completion_status.lexer) {
 					AddToast('Lexical analysis incomplete: Complete tokenization in the Lexer before parsing', 'error');
 					return false;
 				}
@@ -256,7 +315,7 @@
 					return false;
 				}
 				// Check if lexer phase has been completed
-				if (!phase_completion_status.lexer) {
+				if (!completion_status.lexer) {
 					AddToast('Lexical analysis incomplete: Complete tokenization before semantic analysis', 'error');
 					return false;
 				}
@@ -272,7 +331,7 @@
 					return false;
 				}
 				// Check if parser phase has been completed
-				if (!phase_completion_status.parser) {
+				if (!completion_status.parser) {
 					AddToast('Parsing incomplete: Complete syntax analysis before semantic analysis', 'error');
 					return false;
 				}
@@ -370,14 +429,17 @@
 
 		// Prepare the pipeline data
 		const canvasNodes = get(nodes);
+
 		const pipeline = {
 			nodes: canvasNodes,
 			connections: physicalConnections,
-			lastSaved: new Date().toISOString()
+			lastSaved: new Date().toISOString(),
 		};
 
 		// Update the pipeline store to keep it in sync
 		pipelineStore.set(pipeline);
+
+		console.log('Pipeline saved with anchors:', get(pipelineStore));
 
 		try {
 			const response = await fetch('http://localhost:8080/api/users/savePipeline', {
@@ -400,11 +462,57 @@
 			const data = await response.json();
 			console.log('Project Saved:', data);
 			savedProjectData = pipeline;
+			
+			// Update last saved state for unsaved changes tracking
+			lastSavedState = JSON.stringify({
+				nodes: canvasNodes,
+				connections: physicalConnections
+			});
+			
 			AddToast(`Project "${currentProjectName}" saved successfully!`, 'success');
 		} catch (error) {
 			console.error('Failed to save project:', error);
 			AddToast(`Failed to save project: ${error.message}`, 'error');
 		}
+	}
+
+	// --- CLEAR CANVAS FUNCTIONALITY ---
+	function showClearCanvasConfirmation() {
+		showClearCanvasModal = true;
+	}
+
+	function handleClearCanvasConfirm() {
+		// Clear all nodes and connections
+		nodes.set([]);
+		physicalConnections = [];
+		
+		// Reset the pipeline store
+		pipelineStore.update(pipeline => ({
+			...pipeline,
+			nodes: [],
+			connections: []
+		}));
+
+		// Reset node counter
+		node_counter = 0;
+
+		// Reset the toolbox created nodes (we need to access the Toolbox component's internal state)
+		// We'll trigger a custom event that the Toolbox component will listen to
+		const event = new CustomEvent('resetToolbox');
+		document.dispatchEvent(event);
+
+		// Reset last saved state to reflect the cleared canvas
+		lastSavedState = JSON.stringify({
+			nodes: [],
+			connections: []
+		});
+
+		showClearCanvasModal = false;
+		AddToast('Canvas cleared successfully!', 'success');
+	}
+
+	function handleClearCanvasCancel() {
+		showClearCanvasModal = false;
 	}
 
 	// --- TOOLTIPS AND LABELS ---
@@ -466,7 +574,8 @@
 			show_code_input = true;
 		} else {
 			selected_phase = type;
-			if (!source_code.trim()) {
+			const confirmedCode = get(confirmedSourceCode);
+			if (!confirmedCode.trim()) {
 				AddToast('Source code required: Please add source code to begin the compilation process', 'error');
 				selected_phase = null;
 				return;
@@ -523,6 +632,7 @@
 	function handleCodeSubmit(code: string) {
 		show_tokens = false;
 		source_code = code;
+		confirmedSourceCode.set(code); // Update the store
 		show_code_input = false;
 		// Mark source phase as complete when code is submitted
 		phase_completion_status.source = true;
@@ -566,7 +676,7 @@
 <div class="main">
 	<WelcomeOverlay bind:show={showWelcomeOverlay} on:close={handleWelcomeClose} />
 
-	<Toolbox {handleCreateNode} {tooltips} />
+	<Toolbox {handleCreateNode} {tooltips} nodes={$nodes} />
 	<div class="workspace" bind:this={workspace_el} tabindex="-1">
 		{#if currentProjectName}
 			<div class="project-header">
@@ -588,6 +698,24 @@
 							<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
 							<polyline points="17 21 17 13 7 13 7 21" />
 							<polyline points="7 3 7 8 15 8" />
+						</svg>
+					</button>
+					<button class="clear-button" on:click={showClearCanvasConfirmation} aria-label="Clear Canvas" title="Clear Canvas">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="20"
+							height="20"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+						>
+							<polyline points="3 6 5 6 21 6" />
+							<path d="m19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c0-1 1-2 2-2v2" />
+							<line x1="10" y1="11" x2="10" y2="17" />
+							<line x1="14" y1="11" x2="14" y2="17" />
 						</svg>
 					</button>
 				</div>
@@ -698,6 +826,13 @@
 	{/if}
 </div>
 
+<!-- Clear Canvas Confirmation Modal -->
+<ClearCanvasConfirmation 
+	bind:show={showClearCanvasModal} 
+	on:confirm={handleClearCanvasConfirm}
+	on:cancel={handleClearCanvasCancel}
+/>
+
 <style>
 	:global(html, body) {
 		margin: 0;
@@ -765,6 +900,23 @@
 	}
 	.save-button:hover {
 		background-color: #eef2f7;
+	}
+	.clear-button {
+		background-color: transparent;
+		color: #dc2626;
+		border: none;
+		border-radius: 50%;
+		width: 32px;
+		height: 32px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: background-color 0.2s ease;
+		margin-left: 0.25rem;
+	}
+	.clear-button:hover {
+		background-color: #fee2e2;
 	}
 	.analysis-overlay {
 		position: fixed;
@@ -891,6 +1043,12 @@
 	}
 	:global(html.dark-mode) .save-button:hover {
 		background-color: #2d3748;
+	}
+	:global(html.dark-mode) .clear-button {
+		color: #f87171;
+	}
+	:global(html.dark-mode) .clear-button:hover {
+		background-color: #2d1b1b;
 	}
 	:global(html.dark-mode) .analysis-overlay {
 		background: rgba(10, 26, 58, 0.95);
