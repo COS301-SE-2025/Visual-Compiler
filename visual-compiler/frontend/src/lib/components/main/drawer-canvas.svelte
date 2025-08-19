@@ -94,8 +94,8 @@
 		if (sourceCanvasNode && targetCanvasNode) {
 			const newConnection: NodeConnection = {
 				id: `${sourceNodeId}-${targetNodeId}`,
-				sourceNodeId: `N-${sourceNodeId}`,
-				targetNodeId: `N-${targetNodeId}`,
+				sourceNodeId: sourceCanvasNode.id,
+				targetNodeId: targetCanvasNode.id,
 				sourceType: sourceCanvasNode.type,
 				targetType: targetCanvasNode.type,
 				sourceAnchor: event.detail.sourceAnchor.id,
@@ -116,12 +116,19 @@
 		const sourceNodeId = sourceNode.id.replace('N-', '');
 		const targetNodeId = targetNode.id.replace('N-', '');
 		
-		nodeConnections = nodeConnections.filter(conn => 
-			!(conn.sourceNodeId === sourceNodeId && conn.targetNodeId === targetNodeId)
-		);
-		onConnectionChange(nodeConnections);
-		console.log('Updated connections after removal:', nodeConnections);
-	}
+		// Find the canvas nodes to get their actual IDs
+		const sourceCanvasNode = displayNodes.find(node => node.id === sourceNodeId);
+		const targetCanvasNode = displayNodes.find(node => node.id === targetNodeId);
+		
+		if (sourceCanvasNode && targetCanvasNode) {
+			nodeConnections = nodeConnections.filter(conn => 
+				!(conn.sourceNodeId === sourceCanvasNode.id && conn.targetNodeId === targetCanvasNode.id) &&
+				!(conn.sourceNodeId === targetCanvasNode.id && conn.targetNodeId === sourceCanvasNode.id)
+			);
+			onConnectionChange(nodeConnections);
+			console.log('Updated connections after removal:', nodeConnections);
+		}
+	};
 
 	// onNodeClick
 	// Return type: void
