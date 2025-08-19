@@ -6,6 +6,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/routers"
@@ -36,6 +37,11 @@ func main() {
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
 	}))
+
+	// health check for AWS
+	router.GET("/api/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
 
 	// Attach your routes
 	api_user_routes := routers.SetupUserRouter()
