@@ -24,7 +24,7 @@
 	let node_counter = 0;
 
 	// --- CONNECTION TRACKING STATE ---
-	let physicalConnections: NodeConnection[] = [];
+	let physical_connections: NodeConnection[] = [];
 
 	// --- COMPONENT STATE ---
 	let LexerPhaseTutorial: any;
@@ -40,25 +40,28 @@
 	let TranslatorPhaseInspector: any;
 	let TranslatorArtifactViewer: any;
 
-	let showWelcomeOverlay = false;
+	let show_welcome_overlay = false;
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
-	let showClearCanvasModal = false;
+	let show_clear_canvas_modal = false;
 
 	// --- UNSAVED CHANGES TRACKING ---
-	let lastSavedState: string | null = null;
+	let last_saved_state: string | null = null;
 
-	// Function to handle beforeunload event
+	// handleBeforeUnload
+	// Return type: string
+	// Parameter type: BeforeUnloadEvent
+	// Handles the browser beforeunload event to warn users about unsaved changes
 	const handleBeforeUnload = (event: BeforeUnloadEvent) => {
 		// Get current pipeline state
 		const currentNodes = get(nodes);
 		const currentState = JSON.stringify({
 			nodes: currentNodes,
-			connections: physicalConnections
+			connections: physical_connections
 		});
 
 		// Compare with last saved state
-		if (lastSavedState && currentState !== lastSavedState) {
+		if (last_saved_state && currentState !== last_saved_state) {
 			// There are unsaved changes
 			event.preventDefault();
 			event.returnValue = '';
@@ -67,9 +70,9 @@
 	};
 
 	// Subscribe to the project name store
-	let currentProjectName = '';
+	let current_project_name = '';
 	projectName.subscribe((value) => {
-		currentProjectName = value;
+		current_project_name = value;
 	});
 
 	// Subscribe to pipeline store changes
@@ -91,13 +94,13 @@
 						const targetExists = pipeline.nodes.some(node => node.id === conn.targetNodeId);
 						return sourceExists && targetExists;
 					});
-					physicalConnections = validConnections;
+					physical_connections = validConnections;
 				}
 
 				// Update last saved state when project is loaded
-				lastSavedState = JSON.stringify({
+				last_saved_state = JSON.stringify({
 					nodes: pipeline.nodes,
-					connections: physicalConnections
+					connections: physical_connections
 				});
 			}
 		}
@@ -141,7 +144,7 @@
 		}
 
 		if (sessionStorage.getItem('showWelcomeOverlay') === 'true') {
-			showWelcomeOverlay = true; // Trigger the overlay to show.
+			show_welcome_overlay = true; // Trigger the overlay to show.
 		}
 
 		// --- UNSAVED CHANGES PROTECTION ---
@@ -149,9 +152,9 @@
 		if (typeof window !== 'undefined') {
 			window.addEventListener('beforeunload', handleBeforeUnload);
 
-			// Initialize lastSavedState for blank canvas
-			if (!lastSavedState) {
-				lastSavedState = JSON.stringify({
+			// Initialize last_saved_state for blank canvas
+			if (!last_saved_state) {
+				last_saved_state = JSON.stringify({
 					nodes: [],
 					connections: []
 				});
@@ -179,8 +182,12 @@
 		}
 	});
 
+	// handleWelcomeClose
+	// Return type: void
+	// Parameter type: none
+	// Handles closing the welcome overlay and removing it from session storage
 	function handleWelcomeClose() {
-		showWelcomeOverlay = false;
+		show_welcome_overlay = false;
 	}
 
 	// --- CANVAS STATE ---
@@ -202,14 +209,23 @@
 	};
 
 	// Handle physical connection changes from canvas
+	
+
+	// handleConnectionChange
+	// Return type: void
+	// Parameter type: NodeConnection[]
+	// Updates the physical connections array when connections change on the canvas
 	function handleConnectionChange(connections: NodeConnection[]) {
-		physicalConnections = connections;
-		console.log('Physical connections updated:', physicalConnections);
+		physical_connections = connections;
+		console.log('Physical connections updated:', physical_connections);
 	}
 
-	// Check if there's a physical connection between two node types
+	// hasPhysicalConnection
+	// Return type: boolean
+	// Parameter type: NodeType, NodeType
+	// Checks if there is a physical connection between two node types
 	function hasPhysicalConnection(sourceType: NodeType, targetType: NodeType): boolean {
-		return physicalConnections.some(conn => {
+		return physical_connections.some((conn: NodeConnection) => {
 			const sourceNode = findNodeByType(sourceType);
 			const targetNode = findNodeByType(targetType);
 			
@@ -221,11 +237,19 @@
 	}
 
 	// --- CONNECTION VALIDATION FUNCTIONS ---
+	// findNodeByType
+	// Return type: CanvasNode | null
+	// Parameter type: NodeType
+	// Finds a node in the canvas by its type
 	function findNodeByType(nodeType: NodeType): CanvasNode | null {
 		const currentNodes = get(nodes);
 		return currentNodes.find(node => node.type === nodeType) || null;
 	}
 
+	// validateNodeAccess
+	// Return type: boolean
+	// Parameter type: NodeType
+	// Validates if a node type can be accessed based on compilation pipeline requirements
 	function validateNodeAccess(nodeType: NodeType): boolean {
 		const currentNodes = get(nodes);
 		
@@ -411,6 +435,10 @@
 	}
 
 	// --- SAVE PROJECT FUNCTIONALITY ---
+	// saveProject
+	// Return type: Promise<void>
+	// Parameter type: none
+	// Saves the current project state to the backend server
 	async function saveProject() {
 		const user_id = localStorage.getItem('user_id');
 		if (!user_id) {
@@ -418,7 +446,7 @@
 			return;
 		}
 
-		if (!currentProjectName) {
+		if (!current_project_name) {
 			AddToast('Please select a project first.', 'error');
 			return;
 		}
@@ -427,7 +455,7 @@
 		const canvasNodes = get(nodes);
 		const pipeline = {
 			nodes: canvasNodes,
-			connections: physicalConnections,
+			connections: physical_connections,
 			lastSaved: new Date().toISOString()
 		};
 
@@ -442,7 +470,7 @@
 				},
 				body: JSON.stringify({
 					users_id: user_id,
-					project_name: currentProjectName,
+					project_name: current_project_name,
 					pipeline: pipeline
 				})
 			});
@@ -457,12 +485,12 @@
 			savedProjectData = pipeline;
 			
 			// Update last saved state for unsaved changes tracking
-			lastSavedState = JSON.stringify({
+			last_saved_state = JSON.stringify({
 				nodes: canvasNodes,
-				connections: physicalConnections
+				connections: physical_connections
 			});
 			
-			AddToast(`Project "${currentProjectName}" saved successfully!`, 'success');
+			AddToast(`Project "${current_project_name}" saved successfully!`, 'success');
 		} catch (error) {
 			console.error('Failed to save project:', error);
 			AddToast(`Failed to save project: ${error.message}`, 'error');
@@ -470,14 +498,22 @@
 	}
 
 	// --- CLEAR CANVAS FUNCTIONALITY ---
+	// showClearCanvasConfirmation
+	// Return type: void
+	// Parameter type: none
+	// Shows the clear canvas confirmation modal
 	function showClearCanvasConfirmation() {
-		showClearCanvasModal = true;
+		show_clear_canvas_modal = true;
 	}
 
+	// handleClearCanvasConfirm
+	// Return type: void
+	// Parameter type: none
+	// Handles the confirmation to clear the canvas and resets all state
 	function handleClearCanvasConfirm() {
 		// Clear all nodes and connections
 		nodes.set([]);
-		physicalConnections = [];
+		physical_connections = [];
 		
 		// Reset the pipeline store
 		pipelineStore.update(pipeline => ({
@@ -495,17 +531,21 @@
 		document.dispatchEvent(event);
 
 		// Reset last saved state to reflect the cleared canvas
-		lastSavedState = JSON.stringify({
+		last_saved_state = JSON.stringify({
 			nodes: [],
 			connections: []
 		});
 
-		showClearCanvasModal = false;
+		show_clear_canvas_modal = false;
 		AddToast('Canvas cleared successfully!', 'success');
 	}
 
+	// handleClearCanvasCancel
+	// Return type: void
+	// Parameter type: none
+	// Handles cancellation of the clear canvas action
 	function handleClearCanvasCancel() {
-		showClearCanvasModal = false;
+		show_clear_canvas_modal = false;
 	}
 
 	// --- TOOLTIPS AND LABELS ---
@@ -525,6 +565,10 @@
 		translator: 'Translator'
 	};
 
+	// handleCreateNode
+	// Return type: void
+	// Parameter type: NodeType
+	// Creates a new node of the specified type and adds it to the canvas
 	function handleCreateNode(type: NodeType) {
 		node_counter++;
 		nodes.update((curr) => {
@@ -549,11 +593,19 @@
 		workspace_el?.focus();
 	}
 
+	// dismissDragTip
+	// Return type: void
+	// Parameter type: none
+	// Dismisses the drag tip overlay and stores the preference in localStorage
 	function dismissDragTip() {
 		localStorage.setItem('hasSeenDragTip', 'true');
 		show_drag_tip = false;
 	}
 
+	// handlePhaseSelect
+	// Return type: void
+	// Parameter type: NodeType
+	// Handles selection of a compilation phase and opens appropriate components
 	function handlePhaseSelect(type: NodeType) {
 		// Validate node access before proceeding
 		if (!validateNodeAccess(type)) {
@@ -575,6 +627,10 @@
 		}
 	}
 
+	// handleTranslationError
+	// Return type: void
+	// Parameter type: CustomEvent
+	// Handles translation errors by storing the error details and clearing translated code
 	function handleTranslationError(event: CustomEvent) {
 		translationError = event.detail;
 		translated_code = [];
@@ -585,6 +641,10 @@
 	let analyser_error = '';
 	let analyser_error_details = '';
 
+	// handleReset
+	// Return type: void
+	// Parameter type: none
+	// Resets the analysis state by clearing symbol table and error information
 	function handleReset() {
 		show_symbol_table = false;
 		symbol_table = [];
@@ -592,6 +652,10 @@
 		analyser_error_details = '';
 	}
 
+	// handleSymbolGeneration
+	// Return type: void
+	// Parameter type: { symbol_table: Symbol[]; error?: string; error_details?: string }
+	// Handles the generation of symbol table data and updates analysis state accordingly
 	function handleSymbolGeneration(data: { symbol_table: Symbol[]; error?: string; error_details?: string }) {
 		if (data.symbol_table && data.symbol_table.length > 0) {
 			show_symbol_table = true;
@@ -607,6 +671,10 @@
 		}
 	}
 
+	// handleTranslationReceived
+	// Return type: void
+	// Parameter type: CustomEvent<string[]>
+	// Handles received translation data and updates the translator phase completion status
 	function handleTranslationReceived(event: CustomEvent<string[]>) {
 		translated_code = event.detail;
 		// Mark translator phase as complete when translation is received
@@ -615,11 +683,19 @@
 		}
 	}
 
+	// returnToCanvas
+	// Return type: void
+	// Parameter type: none
+	// Returns the user to the canvas view by resetting phase selection and hiding code input
 	function returnToCanvas() {
 		selected_phase = null;
 		show_code_input = false;
 	}
 
+	// handleCodeSubmit
+	// Return type: void
+	// Parameter type: string
+	// Handles code submission by updating source code state and marking source phase as complete
 	function handleCodeSubmit(code: string) {
 		show_tokens = false;
 		source_code = code;
@@ -628,6 +704,10 @@
 		phase_completion_status.source = true;
 	}
 
+	// handleTokenGeneration
+	// Return type: void
+	// Parameter type: { tokens: Token[]; unexpected_tokens: string[] }
+	// Handles token generation data and updates lexer phase completion status
 	function handleTokenGeneration(data: { tokens: Token[]; unexpected_tokens: string[] }) {
 		show_tokens = true;
 		tokens = data.tokens;
@@ -638,6 +718,10 @@
 		}
 	}
 
+	// handleTreeReceived
+	// Return type: void
+	// Parameter type: CustomEvent<SyntaxTree>
+	// Handles received syntax tree data and updates parser phase completion status
 	function handleTreeReceived(event: CustomEvent<SyntaxTree>) {
 		syntaxTreeData = event.detail;
 		artifactData = event.detail;
@@ -652,6 +736,10 @@
 	let artifactData: SyntaxTree | null = null;
 	let parsingError: any = null;
 
+	// handleParsingError
+	// Return type: void
+	// Parameter type: CustomEvent
+	// Handles parsing errors by storing error details and clearing syntax tree data
 	function handleParsingError(event: CustomEvent) {
 		parsingError = event.detail;
 		syntaxTreeData = null;
@@ -661,14 +749,14 @@
 <NavBar />
 
 <div class="main">
-	<WelcomeOverlay bind:show={showWelcomeOverlay} on:close={handleWelcomeClose} />
+	<WelcomeOverlay bind:show={show_welcome_overlay} on:close={handleWelcomeClose} />
 
 	<Toolbox {handleCreateNode} {tooltips} nodes={$nodes} />
 	<div class="workspace" bind:this={workspace_el} tabindex="-1">
-		{#if currentProjectName}
+		{#if current_project_name}
 			<div class="project-header">
 				<div class="project-info-bar">
-					<span class="project-name">{currentProjectName}</span>
+					<span class="project-name">{current_project_name}</span>
 					<div class="separator"></div>
 					<button class="save-button" on:click={saveProject} aria-label="Save Project" title="Save Project">
 						<svg
@@ -708,7 +796,7 @@
 				</div>
 			</div>
 		{/if}
-		<DrawerCanvas {nodes} initialConnections={physicalConnections} onPhaseSelect={handlePhaseSelect} onConnectionChange={handleConnectionChange} />
+		<DrawerCanvas {nodes} initialConnections={physical_connections} onPhaseSelect={handlePhaseSelect} onConnectionChange={handleConnectionChange} />
 
 		{#if show_drag_tip}
 			<div class="help-tip">
@@ -815,7 +903,7 @@
 
 <!-- Clear Canvas Confirmation Modal -->
 <ClearCanvasConfirmation 
-	bind:show={showClearCanvasModal} 
+	bind:show={show_clear_canvas_modal} 
 	on:confirm={handleClearCanvasConfirm}
 	on:cancel={handleClearCanvasCancel}
 />
