@@ -8,6 +8,39 @@ export default defineConfig(({ mode }) => ({
 	test: {
 		globals: true,
 		clearMocks: true,
+		coverage: {
+			exclude: [
+				// Configuration files
+				'svelte.config.js',
+				'vite.config.ts',
+				'vitest.config.ts',
+				'**/*.config.{js,ts}',
+				'eslint.config.js',
+				'cypress.config.js',
+				
+				// Build artifacts and generated code
+				'.svelte-kit/**',
+				'build/**',
+				'dist/**',
+				'coverage/**',
+				'static/**',
+				
+				// Type definitions (no runtime logic)
+				'**/*.d.ts',
+				'src/app.d.ts',
+				'src/lib/types.ts',
+				'src/lib/index.ts',
+				
+				// Test utilities and mocks
+				'tests/**/*.svelte',
+				'**/*{.,_}{test,spec,mock}.{js,ts,svelte}',
+				'tests/unit-tests/mock-*.{js,ts,svelte}',
+				'vitest-setup*.ts',
+				
+				// Dependencies
+				'node_modules/**'
+			]
+		},
 		workspace: [
 			{
 				extends: './vite.config.ts',

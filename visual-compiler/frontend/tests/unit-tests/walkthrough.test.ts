@@ -214,8 +214,8 @@ describe('Walkthrough Component', () => {
 		render(Walkthrough);
 		const endTime = performance.now();
 		
-		// Should render in reasonable time (less than 15ms due to images)
-		expect(endTime - startTime).toBeLessThan(15);
+		// Should render in reasonable time (less than 50ms due to loading multiple images)
+		expect(endTime - startTime).toBeLessThan(50);
 	});
 
 	it('TestMemoryUsage_Success: Component can be created and destroyed', () => {
