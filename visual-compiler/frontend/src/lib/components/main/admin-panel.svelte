@@ -10,6 +10,8 @@
     let selectedUserIdx: number = -1;
     let editUsername = '';
     let editEmail = '';
+    let originalUsername = ''; // Store original values for comparison
+    let originalEmail = '';
     let editError = '';
     let editSuccess = '';
 
@@ -63,6 +65,8 @@
         selectedUserIdx = idx;
         editUsername = users[idx].username;
         editEmail = users[idx].email;
+        originalUsername = users[idx].username; // Store original values
+        originalEmail = users[idx].email;
         editError = '';
         editSuccess = '';
         console.log('Selected user ID:', users[idx].ID); 
@@ -88,7 +92,31 @@
             return;
         }
 
+        // Check if any fields have actually changed
+        const usernameChanged = editUsername !== originalUsername;
+        const emailChanged = editEmail !== originalEmail;
+        
+        if (!usernameChanged && !emailChanged) {
+            editError = 'No changes were made';
+            return;
+        }
+
         const user = users[selectedUserIdx];
+        
+        // Only include fields that have actually changed
+        const updateData: any = {
+            admin_id: adminId,
+            users_id: user.ID
+        };
+        
+        if (usernameChanged) {
+            updateData.username = editUsername;
+        }
+        
+        if (emailChanged) {
+            updateData.email = editEmail;
+        }
+
         try {
             const res = await fetch('http://localhost:8080/api/users/update', {
                 method: 'PATCH',
@@ -96,19 +124,21 @@
                     'Content-Type': 'application/json',
                     'accept': 'application/json'
                 },
-                body: JSON.stringify({
-                    admin_id: adminId,
-                    users_id: user.ID,
-                    username: editUsername,
-                    email: editEmail
-                })
+                body: JSON.stringify(updateData)
             });
 
             const data = await res.json();
             if (res.ok) {
                 editSuccess = 'User updated successfully!';
-                users[selectedUserIdx].username = editUsername;
-                users[selectedUserIdx].email = editEmail;
+                // Update the local state with new values
+                if (usernameChanged) {
+                    users[selectedUserIdx].username = editUsername;
+                    originalUsername = editUsername; // Update original value
+                }
+                if (emailChanged) {
+                    users[selectedUserIdx].email = editEmail;
+                    originalEmail = editEmail; // Update original value
+                }
             } else {
                 editError = data.error || 'Failed to update user.';
             }
