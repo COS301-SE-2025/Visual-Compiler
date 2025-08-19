@@ -1,6 +1,3 @@
-//go:build !coverage
-// +build !coverage
-
 package handlers
 
 import (
