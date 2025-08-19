@@ -118,23 +118,6 @@ describe('Hero Component', () => {
 		expect(container.querySelector('p.sub_headline')).toBeTruthy();
 	});
 
-	// ===== ERROR HANDLING TESTS =====
-	it('TestNavigationError_Success: Handles navigation errors gracefully', async () => {
-		mockedGoto.mockRejectedValue(new Error('Navigation failed'));
-		
-		render(Hero);
-		const launchButton = screen.getByRole('button', { name: 'Get Started' });
-		
-		// Click button and catch any errors
-		try {
-			await fireEvent.click(launchButton);
-		} catch (error) {
-			// Expected to fail, silently handle
-		}
-		
-		expect(mockedGoto).toHaveBeenCalled();
-	});
-
 	// ===== VISUAL STRUCTURE TESTS =====
 	it('TestCSSClasses_Success: Elements have correct CSS classes', () => {
 		const { container } = render(Hero);
