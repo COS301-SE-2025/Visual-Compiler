@@ -1,41 +1,47 @@
 <script lang="ts">
-
-    import type {Symbol} from '$lib/types';
+    import { lexerState } from '$lib/stores/lexer';
+    import type { Symbol } from '$lib/types';
 
     export let phase: string;
     export let symbol_table: Symbol[] = [];
     export let show_symbol_table = false;
-    export let analyser_error: boolean ;
+    export let analyser_error: boolean;
     export let analyser_error_details: string;
 
+    // Add reactive statement to handle loaded symbol table
+    $: if ($lexerState?.symbol_table) {
+        symbol_table = $lexerState.symbol_table;
+        show_symbol_table = true;
+        analyser_error = false;
+        analyser_error_details = '';
+    }
 </script>
 
 <div class="artifact-container">
-	<div class="artifact-header">
-		<h2 class="artifact-title">Analyser Artefact</h2>
-	</div>
+    <div class="artifact-header">
+        <h2 class="artifact-title">Analyser Artefact</h2>
+    </div>
 
     <div class="artifact-viewer">
-
         {#if phase === 'analyser' && show_symbol_table}
             <div class="artifact-header">
-				<h3>Symbols</h3>
-			</div>
+                <h3>Symbols</h3>
+            </div>
 
             {#if symbol_table && symbol_table.length > 0}
                 <table class="symbol-table">
                     <thead>
                         <tr>
-                            <th>Type</th>
                             <th>Name</th>
+                            <th>Type</th>
                             <th>Scope</th>
                         </tr>
                     </thead>
                     <tbody>
                         {#each symbol_table as symbol}
                             <tr>
-                                <td>{symbol.type}</td>
                                 <td>{symbol.name}</td>
+                                <td>{symbol.type}</td>
                                 <td>{symbol.scope}</td>
                             </tr>
                         {/each}
@@ -43,34 +49,6 @@
                 </table>
             {:else}
                 <div class="no-symbols">No symbols generated</div>
-            {/if}
-
-        {:else if phase === 'analyser'}
-            {#if analyser_error}
-                <div class="error-state">
-                    <div class="error-icon">
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="48"
-                            height="48"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="1.5"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <circle cx="12" cy="12" r="10" />
-                            <line x1="12" y1="8" x2="12" y2="12" />
-                            <line x1="12" y1="16" x2="12.01" y2="16" />
-                        </svg>
-                    </div>
-                    <h4>Semantic Error Found</h4>
-                    <p class="error-message">
-                        The source code could not be analysed with the provided scope rules and type rules. Please check your input again.<br>
-                    </p>
-                    <pre class="error-details">{analyser_error_details}</pre>
-                </div>
             {/if}
         {/if}
     </div>
@@ -128,7 +106,7 @@
 
     .symbol-table th,
     .symbol-table td {
-        width: 33%;
+        width: 33%;  /* Updated to distribute space evenly among 3 columns */
         padding: 0.75rem 1rem;
         border-bottom: 1px solid #e0e0e0;
         text-align: left;

@@ -6,6 +6,7 @@
     import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
 	import { error } from '@sveltejs/kit';
+    import { lexerState } from '$lib/stores/lexer';
 
     const dispatch = createEventDispatcher();
 
@@ -352,6 +353,47 @@
 
     // Overall Completeness for Submit Button
     $: overallAllRowsComplete = allScopeRowsComplete && allTypeRowsComplete && allGrammarRulesComplete;
+
+    // Update rules when project data is loaded
+    $: if ($lexerState?.analyzer_data) {
+        const analyzerData = $lexerState.analyzer_data;
+        
+        // Update scope rules
+        scope_rules = analyzerData.scope_rules.map((rule, index) => ({
+            id: index,
+            Start: rule.start,
+            End: rule.end
+        }));
+        next_scope_id = scope_rules.length;
+
+        // Update type rules
+        type_rules = analyzerData.type_rules.map((rule, index) => ({
+            id: index,
+            ResultData: rule.resultdata,
+            Assignment: rule.assignment,
+            LHSData: rule.lhsdata,
+            Operator: rule.operator || [''],
+            RHSData: rule.rhsdata
+        }));
+        next_type_id = type_rules.length;
+
+        // Update grammar rules
+        grammar_rules = {
+            VariableRule: analyzerData.grammar_rules.variablerule,
+            TypeRule: analyzerData.grammar_rules.typerule,
+            FunctionRule: analyzerData.grammar_rules.functionrule,
+            ParameterRule: analyzerData.grammar_rules.parameterrule,
+            AssignmentRule: analyzerData.grammar_rules.assignmentrule,
+            OperatorRule: analyzerData.grammar_rules.operatorrule,
+            TermRule: analyzerData.grammar_rules.termrule
+        };
+
+        // Set submitted state
+        submitted_scope_rules = [...scope_rules];
+        submitted_type_rules = [...type_rules];
+        submitted_grammar_rules = { ...grammar_rules };
+        rules_submitted = true;
+    }
 </script>
 
 <div class="panel-container">

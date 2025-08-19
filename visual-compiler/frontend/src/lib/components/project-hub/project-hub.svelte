@@ -131,23 +131,31 @@
 					// Update lexer and parser state
 					updateLexerStateFromProject({
 						lexing: data.results.lexing,
-						parsing: data.results.parsing
+						parsing: data.results.parsing,
+						analysing: {
+							...data.results.analysing,
+							// Simplify symbol table data
+							symbol_table_artefact: {
+								symbolscopes: data.results.analysing?.symbol_table_artefact?.symbolscopes?.map(symbol => ({
+									name: symbol.name,
+									type: symbol.type,
+									scope: symbol.scope
+								}))
+							}
+						}
 					});
 
-					// Update phase completion status with all phases
+					// Update phase completion status
 					const hasTokens = !!(data.results.lexing?.tokens && data.results.lexing.tokens.length > 0);
 					const hasCode = !!data.results.lexing?.code;
-					// More specific check for parser completion
 					const hasTree = !!(data.results.parsing?.tree?.root);
-					const hasSymbolTable = !!(data.results.lexing?.symbol_table);
-					const hasAnalysis = hasSymbolTable && !data.results.lexing?.analyser_error;
+					const hasSymbolTable = !!(data.results.analysing?.symbol_table_artefact?.symbolscopes);
 					
-					// Update the phase completion status store directly
 					phase_completion_status.set({
 						source: hasCode,
 						lexer: hasTokens,
-						parser: hasTree,  // This needs to be true when a valid tree exists
-						analyser: hasAnalysis,
+						parser: hasTree,
+						analyser: hasSymbolTable,
 						translator: !!(data.results.lexing?.translated_code && data.results.lexing.translated_code.length > 0)
 					});
 
