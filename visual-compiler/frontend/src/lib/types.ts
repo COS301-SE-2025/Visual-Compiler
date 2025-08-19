@@ -31,7 +31,7 @@ export interface NodeConnection {
     targetNodeId: string;
     sourceType: NodeType;
     targetType: NodeType;
-    sourceAnchor?: string;
-    targetAnchor?: string;
+    sourceAnchor: string;
+    targetAnchor: string;
 }
 

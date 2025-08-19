@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { createEventDispatcher, onMount, tick } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
-	import { pipelineStore, resetPipeline } from '$lib/stores/pipeline';
+	import { pipelineStore, resetPipeline, type Pipeline } from '$lib/stores/pipeline';
 	import ProjectNamePrompt from './project-name-prompt.svelte';
 	import DeleteConfirmPrompt from './delete-confirmation.svelte'; 
 	import { AddToast } from '$lib/stores/toast';
@@ -75,6 +75,21 @@
 		showProjectNamePrompt = true;
 	}
 
+	function connectNode(pipeline: Pipeline) {
+
+		const node_connections = pipeline.connections;
+
+		node_connections.forEach(conn => {
+
+			const start_node = document.getElementById(conn.sourceAnchor);
+			const end_node = document.getElementById(conn.targetAnchor);
+
+			start_node?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
+			end_node?.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }));
+		});
+
+	}
+
 	async function selectProject(selectedProjectName: string) {
 		const userId = localStorage.getItem('user_id');
 		if (!userId) {
@@ -104,6 +119,9 @@
 					pipelineStore.set(data.results.pipeline);
 					console.log('Restored pipeline:', data.results.pipeline);
 					AddToast('Pipeline restored successfully', 'success');
+
+					await tick();
+					connectNode(data.results.pipeline); 
 				} else {
 					// If no pipeline data, initialize with empty state
 					pipelineStore.set({
