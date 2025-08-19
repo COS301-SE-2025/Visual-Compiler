@@ -12,12 +12,67 @@
 	}
 
 	export let nodes: Writable<CanvasNode[]>;
+	export let initialConnections: NodeConnection[] = [];
 
 	export let onPhaseSelect: (type: NodeType) => void = () => {};
 	export let onConnectionChange: (connections: NodeConnection[]) => void = () => {};
 
 	// Track physical connections between nodes
-	let nodeConnections: NodeConnection[] = [];
+	let nodeConnections: NodeConnection[] = [...initialConnections];
+
+	// Make nodeConnections reactive to changes in initialConnections
+	$: nodeConnections = [...initialConnections];
+
+	// Function to restore nodes to their original saved positions
+	function restoreOriginalPositions(nodesList: CanvasNode[]): CanvasNode[] {
+		// Simply return the nodes as they are - with their saved positions
+		// The displayNodes computed property will handle the override
+		console.log('Restoring nodes to original positions:', nodesList.map(n => ({ id: n.id, x: n.position.x, y: n.position.y })));
+		return nodesList;
+	}
+
+	// Track if we need to reposition nodes (to avoid infinite updates)
+	let hasRepositioned = false;
+	let lastNodeCount = 0;
+	let lastNodeIds: string[] = [];
+
+	// Create a computed store that always returns properly positioned nodes
+	$: displayNodes = (() => {
+		const currentNodeIds = $nodes.map(n => n.id).sort();
+		const nodeIdsChanged = JSON.stringify(currentNodeIds) !== JSON.stringify(lastNodeIds);
+		
+		if ($nodes.length > 0 && nodeIdsChanged) {
+			console.log('Nodes changed, ensuring positions are respected by Svelvet:', {
+				nodeCount: $nodes.length,
+				nodeIdsChanged,
+				currentPositions: $nodes.map(n => ({ id: n.id, x: n.position.x, y: n.position.y }))
+			});
+			
+			const restoredNodes = restoreOriginalPositions($nodes);
+			console.log('Restoring positions for Svelvet:', restoredNodes.map(n => ({ id: n.id, x: n.position.x, y: n.position.y })));
+			
+			// Update the tracking variables
+			hasRepositioned = true;
+			lastNodeCount = $nodes.length;
+			lastNodeIds = currentNodeIds;
+			
+			// Also update the original store to keep it in sync
+			setTimeout(() => {
+				nodes.set(restoredNodes);
+			}, 10);
+			
+			return restoredNodes;
+		} else if ($nodes.length === 0) {
+			hasRepositioned = false;
+			lastNodeCount = 0;
+			lastNodeIds = [];
+		}
+		
+		return $nodes;
+	})();
+
+	// Create a key that changes when display nodes change
+	$: canvasKey = displayNodes.length > 0 ? `${displayNodes.length}-${displayNodes.map(n => `${n.id}-${n.position.x}-${n.position.y}`).join('|')}` : 'empty';
 
 	let canvas_el: any;
 	let last_click = -Infinity;
@@ -34,9 +89,9 @@
 		
 		console.log('Parsed node IDs:', { sourceNodeId, targetNodeId });
 		
-		// Find the node types for source and target
-		const sourceCanvasNode = $nodes.find(node => node.id === sourceNodeId);
-		const targetCanvasNode = $nodes.find(node => node.id === targetNodeId);
+		// Find the node types for source and target from display nodes
+		const sourceCanvasNode = displayNodes.find(node => node.id === sourceNodeId);
+		const targetCanvasNode = displayNodes.find(node => node.id === targetNodeId);
 		
 		console.log('Found canvas nodes:', { sourceCanvasNode, targetCanvasNode });
 		
@@ -94,13 +149,29 @@
 
 <div class="drawer-canvas">
 	<div class="canvas-container" class:dark-mode={$theme === 'dark'}>
+		{#key canvasKey}
 		<Svelvet 
 			bind:this={canvas_el} 
 			theme={'custom-theme'}
+			edges={nodeConnections.map(conn => ({
+				source: conn.sourceNodeId,
+				target: conn.targetNodeId,
+				id: conn.id
+			}))}
 			on:connection={handleConnection}
 			on:disconnection={handleDisconnection}
+			on:nodeMove={(event) => {
+				const { node, position } = event.detail;
+				const nodeId = node.id.replace('N-', '');
+				const updatedNodes = $nodes.map(n => 
+					n.id === nodeId 
+						? { ...n, position: { x: position.x, y: position.y } }
+						: n
+				);
+				nodes.set(updatedNodes);
+			}}
 		>
-			{#each $nodes as node (node.id)}
+			{#each displayNodes as node (node.id)}
 				<Node
 					id={node.id}
 					position={node.position}
@@ -116,6 +187,7 @@
 				/>
 			{/each}
 		</Svelvet>
+		{/key}
 	</div>
 </div>
 

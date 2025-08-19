@@ -5,6 +5,7 @@
 	import { pipelineStore } from '$lib/stores/pipeline';
 	import ProjectNamePrompt from './project-name-prompt.svelte';
 	import DeleteConfirmPrompt from './delete-confirmation.svelte'; 
+	import { AddToast } from '$lib/stores/toast';
 
 	const dispatch = createEventDispatcher();
 
@@ -107,6 +108,7 @@
 					// If no pipeline data, initialize with empty state
 					pipelineStore.set({
 						nodes: [],
+						connections: [],
 						lastSaved: null
 					});
 					console.log('No saved pipeline found, initialized empty state');

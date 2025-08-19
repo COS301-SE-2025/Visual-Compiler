@@ -1,16 +1,31 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { writable, get } from 'svelte/store';
+	import { writable, get, type Writable } from 'svelte/store';
 	import type { NodeType, Token, SyntaxTree, NodeConnection } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
-	import { projectName } from '$lib/stores/project'; // Import the new store
+	import { projectName } from '$lib/stores/project';
+	import { pipelineStore } from '$lib/stores/pipeline';
 	import NavBar from '$lib/components/main/nav-bar.svelte';
 	import Toolbox from '$lib/components/main/Toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 	import WelcomeOverlay from '$lib/components/project-hub/project-hub.svelte';
 
+	// --- CANVAS STATE ---
+	interface CanvasNode {
+		id: string;
+		type: NodeType;
+		label: string;
+		position: { x: number; y: number };
+	}
+	const nodes: Writable<CanvasNode[]> = writable([]);
+	let node_counter = 0;
+
+	// --- CONNECTION TRACKING STATE ---
+	let physicalConnections: NodeConnection[] = [];
+
+	// --- COMPONENT STATE ---
 	let LexerPhaseTutorial: any;
 	let LexerPhaseInspector: any;
 	let LexerArtifactViewer: any;
@@ -25,7 +40,6 @@
 	let TranslatorArtifactViewer: any;
 
 	let showWelcomeOverlay = false;
-
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
 
@@ -33,6 +47,38 @@
 	let currentProjectName = '';
 	projectName.subscribe((value) => {
 		currentProjectName = value;
+	});
+
+	// Subscribe to pipeline store changes
+	const unsubscribePipeline = pipelineStore.subscribe(pipeline => {
+		if (pipeline) {
+			if (Array.isArray(pipeline.nodes)) {
+				// Update the canvas nodes with the restored pipeline nodes
+				nodes.set(pipeline.nodes);
+				// Reset the node counter to be higher than any existing node ID
+				node_counter = pipeline.nodes.reduce((maxId, node) => {
+					const idNum = parseInt(node.id.split('-')[1]) || 0;
+					return Math.max(maxId, idNum);
+				}, 0);
+
+				// Filter out connections that reference non-existent nodes
+				if (Array.isArray(pipeline.connections)) {
+					const validConnections = pipeline.connections.filter(conn => {
+						const sourceExists = pipeline.nodes.some(node => node.id === conn.sourceNodeId);
+						const targetExists = pipeline.nodes.some(node => node.id === conn.targetNodeId);
+						return sourceExists && targetExists;
+					});
+					physicalConnections = validConnections;
+				}
+			}
+		}
+	});
+
+	onMount(() => {
+		return () => {
+			// Cleanup subscriptions
+			unsubscribePipeline();
+		};
 	});
 
 	onMount(async () => {
@@ -83,14 +129,6 @@
 	}
 
 	// --- CANVAS STATE ---
-	interface CanvasNode {
-		id: string;
-		type: NodeType;
-		label: string;
-		position: { x: number; y: number };
-	}
-	const nodes = writable<CanvasNode[]>([]);
-	let node_counter = 0;
 	let selected_phase: NodeType | null = null;
 	let show_code_input = false;
 	let source_code = '';
@@ -107,9 +145,6 @@
 		analyser: false,
 		translator: false
 	};
-
-	// --- PHYSICAL CONNECTION TRACKING ---
-	let physicalConnections: NodeConnection[] = [];
 
 	// Handle physical connection changes from canvas
 	function handleConnectionChange(connections: NodeConnection[]) {
@@ -337,8 +372,12 @@
 		const canvasNodes = get(nodes);
 		const pipeline = {
 			nodes: canvasNodes,
+			connections: physicalConnections,
 			lastSaved: new Date().toISOString()
 		};
+
+		// Update the pipeline store to keep it in sync
+		pipelineStore.set(pipeline);
 
 		try {
 			const response = await fetch('http://localhost:8080/api/users/savePipeline', {
@@ -554,7 +593,7 @@
 				</div>
 			</div>
 		{/if}
-		<DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} onConnectionChange={handleConnectionChange} />
+		<DrawerCanvas {nodes} initialConnections={physicalConnections} onPhaseSelect={handlePhaseSelect} onConnectionChange={handleConnectionChange} />
 
 		{#if show_drag_tip}
 			<div class="help-tip">
