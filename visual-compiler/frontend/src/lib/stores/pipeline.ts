@@ -27,7 +27,7 @@ export interface Pipeline {
 export const pipelineStore = writable<Pipeline>({
     nodes: [],
     connections: [],
-    lastSaved: null
+    lastSaved: null,
 });
 
 // Helper functions for pipeline management
@@ -35,7 +35,7 @@ export const resetPipeline = () => {
     pipelineStore.set({
         nodes: [],
         connections: [],
-        lastSaved: null
+        lastSaved: null,
     });
 };
 
