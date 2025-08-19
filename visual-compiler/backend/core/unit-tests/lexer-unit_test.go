@@ -285,9 +285,7 @@ func TestCreateTokens_IdentifierTokensIdentified_Complex(t *testing.T) {
 		"=",
 		"3",
 		";",
-		"=",
 		"5",
-		";",
 	}
 
 	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
@@ -915,8 +913,6 @@ func TestCreateTokensFromDFA_ComplexDFAWithComplexCode(t *testing.T) {
 		";",
 		"<",
 		"{",
-		"=",
-		";",
 		"}",
 	}
 

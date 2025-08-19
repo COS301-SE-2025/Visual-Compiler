@@ -5,84 +5,114 @@
     export let phase: string;
     export let symbol_table: Symbol[] = [];
     export let show_symbol_table = false;
-    export let analyser_error: string;
+    export let analyser_error: boolean ;
     export let analyser_error_details: string;
 
 </script>
 
-<div class="artifact-viewer">
-    {#if phase === 'analyser' && show_symbol_table}
-        <div class="symbol-heading">
-            <h3>Symbols</h3>
-        </div>
-        {#if symbol_table && symbol_table.length > 0}
-            <table class="symbol-table">
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Name</th>
-                        <th>Scope</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {#each symbol_table as symbol}
-                        <tr>
-                            <td>{symbol.type}</td>
-                            <td>{symbol.name}</td>
-                            <td>{symbol.scope}</td>
-                        </tr>
-                    {/each}
-                </tbody>
-            </table>
-        {:else}
-            <div class="no-symbols">No symbols generated</div>
-        {/if}
+<div class="artifact-container">
+	<div class="artifact-header">
+		<h2 class="artifact-title">Analyser Artefact</h2>
+	</div>
 
-        {#if analyser_error && analyser_error.length > 0}
-            <div class="error-state">
-				<div class="error-icon">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="48"
-						height="48"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					>
-						<circle cx="12" cy="12" r="10" />
-						<line x1="12" y1="8" x2="12" y2="12" />
-						<line x1="12" y1="16" x2="12.01" y2="16" />
-					</svg>
-				</div>
-				<h4>Semantic Error Found</h4>
-				<p class="error-message">
-					The source code could not be analysed with the provided scope rules and type rules. Please check your input again.<br>
-				</p>
-				<pre class="error-details">{analyser_error_details}</pre>
+    <div class="artifact-viewer">
+
+        {#if phase === 'analyser' && show_symbol_table}
+            <div class="artifact-header">
+				<h3>Symbols</h3>
 			</div>
+
+            {#if symbol_table && symbol_table.length > 0}
+                <table class="symbol-table">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Name</th>
+                            <th>Scope</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {#each symbol_table as symbol}
+                            <tr>
+                                <td>{symbol.type}</td>
+                                <td>{symbol.name}</td>
+                                <td>{symbol.scope}</td>
+                            </tr>
+                        {/each}
+                    </tbody>
+                </table>
+            {:else}
+                <div class="no-symbols">No symbols generated</div>
+            {/if}
+
+        {:else if phase === 'analyser'}
+            {#if analyser_error}
+                <div class="error-state">
+                    <div class="error-icon">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="48"
+                            height="48"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                    </div>
+                    <h4>Semantic Error Found</h4>
+                    <p class="error-message">
+                        The source code could not be analysed with the provided scope rules and type rules. Please check your input again.<br>
+                    </p>
+                    <pre class="error-details">{analyser_error_details}</pre>
+                </div>
+            {/if}
         {/if}
-    {:else if phase === 'analyser'}
-        <div class="empty-state">Symbols will appear here after generation</div>
-    {/if}
+    </div>
 </div>
 
 <style>
-    .artifact-viewer {
-        padding: 2rem 1.5rem 1.5rem;
-        transition: background-color 0.3s ease;
-    }
+    .artifact-container {
+		padding: 1.5rem;
+		background-color: #f8f9fa;
+		border-radius: 8px;
+		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		height: 100%;
+	}
 
-    h3 {
-        color: #041a47;
-        font-size: 1.25rem;
-        margin: 0 0 1.5rem 0;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid #e5e7eb;
-        transition: color 0.3s ease, border-bottom-color 0.3s ease;
-    }
+    .artifact-header {
+		border-bottom: 1px solid #e5e7eb;
+		padding-bottom: 0.75rem;
+	}
+
+	.artifact-viewer .artifact-header {
+		border-bottom: none;
+		padding-bottom: 0;
+		margin-bottom: 1.5rem;
+		text-align: center;
+	}
+
+	.artifact-title {
+		margin: 0;
+		color: #001a6e;
+		font-family: 'Times New Roman', serif;
+		font-size: 1.25rem;
+	}
+
+	h3 {
+		color: #001a6e;
+		font-size: 1.5rem;
+		margin: 0;
+		font-family: 'Times New Roman', serif;
+	}
 
     .symbol-table {
         width: 100%;
@@ -110,8 +140,8 @@
     }
 
     .symbol-table th {
-        background: #041a47;
-        color: white;
+        background: #BED2E6;
+        color: 000000;
         font-weight: 500;
         transition: background-color 0.3s ease, color 0.3s ease;
     }
@@ -195,7 +225,13 @@
     }
 
     :global(html.dark-mode) .symbol-table th {
-        background: #1a202c;
+        background: #001A6E;
+        color: #ffffff;
+    }
+
+    :global(html.dark-mode) .symbol-table {
+        background: #2d3748;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 
     :global(html.dark-mode) .error-state {

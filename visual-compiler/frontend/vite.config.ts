@@ -4,6 +4,17 @@ import { defineConfig } from 'vite';
 import { svelte } from '@sveltejs/vite-plugin-svelte';
 
 export default defineConfig(({ mode }) => ({
+	...(mode === 'development' && {
+		server: {
+			allowedHosts: [
+				'visual-compiler-alb-1542446286.eu-north-1.elb.amazonaws.com',
+				'visual-compiler.co.za',
+				'www.visual-compiler.co.za',
+				'localhost',
+			],
+			port: 5173
+		}
+	}),
 	plugins: [sveltekit()],
 	test: {
 		globals: true,
@@ -25,8 +36,9 @@ export default defineConfig(({ mode }) => ({
 					setupFiles: ['./vitest-setup-client.ts']
 				},
 				resolve: {
-					conditions: ['browser'] 
-					},
+					conditions: ['browser']
+				},
+				server: {},
 			},
 			{
 				extends: './vite.config.ts',
@@ -36,8 +48,9 @@ export default defineConfig(({ mode }) => ({
 					include: ['tests/**/*.server.{test,spec}.{js,ts}', 'src/**/*.server.{test,spec}.{js,ts}'],
 					exclude: ['tests/**/*.{test,spec}.{js,ts}', 'node_modules/**'],
 					setupFiles: ['./vitest-setup-server.ts']
-				}
+				},
+				server: {},
 			}
 		]
-	},
+	}
 }));

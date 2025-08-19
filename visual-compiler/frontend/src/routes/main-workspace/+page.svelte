@@ -1,16 +1,31 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { writable, get } from 'svelte/store';
+	import { writable, get, type Writable } from 'svelte/store';
 	import type { NodeType, Token, SyntaxTree, NodeConnection } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
-	import { projectName } from '$lib/stores/project'; // Import the new store
+	import { projectName } from '$lib/stores/project';
+	import { pipelineStore } from '$lib/stores/pipeline';
 	import NavBar from '$lib/components/main/nav-bar.svelte';
 	import Toolbox from '$lib/components/main/Toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 	import WelcomeOverlay from '$lib/components/project-hub/project-hub.svelte';
 
+	// --- CANVAS STATE ---
+	interface CanvasNode {
+		id: string;
+		type: NodeType;
+		label: string;
+		position: { x: number; y: number };
+	}
+	const nodes: Writable<CanvasNode[]> = writable([]);
+	let node_counter = 0;
+
+	// --- CONNECTION TRACKING STATE ---
+	let physicalConnections: NodeConnection[] = [];
+
+	// --- COMPONENT STATE ---
 	let LexerPhaseTutorial: any;
 	let LexerPhaseInspector: any;
 	let LexerArtifactViewer: any;
@@ -25,7 +40,6 @@
 	let TranslatorArtifactViewer: any;
 
 	let showWelcomeOverlay = false;
-
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
 
@@ -33,6 +47,38 @@
 	let currentProjectName = '';
 	projectName.subscribe((value) => {
 		currentProjectName = value;
+	});
+
+	// Subscribe to pipeline store changes
+	const unsubscribePipeline = pipelineStore.subscribe(pipeline => {
+		if (pipeline) {
+			if (Array.isArray(pipeline.nodes)) {
+				// Update the canvas nodes with the restored pipeline nodes
+				nodes.set(pipeline.nodes);
+				// Reset the node counter to be higher than any existing node ID
+				node_counter = pipeline.nodes.reduce((maxId, node) => {
+					const idNum = parseInt(node.id.split('-')[1]) || 0;
+					return Math.max(maxId, idNum);
+				}, 0);
+
+				// Filter out connections that reference non-existent nodes
+				if (Array.isArray(pipeline.connections)) {
+					const validConnections = pipeline.connections.filter(conn => {
+						const sourceExists = pipeline.nodes.some(node => node.id === conn.sourceNodeId);
+						const targetExists = pipeline.nodes.some(node => node.id === conn.targetNodeId);
+						return sourceExists && targetExists;
+					});
+					physicalConnections = validConnections;
+				}
+			}
+		}
+	});
+
+	onMount(() => {
+		return () => {
+			// Cleanup subscriptions
+			unsubscribePipeline();
+		};
 	});
 
 	onMount(async () => {
@@ -83,14 +129,6 @@
 	}
 
 	// --- CANVAS STATE ---
-	interface CanvasNode {
-		id: string;
-		type: NodeType;
-		label: string;
-		position: { x: number; y: number };
-	}
-	const nodes = writable<CanvasNode[]>([]);
-	let node_counter = 0;
 	let selected_phase: NodeType | null = null;
 	let show_code_input = false;
 	let source_code = '';
@@ -107,9 +145,6 @@
 		analyser: false,
 		translator: false
 	};
-
-	// --- PHYSICAL CONNECTION TRACKING ---
-	let physicalConnections: NodeConnection[] = [];
 
 	// Handle physical connection changes from canvas
 	function handleConnectionChange(connections: NodeConnection[]) {
@@ -321,18 +356,55 @@
 	}
 
 	// --- SAVE PROJECT FUNCTIONALITY ---
-	function saveProject() {
+	async function saveProject() {
+		const user_id = localStorage.getItem('user_id');
+		if (!user_id) {
+			AddToast('Please log in to save your project.', 'error');
+			return;
+		}
+
+		if (!currentProjectName) {
+			AddToast('Please select a project first.', 'error');
+			return;
+		}
+
+		// Prepare the pipeline data
 		const canvasNodes = get(nodes);
-		const projectData = {
-			projectName: currentProjectName,
-			nodes: canvasNodes
+		const pipeline = {
+			nodes: canvasNodes,
+			connections: physicalConnections,
+			lastSaved: new Date().toISOString()
 		};
 
-		savedProjectData = projectData;
-		// For now, we'll just log it. Later, you can send this to your backend.
-		console.log('Project Saved:', JSON.stringify(savedProjectData, null, 2));
+		// Update the pipeline store to keep it in sync
+		pipelineStore.set(pipeline);
 
-		AddToast(`Project "${currentProjectName}" saved successfully!`, 'success');
+		try {
+			const response = await fetch('http://localhost:8080/api/users/savePipeline', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify({
+					users_id: user_id,
+					project_name: currentProjectName,
+					pipeline: pipeline
+				})
+			});
+
+			if (!response.ok) {
+				const error = await response.text();
+				throw new Error(error);
+			}
+
+			const data = await response.json();
+			console.log('Project Saved:', data);
+			savedProjectData = pipeline;
+			AddToast(`Project "${currentProjectName}" saved successfully!`, 'success');
+		} catch (error) {
+			console.error('Failed to save project:', error);
+			AddToast(`Failed to save project: ${error.message}`, 'error');
+		}
 	}
 
 	// --- TOOLTIPS AND LABELS ---
@@ -388,7 +460,7 @@
 		}
 
 		syntaxTreeData = null;
-		parsingError = null;
+		parsing_error = false;
 		translationError = null;
 		if (type === 'source') {
 			show_code_input = true;
@@ -409,33 +481,34 @@
 
 	let show_symbol_table = false;
 	let symbol_table: Symbol[] = [];
-	let analyser_error = '';
+	let analyser_error = false;
 	let analyser_error_details = '';
 
 	function handleReset() {
 		show_symbol_table = false;
 		symbol_table = [];
-		analyser_error = '';
+		analyser_error = false;
 		analyser_error_details = '';
 	}
 
-	function handleSymbolGeneration(data: { symbol_table: Symbol[]; error?: string; error_details?: string }) {
+	function handleSymbolGeneration(data: { symbol_table: Symbol[]; analyser_error?: boolean; analyser_error_details?: string }) {
 		if (data.symbol_table && data.symbol_table.length > 0) {
 			show_symbol_table = true;
 			symbol_table = data.symbol_table;
-			analyser_error = '';
+			analyser_error = false;
 			analyser_error_details = '';
 			// Mark analyser phase as complete when symbol table is generated successfully
 			phase_completion_status.analyser = true;
 		} else {
 			show_symbol_table = false;
-			analyser_error = data.error || 'Analysis failed';
-			analyser_error_details = data.error_details || '';
+			analyser_error = true;
+			analyser_error_details = data.analyser_error_details || '';
 		}
 	}
 
 	function handleTranslationReceived(event: CustomEvent<string[]>) {
 		translated_code = event.detail;
+		translationError = null;
 		// Mark translator phase as complete when translation is received
 		if (event.detail && event.detail.length > 0) {
 			phase_completion_status.translator = true;
@@ -470,6 +543,7 @@
 		artifactData = event.detail;
 		// Mark parser phase as complete when syntax tree is received
 		phase_completion_status.parser = true;
+		parsing_error = false;
 	}
 
 	let tokens: Token[] = [];
@@ -477,10 +551,12 @@
 	let translated_code: string[] = [];
 
 	let artifactData: SyntaxTree | null = null;
-	let parsingError: any = null;
+	let parsing_error: boolean=false;
+	let parsing_error_details: string="";
 
-	function handleParsingError(event: CustomEvent) {
-		parsingError = event.detail;
+	function handleParsingError(data: { parsing_error?: boolean; parsing_error_details?: string }) {
+		parsing_error = true;
+		parsing_error_details = data.parsing_error_details || '';
 		syntaxTreeData = null;
 	}
 </script>
@@ -517,7 +593,7 @@
 				</div>
 			</div>
 		{/if}
-		<DrawerCanvas {nodes} onPhaseSelect={handlePhaseSelect} onConnectionChange={handleConnectionChange} />
+		<DrawerCanvas {nodes} initialConnections={physicalConnections} onPhaseSelect={handlePhaseSelect} onConnectionChange={handleConnectionChange} />
 
 		{#if show_drag_tip}
 			<div class="help-tip">
@@ -572,7 +648,7 @@
 							on:treereceived={handleTreeReceived}
 							on:parsingerror={handleParsingError}
 						/>
-						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} {parsingError} />
+						<svelte:component this={ParserArtifactViewer} syntaxTree={syntaxTreeData} {parsing_error}{parsing_error_details} />
 					{/if}
 
 					{#if selected_phase === 'analyser' && AnalyserPhaseTutorial}
@@ -724,17 +800,18 @@
 		bottom: 20px;
 		right: 20px;
 		padding: 0.5rem 1rem;
-		background: #001a6e;
-		color: white;
+		background: #bed2e6;
+		color: black;
 		border: none;
 		border-radius: 4px;
 		cursor: pointer;
 		z-index: 1000;
 		margin-right: 1rem;
 		margin-bottom: 1rem;
+		font-weight: bold;
 	}
 	.return-button:hover {
-		background: #074799;
+		background: #a8bdd1;
 	}
 	.code-input-overlay {
 		position: fixed;
