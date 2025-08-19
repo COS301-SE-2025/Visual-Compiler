@@ -37,23 +37,22 @@
 
     const example_rules = [
         {
-            sequence: 'NUMBER, PLUS, NUMBER',
-            translation: 'ADD {NUMBER}, {NUMBER}',
-            source: '10 + 5',
-            output: 'ADD 10, 5\nMOV [result], RAX'
+            sequence: 'INTEGER, OPERATOR, INTEGER',
+            translation: 'mov   rax, {INTEGER}\nadd   rax, {INTEGER}',
+            source: '12 + 13',
+            output: 'mov   rax, 12\nadd   rax, 13'
         },
         {
-            sequence: 'KEYWORD, IDENTIFIER, ASSIGNMENT, NUMBER',
-            translation: 'MOV [{IDENTIFIER}], {NUMBER}',
-            source: 'int count = 42;',
-            output: 'MOV [count], 42'
+            sequence: 'KEYWORD, IDENTIFIER, ASSIGNMENT, BOOLEAN',
+            translation: 'mov   rax, [{IDENTIFIER}]\nmov   rax, {BOOLEAN}',
+            source: 'bool found = true;',
+            output: 'mov   rax, [found]\nmov   rax, 1'
         }
     ];
 
     const critical_donts = [
-        { mistake: 'Mixing token types', wrong: 'int, x, =, 5', right: 'KEYWORD, IDENTIFIER, ASSIGNMENT, NUMBER' },
-        { mistake: 'Skipping placeholders', wrong: 'MOV [result], 10', right: 'MOV [{IDENTIFIER}], {NUMBER}' },
-        { mistake: 'Skipping operators', wrong: 'a b', right: 'a TIMES b' }
+        { mistake: 'Not using token types', wrong: 'int, result, =, 1', right: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER' },
+        { mistake: 'Skipping placeholders', wrong: 'mov [result], 1', right: 'MOV [{IDENTIFIER}], {INTEGER}' }
     ];
 </script>
 
@@ -99,15 +98,15 @@
                                 <div class="example-content">
                                     <div class="type-pair">
                                         <span class="type">Sequence:</span>
-                                        <code class="pattern-code">NUMBER, PLUS, NUMBER</code>
+                                        <code class="pattern-code">IDENTIFIER, OPERATOR, INTEGER</code>
                                     </div>
                                     <div class="type-pair">
                                         <span class="type">Translation:</span>
-                                        <code class="pattern-code">ADD {NUMBER}, {NUMBER}</code>
+                                        <code class="pattern-code">add [&#123;IDENTIFIER&#125;], &#123;INTEGER&#125;</code>
                                     </div>
                                     <div class="output-section">
                                         <span>✅ Result:</span>
-                                        <p>This changes <code>10 + 5</code> to <code>ADD 10, 5</code></p>
+                                        <p>This changes <code> var + 13 </code> to <code> add [var], 13 </code></p>
                                     </div>
                                 </div>
                             </div>
@@ -120,13 +119,14 @@
                             <p> Click "Submit Rules" to generate your output:</p>
                             <div class="code-sample">
                                 <div class="code-header">
-                                    <span>-- Example Output for <code>10 + 5</code>:</span>
+                                    <span>-- Example Output for <code>result = 12</code>:</span>
                                 </div>
                                 <pre class="code-output">
 📝 Assembly Output:
 
-ADD 10, 5
-MOV [result], RAX</pre>
+mov    rax, [result]
+add    rax, 12
+                </pre>
                             </div>
                         </div>
                     </div>
@@ -175,7 +175,7 @@ MOV [result], RAX</pre>
                     </div>
                 {:else if reactive_step === 6}
                     <div class="tutorial-step">
-                        <h3>6. Critical "Don'ts" and Warnings</h3>
+                        <h3>6. Important Warnings</h3>
                         <div class="step-content">
                             <p>Avoid these common mistakes:</p>
                             {#each critical_donts as { mistake, wrong, right }}
