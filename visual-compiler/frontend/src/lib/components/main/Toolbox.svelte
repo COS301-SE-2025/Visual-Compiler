@@ -1,15 +1,31 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import type { NodeType } from '$lib/types';
 	import { theme } from '../../stores/theme';
 	import { AddToast } from '../../stores/toast';
 
+	// Define CanvasNode interface to match the one from main-workspace
+	interface CanvasNode {
+		id: string;
+		type: NodeType;
+		label: string;
+		position: { x: number; y: number };
+	}
+
 	export let handleCreateNode: (type: NodeType) => void;
 	export let tooltips: Record<NodeType, string>;
+	export let nodes: CanvasNode[] = [];
 
 	// A set to keep track of the node types that have been created.
 	let createdNodeTypes = new Set<NodeType>();
 	// A flag to ensure the toast is only shown once.
 	let hasShownDisabledToast = false;
+
+	// Reactive statement to synchronize createdNodeTypes with nodes from canvas
+	$: {
+		const typesOnCanvas = new Set(nodes.map(node => node.type));
+		createdNodeTypes = typesOnCanvas;
+	}
 
 	const node_types: { id: NodeType; label: string }[] = [
 		{ id: 'source', label: 'Source Code' },
@@ -49,15 +65,36 @@
 			createNode(type);
 		}
 	}
+
+	// Reset function to clear created node types
+	function resetCreatedNodeTypes() {
+		createdNodeTypes.clear();
+		createdNodeTypes = createdNodeTypes; // Trigger reactivity
+		hasShownDisabledToast = false; // Reset the toast flag
+	}
+
+	// Listen for reset events from the main workspace
+	onMount(() => {
+		const handleReset = () => {
+			resetCreatedNodeTypes();
+		};
+		
+		document.addEventListener('resetToolbox', handleReset);
+		
+		return () => {
+			document.removeEventListener('resetToolbox', handleReset);
+		};
+	});
 </script>
 
 <aside class="toolbox" data-testid="toolbox">
 	<h2 class="toolbox-heading">Blocks</h2>
 	<h2 class="toolbox-instruction">Click a block to add it to the canvas.</h2>
-	{#each node_types as n}
+	{#each node_types as n, i}
 		<!-- Wrapper div to capture clicks even when the button is disabled -->
 		<div on:click={() => handleClick(n.id)}>
 			<button class="phase-btn" disabled={createdNodeTypes.has(n.id)}>
+				<span class="button-number-corner">{i + 1}</span>
 				{n.label}
 				<span class="custom-tooltip">{tooltips[n.id]}</span>
 			</button>
@@ -80,6 +117,26 @@
 		border-radius: 12px;
 		border: 1px solid #e0e0e0;
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+		overflow-y: auto;
+		min-height: 0;
+	}
+
+	/* Minimalistic scrollbar styling */
+	.toolbox::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	.toolbox::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.toolbox::-webkit-scrollbar-thumb {
+		background-color: rgba(0, 0, 0, 0.2);
+		border-radius: 3px;
+	}
+
+	.toolbox::-webkit-scrollbar-thumb:hover {
+		background-color: rgba(0, 0, 0, 0.3);
 	}
 
 	.toolbox-heading {
@@ -104,8 +161,8 @@
 	}
 
 	.phase-btn {
-		height: 90px;
-		width: 200px;
+		height: 85px;
+		width: 190px;
 		background-color: #BED2E6;
 		color: #000000;
 		border-radius: 8px;
@@ -121,6 +178,18 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.button-number-corner {
+		position: absolute;
+		top: 6px;
+		left: 6px;
+		color: rgba(4, 26, 71);
+		font-size: 0.65rem;
+		font-weight: 600;
+		line-height: 1;
+		z-index: 2;
 	}
 
 	.phase-btn:hover {
@@ -195,6 +264,24 @@
 		box-shadow: none;
 	}
 
+	/* Dark mode scrollbar styling */
+	:global(html.dark-mode) .toolbox::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	:global(html.dark-mode) .toolbox::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	:global(html.dark-mode) .toolbox::-webkit-scrollbar-thumb {
+		background-color: rgba(255, 255, 255, 0.2);
+		border-radius: 3px;
+	}
+
+	:global(html.dark-mode) .toolbox::-webkit-scrollbar-thumb:hover {
+		background-color: rgba(255, 255, 255, 0.3);
+	}
+
 	:global(html.dark-mode) .toolbox-heading {
 		color: #d3d3d3;
 	}
@@ -207,6 +294,10 @@
 		background-color: #001A6E;
 		color: #ffffff;
 		border: 1px solid #374151;
+	}
+
+	:global(html.dark-mode) .button-number-corner {
+		color: rgba(255, 255, 255, 0.4);
 	}
 
 	:global(html.dark-mode) .phase-btn:hover {

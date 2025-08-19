@@ -2,7 +2,7 @@
 	import { createEventDispatcher, onMount } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
-	import { pipelineStore } from '$lib/stores/pipeline';
+	import { pipelineStore, resetPipeline } from '$lib/stores/pipeline';
 	import ProjectNamePrompt from './project-name-prompt.svelte';
 	import DeleteConfirmPrompt from './delete-confirmation.svelte'; 
 	import { AddToast } from '$lib/stores/toast';
@@ -156,6 +156,7 @@
 
 			// Update UI and close modal
 			projectName.set(newProjectName);
+			resetPipeline(); // Clear the canvas for the new blank project
 			showProjectNamePrompt = false;
 			await fetchProjects(); // Refresh the project list
 			handleClose();
@@ -343,6 +344,7 @@
 	bind:show={showProjectNamePrompt}
 	on:confirm={handleProjectNameConfirm}
 	on:cancel={() => (showProjectNamePrompt = false)}
+	recentProjects={recentProjects}
 />
 
 <DeleteConfirmPrompt
