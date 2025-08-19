@@ -127,18 +127,25 @@
 			});
 
 			if (data.message === "Retrieved users project details") {
-				if (data.results?.lexing) {
-					// Update lexer state
-					updateLexerStateFromProject(data.results);
+				if (data.results) {
+					// Update lexer and parser state with proper structure
+					updateLexerStateFromProject({
+						lexing: data.results.lexing,
+						parsing: {
+							grammar: data.results.parsing?.grammar || null,
+							tree: data.results.parsing?.tree || null
+						}
+					});
 
-					// Update phase completion status directly using the store
+					// Update phase completion status
 					const hasTokens = !!(data.results.lexing.tokens && data.results.lexing.tokens.length > 0);
 					const hasCode = !!data.results.lexing.code;
+					const hasTree = !!(data.results.parsing?.tree);
 					
 					phase_completion_status.set({
 						source: hasCode,
 						lexer: hasTokens,
-						parser: !!(data.results.lexing.tree && !data.results.lexing.parsing_error),
+						parser: hasTree,
 						analyser: !!(data.results.lexing.symbol_table && !data.results.lexing.analyser_error),
 						translator: !!(data.results.lexing.translated_code && data.results.lexing.translated_code.length > 0)
 					});
