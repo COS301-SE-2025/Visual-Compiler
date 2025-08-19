@@ -3,6 +3,7 @@
 	import { fly } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
 	import { pipelineStore, resetPipeline, type Pipeline } from '$lib/stores/pipeline';
+	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import ProjectNamePrompt from './project-name-prompt.svelte';
 	import DeleteConfirmPrompt from './delete-confirmation.svelte'; 
 	import { AddToast } from '$lib/stores/toast';
@@ -112,7 +113,26 @@
 
 			const data = await response.json();
 			
+			// Log detailed project data to console
+			console.log('Project Data:', {
+				message: data.message,
+				projectName: selectedProjectName,
+				hasResults: !!data.results,
+				lexingData: data.results?.lexing,
+				hasSourceCode: !!data.results?.lexing?.code,
+				pipelineData: data.results?.pipeline,
+				fullResponse: data
+			});
+			
 			if (data.message === "Retrieved users project details") {
+				// Handle source code if it exists
+				if (data.results?.lexing?.code) {
+					confirmedSourceCode.set(data.results.lexing.code);
+					AddToast('Source code restored from project', 'success');
+				} else {
+					confirmedSourceCode.set('');
+				}
+
 				// Check if there's pipeline data
 				if (data.results && data.results.pipeline) {
 					// Update the pipeline store with the saved pipeline data
