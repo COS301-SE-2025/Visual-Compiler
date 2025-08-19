@@ -77,6 +77,9 @@ func Analyse(c *gin.Context) {
 			"users_id":              req.UsersID,
 			"symbol_table_artefact": artefact,
 			"project_name":          req.Project_Name,
+			"scope_rules":           req.ScopeRules,
+			"grammar_rules":         req.GrammarRules,
+			"type_rules":            req.TypeRules,
 		})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
@@ -86,6 +89,9 @@ func Analyse(c *gin.Context) {
 		update_existing := bson.D{
 			bson.E{Key: "$set", Value: bson.M{
 				"symbol_table_artefact": artefact,
+				"scope_rules":           req.ScopeRules,
+				"grammar_rules":         req.GrammarRules,
+				"type_rules":            req.TypeRules,
 			}},
 		}
 		_, err = analyse_collection.UpdateOne(ctx, filters, update_existing)
