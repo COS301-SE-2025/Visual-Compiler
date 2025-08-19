@@ -425,14 +425,17 @@
 
 		// Prepare the pipeline data
 		const canvasNodes = get(nodes);
+
 		const pipeline = {
 			nodes: canvasNodes,
 			connections: physicalConnections,
-			lastSaved: new Date().toISOString()
+			lastSaved: new Date().toISOString(),
 		};
 
 		// Update the pipeline store to keep it in sync
 		pipelineStore.set(pipeline);
+
+		console.log('Pipeline saved with anchors:', get(pipelineStore));
 
 		try {
 			const response = await fetch('http://localhost:8080/api/users/savePipeline', {

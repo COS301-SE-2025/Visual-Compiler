@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Svelvet, Node, Anchor } from 'svelvet';
+	import { Svelvet, Node } from 'svelvet';
 	import type { Writable } from 'svelte/store';
 	import type { NodeType, NodeConnection } from '$lib/types';
 	import { theme } from '../../stores/theme';
@@ -78,35 +78,32 @@
 	let last_click = -Infinity;
 	const DOUBLE_CLICK_MILLISECONDS = 300;
 
+
+
 	// Handle new edge connections
 	function handleConnection(event: CustomEvent) {
-		console.log('Connection created:', event.detail);
 		const { sourceNode, targetNode } = event.detail;
-		
-		// Extract node IDs from the node objects
-		const sourceNodeId = sourceNode.id.replace('N-', '');
-		const targetNodeId = targetNode.id.replace('N-', '');
-		
-		console.log('Parsed node IDs:', { sourceNodeId, targetNodeId });
-		
-		// Find the node types for source and target from display nodes
+
+		const sourceNodeId = sourceNode.id.replace("N-", "");
+		const targetNodeId = targetNode.id.replace("N-", "");
+
+		//const sourceNodeId = sourceNode.id.replace("N-", "");
 		const sourceCanvasNode = displayNodes.find(node => node.id === sourceNodeId);
 		const targetCanvasNode = displayNodes.find(node => node.id === targetNodeId);
-		
-		console.log('Found canvas nodes:', { sourceCanvasNode, targetCanvasNode });
-		
+
 		if (sourceCanvasNode && targetCanvasNode) {
 			const newConnection: NodeConnection = {
 				id: `${sourceNodeId}-${targetNodeId}`,
-				sourceNodeId: sourceCanvasNode.id,
-				targetNodeId: targetCanvasNode.id,
+				sourceNodeId: `N-${sourceNodeId}`,
+				targetNodeId: `N-${targetNodeId}`,
 				sourceType: sourceCanvasNode.type,
-				targetType: targetCanvasNode.type
+				targetType: targetCanvasNode.type,
+				sourceAnchor: event.detail.sourceAnchor.id,
+				targetAnchor: event.detail.targetAnchor.id,
 			};
-			
+
 			nodeConnections = [...nodeConnections, newConnection];
 			onConnectionChange(nodeConnections);
-			console.log('Updated connections:', nodeConnections);
 		}
 	}
 
@@ -153,11 +150,6 @@
 		<Svelvet 
 			bind:this={canvas_el} 
 			theme={'custom-theme'}
-			edges={nodeConnections.map(conn => ({
-				source: conn.sourceNodeId,
-				target: conn.targetNodeId,
-				id: conn.id
-			}))}
 			on:connection={handleConnection}
 			on:disconnection={handleDisconnection}
 			on:nodeMove={(event) => {
@@ -173,7 +165,7 @@
 		>
 			{#each displayNodes as node (node.id)}
 				<Node
-					id={node.id}
+					id={`N-${node.id}`}
 					position={node.position}
 					drop="center"
 					bgColor={$theme === 'dark' ? '#001A6E' : '#BED2E6'}
