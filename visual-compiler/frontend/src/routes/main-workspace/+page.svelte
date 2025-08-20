@@ -608,6 +608,7 @@
 			analyser_error_details = '';
 			// Mark analyser phase as complete when symbol table is generated successfully
 			phase_completion_status.analyser = true;
+			completion_status.analyser = true;
 		} else {
 			show_symbol_table = false;
 			analyser_error = true;
@@ -621,6 +622,7 @@
 		// Mark translator phase as complete when translation is received
 		if (event.detail && event.detail.length > 0) {
 			phase_completion_status.translator = true;
+			completion_status.translator = true;
 		}
 	}
 
@@ -636,6 +638,7 @@
 		show_code_input = false;
 		// Mark source phase as complete when code is submitted
 		phase_completion_status.source = true;
+		completion_status.source = true;
 	}
 
 	function handleTokenGeneration(data: { tokens: Token[]; unexpected_tokens: string[] }) {
@@ -645,6 +648,7 @@
 		// Mark lexer phase as complete when tokens are generated successfully
 		if (data.tokens.length > 0) {
 			phase_completion_status.lexer = true;
+			completion_status.lexer = true;
 		}
 	}
 
@@ -653,6 +657,7 @@
 		artifactData = event.detail;
 		// Mark parser phase as complete when syntax tree is received
 		phase_completion_status.parser = true;
+		completion_status.parser = true;
 		parsing_error = false;
 	}
 
