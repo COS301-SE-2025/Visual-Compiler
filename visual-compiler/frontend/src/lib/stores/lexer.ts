@@ -19,6 +19,29 @@ export interface Rule {
     regex: string;
 }
 
+export interface AnalyzerData {
+    scope_rules: Array<{
+        start: string;
+        end: string;
+    }>;
+    type_rules: Array<{
+        resultdata: string;
+        assignment: string;
+        lhsdata: string;
+        operator: string[];
+        rhsdata: string;
+    }>;
+    grammar_rules: {
+        variablerule: string;
+        typerule: string;
+        functionrule: string;
+        parameterrule: string;
+        assignmentrule: string;
+        operatorrule: string;
+        termrule: string;
+    };
+}
+
 export interface LexerState {
     mode: 'AUTOMATA' | 'REGEX' | null;
     dfa: DFAState | null;
@@ -50,6 +73,12 @@ export interface LexerState {
             }
         }
     };
+    analyzer_data?: AnalyzerData;
+    symbol_table?: Array<{
+        name: string;
+        type: string;
+        scope: number;
+    }>;
 }
 
 export const lexerState = writable<LexerState>({
@@ -70,6 +99,7 @@ export function updateLexerStateFromProject(projectData: any) {
 
     const lexingData = projectData.lexing;
     const parsingData = projectData.parsing;
+    const analysingData = projectData.analysing;
 
     lexerState.update(state => ({
         ...state,
@@ -94,6 +124,25 @@ export function updateLexerStateFromProject(projectData: any) {
         parser_data: parsingData ? {
             tree: parsingData.tree,
             grammar: parsingData.grammar
-        } : undefined
+        } : undefined,
+        analyzer_data: analysingData ? {
+            scope_rules: analysingData.scope_rules.map((rule: any) => ({
+                start: rule.start || '',
+                end: rule.end || ''
+            })),
+            type_rules: analysingData.type_rules.map((rule: any) => ({
+                resultdata: rule.resultdata || '',
+                assignment: rule.assignment || '',
+                lhsdata: rule.lhsdata || '',
+                operator: rule.operator || [],
+                rhsdata: rule.rhsdata || ''
+            })),
+            grammar_rules: analysingData.grammar_rules || {}
+        } : undefined,
+        symbol_table: analysingData?.symbol_table_artefact?.symbolscopes?.map(symbol => ({
+            name: symbol.name,
+            type: symbol.type,
+            scope: symbol.scope
+        })) || []
     }));
 }
