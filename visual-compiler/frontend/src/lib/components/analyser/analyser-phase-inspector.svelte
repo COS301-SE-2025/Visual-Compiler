@@ -397,39 +397,7 @@
 </script>
 
 <div class="panel-container">
-    <div class="default-toggle-wrapper">
-        <button
-            class="default-toggle-btn"
-            class:selected={show_default_rules}
-            on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
-            type="button"
-            aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-            title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-        >
-            <span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
-        </button>
-    </div>
-    <div class="header">
-        {#if rules_submitted}
-            <div class="reset-wrapper" transition:fade={{ duration: 150 }}>
-                <button class="reset-button" on:click={resetState} aria-label="Reset rules">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                        <path d="M3 3v5h5" />
-                    </svg>
-                </button>
-            </div>
-        {/if}
+    <div class="header-container">
         <h1 class="analyser-heading">ANALYSING</h1>
     </div>
 
@@ -453,6 +421,16 @@
         <div class="analyser-box">
             <div class="analyser-box-header">
                 <h2 class="heading2">Scope Rules</h2>
+                <button
+                    class="default-toggle-btn"
+                    class:selected={show_default_rules}
+                    on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
+                    type="button"
+                    aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+                    title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+                >
+                    <span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
+                </button>
             </div>
             <div class="rules-list">
                 {#each scope_rules as rule, i (rule.id)}
@@ -1080,6 +1058,7 @@
 	.analyser-box-header {
 		display: flex;
 		align-items: center;
+		justify-content: space-between;
 		margin-bottom: 1rem;
 	}
 	.analyser-box .heading2 {

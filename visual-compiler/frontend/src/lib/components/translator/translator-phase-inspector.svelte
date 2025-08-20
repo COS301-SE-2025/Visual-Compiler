@@ -228,17 +228,8 @@
 <div class="inspector-container">
 	<div class="header-container">
 		<h1 class="heading">TRANSLATING</h1>
-		<button
-			class="default-toggle-btn"
-			class:selected={show_default_rules}
-			on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
-			type="button"
-			aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-			title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-		>
-			<span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
-		</button>
 	</div>
+
 	<div class="section">
 		<h3 class="section-heading1">Source Code</h3>
 		<div class="code-block-wrapper">
@@ -256,7 +247,19 @@
 	</div>
 
 	<div class="section">
-		<h2 class="section-heading">Translation Rules</h2>
+		<div class="section-header">
+			<h2 class="section-heading">Translation Rules</h2>
+			<button
+				class="default-toggle-btn"
+				class:selected={show_default_rules}
+				on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
+				type="button"
+				aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+				title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+			>
+				<span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
+			</button>
+		</div>
 		<div class="rules-container">
 			{#each rules as rule, ruleIndex}
 				<div class="rule-block">
@@ -722,5 +725,15 @@
 		background-color: #001a6e;
 		border-color: #60a5fa;
 		color: #e0e7ff;
+	}
+
+	/* Add section-header style */
+	.section-header {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		margin-bottom: 1rem;
+		position: relative;
 	}
 </style>
