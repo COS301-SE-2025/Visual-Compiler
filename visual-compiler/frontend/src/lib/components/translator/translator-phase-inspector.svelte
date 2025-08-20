@@ -12,6 +12,7 @@
 	let isSubmitted = false;
 	let translationSuccessful = false;
 	let show_default_rules = false;
+	let hasInitialized = false;
 
 	// --- DEFAULT RULES DATA ---
 	const DEFAULT_TRANSLATION_RULES = [
@@ -49,6 +50,10 @@
 	function removeRule(ruleIndex: number) {
 		if (rules.length > 1) {
 			rules = rules.filter((_, i) => i !== ruleIndex);
+			isSubmitted = false;
+		} else {
+			// If removing the last rule, replace it with an empty one
+			rules = [{ tokenSequence: '', lines: [''] }];
 			isSubmitted = false;
 		}
 	}
@@ -215,13 +220,18 @@
 	}
 
 	// Add reactive statement for translator rules
-	$: if ($lexerState?.translator_data?.translating_rules) {
+	$: if ($lexerState?.translator_data?.translating_rules && !hasInitialized) {
 		rules = $lexerState.translator_data.translating_rules.map(rule => ({
 			tokenSequence: rule.sequence,
 			lines: rule.translation
 		}));
 		isSubmitted = true;
 		show_default_rules = false;
+		hasInitialized = true;
+	} else if ($lexerState !== undefined && rules.length === 0 && !hasInitialized) {
+		// Ensure rules are initialized with empty rule when no saved data exists
+		rules = [{ tokenSequence: '', lines: [''] }];
+		hasInitialized = true;
 	}
 </script>
 
@@ -269,7 +279,6 @@
 							<button
 								class="remove-btn"
 								on:click={() => removeRule(ruleIndex)}
-								disabled={rules.length <= 1}
 								title="Remove Rule">
 								✕
 							</button>
