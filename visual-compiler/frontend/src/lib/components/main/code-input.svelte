@@ -65,7 +65,10 @@
 	let confirmed_code = '';
 	const unsubscribe = confirmedSourceCode.subscribe(value => {
 		confirmed_code = value;
-		if (!code_text) code_text = value; // Auto fill input if empty
+		// Always update code_text when confirmed code changes
+		code_text = value;
+		// Set isConfirmed based on whether there is confirmed code
+		isConfirmed = !!value;
 	});
 
 	onDestroy(() => {
@@ -80,10 +83,17 @@
 	function handleDefaultInput() {
 		if (!isDefaultInput) {
 			previous_code_text = code_text;
-			code_text = 'int blue = 13 + 5;\n';
-			code_text += 'int function_name(int red) {\n';
-			code_text += '    int green = red;\n';
-			code_text += '    return green;\n';
+			code_text = 'int blue = 13;\n\n';
+			code_text += 'int new(int red)\n';
+			code_text += '{\n';
+			code_text += '    red = red + 1;\n';
+			code_text += '    return red;\n';
+			code_text += '}\n\n';
+			code_text += 'int _i = 0;\n\n';
+			code_text += 'for _i range(12)\n';
+			code_text += '{\n';
+			code_text += '    blue = new(blue);\n';
+			code_text += '    print(blue);\n';
 			code_text += '}\n';
 			isDefaultInput = true;
 		} else {

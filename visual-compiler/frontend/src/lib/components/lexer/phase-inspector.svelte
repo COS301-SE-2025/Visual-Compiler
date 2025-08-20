@@ -7,6 +7,7 @@
 	import { fade, scale } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
+	import { lexerState } from '$lib/stores/lexer';
 
 	export let source_code = '';
 	export let onGenerateTokens: (data: {
@@ -321,6 +322,12 @@
 		showGenerateButton = false;
 		showRegexActionButtons = false;
 		submissionStatus = { show: false, success: false, message: '' };
+		
+		// Update the store when inputs change
+		lexerState.update(state => ({
+			...state,
+			userInputRows: [...userInputRows]
+		}));
 	}
 
 	$: {
@@ -505,10 +512,9 @@
 
 	function selectType(type: 'AUTOMATA' | 'REGEX') {
 		selectedType = type;
-		resetInputs();
 		showRegexActionButtons = false;
 		
-		// Reset visualization states
+		// Reset visualization states only
 		showNfaVis = false;
 		showDfaVis = false;
 		showRegexNfaVis = false;
@@ -518,13 +524,10 @@
 		currentAutomatonForModal = null;
 
 		if (type === 'REGEX') {
-			showDefault = false;
-			userInputRows = [{ type: '', regex: '', error: '' }];
-			inputRows = [{ type: '', regex: '', error: '' }];
-			editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
-			formError = '';
-			submissionStatus = { show: false, success: false, message: '' };
-			showGenerateButton = false;
+			// Use stored inputs if they exist
+			userInputRows = $lexerState.userInputRows.length > 0 
+				? [...$lexerState.userInputRows]
+				: [{ type: '', regex: '', error: '' }];
 		}
 	}
 
@@ -532,37 +535,44 @@
 		showDefault = true;
 		editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
 		inputRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
-		states = 'S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17';
+		
+		states = 'S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19, S20, S21, S22, S23, S24, S25, S26, S27, S28, S29, S30';
 		startState = 'S0';
-		acceptedStates =
-			'S3->KEYWORD, S14->KEYWORD, S4->IDENTIFIER, S5->ASSIGNMENT, S6->OPERATOR, S7->INTEGER, S8->SEPARATOR, S15->OPEN_BRACKETS, S16->CLOSE_BRACKETS, S17->OPEN_SCOPE, S18->CLOSE_SCOPE ';
-		transitions ='S0,i->S1\n';
-        transitions +='S1,n->S2\n';
-        transitions +='S2,t->S3\n';
+		acceptedStates = 'S1->ASSIGNMENT, S2->DELIMITER, S3->KEYWORD, S4->OPEN_BRACKET, S5->KEYWORD, S6->IDENTIFIER, S7->INTEGER, S8->CLOSE_SCOPE, S9->CONTROL, S10->OPERATOR, S11->CLOSE_BRACKET, S12->OPEN_SCOPE, S13->CONTROL, S14->KEYWORD, S15->KEYWORD, S16->KEYWORD, S17->KEYWORD, S18->KEYWORD, S19->KEYWORD, S20->CONTROL, S21->KEYWORD, S22->KEYWORD, S23->CONTROL, S24->KEYWORD, S25->KEYWORD, S26->CONTROL, S27->KEYWORD, S28->KEYWORD, S29->CONTROL, S30->KEYWORD';
 
-        transitions += 'S0,r->S9\n';
-        transitions += 'S9,e->S10\n';
-        transitions += 'S10,t->S11\n';
-        transitions += 'S11,u->S12\n';
-        transitions += 'S12,r->S13\n';
-        transitions += 'S13,n->S14\n';
-
-        transitions +='S0,[a-zA-Z_]->S4\n';
-        transitions +='S4,[a-zA-Z_]->S4\n';
-
-        transitions +='S0,=->S5\n';
-        transitions +='S0,[+\\-*/%]->S6\n';
-
-        transitions +='S0,[0-9]->S7\n';
-        transitions +='S7,[0-9]->S7\n';
-
-        transitions +='S0,;->S8\n';
-
-        transitions += 'S0,(->S15\n';
-        transitions += 'S0,)->S16\n';
-
-        transitions += 'S0,{->S17\n';
-        transitions += 'S0,}->S18\n';
+		transitions = '';
+		transitions += 'S0,i->S3\n';
+		transitions += 'S0,r->S9\n';
+		transitions += 'S0,f->S13\n';
+		transitions += 'S0,p->S5\n';
+		transitions += 'S0,[a-zA-Z_]->S6\n';
+		transitions += 'S0,[0-9]->S7\n';
+		transitions += 'S0,+/%->S10\n';
+		transitions += 'S0,=->S1\n';
+		transitions += 'S0,;->S2\n';
+		transitions += 'S0,(->S4\n';
+		transitions += 'S0,)->S11\n';
+		transitions += 'S0,{->S12\n';
+		transitions += 'S0,}->S8\n';
+		transitions += 'S3,n->S14\n';
+		transitions += 'S5,r->S15\n';
+		transitions += 'S6,[a-zA-Z_]->S6\n';
+		transitions += 'S7,[0-9]->S7\n';
+		transitions += 'S9,e->S16\n';
+		transitions += 'S9,a->S17\n';
+		transitions += 'S13,o->S18\n';
+		transitions += 'S14,t->S19\n';
+		transitions += 'S15,i->S20\n';
+		transitions += 'S16,t->S21\n';
+		transitions += 'S17,n->S22\n';
+		transitions += 'S18,r->S23\n';
+		transitions += 'S20,n->S24\n';
+		transitions += 'S21,u->S25\n';
+		transitions += 'S22,g->S26\n';
+		transitions += 'S24,t->S27\n';
+		transitions += 'S25,r->S28\n';
+		transitions += 'S26,e->S29\n';
+		transitions += 'S28,n->S30\n';
 	}
 
 	function removeDefault() {
@@ -572,14 +582,15 @@
 	}
 
 	const DEFAULT_INPUT_ROWS = [
-		{ type: 'KEYWORD', regex: 'int|return', error: '' },
+		{ type: 'KEYWORD', regex: 'int|return|print', error: '' },
+		{ type: 'CONTROL', regex: 'for|range', error: '' },
 		{ type: 'IDENTIFIER', regex: '[a-zA-Z_]+', error: '' },
 		{ type: 'INTEGER', regex: '[0-9]+', error: '' },
 		{ type: 'ASSIGNMENT', regex: '=', error: '' },
 		{ type: 'OPERATOR', regex: '[+\\-*/%]', error: '' },
-		{ type: 'SEPARATOR', regex: ';', error: '' },
-        { type: 'OPEN_BRACKETS', regex: '\\(', error: '' },
-        { type: 'CLOSE_BRACKETS', regex: '\\)', error: '' },
+		{ type: 'DELIMITER', regex: ';', error: '' },
+        { type: 'OPEN_BRACKET', regex: '\\(', error: '' },
+        { type: 'CLOSE_BRACKET', regex: '\\)', error: '' },
         { type: 'OPEN_SCOPE', regex: '\{', error: '' },
         { type: 'CLOSE_SCOPE', regex: '\}', error: '' }
 	];
@@ -694,16 +705,15 @@
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
-				AddToast('DFA→Regex failed: ' + errorText, 'error');
+				AddToast('DFA→Regex failed: Please check your DFA input.','error');
 				return;
 			}
 			const data = await response.json();
-			console.log('dfaToRegex response:', JSON.stringify(data, null, 2));
 			regexRules = Array.isArray(data.rules) ? data.rules : [];
 			showRegexOutput = true;
 			AddToast('DFA converted to Regex successfully!', 'success');
 		} catch (error) {
-			AddToast('DFA→Regex failed: ' + error, 'error');
+			AddToast('DFA→Regex failed: Please check your internet connection.', 'error');
 		}
 	}
 
@@ -735,11 +745,10 @@
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
-				AddToast('Regex→NFA failed: ' + errorText, 'error');
+				AddToast('Regex→NFA failed: Please check your regex rules', 'error');
 				return;
 			}
 			const data = await response.json();
-			console.log('NFA from backend:', JSON.stringify(data.nfa, null, 2));
 			regexNfa = adaptAutomatonForVis(data.nfa);
 			currentAutomatonForModal = { data: regexNfa, isDfa: false }; 
 			showRegexNfaVis = true;
@@ -983,6 +992,67 @@
 			});
 		}
 	}
+
+	// Add a new function to format transitions
+	function formatTransitions(transitions: Array<{from: string, to: string, label: string}>): string {
+	    return transitions.map(t => `${t.from},${t.label}->${t.to}`).join('\n');
+	}
+
+	// Add a new function to format accepting states
+	function formatAcceptingStates(accepting: Array<{state: string, type: string}>): string {
+	    return accepting.map(a => `${a.state}->${a.type}`).join(', ');
+	}
+
+	// Add a watch on projectName store to update inputs when project changes
+	$: $projectName && updateInputsFromProject();
+
+	// Add function to update inputs from project data
+	async function updateInputsFromProject() {
+	    const userId = localStorage.getItem('user_id');
+	    const project = get(projectName);
+	    
+	    if (!userId || !project) return;
+
+	    try {
+	        const response = await fetch(
+	            `http://localhost:8080/api/users/getProject?project_name=${project}&users_id=${userId}`,
+	            {
+	                method: 'GET',
+	                headers: { 'accept': 'application/json' }
+	            }
+	        );
+
+	        if (!response.ok) return;
+
+	        const data = await response.json();
+	        
+	        if (data.results?.lexing) {
+	            // Update automata inputs if DFA exists
+	            if (data.results.lexing.dfa) {
+	                states = data.results.lexing.dfa.states.join(', ');
+	                startState = data.results.lexing.dfa.start;
+	                acceptedStates = formatAcceptingStates(data.results.lexing.dfa.accepting);
+	                transitions = formatTransitions(data.results.lexing.dfa.transitions);
+	            }
+
+	            // Update regex inputs if rules exist
+	            if (data.results.lexing.rules) {
+	                userInputRows = data.results.lexing.rules.map(rule => ({
+	                    type: rule.type,
+	                    regex: rule.regex,
+	                    error: ''
+	                }));
+	            }
+
+	            // If there's no input rows, add one empty row
+	            if (userInputRows.length === 0) {
+	                userInputRows = [{ type: '', regex: '', error: '' }];
+	            }
+	        }
+	    } catch (error) {
+	        console.error('Error updating inputs:', error);
+	    }
+	}
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -1000,7 +1070,7 @@
 		<div class="instructions-content">
 			<h4 class="instructions-header">Instructions</h4>
 			<p class="instructions-text">
-				Mock Data
+				Enter regular expressions or an automata to tokenise your source code. The type that you choose for each token is important.
 			</p>
 		</div>
 	</div>
@@ -1146,9 +1216,9 @@
 					</div>
 					{#if (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).type && 
       (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).regex}
-    <button class="add-button" on:click={addNewRow} title="Add new expression">
-        <span>+</span>
-    </button>
+    
+	<button class="add-rule-btn" on:click={addNewRow}>+ Add New Rule</button>
+
 {/if}
 				</div>
 				{#if formError}
@@ -1218,17 +1288,9 @@
 					class="action-btn"
 					type="button"
 					on:click={() => {
-						showNfaDiagram();
-						automataDisplay = 'NFA';
-					}}>Show NFA</button
-				>
-				<button
-					class="action-btn"
-					type="button"
-					on:click={() => {
 						handleShowDfa();
 						automataDisplay = 'DFA';
-					}}>Show DFA</button
+					}}>Show Automata</button
 				>
 				<button
 					class="action-btn"
@@ -1460,7 +1522,7 @@
 		margin: 1.5rem 0 2rem 0;
 		background: #f8f9fa;
 		border-radius: 8px;
-		border-left: 4px solid #007acc;
+		border-left: 4px solid #bed2e6;
 		transition: background-color 0.3s ease, border-color 0.3s ease;
 	}
 
@@ -1488,7 +1550,8 @@
 		background: #f5f5f5;
 		padding: 1rem;
 		border-radius: 4px;
-		overflow-x: auto;
+		max-height: 260px;
+		overflow: auto;
 		font-family: monospace;
 		white-space: pre-wrap;
 		margin: 0;
@@ -1584,28 +1647,6 @@
 		text-align: center;
 		margin: 0.5rem 0;
 		font-size: 0.9rem;
-	}
-
-	.add-button {
-		position: absolute;
-		right: -16px;
-		bottom: -16px;
-		width: 32px;
-		height: 32px;
-		border-radius: 50%;
-		background: #BED2E6;
-		color: 000000;
-		border: none;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 1.2rem;
-		transition: background-color 0.2s;
-	}
-
-	.add-button:hover {
-		background: #27548a;
 	}
 
 	.submit-button {
@@ -1909,6 +1950,18 @@
 		transition: background-color 0.3s ease, color 0.3s ease;
 	}
 
+	.add-rule-btn {
+        display: block;
+        margin: 1.5rem auto 0;
+        padding: 0.5rem 1rem;
+        border: 1px dashed #001a6e;
+        background: transparent;
+        color: #001a6e;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
 	/* --- Dark Mode Styles --- */
 	:global(html.dark-mode) .phase-inspector {
 		background: #1a2a4a;
@@ -1969,15 +2022,6 @@
 		border-color: #60a5fa;
 		background-color: #2d3748;
 		box-shadow: 0 0 0 2px rgba(99, 179, 237, 0.2);
-	}
-
-	:global(html.dark-mode) .add-button {
-		background: #001A6E;
-		color: #ffffff;
-	}
-
-	:global(html.dark-mode) .add-button:hover {
-		background: #002a8e;
 	}
 
 	:global(html.dark-mode) .submit-button {
@@ -2062,6 +2106,11 @@
 		background: #4a5568;
 		color: #e2e8f0;
 	}
+
+	:global(html.dark-mode) .add-rule-btn {
+        border-color: #60a5fa;
+        color: #60a5fa;
+    }
 
 	::-webkit-scrollbar {
 		width: 11px;
@@ -2278,4 +2327,5 @@
 		overflow: hidden;
 		position: relative;
 	}
+
 </style>
