@@ -1,5 +1,77 @@
 <script>
 	import { fade } from 'svelte/transition';
+	import { onMount, onDestroy } from 'svelte';
+	import { createEventDispatcher } from 'svelte';
+
+	const dispatch = createEventDispatcher();
+
+	let animationStarted = false;
+	let animationCompleted = false;
+	let animationDuration = 3500; // Total animation duration including delays
+
+	/**
+	 * Handles the animation start event
+	 */
+	function handleAnimationStart() {
+		animationStarted = true;
+		dispatch('animationstart');
+	}
+
+	/**
+	 * Handles the animation end event
+	 */
+	function handleAnimationEnd() {
+		animationCompleted = true;
+		dispatch('animationend');
+	}
+
+	/**
+	 * Gets the current animation state
+	 */
+	function getAnimationState() {
+		return {
+			started: animationStarted,
+			completed: animationCompleted,
+			duration: animationDuration
+		};
+	}
+
+	/**
+	 * Sets a custom animation duration
+	 * @param {number} duration - Duration in milliseconds
+	 */
+	function setAnimationDuration(duration) {
+		if (typeof duration === 'number' && duration > 0) {
+			animationDuration = duration;
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Resets the animation state
+	 */
+	function resetAnimation() {
+		animationStarted = false;
+		animationCompleted = false;
+	}
+
+	// Lifecycle functions
+	onMount(() => {
+		// Start animation when component mounts
+		setTimeout(handleAnimationStart, 100);
+		
+		// Complete animation after duration
+		setTimeout(handleAnimationEnd, animationDuration);
+	});
+
+	onDestroy(() => {
+		// Clean up if needed
+		resetAnimation();
+	});
+
+	// Export functions for testing
+	export { getAnimationState, setAnimationDuration, resetAnimation };
 </script>
 
 <div class="loader_overlay" in:fade={{ duration: 300 }} out:fade={{ duration: 500 }}>
