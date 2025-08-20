@@ -103,6 +103,25 @@ export const lexerState = writable<LexerState>({
     userInputRows: [{ type: '', regex: '', error: '' }]
 });
 
+export function resetLexerState() {
+    lexerState.set({
+        mode: null,
+        dfa: null,
+        tokens: null,
+        tokens_unidentified: null,
+        inputs: [],
+        states: '',
+        startState: '',
+        acceptedStates: '',
+        transitions: '',
+        userInputRows: [{ type: '', regex: '', error: '' }],
+        parser_data: undefined,
+        analyzer_data: undefined,
+        symbol_table: [],
+        translator_data: undefined
+    });
+}
+
 export function updateLexerStateFromProject(projectData: any) {
     if (!projectData?.lexing) return;
 

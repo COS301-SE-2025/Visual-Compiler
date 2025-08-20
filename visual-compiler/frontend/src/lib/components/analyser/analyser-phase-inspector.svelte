@@ -400,6 +400,26 @@
         scope_rules = [...scope_rules];
         type_rules = [...type_rules];
     }
+    
+    // Reset when lexer state is cleared (new project or project switch)
+    $: if (!$lexerState?.analyzer_data && hasInitialized) {
+        hasInitialized = false;
+        // Reset to default state
+        scope_rules = [{ id: 0, Start: '', End: '' }];
+        type_rules = [{ id: 0, ResultData: '',Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
+        grammar_rules = {
+            VariableRule: '',
+            TypeRule: '',
+            FunctionRule: '',
+            ParameterRule: '',
+            AssignmentRule: '',
+            OperatorRule: '',
+            TermRule: ''
+        };
+        next_scope_id = 1;
+        next_type_id = 1;
+        rules_submitted = false;
+    }
 </script>
 
 <div class="panel-container">

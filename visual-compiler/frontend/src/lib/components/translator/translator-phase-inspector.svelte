@@ -233,6 +233,14 @@
 		rules = [{ tokenSequence: '', lines: [''] }];
 		hasInitialized = true;
 	}
+	
+	// Reset when lexer state is cleared (new project or project switch)
+	$: if (!$lexerState?.translator_data && hasInitialized) {
+		hasInitialized = false;
+		rules = [{ tokenSequence: '', lines: [''] }];
+		isSubmitted = false;
+		show_default_rules = false;
+	}
 </script>
 
 <div class="inspector-container">

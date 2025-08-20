@@ -3,11 +3,11 @@
 	import { fly } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
 	import { pipelineStore, resetPipeline, type Pipeline } from '$lib/stores/pipeline';
-	import { confirmedSourceCode } from '$lib/stores/source-code';
+	import { confirmedSourceCode, resetSourceCode } from '$lib/stores/source-code';
 	import ProjectNamePrompt from './project-name-prompt.svelte';
 	import DeleteConfirmPrompt from './delete-confirmation.svelte'; 
 	import { AddToast } from '$lib/stores/toast';
-	import { updateLexerStateFromProject } from '$lib/stores/lexer';
+	import { updateLexerStateFromProject, resetLexerState } from '$lib/stores/lexer';
 	import { phase_completion_status } from '$lib/stores/pipeline';
 
 	const dispatch = createEventDispatcher();
@@ -100,6 +100,10 @@
 			return;
 		}
 
+		// Clear existing state before loading new project
+		resetLexerState();
+		resetSourceCode();
+		
 		try {
 			const response = await fetch(
 				`http://localhost:8080/api/users/getProject?project_name=${selectedProjectName}&users_id=${userId}`, {
@@ -224,6 +228,18 @@
 			// Update UI and close modal
 			projectName.set(newProjectName);
 			resetPipeline(); // Clear the canvas for the new blank project
+			resetLexerState(); // Clear all saved input data for a fresh start
+			resetSourceCode(); // Clear the source code for a fresh start
+			
+			// Reset phase completion status for new project
+			phase_completion_status.set({
+				source: false,
+				lexer: false,
+				parser: false,
+				analyser: false,
+				translator: false
+			});
+			
 			showProjectNamePrompt = false;
 			await fetchProjects(); // Refresh the project list
 			handleClose();
