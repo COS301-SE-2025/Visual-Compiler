@@ -23,6 +23,32 @@
     </div>
 
     <div class="artifact-viewer">
+        {#if phase === 'analyser' && analyser_error}
+                <div class="error-state">
+                    <div class="error-icon">
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="48"
+                            height="48"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                    </div>
+                    <h4>Semantic Error Found</h4>
+                    <p class="error-message">
+                        The source code could not be analysed with the provided scope rules and type rules. Please check your input again.<br>
+                    </p>
+                    <pre class="error-details">{analyser_error_details}</pre>
+                </div>
+            {/if}
         {#if phase === 'analyser' && show_symbol_table}
             <div class="artifact-header">
                 <h3>Symbols</h3>
