@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, fireEvent, screen, within, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
-import MainWorkspace from '../../src/routes/main-workspace/+page.svelte';
+import MainWorkspace from '../src/routes/main-workspace/+page.svelte';
 
 // Mock SvelteKit runtime
 (globalThis as any).__SVELTEKIT_PAYLOAD__ = {
@@ -72,6 +72,14 @@ vi.mock('$lib/stores/pipeline', () => ({
 	pipelineStore: {
 		subscribe: vi.fn((fn) => {
 			fn(null);
+			return { unsubscribe: vi.fn() };
+		}),
+		set: vi.fn(),
+		update: vi.fn()
+  },
+	phase_completion_status: {
+		subscribe: vi.fn((fn) => {
+			fn({});
 			return { unsubscribe: vi.fn() };
 		}),
 		set: vi.fn(),

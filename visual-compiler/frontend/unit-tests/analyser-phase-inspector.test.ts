@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AnalyserPhaseInspector from '../../src/lib/components/analyser/analyser-phase-inspector.svelte';
+import AnalyserPhaseInspector from '../src/lib/components/analyser/analyser-phase-inspector.svelte';
 
 // Mock the toast store
 vi.mock('$lib/stores/toast', () => ({
@@ -65,7 +65,7 @@ describe('AnalyserPhaseInspector Component', () => {
 		expect(screen.getByPlaceholderText('Result Type')).toBeInTheDocument();
 		expect(screen.getByPlaceholderText('Assignment')).toBeInTheDocument();
 		expect(screen.getByPlaceholderText('LHS')).toBeInTheDocument();
-		expect(screen.getByPlaceholderText('Operator(s)')).toBeInTheDocument();
+		expect(screen.getByPlaceholderText('Operator')).toBeInTheDocument();
 		expect(screen.getByPlaceholderText('RHS')).toBeInTheDocument();
 	});
 

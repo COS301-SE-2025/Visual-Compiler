@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { writable } from 'svelte/store';
 import { tick } from 'svelte';
 import type { Toast } from '$lib/stores/toast';
-import ToastContainer from '../../src/lib/components/toast-conatiner.svelte';
+import ToastContainer from '../src/lib/components/toast-conatiner.svelte';
 
 // Mock the toast store with a factory function approach
 vi.mock('$lib/stores/toast', () => {
@@ -145,3 +145,5 @@ describe('ToastContainer Component', () => {
 		expect(await screen.findByText('Toast 2')).toBeInTheDocument();
 	});
 });
+
+

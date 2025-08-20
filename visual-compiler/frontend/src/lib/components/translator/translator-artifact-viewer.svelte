@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { AddToast } from '$lib/stores/toast';
+	import { lexerState } from '$lib/stores/lexer';
 
 	// Prop to receive the translated code
 	export let translated_code: string[] = [];
@@ -23,6 +24,11 @@
 					AddToast('Copy failed: Unable to copy code to clipboard', 'error');
 				});
 		}
+	}
+
+	// Add reactive statement for translator data
+	$: if ($lexerState?.translator_data?.code) {
+		translated_code = $lexerState.translator_data.code;
 	}
 </script>
 

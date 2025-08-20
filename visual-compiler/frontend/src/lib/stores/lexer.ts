@@ -42,6 +42,14 @@ export interface AnalyzerData {
     };
 }
 
+export interface TranslatorData {
+    code: string[];
+    translating_rules: Array<{
+        sequence: string[];
+        translation: string[];
+    }>;
+}
+
 export interface LexerState {
     mode: 'AUTOMATA' | 'REGEX' | null;
     dfa: DFAState | null;
@@ -79,6 +87,7 @@ export interface LexerState {
         type: string;
         scope: number;
     }>;
+    translator_data?: TranslatorData;
 }
 
 export const lexerState = writable<LexerState>({
@@ -94,12 +103,32 @@ export const lexerState = writable<LexerState>({
     userInputRows: [{ type: '', regex: '', error: '' }]
 });
 
+export function resetLexerState() {
+    lexerState.set({
+        mode: null,
+        dfa: null,
+        tokens: null,
+        tokens_unidentified: null,
+        inputs: [],
+        states: '',
+        startState: '',
+        acceptedStates: '',
+        transitions: '',
+        userInputRows: [{ type: '', regex: '', error: '' }],
+        parser_data: undefined,
+        analyzer_data: undefined,
+        symbol_table: [],
+        translator_data: undefined
+    });
+}
+
 export function updateLexerStateFromProject(projectData: any) {
     if (!projectData?.lexing) return;
 
     const lexingData = projectData.lexing;
     const parsingData = projectData.parsing;
     const analysingData = projectData.analysing;
+    const translatingData = projectData.translating;
 
     lexerState.update(state => ({
         ...state,
@@ -143,6 +172,14 @@ export function updateLexerStateFromProject(projectData: any) {
             name: symbol.name,
             type: symbol.type,
             scope: symbol.scope
-        })) || []
+        })) || [],
+        translator_data: translatingData ? {
+            code: translatingData.code || [],
+            translating_rules: (translatingData.translating_rules || [])
+                .map(rule => ({
+                    sequence: Array.isArray(rule.sequence) ? rule.sequence.join(', ') : '',
+                    translation: rule.translation || []
+                }))
+        } : undefined
     }));
 }

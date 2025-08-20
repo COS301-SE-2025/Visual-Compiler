@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AnalyserPhaseInspector from '../../src/lib/components/analyser/analyser-phase-inspector.svelte';
+import AnalyserPhaseInspector from '../src/lib/components/analyser/analyser-phase-inspector.svelte';
 
 // Mock the toast store
 vi.mock('$lib/stores/toast', () => ({

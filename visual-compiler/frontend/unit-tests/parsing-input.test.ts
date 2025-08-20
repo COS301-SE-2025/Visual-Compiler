@@ -2,7 +2,7 @@
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import ParsingInput from '../../src/lib/components/parser/parsing-input.svelte';
+import ParsingInput from '../src/lib/components/parser/parsing-input.svelte';
 import type { SyntaxTree } from '$lib/types';
 
 // Mock the toast store and fetch API
@@ -76,9 +76,9 @@ describe('ParsingInput Component', () => {
 		const variablesInput = screen.getByLabelText('Variables') as HTMLInputElement;
 		const terminalsInput = screen.getByLabelText('Terminals') as HTMLInputElement;
 
-		expect(variablesInput.value).toBe('PROGRAM, CODE, STATEMENT, DECLARATION, EXPRESSION, TYPE, TERM, FUNCTION, PARAM, FUNCTION_DECLARATION, FUNC_BLOCK, RETURN_S');
+		expect(variablesInput.value).toBe('PROGRAM, STATEMENT, FUNCTION, ITERATION, DECLARATION, ELEMENT, TYPE, EXPRESSION, FUNCTION_DEFINITION, FUNCTION_BLOCK, RETURN, ITERATION_DEFINITION, ITERATION_BLOCK, PARAMETER, PRINT');
 		expect(terminalsInput.value).toBe(
-			'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, SEPARATOR, OPEN_BRACKETS, CLOSE_BRACKETS ,OPEN_SCOPE, CLOSE_SCOPE,STRING'
+			'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, DELIMITER, OPEN_BRACKET, CLOSE_BRACKET, OPEN_SCOPE, CLOSE_SCOPE, CONTROL'
 		);
 		expect(screen.getByDisplayValue('PROGRAM')).toBeInTheDocument();
 	});

@@ -74,6 +74,7 @@
 
     // Overall Submission State
     let rules_submitted = false; // This flag now controls the overall submission state
+    let hasInitialized = false; // Flag to prevent reactive statement from re-running
 
     const DEFAULT_SCOPE_RULES = [
         { id: 0, Start: '{', End: '}' }
@@ -355,7 +356,7 @@
     $: overallAllRowsComplete = allScopeRowsComplete && allTypeRowsComplete && allGrammarRulesComplete;
 
     // Update rules when project data is loaded
-    $: if ($lexerState?.analyzer_data) {
+    $: if ($lexerState?.analyzer_data && !hasInitialized) {
         const analyzerData = $lexerState.analyzer_data;
         
         // Update scope rules
@@ -393,43 +394,36 @@
         submitted_type_rules = [...type_rules];
         submitted_grammar_rules = { ...grammar_rules };
         rules_submitted = true;
+        hasInitialized = true;
+        
+        // Force reactivity by triggering array updates
+        scope_rules = [...scope_rules];
+        type_rules = [...type_rules];
+    }
+    
+    // Reset when lexer state is cleared (new project or project switch)
+    $: if (!$lexerState?.analyzer_data && hasInitialized) {
+        hasInitialized = false;
+        // Reset to default state
+        scope_rules = [{ id: 0, Start: '', End: '' }];
+        type_rules = [{ id: 0, ResultData: '',Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
+        grammar_rules = {
+            VariableRule: '',
+            TypeRule: '',
+            FunctionRule: '',
+            ParameterRule: '',
+            AssignmentRule: '',
+            OperatorRule: '',
+            TermRule: ''
+        };
+        next_scope_id = 1;
+        next_type_id = 1;
+        rules_submitted = false;
     }
 </script>
 
 <div class="panel-container">
-    <div class="default-toggle-wrapper">
-        <button
-            class="default-toggle-btn"
-            class:selected={show_default_rules}
-            on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
-            type="button"
-            aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-            title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-        >
-            <span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
-        </button>
-    </div>
-    <div class="header">
-        {#if rules_submitted}
-            <div class="reset-wrapper" transition:fade={{ duration: 150 }}>
-                <button class="reset-button" on:click={resetState} aria-label="Reset rules">
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                        <path d="M3 3v5h5" />
-                    </svg>
-                </button>
-            </div>
-        {/if}
+    <div class="header-container">
         <h1 class="analyser-heading">ANALYSING</h1>
     </div>
 
@@ -453,6 +447,16 @@
         <div class="analyser-box">
             <div class="analyser-box-header">
                 <h2 class="heading2">Scope Rules</h2>
+                <button
+                    class="default-toggle-btn"
+                    class:selected={show_default_rules}
+                    on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
+                    type="button"
+                    aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+                    title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+                >
+                    <span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
+                </button>
             </div>
             <div class="rules-list">
                 {#each scope_rules as rule, i (rule.id)}
@@ -512,7 +516,7 @@
                     </div>
                 {/each}
             </div>
-            {#if !rules_submitted && lastScopeRowComplete}
+            {#if lastScopeRowComplete}
                 <div class="add-button-wrapper" transition:slide={{ duration: 150 }}>
                     <button class="add-button" on:click={addScopeRow} aria-label="Add new scope delimiter row">
                         <svg
@@ -559,7 +563,7 @@
                     </div>
                 {/each}
             </div>
-            {#if !rules_submitted && lastTypeRowComplete}
+            {#if lastTypeRowComplete}
                 <div class="add-button-wrapper" transition:slide={{ duration: 150 }}>
                     <button class="add-button" on:click={addTypeRow} aria-label="Add new type rule row">
                         <svg
@@ -1080,6 +1084,7 @@
 	.analyser-box-header {
 		display: flex;
 		align-items: center;
+		justify-content: space-between;
 		margin-bottom: 1rem;
 	}
 	.analyser-box .heading2 {

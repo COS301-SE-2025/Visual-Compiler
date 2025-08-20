@@ -24,3 +24,5 @@ describe('hero Component', () => {
 		expect(mockedGoto).toHaveBeenCalledWith('/auth-page');
 	});
 });
+
+

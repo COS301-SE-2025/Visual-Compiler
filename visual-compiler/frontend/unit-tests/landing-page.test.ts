@@ -1,6 +1,6 @@
 import { render } from '@testing-library/svelte';
 import { describe, it, expect, vi } from 'vitest';
-import LandingPage from '../../src/routes/landing-page/+page.svelte';
+import LandingPage from '../src/routes/landing-page/+page.svelte';
 
 // Mock all the landing page components with simple function mocks
 vi.mock('$lib/components/landing/loader-animation.svelte', () => ({
@@ -35,3 +35,5 @@ describe('LandingPage Component', () => {
 		expect(container.innerHTML).toBeTruthy();
 	});
 });
+
+

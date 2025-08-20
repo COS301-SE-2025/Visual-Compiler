@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
-import { projectName, saveProject, getProjects } from '../../src/lib/stores/project';
+import { projectName, saveProject, getProjects } from '../src/lib/stores/project';
 
 // Mock fetch globally
 const mockFetch = vi.fn();

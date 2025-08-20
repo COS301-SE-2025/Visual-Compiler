@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, it, expect, vi } from 'vitest';
-import ParserArtifactViewer from '../../src/lib/components/parser/parser-artifact-viewer.svelte';
+import ParserArtifactViewer from '../src/lib/components/parser/parser-artifact-viewer.svelte';
 import type { SyntaxTree } from '$lib/types';
 
 // Mock the vis-network library to prevent errors in the JSDOM test environment.
@@ -86,3 +86,5 @@ describe('ParserArtifactViewer Component', () => {
 		expect(mockNetwork.destroy).toHaveBeenCalled();
 	});
 });
+
+

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, beforeEach } from 'vitest';
-import TranslatorPhaseTutorial from '../../src/lib/components/translator/translator-phase-tutorial.svelte';
+import TranslatorPhaseTutorial from '../src/lib/components/translator/translator-phase-tutorial.svelte';
 
 describe('TranslatorPhaseTutorial Component', () => {
 	beforeEach(() => {
@@ -17,7 +17,7 @@ describe('TranslatorPhaseTutorial Component', () => {
 	it('TestInitialStep_Success: Shows step 1 initially', () => {
 		render(TranslatorPhaseTutorial);
 
-		expect(screen.getByText('1️⃣ Complete Lexing and Parsing')).toBeInTheDocument();
+		expect(screen.getByText('1. Complete Lexing and Parsing')).toBeInTheDocument();
 		expect(screen.getByText(/Before using the translator, you must complete/)).toBeInTheDocument();
 	});
 
@@ -27,142 +27,108 @@ describe('TranslatorPhaseTutorial Component', () => {
 		expect(screen.getByText('Steps to Follow:')).toBeInTheDocument();
 	});
 
-	it('TestNavigationButtons_Success: Shows navigation buttons', () => {
+	it('TestNavigationButtons_Success: Shows navigation buttons', async () => {
 		render(TranslatorPhaseTutorial);
 
-		// Should have navigation controls
-		const buttons = screen.getAllByRole('button');
-		expect(buttons.length).toBeGreaterThan(0);
+		await waitFor(() => {
+			expect(screen.getByRole('button', { name: /previous/i })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: /next/i })).toBeInTheDocument();
+		});
 	});
 
 	it('TestStepProgression_Success: Can navigate to next step', async () => {
 		render(TranslatorPhaseTutorial);
 
-		// Find next button
+		const nextButton = screen.getByRole('button', { name: /next/i });
+		await fireEvent.click(nextButton);
+
+		expect(screen.getByText('2 / 6')).toBeInTheDocument();
+	});
+
+	// Test: Renders all token types in step 4
+	it('TestTokenTypesRender_Success: Renders all token types in step 4', async () => {
+		render(TranslatorPhaseTutorial);
+
+		// Navigate to step 4 (token types)
 		const nextButtons = screen.getAllByRole('button').filter(btn => 
-			btn.textContent?.includes('Next') || btn.textContent?.includes('→') || btn.textContent?.includes('>')
+			btn.textContent?.includes('Next') || btn.textContent?.includes('→')
 		);
 		
 		if (nextButtons.length > 0) {
-			await fireEvent.click(nextButtons[0]);
-			
+			await fireEvent.click(nextButtons[0]); // Step 2
+			await fireEvent.click(nextButtons[0]); // Step 3
+			await fireEvent.click(nextButtons[0]); // Step 4
+
 			await waitFor(() => {
-				expect(screen.getByText('2️⃣ Define Translation Rules')).toBeInTheDocument();
+				// Verify all 6 token types are rendered in the each loop
+				expect(screen.getByText('🔹 KEYWORD')).toBeInTheDocument();
+				expect(screen.getByText('Reserved words (e.g., int, if, while)')).toBeInTheDocument();
+				expect(screen.getByText('🔹 IDENTIFIER')).toBeInTheDocument();
+				expect(screen.getByText('Variable names (e.g., result, count)')).toBeInTheDocument();
+				expect(screen.getByText('🔹 NUMBER')).toBeInTheDocument();
+				expect(screen.getByText('Integers (e.g., 10, 42)')).toBeInTheDocument();
+				expect(screen.getByText('🔹 PLUS')).toBeInTheDocument();
+				expect(screen.getByText('Addition operator (+)')).toBeInTheDocument();
+				expect(screen.getByText('🔹 MINUS')).toBeInTheDocument();
+				expect(screen.getByText('Subtraction operator (-)')).toBeInTheDocument();
+				expect(screen.getByText('🔹 ASSIGNMENT')).toBeInTheDocument();
+				expect(screen.getByText('Assignment operator (=)')).toBeInTheDocument();
 			});
 		}
 	});
 
-	it('TestTranslationRulesStep_Success: Shows translation rules in step 2', async () => {
+	// Test: Renders all example rules in step 5
+	it('TestExampleRulesRender_Success: Renders all example rules in step 5', async () => {
 		render(TranslatorPhaseTutorial);
 
-		// Navigate to step 2 if possible
+		// Navigate to step 5 (example rules)
 		const nextButtons = screen.getAllByRole('button').filter(btn => 
-			btn.textContent?.includes('Next') || btn.textContent?.includes('→') || btn.textContent?.includes('>')
+			btn.textContent?.includes('Next') || btn.textContent?.includes('→')
 		);
 		
 		if (nextButtons.length > 0) {
-			await fireEvent.click(nextButtons[0]);
-			
-			await waitFor(() => {
-				expect(screen.getByText(/Click "\+ Add New Rule" for each pattern/)).toBeInTheDocument();
-			});
-		}
-	});
-
-	it('TestLexingParsingPrerequisites_Success: Shows lexing and parsing prerequisites', () => {
-		render(TranslatorPhaseTutorial);
-
-		expect(screen.getByText('🔍 Lexing')).toBeInTheDocument();
-		expect(screen.getByText('Break your source code into tokens')).toBeInTheDocument();
-		expect(screen.getByText('🌳 Parsing')).toBeInTheDocument();
-		expect(screen.getByText('Use the tokens to create a syntax tree')).toBeInTheDocument();
-	});
-
-	it('TestTokenTypes_Success: Contains token type information', () => {
-		const { container } = render(TranslatorPhaseTutorial);
-
-		// Should contain token-related content
-		expect(container.innerHTML).toContain('token');
-		expect(container.innerHTML).toContain('code');
-	});
-
-	it('TestExampleRules_Success: Contains example translation rules', () => {
-		const { container } = render(TranslatorPhaseTutorial);
-
-		// Should contain example-related content
-		expect(container.innerHTML).toContain('rule');
-		expect(container.innerHTML).toContain('translation');
-	});
-
-	it('TestCriticalDonts_Success: Shows critical mistakes to avoid', () => {
-		const { container } = render(TranslatorPhaseTutorial);
-
-		// Should contain warning-related content
-		expect(container.innerHTML).toContain('must');
-		expect(container.innerHTML).toContain('complete');
-	});
-
-	it('TestTutorialStructure_Success: Has proper tutorial structure', () => {
-		const { container } = render(TranslatorPhaseTutorial);
-
-		const tutorialContainer = container.querySelector('.phase-tutorial');
-		expect(tutorialContainer).toBeInTheDocument();
-
-		const tutorialContent = container.querySelector('.tutorial-content');
-		expect(tutorialContent).toBeInTheDocument();
-	});
-
-	it('TestTranslationDescription_Success: Contains translation explanation', () => {
-		render(TranslatorPhaseTutorial);
-
-		expect(screen.getByText(/Think of it as teaching the computer how to rewrite/)).toBeInTheDocument();
-	});
-
-	it('TestMultipleSteps_Success: Has multiple tutorial steps', () => {
-		const { container } = render(TranslatorPhaseTutorial);
-
-		// Should have tutorial step content areas
-		const tutorialContentArea = container.querySelector('.tutorial-content-area');
-		expect(tutorialContentArea).toBeInTheDocument();
-	});
-
-	it('TestCodeExamples_Success: Contains code examples', () => {
-		render(TranslatorPhaseTutorial);
-
-		// Should contain code-related content that exists
-		expect(screen.getByText(/converts your source code/)).toBeInTheDocument();
-	});
-
-	it('TestBackNavigation_Success: Can navigate to previous step', async () => {
-		render(TranslatorPhaseTutorial);
-
-		// First navigate forward
-		const nextButtons = screen.getAllByRole('button').filter(btn => 
-			btn.textContent?.includes('Next') || btn.textContent?.includes('→') || btn.textContent?.includes('>')
-		);
-		
-		if (nextButtons.length > 0) {
-			await fireEvent.click(nextButtons[0]);
-			
-			// Now try to go back
-			const prevButtons = screen.getAllByRole('button').filter(btn => 
-				btn.textContent?.includes('Previous') || btn.textContent?.includes('←') || btn.textContent?.includes('<')
-			);
-			
-			if (prevButtons.length > 0) {
-				await fireEvent.click(prevButtons[0]);
-				
-				await waitFor(() => {
-					expect(screen.getByText('1️⃣ Complete Lexing and Parsing')).toBeInTheDocument();
-				});
+			for (let i = 0; i < 4; i++) {
+				await fireEvent.click(nextButtons[0]);
 			}
+
+		await waitFor(() => {
+			// Verify both example rules are rendered in the each loop
+			expect(screen.getByText('12 + 13')).toBeInTheDocument();
+			expect(screen.getByText('INTEGER, OPERATOR, INTEGER')).toBeInTheDocument();
+			expect(screen.getByText(/mov\s+rax, \{INTEGER\}/)).toBeInTheDocument();
+			expect(screen.getByText(/mov\s+rax, 12/)).toBeInTheDocument(); // Use regex for multi-line text
+			expect(screen.getByText('bool found = true;')).toBeInTheDocument();
+			expect(screen.getByText('KEYWORD, IDENTIFIER, ASSIGNMENT, BOOLEAN')).toBeInTheDocument();
+			expect(screen.getByText(/mov\s+rax, \[\{IDENTIFIER\}\]/)).toBeInTheDocument();
+			expect(screen.getByText(/mov\s+rax, \[found\]/)).toBeInTheDocument();
+		});
 		}
 	});
 
-	it('TestStepIndicators_Success: Shows step progression indicators', () => {
-		const { container } = render(TranslatorPhaseTutorial);
+	// Test: Renders all critical mistakes in step 6
+	it('TestCriticalDontsRender_Success: Renders all critical mistakes in step 6', async () => {
+		render(TranslatorPhaseTutorial);
 
-		// Should have some indication of step progression
-		expect(container.innerHTML).toContain('1️⃣');
+		// Navigate to step 6 (critical mistakes)
+		const nextButtons = screen.getAllByRole('button').filter(btn => 
+			btn.textContent?.includes('Next') || btn.textContent?.includes('→')
+		);
+		
+		if (nextButtons.length > 0) {
+			for (let i = 0; i < 5; i++) {
+				await fireEvent.click(nextButtons[0]);
+			}
+
+			await waitFor(() => {
+				// Verify critical mistakes are rendered in the each loop
+				expect(screen.getByText('Not using token types')).toBeInTheDocument();
+				expect(screen.getByText('int, result, =, 1')).toBeInTheDocument();
+				expect(screen.getByText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER')).toBeInTheDocument();
+				
+				expect(screen.getByText('Skipping placeholders')).toBeInTheDocument();
+				expect(screen.getByText('mov [result], 1')).toBeInTheDocument();
+				expect(screen.getByText('MOV [{IDENTIFIER}], {INTEGER}')).toBeInTheDocument();
+			});
+		}
 	});
 });

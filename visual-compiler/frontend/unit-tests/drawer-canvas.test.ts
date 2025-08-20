@@ -4,8 +4,8 @@ import { render, screen, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte'; // Make sure tick is imported
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { writable } from 'svelte/store';
-import DrawerCanvas from '../../src/lib/components/main/drawer-canvas.svelte';
-import type { NodeType } from '../../src/lib/types';
+import DrawerCanvas from '../src/lib/components/main/drawer-canvas.svelte';
+import type { NodeType } from '../src/lib/types';
 
 // The manual mock for svelvet is correct and does not need changes.
 // Vitest will automatically use the file in /tests/__mocks__/svelvet.ts
@@ -463,3 +463,5 @@ describe('DrawerCanvas Component', () => {
 		expect(mockConnectionHandler).toBeDefined();
 	});
 });
+
+
