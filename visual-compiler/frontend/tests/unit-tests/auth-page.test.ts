@@ -250,4 +250,381 @@ describe('register page', () => {
 			expect(screen.getByText('Registration failed: Failed')).toBeInTheDocument();
 		});
 	});
+
+	it('register function (password mismatch)', async () => {
+		// Mock Element.prototype.animate properly
+		Element.prototype.animate = vi.fn().mockReturnValue({
+			finished: Promise.resolve(),
+			cancel: vi.fn(),
+			onfinish: null
+		});
+
+		render(page_comp);
+		const reg_tab = screen.getByText('Register');
+		await fireEvent.click(reg_tab);
+
+		const username = screen.getByLabelText('Username');
+		const login_form = username.closest('form');
+		const email = screen.getByLabelText('Email');
+		const password = screen.getByLabelText('Password');
+		const c_password = screen.getByLabelText('Confirm Password');
+		
+		await fireEvent.input(username, { target: { value: 'halfstack' } });
+		await fireEvent.input(email, { target: { value: 'halfstack@gmail.com' } });
+		await fireEvent.input(password, { target: { value: '12345678' } });
+		await fireEvent.input(c_password, { target: { value: 'differentpassword' } });
+		
+		render(toasts);
+		await fireEvent.submit(login_form!);
+
+		await waitFor(() => {
+			expect(screen.getByText(/Passwords don't match/)).toBeInTheDocument();
+		});
+	});
+
+	it('register function (network error)', async () => {
+		vi.resetAllMocks();
+		// Mock Element.prototype.animate properly
+		Element.prototype.animate = vi.fn().mockReturnValue({
+			finished: Promise.resolve(),
+			cancel: vi.fn(),
+			onfinish: null
+		});
+		
+		// Mock fetch to throw a network error
+		global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+		
+		render(page_comp);
+		const reg_tab = screen.getByText('Register');
+		await fireEvent.click(reg_tab);
+
+		const username = screen.getByLabelText('Username');
+		const login_form = username.closest('form');
+		const email = screen.getByLabelText('Email');
+		const password = screen.getByLabelText('Password');
+		const c_password = screen.getByLabelText('Confirm Password');
+		
+		await fireEvent.input(username, { target: { value: 'halfstack' } });
+		await fireEvent.input(email, { target: { value: 'halfstack@gmail.com' } });
+		await fireEvent.input(password, { target: { value: '12345678' } });
+		await fireEvent.input(c_password, { target: { value: '12345678' } });
+		
+		render(toasts);
+		await fireEvent.submit(login_form!);
+
+		await waitFor(() => {
+			expect(screen.getByText(/Registration error: Network error/)).toBeInTheDocument();
+		});
+	});
+
+	it('register function (form reset after success)', async () => {
+		// Mock Element.prototype.animate properly
+		Element.prototype.animate = vi.fn().mockReturnValue({
+			finished: Promise.resolve(),
+			cancel: vi.fn(),
+			onfinish: null
+		});
+		global.fetch = vi.fn().mockResolvedValue(mockSuccessResponse);
+		
+		render(page_comp);
+		const reg_tab = screen.getByText('Register');
+		await fireEvent.click(reg_tab);
+
+		const username = screen.getByLabelText('Username');
+		const login_form = username.closest('form');
+		const email = screen.getByLabelText('Email');
+		const password = screen.getByLabelText('Password');
+		const c_password = screen.getByLabelText('Confirm Password');
+		
+		await fireEvent.input(username, { target: { value: 'halfstack' } });
+		await fireEvent.input(email, { target: { value: 'halfstack@gmail.com' } });
+		await fireEvent.input(password, { target: { value: '12345678' } });
+		await fireEvent.input(c_password, { target: { value: '12345678' } });
+		
+		await fireEvent.submit(login_form!);
+
+		// Wait for success processing and tab switch
+		await waitFor(() => {
+			// Should switch back to login tab - check for login form
+			expect(screen.getByLabelText('Username')).toHaveAttribute('id', 'loginUsername');
+		});
+
+		// After switching to login tab, the register form fields are no longer visible
+		// So we verify the form reset by checking that we're back on the login tab
+		expect(screen.getByText('Login')).toHaveClass('active');
+	});
+});
+
+describe('login page advanced', () => {
+	it('login function (network error)', async () => {
+		vi.resetAllMocks();
+		// Mock Element.prototype.animate properly
+		Element.prototype.animate = vi.fn().mockReturnValue({
+			finished: Promise.resolve(),
+			cancel: vi.fn(),
+			onfinish: null
+		});
+		
+		// Mock fetch to throw a network error
+		global.fetch = vi.fn().mockRejectedValue(new Error('Network connection failed'));
+		
+		render(page_comp);
+		const username = screen.getByLabelText('Username');
+		const login_form = username.closest('form');
+		const password = screen.getByLabelText('Password');
+		
+		await fireEvent.input(username, { target: { value: 'halfstack' } });
+		await fireEvent.input(password, { target: { value: '12345678' } });
+		
+		render(toasts);
+		await fireEvent.submit(login_form!);
+
+		await waitFor(() => {
+			expect(screen.getByText(/Login error: Network connection failed/)).toBeInTheDocument();
+		});
+	});
+
+	it('login function (user data storage)', async () => {
+		Element.prototype.animate = vi.fn().mockReturnValue({
+			finished: Promise.resolve(),
+			cancel: vi.fn(),
+			onfinish: null
+		});
+		
+		const mockLoginResponse = {
+			ok: true,
+			json: async () => ({ 
+				message: 'Success',
+				id: 'user123',
+				is_admin: true
+			})
+		};
+		
+		global.fetch = vi.fn().mockResolvedValue(mockLoginResponse);
+		
+		// Mock localStorage
+		const localStorageMock = {
+			setItem: vi.fn(),
+			getItem: vi.fn(),
+			removeItem: vi.fn(),
+			clear: vi.fn()
+		};
+		Object.defineProperty(window, 'localStorage', {
+			value: localStorageMock
+		});
+
+		// Mock sessionStorage  
+		const sessionStorageMock = {
+			setItem: vi.fn(),
+			getItem: vi.fn(),
+			removeItem: vi.fn(),
+			clear: vi.fn()
+		};
+		Object.defineProperty(window, 'sessionStorage', {
+			value: sessionStorageMock
+		});
+		
+		render(page_comp);
+		const username = screen.getByLabelText('Username');
+		const login_form = username.closest('form');
+		const password = screen.getByLabelText('Password');
+		
+		await fireEvent.input(username, { target: { value: 'halfstack' } });
+		await fireEvent.input(password, { target: { value: '12345678' } });
+		
+		await fireEvent.submit(login_form!);
+
+		await waitFor(() => {
+			// Should store user data in localStorage
+			expect(localStorageMock.setItem).toHaveBeenCalledWith('user_id', 'user123');
+			expect(localStorageMock.setItem).toHaveBeenCalledWith('is_admin', 'true');
+			// Should set welcome overlay flag in sessionStorage
+			expect(sessionStorageMock.setItem).toHaveBeenCalledWith('showWelcomeOverlay', 'true');
+		});
+	});
+
+	it('login function (non-admin user)', async () => {
+		Element.prototype.animate = vi.fn().mockReturnValue({
+			finished: Promise.resolve(),
+			cancel: vi.fn(),
+			onfinish: null
+		});
+		
+		const mockLoginResponse = {
+			ok: true,
+			json: async () => ({ 
+				message: 'Success',
+				id: 'user456',
+				is_admin: false
+			})
+		};
+		
+		global.fetch = vi.fn().mockResolvedValue(mockLoginResponse);
+		
+		// Mock localStorage
+		const localStorageMock = {
+			setItem: vi.fn(),
+			getItem: vi.fn(),
+			removeItem: vi.fn(),
+			clear: vi.fn()
+		};
+		Object.defineProperty(window, 'localStorage', {
+			value: localStorageMock
+		});
+		
+		render(page_comp);
+		const username = screen.getByLabelText('Username');
+		const login_form = username.closest('form');
+		const password = screen.getByLabelText('Password');
+		
+		await fireEvent.input(username, { target: { value: 'regularuser' } });
+		await fireEvent.input(password, { target: { value: '12345678' } });
+		
+		await fireEvent.submit(login_form!);
+
+		await waitFor(() => {
+			// Should store is_admin as 'false'
+			expect(localStorageMock.setItem).toHaveBeenCalledWith('is_admin', 'false');
+		});
+	});
+
+	it('login button disabled when form invalid', () => {
+		render(page_comp);
+		
+		// Initially should be disabled
+		const login_buttons = screen.getAllByRole('button', { name: 'Login', hidden: true });
+		const test_button = login_buttons.find((button) => button.getAttribute('type') === 'submit');
+		expect(test_button).toBeDisabled();
+
+		// Still disabled with only username
+		const username = screen.getByLabelText('Username');
+		fireEvent.input(username, { target: { value: 'halfstack' } });
+		expect(test_button).toBeDisabled();
+
+		// Still disabled with only password
+		fireEvent.input(username, { target: { value: '' } });
+		const password = screen.getByLabelText('Password');
+		fireEvent.input(password, { target: { value: '12345678' } });
+		expect(test_button).toBeDisabled();
+	});
+});
+
+describe('password visibility', () => {
+	it('toggle password visibility', async () => {
+		render(page_comp);
+		
+		const password = screen.getByLabelText('Password') as HTMLInputElement;
+		expect(password.type).toBe('password');
+
+		// Find and click the password visibility toggle button
+		const toggleButton = screen.getByRole('button', { name: '' }); // The show/hide password button
+		
+		await fireEvent.click(toggleButton);
+		
+		// Should toggle to text type
+		expect(password.type).toBe('text');
+		
+		// Toggle back
+		await fireEvent.click(toggleButton);
+		expect(password.type).toBe('password');
+	});
+
+	it('toggle confirm password visibility', async () => {
+		render(page_comp);
+		const reg_tab = screen.getByText('Register');
+		await fireEvent.click(reg_tab);
+
+		const confirmPassword = screen.getByLabelText('Confirm Password') as HTMLInputElement;
+		expect(confirmPassword.type).toBe('password');
+
+		// Find the confirm password container and its toggle button
+		const passwordGroup = confirmPassword.closest('.input-group');
+		const toggleButton = passwordGroup?.querySelector('button[type="button"]') as HTMLButtonElement;
+		
+		await fireEvent.click(toggleButton);
+		
+		// Should toggle to text type  
+		expect(confirmPassword.type).toBe('text');
+		
+		// Toggle back
+		await fireEvent.click(toggleButton);
+		expect(confirmPassword.type).toBe('password');
+	});
+
+	it('password visibility state changes correctly', () => {
+		render(page_comp);
+		
+		const password = screen.getByLabelText('Password') as HTMLInputElement;
+		const toggleButton = screen.getByRole('button', { name: '' }); // The show/hide password button
+		
+		// Initial state should be password (hidden)
+		expect(password.type).toBe('password');
+		
+		// Click to show password
+		fireEvent.click(toggleButton);
+		expect(password.type).toBe('text');
+		
+		// Click again to hide password
+		fireEvent.click(toggleButton);
+		expect(password.type).toBe('password');
+	});
+
+	it('confirm password visibility state changes correctly', async () => {
+		render(page_comp);
+		const reg_tab = screen.getByText('Register');
+		await fireEvent.click(reg_tab);
+
+		const confirmPassword = screen.getByLabelText('Confirm Password') as HTMLInputElement;
+		const passwordGroup = confirmPassword.closest('.input-group');
+		const toggleButton = passwordGroup?.querySelector('button[type="button"]') as HTMLButtonElement;
+		
+		// Initial state should be password (hidden)
+		expect(confirmPassword.type).toBe('password');
+		
+		// Click to show password
+		fireEvent.click(toggleButton);
+		expect(confirmPassword.type).toBe('text');
+		
+		// Click again to hide password
+		fireEvent.click(toggleButton);
+		expect(confirmPassword.type).toBe('password');
+	});
+});
+
+describe('form validation edge cases', () => {
+	it('register button disabled with whitespace-only inputs', () => {
+		render(page_comp);
+		const reg_tab = screen.getByText('Register');
+		fireEvent.click(reg_tab);
+
+		const username = screen.getByLabelText('Username');
+		const email = screen.getByLabelText('Email');
+		const password = screen.getByLabelText('Password');
+		const c_password = screen.getByLabelText('Confirm Password');
+		
+		// Fill with whitespace only
+		fireEvent.input(username, { target: { value: '   ' } });
+		fireEvent.input(email, { target: { value: '   ' } });
+		fireEvent.input(password, { target: { value: '   ' } });
+		fireEvent.input(c_password, { target: { value: '   ' } });
+
+		const reg_buttons = screen.getAllByRole('button', { name: 'Register', hidden: true });
+		const test_button = reg_buttons.find((button) => button.getAttribute('type') === 'submit');
+		expect(test_button).toBeDisabled();
+	});
+
+	it('login button disabled with whitespace-only inputs', () => {
+		render(page_comp);
+
+		const username = screen.getByLabelText('Username');
+		const password = screen.getByLabelText('Password');
+		
+		// Fill with whitespace only
+		fireEvent.input(username, { target: { value: '   ' } });
+		fireEvent.input(password, { target: { value: '   ' } });
+
+		const login_buttons = screen.getAllByRole('button', { name: 'Login', hidden: true });
+		const test_button = login_buttons.find((button) => button.getAttribute('type') === 'submit');
+		expect(test_button).toBeDisabled();
+	});
 });
