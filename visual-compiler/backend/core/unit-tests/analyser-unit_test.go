@@ -3715,3 +3715,115 @@ func TestHandleFunctionScope_SuccessParameter_NoType(t *testing.T) {
 		t.Fatalf("Error expected")
 	}
 }
+
+func TestAnalyse_DefaultExample(t *testing.T) {
+	scope_rules := []*services.ScopeRule{
+		{Start: "{", End: "}"},
+	}
+
+	tokens := []services.TypeValue{
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "blue"},
+		{Type: "ASSIGNMENT", Value: "="},
+		{Type: "INTEGER", Value: "13"},
+		{Type: "DELIMITER", Value: ";"},
+
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "new"},
+		{Type: "OPEN_BRACKET", Value: "("},
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "red"},
+		{Type: "CLOSE_BRACKET", Value: ")"},
+
+		{Type: "OPEN_SCOPE", Value: "{"},
+		{Type: "IDENTIFIER", Value: "red"},
+		{Type: "ASSIGNMENT", Value: "="},
+		{Type: "IDENTIFIER", Value: "red"},
+		{Type: "OPERATOR", Value: "+"},
+		{Type: "INTEGER", Value: "1"},
+		{Type: "DELIMITER", Value: ";"},
+		{Type: "KEYWORD", Value: "return"},
+		{Type: "IDENTIFIER", Value: "red"},
+		{Type: "DELIMITER", Value: ";"},
+		{Type: "CLOSE_SCOPE", Value: "}"},
+
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "_i"},
+		{Type: "ASSIGNMENT", Value: "="},
+		{Type: "INTEGER", Value: "0"},
+		{Type: "DELIMITER", Value: ";"},
+
+		{Type: "CONTROL", Value: "for"},
+		{Type: "IDENTIFIER", Value: "_i"},
+		{Type: "CONTROL", Value: "range"},
+		{Type: "OPEN_BRACKET", Value: "("},
+		{Type: "INTEGER", Value: "12"},
+		{Type: "CLOSE_BRACKET", Value: ")"},
+		{Type: "OPEN_SCOPE", Value: "{"},
+		{Type: "IDENTIFIER", Value: "blue"},
+		{Type: "ASSIGNMENT", Value: "="},
+		{Type: "IDENTIFIER", Value: "new"},
+		{Type: "OPEN_BRACKET", Value: "("},
+		{Type: "IDENTIFIER", Value: "blue"},
+		{Type: "CLOSE_BRACKET", Value: ")"},
+		{Type: "DELIMITER", Value: ";"},
+		{Type: "KEYWORD", Value: "print"},
+		{Type: "OPEN_BRACKET", Value: "("},
+		{Type: "IDENTIFIER", Value: "blue"},
+		{Type: "CLOSE_BRACKET", Value: ")"},
+		{Type: "DELIMITER", Value: ";"},
+		{Type: "CLOSE_SCOPE", Value: "}"},
+	}
+
+	grammar := services.Grammar{
+		Variables: []string{"PROGRAM", "STATEMENT", "FUNCTION", "ITERATION", "DECLARATION", "ELEMENT", "TYPE", "EXPRESSION", "FUNCTION_DEFINITION", "FUNCTION_BLOCK", "RETURN", "ITERATION_DEFINITION", "ITERATION_BLOCK", "PARAMETER", "PRINT"},
+		Terminals: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "OPERATOR", "DELIMITER", "OPEN_BRACKET", "CLOSE_BRACKET", "OPEN_SCOPE", "CLOSE_SCOPE", "CONTROL"},
+		Start:     "PROGRAM",
+		Rules: []services.ParsingRule{
+			{Input: "PROGRAM", Output: []string{"STATEMENT", "FUNCTION", "STATEMENT", "ITERATION"}},
+			{Input: "STATEMENT", Output: []string{"DECLARATION", "DELIMITER"}},
+			{Input: "DECLARATION", Output: []string{"TYPE", "IDENTIFIER", "ASSIGNMENT", "ELEMENT"}},
+			{Input: "DECLARATION", Output: []string{"IDENTIFIER", "ASSIGNMENT", "EXPRESSION"}},
+			{Input: "DECLARATION", Output: []string{"IDENTIFIER", "ASSIGNMENT", "IDENTIFIER", "PARAMETER"}},
+			{Input: "TYPE", Output: []string{"KEYWORD"}},
+			{Input: "EXPRESSION", Output: []string{"ELEMENT", "OPERATOR", "ELEMENT"}},
+			{Input: "ELEMENT", Output: []string{"INTEGER"}},
+			{Input: "ELEMENT", Output: []string{"IDENTIFIER"}},
+			{Input: "FUNCTION", Output: []string{"FUNCTION_DEFINITION", "FUNCTION_BLOCK"}},
+			{Input: "FUNCTION_DEFINITION", Output: []string{"TYPE", "IDENTIFIER", "PARAMETER"}},
+			{Input: "FUNCTION_BLOCK", Output: []string{"OPEN_SCOPE", "STATEMENT", "RETURN", "CLOSE_SCOPE"}},
+			{Input: "RETURN", Output: []string{"KEYWORD", "ELEMENT", "DELIMITER"}},
+			{Input: "ITERATION", Output: []string{"ITERATION_DEFINITION", "ITERATION_BLOCK"}},
+			{Input: "ITERATION_DEFINITION", Output: []string{"CONTROL", "IDENTIFIER", "CONTROL", "PARAMETER"}},
+			{Input: "ITERATION_BLOCK", Output: []string{"OPEN_SCOPE", "STATEMENT", "PRINT", "CLOSE_SCOPE"}},
+			{Input: "PARAMETER", Output: []string{"OPEN_BRACKET", "ELEMENT", "CLOSE_BRACKET"}},
+			{Input: "PARAMETER", Output: []string{"OPEN_BRACKET", "TYPE", "IDENTIFIER", "CLOSE_BRACKET"}},
+			{Input: "PRINT", Output: []string{"KEYWORD", "OPEN_BRACKET", "ELEMENT", "CLOSE_BRACKET", "DELIMITER"}},
+		},
+	}
+
+	syntax_tree, err := services.CreateSyntaxTree(tokens, grammar)
+	if err != nil {
+		t.Fatalf("parser failed")
+	}
+
+	type_rules := []services.TypeRule{
+		{ResultData: "int", Assignment: "=", LHSData: "INTEGER", Operator: []string{}, RHSData: ""},
+		{ResultData: "int", Assignment: "=", LHSData: "int", Operator: []string{}, RHSData: ""},
+		{ResultData: "int", Assignment: "=", LHSData: "int", Operator: []string{"+"}, RHSData: "INTEGER"},
+	}
+	rules := services.GrammarRules{
+		VariableRule:   "IDENTIFIER",
+		TypeRule:       "TYPE",
+		ParameterRule:  "PARAMETER",
+		FunctionRule:   "FUNCTION_DEFINITION",
+		AssignmentRule: "ASSIGNMENT",
+		OperatorRule:   "OPERATOR",
+		TermRule:       "ELEMENT",
+	}
+
+	_, _, err = services.Analyse(scope_rules, syntax_tree, rules, type_rules)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+}
