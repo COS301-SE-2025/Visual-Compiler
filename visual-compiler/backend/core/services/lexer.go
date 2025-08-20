@@ -142,9 +142,12 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 				i++
 				r = rune(source[i])
 
-				if !(unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r)) || r == '-' {
+				if !(unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsSpace(r) || r == ';' || r == '_' || r == '.' || r == '-' || r == ')') {
 
 					builder.WriteRune(r)
+
+				} else {
+					i--
 				}
 			}
 
@@ -173,6 +176,15 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 			tokens_unidentified = append(tokens_unidentified, word)
 		}
 	}
+
+	for current_token := 0; current_token < len(tokens_unidentified); current_token++ {
+		for other_token := current_token + 1; other_token < len(tokens_unidentified); other_token++ {
+			if tokens_unidentified[current_token] == tokens_unidentified[other_token] {
+				tokens_unidentified = append(tokens_unidentified[:other_token], tokens_unidentified[other_token+1:]...)
+				other_token--
+			}
+    }
+}
 
 	return tokens, tokens_unidentified, nil
 }
@@ -287,6 +299,15 @@ func CreateTokensFromDFA(source_code string, dfa Automata) ([]TypeValue, []strin
 		}
 	}
 
+	for current_token := 0; current_token < len(tokens_unidentified); current_token++ {
+			for other_token := current_token + 1; other_token < len(tokens_unidentified); other_token++ {
+				if tokens_unidentified[current_token] == tokens_unidentified[other_token] {
+					tokens_unidentified = append(tokens_unidentified[:other_token], tokens_unidentified[other_token+1:]...)
+					other_token--
+				}
+		}
+	}
+
 	return tokens, tokens_unidentified, nil
 }
 
@@ -330,34 +351,30 @@ func ConvertDFAToRegex(dfa Automata) ([]TypeRegex, error) {
 	var rules []TypeRegex
 	for token_type, regex := range paths {
 		raw := strings.Join(regex, "|")
+
 		ConvertRawRegexToRegexRules(&raw)
-		switch token_type {
-		case "KEYWORD":
-			ConvertKeywordToRegex(&raw)
-		case "IDENTIFIER", "ID":
-			ConvertIdentifierToRegex(&raw)
-		case "NUMBER", "NUM":
-			ConvertNumberToRegex(&raw)
-		case "FLOAT":
-			ConvertFloatToRegex(&raw)
-		default:
-			ConvertTypeToRegex(&raw)
-		}
+
 		multiple_rules := SimplifyRegex(raw)
 		if len(multiple_rules) > 1 {
 			for _, rule := range multiple_rules {
+				_, err := regexp.Compile(rule)
+				if rule != "()+" && err == nil {
+					new_rule := TypeRegex{
+						Type:  token_type,
+						Regex: rule,
+					}
+					rules = append(rules, new_rule)
+				}
+			}
+		} else {
+			_, err := regexp.Compile(raw)
+			if raw != "()+" && err == nil {
 				new_rule := TypeRegex{
 					Type:  token_type,
-					Regex: rule,
+					Regex: raw,
 				}
 				rules = append(rules, new_rule)
 			}
-		} else {
-			new_rule := TypeRegex{
-				Type:  token_type,
-				Regex: raw,
-			}
-			rules = append(rules, new_rule)
 		}
 	}
 
@@ -373,8 +390,10 @@ func ConvertDFAToRegex(dfa Automata) ([]TypeRegex, error) {
 // Helper function to simplify regex
 func SimplifyRegex(regex string) []string {
 
-	if strings.Contains(regex, "\\b") {
-		return nil
+	if !strings.Contains(regex, "+") {
+		var string_array []string
+		string_array = append(string_array, regex)
+		return string_array
 	}
 
 	parts := strings.Split(regex, "|")
@@ -392,109 +411,6 @@ func SimplifyRegex(regex string) []string {
 	return no_duplicates
 }
 
-// Name: convertTypeToRegex
-//
-// Parameters: *string
-//
-// Return: None
-//
-// Helper function to convert Keyword to proper regex
-func ConvertTypeToRegex(regex *string) {
-
-	var valid bool
-	valid = true
-	for _, letter := range *regex {
-		if !unicode.IsLetter(letter) && letter != '|' && letter != '(' && letter != ')' {
-			valid = false
-		}
-	}
-
-	if valid {
-		if strings.Contains(*regex, "|") {
-			*regex = "\\b(" + *regex + ")\\b"
-		} else {
-			*regex = "\\b" + *regex + "\\b"
-		}
-	}
-
-}
-
-// Name: convertKeywordToRegex
-//
-// Parameters: *string
-//
-// Return: None
-//
-// Helper function to convert Keyword to proper regex
-func ConvertKeywordToRegex(regex *string) {
-
-	if strings.Contains(*regex, "|") {
-		*regex = "\\b(" + *regex + ")\\b"
-	} else {
-		*regex = "\\b" + *regex + "\\b"
-	}
-
-}
-
-// Name: convertIdentifierToRegex
-//
-// Parameters: *string
-//
-// Return: None
-//
-// Helper function to convert Identifiers to proper regex
-func ConvertIdentifierToRegex(regex *string) {
-
-	if matched, _ := regexp.MatchString(`^\[a-z\]\(\[a-z0-9\]\)\*$`, *regex); matched {
-		*regex = "[a-zA-Z_]\\w*"
-	}
-
-	*regex = strings.ReplaceAll(*regex, "[a-z0-9]", "\\w")
-	*regex = strings.ReplaceAll(*regex, "[a-z]", "[a-zA-Z_]")
-
-}
-
-// Name: convertNumberToRegex
-//
-// Parameters: *string
-//
-// Return: None
-//
-// Helper function to convert Numbers to proper regex
-func ConvertNumberToRegex(regex *string) {
-
-	*regex = strings.ReplaceAll(*regex, "([0-9])*", `\d+`)
-	*regex = strings.ReplaceAll(*regex, "[0-9]", `\d`)
-	*regex = strings.ReplaceAll(*regex, `\d(\d)*`, `\d+`)
-	*regex = strings.ReplaceAll(*regex, `\d\d+`, `\d+`)
-	*regex = strings.ReplaceAll(*regex, "\\d+|[+-]\\d+", "[+-]?\\d+")
-
-}
-
-// Name: convertFloatToRegex
-//
-// Parameters: *string
-//
-// Return: None
-//
-// Helper function to convert Numbers to proper regex
-func ConvertFloatToRegex(regex *string) {
-
-	*regex = strings.ReplaceAll(*regex, "([0-9])*", `\d+`)
-	*regex = strings.ReplaceAll(*regex, "[0-9]", `\d`)
-	*regex = strings.ReplaceAll(*regex, `\d(\d)*`, `\d+`)
-	*regex = strings.ReplaceAll(*regex, `\d\d+`, `\d+`)
-	*regex = strings.ReplaceAll(*regex, "\\d+|[+-]\\d+", "[+-]?\\d+")
-
-	if strings.Contains(*regex, "[eE]") {
-		*regex = "\\d+\\.\\d+|\\d+[eE][+-]?\\d+"
-	} else {
-
-		*regex = "\\d+(\\.\\d+)?"
-	}
-
-}
-
 // Name: convertRawRegexToRegexRules
 //
 // Parameters: *string
@@ -504,11 +420,100 @@ func ConvertFloatToRegex(regex *string) {
 // Helper function to replace grammar with regex rules
 func ConvertRawRegexToRegexRules(regex *string) {
 
-	*regex = strings.ReplaceAll(*regex, "abcdefghijklmnopqrstuvwxyz0123456789", "[a-z0-9]")
-	*regex = strings.ReplaceAll(*regex, "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", "[A-Z0-9]")
-	*regex = strings.ReplaceAll(*regex, "abcdefghijklmnopqrstuvwxyz", "[a-z]")
-	*regex = strings.ReplaceAll(*regex, "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "[A-Z]")
-	*regex = strings.ReplaceAll(*regex, "0123456789", "[0-9]")
+	var strings_array []strings.Builder
+	var build_string strings.Builder
+	is_range := false
+	end_range := false
+
+	if strings.Contains(*regex, "(") && strings.Contains(*regex, ")") && strings.Contains(*regex, "*") {
+		for _, char := range *regex {
+
+			switch char {
+
+			case '(':
+				is_range = true
+				if build_string.Len() != 0 {
+					strings_array = append(strings_array, build_string)
+				}
+				build_string.Reset()
+			case ')':
+				end_range = true
+			case '*':
+				if is_range && end_range {
+					*regex = strings.ReplaceAll(*regex, "*", "+")
+
+					for _, curr_string := range strings_array {
+						if curr_string.String() == build_string.String() {
+							*regex = strings.Replace(*regex, curr_string.String(), "", 1)
+						}
+					}
+				}
+				build_string.Reset()
+			default:
+				build_string.WriteRune(char)
+
+			}
+
+		}
+
+		u_alphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+		l_alphabet := "abcdefghijklmnopqrstuvwxyz"
+		numbers := "0123456789"
+		if strings.Contains(*regex, u_alphabet) {
+			*regex = strings.ReplaceAll(*regex, u_alphabet, "A-Z")
+			*regex = strings.ReplaceAll(*regex, "(", "[")
+			*regex = strings.ReplaceAll(*regex, ")", "]")
+		}
+		if strings.Contains(*regex, l_alphabet) {
+			*regex = strings.ReplaceAll(*regex, l_alphabet, "a-z")
+			*regex = strings.ReplaceAll(*regex, "(", "[")
+			*regex = strings.ReplaceAll(*regex, ")", "]")
+		}
+		if strings.Contains(*regex, numbers) {
+			*regex = strings.ReplaceAll(*regex, numbers, "0-9")
+			*regex = strings.ReplaceAll(*regex, "(", "[")
+			*regex = strings.ReplaceAll(*regex, ")", "]")
+		}
+
+		build_string.Reset()
+		for _, char := range *regex {
+			switch char {
+			case '[':
+				if build_string.Len() != 0 {
+					if !strings.Contains(build_string.String(), "[") {
+						if strings.Contains(build_string.String(), "a-zA-Z0-9") {
+							*regex = strings.Replace(*regex, "a-zA-Z0-9", "[a-zA-Z0-9]", 1)
+						} else if strings.Contains(build_string.String(), "a-z0-9") {
+							*regex = strings.Replace(*regex, "a-z0-9", "[a-z0-9]", 1)
+						} else if strings.Contains(build_string.String(), "A-Z0-9") {
+							*regex = strings.Replace(*regex, "A-Z0-9", "[A-Z0-9]", 1)
+						} else if strings.Contains(build_string.String(), "a-zA-Z") {
+							*regex = strings.Replace(*regex, "a-zA-Z", "[a-zA-Z]", 1)
+						} else if strings.Contains(build_string.String(), "a-z") {
+							*regex = strings.Replace(*regex, "a-z", "[a-z]", 1)
+						} else if strings.Contains(build_string.String(), "A-Z") {
+							*regex = strings.Replace(*regex, "A-Z", "[A-Z]", 1)
+						} else if strings.Contains(build_string.String(), "0-9") {
+							*regex = strings.Replace(*regex, "0-9", "[0-9]", 1)
+						}
+
+					}
+				}
+				build_string.Reset()
+				build_string.WriteRune(char)
+			case ']':
+				build_string.WriteRune(char)
+			default:
+				build_string.WriteRune(char)
+			}
+		}
+		*regex = strings.ReplaceAll(*regex, "([", "[")
+		*regex = strings.ReplaceAll(*regex, "])", "]")
+		*regex = strings.ReplaceAll(*regex, "[[", "[")
+		*regex = strings.ReplaceAll(*regex, "]]", "]")
+
+	}
+
 }
 
 // Name: buildRegexForPath
@@ -1013,6 +1018,16 @@ func (c *Converter) parseAtom(regex string, position int) (*Fragment, int) {
 		return &Fragment{start: start, end: start}, position
 	}
 
+	if regex[position] == '\\' && position+1 < len(regex) {
+
+		start := c.newState()
+		end := c.newState()
+
+		c.addTransition(start, end, string(regex[position+1]))
+
+		return &Fragment{start: start, end: end}, position + 2
+	}
+
 	switch regex[position] {
 
 	case '(':
@@ -1022,13 +1037,20 @@ func (c *Converter) parseAtom(regex string, position int) (*Fragment, int) {
 
 		for i < len(regex) && level > 0 {
 
-			if regex[i] == '(' {
+			if regex[i] == '\\' {
+				i += 2
+				continue
+			} else if regex[i] == '(' {
 				level++
 			} else if regex[i] == ')' {
 				level--
 			}
 
 			i++
+		}
+
+		if level != 0 {
+			return nil, 0
 		}
 
 		inner := regex[position+1 : i-1]
@@ -1044,9 +1066,7 @@ func (c *Converter) parseAtom(regex string, position int) (*Fragment, int) {
 
 			start := c.newState()
 			end := c.newState()
-
 			c.addTransition(start, end, string(regex[position]))
-
 			return &Fragment{start: start, end: end}, position + 1
 		}
 

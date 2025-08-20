@@ -47,23 +47,37 @@
         <td>Current presentation for the project</td>
     </tr>
     <tr>
-        <td><a href="https://docs.google.com/document/d/15WX0FavQEsOjaEiZ4pd0sGyy4147BWMH-JopldpOnLw/edit?usp=sharing">Software Requirements Specification</a></td>
+        <td><a href="https://docs.google.com/document/d/1YySkwjKvmzA8BFvnIsnu1KxFNTHO1EYEotQ1GqLGK7Y/edit?usp=sharing">Software Requirements Specification</a></td>
         <td>Overview of the system requirements</td>
     </tr>
     <tr>
-        <td><a href="https://docs.google.com/document/d/1ugqZaQD_qwDpzRkGnGatt2gd14xrCfl0PoQ1vLvogyE/edit?usp=sharing">Architectural Specification</a></td>
+        <td><a href="https://drive.google.com/file/d/1_qOSHfDT9nNCDGBcoHH1gqHGKmcSndQe/view?usp=sharing">Architectural Diagram</a></td>
+        <td>Diagram of the system design</td>
+    </tr>
+    <tr>
+        <td><a href="https://docs.google.com/document/d/1-cqSy6rzK-4FLwIRygRXbVL5P1QcKGJljU8ixQVEWP8/edit?usp=sharing">Architectural Specification</a></td>
         <td>Overview of the system design</td>
     </tr>
     <tr>
-        <td><a href="https://docs.google.com/document/d/1tVrhizcXNHjNbVq2HFYUWBuxHDrg89t30klhHsdpqTg/edit?usp=sharing">User Manual</a></td>
+        <td><a href="https://docs.google.com/document/d/1zEM9TcM7d6pYfJ-2KkU4ibohllwaDNW_0YkOEJixTTM/edit?usp=sharing">User Manual</a></td>
         <td>Guidelines for navigating the web pages</td>
     </tr>
     <tr>
-        <td><a href="https://docs.google.com/document/d/1bI4XpA5oFn2Oc82GLs6eqSYKCDG_QYiBoueZU-l5xY8/edit?usp=sharing">Coding Standards</a></td>
+        <td><a href="https://docs.google.com/document/d/1A-SofOieCKUslr2NPHrRGS8yt4JShl4LHlc-QNRdQeU/edit?usp=sharing">Technical Installation Manual</a></td>
+        <td>Instructions for system configuration</td>
+    </tr>
+    <tr>
+        <td><a href="https://docs.google.com/document/d/1uddlkfJpo1DAB3ONdb8VOSqM3NrbCV-Hk9RB0lpWYEg/edit?usp=sharing">Coding Standards</a></td>
         <td>Guidelines for coding, testing and git</td>
+    </tr>
+    <tr>
+        <td><a href="https://drive.google.com/file/d/13NJdZvrVv6CiGIblz37mhN9dTZShmij7/view?usp=sharing">Deployment Model</a></td>
+        <td>Structure of project deployment</td>
     </tr>
     </table>
 </div>
+
+<br>
 
 <div align="center">
     <table style="border-width: 1px;">
@@ -71,13 +85,12 @@
         <td>Archive</td>
         <td><a href="https://drive.google.com/drive/folders/1gZxrNcvqcn7gJSiDE_-Copuitz8FpEkN?usp=sharing">Demo 1</a></td>
         <td><a href="https://drive.google.com/drive/folders/1Z_4HXzXW3FuWxgdJLlHaWxEYyhD6IC9B?usp=sharing">Demo 2</a></td>
+        <td><a href="https://drive.google.com/drive/folders/1q7_5hekMYKBIC7KENK27lYYommERJ49Y?usp=sharing">Demo 3</a></td>
     </tr>
     </table>
 </div>
 
 <br>
-
-<h2 align="center">Project Management</h2>
 
 <div align="center">
     <table style="border-width: 1px;">
@@ -87,26 +100,6 @@
         <td><a href="https://github.com/orgs/COS301-SE-2025/projects/171">Backend</a></td>
         <td><a href="https://github.com/orgs/COS301-SE-2025/projects/173">Administration</a></td>
     </tr>
-    </table>
-</div>
-
-<div align="center">
-    <table style="border-width: 1px;">
-        <tr>
-            <td rowspan="2" style="border: 0; text-align: center;">Branching Strategy</td>
-            <td>main</td>
-            <td>dev</td>
-            <td>feature/</td>
-            <td>fix/</td>
-            <td>enhance/</td>
-        </tr>
-        <tr>
-            <td>Production Ready</td>
-            <td>Latest Integration</td>
-            <td>In Progress</td>
-            <td>Minor Fixes</td>
-            <td>Improvements</td>
-        </tr>
     </table>
 </div>
 
@@ -209,7 +202,6 @@
     ├───📁.github
     │   └───📁workflows
     ├───📁assets
-    ├───📄docker-compose.yml
     └───📁visual-compiler
         ├───📁backend
         │   ├───📁api
@@ -220,14 +212,12 @@
         │   │   ├───📁db
         │   │   ├───📁services
         │   │   └───📁unit-tests
-        │   └───📁tests
-        │       └───📁integration-tests
+        │   └───📁integration-tests
         ├───📁frontend
         │   ├───📁src
         │   │   ├───📁lib
         │   │   └───📁routes
-        │   └───📁tests
-        │       ├───📁integration-tests
-        │       └───📁unit-tests
-        └───📁tests
+        │   └───📁unit-tests
+        └───📁e2e-tests
+             └───📁e2e
 ```
