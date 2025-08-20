@@ -128,20 +128,16 @@
 
 			if (data.message === "Retrieved users project details") {
 				if (data.results) {
-					// Update lexer and parser state
 					updateLexerStateFromProject({
 						lexing: data.results.lexing,
 						parsing: data.results.parsing,
-						analysing: {
-							...data.results.analysing,
-							// Simplify symbol table data
-							symbol_table_artefact: {
-								symbolscopes: data.results.analysing?.symbol_table_artefact?.symbolscopes?.map(symbol => ({
-									name: symbol.name,
-									type: symbol.type,
-									scope: symbol.scope
-								}))
-							}
+						analysing: data.results.analysing,
+						translating: {
+							code: data.results.translating?.code || [],
+							translating_rules: data.results.translating?.translating_rules?.map(rule => ({
+								sequence: Array.isArray(rule.sequence) ? rule.sequence : [],
+								translation: Array.isArray(rule.translation) ? rule.translation : []
+							})) || []  
 						}
 					});
 
@@ -150,13 +146,14 @@
 					const hasCode = !!data.results.lexing?.code;
 					const hasTree = !!(data.results.parsing?.tree?.root);
 					const hasSymbolTable = !!(data.results.analysing?.symbol_table_artefact?.symbolscopes);
+					const hasTranslation = !!(data.results.translating?.code && data.results.translating.code.length > 0);
 					
 					phase_completion_status.set({
 						source: hasCode,
 						lexer: hasTokens,
 						parser: hasTree,
 						analyser: hasSymbolTable,
-						translator: !!(data.results.lexing?.translated_code && data.results.lexing.translated_code.length > 0)
+						translator: hasTranslation
 					});
 
 					// Handle source code if it exists

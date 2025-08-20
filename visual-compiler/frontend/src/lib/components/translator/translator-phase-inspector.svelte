@@ -4,6 +4,7 @@
 	import { createEventDispatcher } from 'svelte';
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
+	import { lexerState } from '$lib/stores/lexer';
 
 	const dispatch = createEventDispatcher();
 
@@ -212,6 +213,16 @@
 			AddToast('Translation failed: ' + (error.message || 'Unable to translate code. Please check your rules and try again'), 'error');
 		}
 	}
+
+	// Add reactive statement for translator rules
+	$: if ($lexerState?.translator_data?.translating_rules) {
+		rules = $lexerState.translator_data.translating_rules.map(rule => ({
+			tokenSequence: rule.sequence,
+			lines: rule.translation
+		}));
+		isSubmitted = true;
+		show_default_rules = false;
+	}
 </script>
 
 <div class="inspector-container">
@@ -251,16 +262,12 @@
 				<div class="rule-block">
 					<div class="form-group">
 						<div class="rule-header">
-							<label class="form-label" for="token-seq-{ruleIndex}" style="margin-right: auto;"
-								>Token Sequence</label
-							>
+							<label class="form-label" for="token-seq-{ruleIndex}">Token Sequence</label>
 							<button
 								class="remove-btn"
 								on:click={() => removeRule(ruleIndex)}
 								disabled={rules.length <= 1}
-								title="Remove Rule"
-								style="margin-left: auto;"
-							>
+								title="Remove Rule">
 								✕
 							</button>
 						</div>
@@ -269,7 +276,7 @@
 							class="input-field"
 							id="token-seq-{ruleIndex}"
 							bind:value={rule.tokenSequence}
-							placeholder="Enter token sequence"
+							placeholder="Enter token sequence (e.g., KEYWORD, IDENTIFIER)"
 						/>
 					</div>
 					<div style="display: flex; justify-content: center; align-items: center; margin: 0.1rem 0;">

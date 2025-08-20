@@ -2,6 +2,7 @@
     import type { Token } from '$lib/types';
     import { lexerState } from '$lib/stores/lexer';
     import { onMount, onDestroy } from 'svelte';
+    import { get } from 'svelte/store';
 
     export let phase: string;
     export let tokens: Token[] = [];
