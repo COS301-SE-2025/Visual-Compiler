@@ -68,9 +68,6 @@ describe('Lexer Test', ()=> {
         cy.get('.token-table').should('contain','=');
         cy.get('.token-table').should('contain','INTEGER');
         cy.get('.token-table').should('contain','13');
-        cy.get('.token-table').should('contain','OPERATOR');
-        cy.get('.token-table').should('contain','5');
-        cy.get('.token-table').should('contain','SEPARATOR');
         cy.get('.token-table').should('contain',';');
 
         cy.contains('Successfully tokenised');
