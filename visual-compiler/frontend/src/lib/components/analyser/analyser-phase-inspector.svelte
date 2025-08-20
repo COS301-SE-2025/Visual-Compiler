@@ -74,6 +74,7 @@
 
     // Overall Submission State
     let rules_submitted = false; // This flag now controls the overall submission state
+    let hasInitialized = false; // Flag to prevent reactive statement from re-running
 
     const DEFAULT_SCOPE_RULES = [
         { id: 0, Start: '{', End: '}' }
@@ -355,7 +356,7 @@
     $: overallAllRowsComplete = allScopeRowsComplete && allTypeRowsComplete && allGrammarRulesComplete;
 
     // Update rules when project data is loaded
-    $: if ($lexerState?.analyzer_data) {
+    $: if ($lexerState?.analyzer_data && !hasInitialized) {
         const analyzerData = $lexerState.analyzer_data;
         
         // Update scope rules
@@ -393,6 +394,11 @@
         submitted_type_rules = [...type_rules];
         submitted_grammar_rules = { ...grammar_rules };
         rules_submitted = true;
+        hasInitialized = true;
+        
+        // Force reactivity by triggering array updates
+        scope_rules = [...scope_rules];
+        type_rules = [...type_rules];
     }
 </script>
 
@@ -490,7 +496,7 @@
                     </div>
                 {/each}
             </div>
-            {#if !rules_submitted && lastScopeRowComplete}
+            {#if lastScopeRowComplete}
                 <div class="add-button-wrapper" transition:slide={{ duration: 150 }}>
                     <button class="add-button" on:click={addScopeRow} aria-label="Add new scope delimiter row">
                         <svg
@@ -537,7 +543,7 @@
                     </div>
                 {/each}
             </div>
-            {#if !rules_submitted && lastTypeRowComplete}
+            {#if lastTypeRowComplete}
                 <div class="add-button-wrapper" transition:slide={{ duration: 150 }}>
                     <button class="add-button" on:click={addTypeRow} aria-label="Add new type rule row">
                         <svg
