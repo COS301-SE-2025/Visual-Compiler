@@ -143,7 +143,7 @@ describe('CodeInput Component', () => {
 
 		// Verify fetch was called with correct parameters
 		expect(mockFetch).toHaveBeenCalledWith(
-			'http://localhost:8080/api/users/getProjects?users_id=test-user-123',
+			'https://www.visual-compiler.co.za/api/users/getProjects?users_id=test-user-123',
 			expect.objectContaining({
 				method: 'GET',
 				headers: { 'accept': 'application/json' }

@@ -120,7 +120,7 @@ describe('ParsingInput Component', () => {
 
 		await waitFor(() => {
 			expect(mockFetch).toHaveBeenCalledWith(
-				'http://localhost:8080/api/parsing/grammar',
+				'https://www.visual-compiler.co.za/api/parsing/grammar',
 				expect.any(Object)
 			);
 			expect(AddToast).toHaveBeenCalledWith('Grammar saved successfully! Your parsing rules are ready for syntax analysis', 'success');
@@ -171,7 +171,7 @@ describe('ParsingInput Component', () => {
 		
 		// Should attempt to fetch tokens on mount
 		expect(mockFetch).toHaveBeenCalledWith(
-			'http://localhost:8080/api/lexing/lexer',
+			'https://www.visual-compiler.co.za/api/lexing/lexer',
 			expect.any(Object)
 		);
 	});
@@ -214,7 +214,7 @@ describe('ParsingInput Component', () => {
 		
 		// Verify the API call was made for grammar submission
 		expect(mockFetch).toHaveBeenCalledWith(
-			'http://localhost:8080/api/parsing/grammar',
+			'https://www.visual-compiler.co.za/api/parsing/grammar',
 			expect.any(Object)
 		);
 	});
