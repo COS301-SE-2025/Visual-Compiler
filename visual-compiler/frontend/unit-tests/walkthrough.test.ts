@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, it, expect } from 'vitest';
-import Walkthrough from '../../src/lib/components/landing/Walkthrough.svelte';
+import Walkthrough from '../src/lib/components/landing/Walkthrough.svelte';
 
 describe('Walkthrough Component', () => {
 	it('TestRender_Success: Renders walkthrough section with main heading', () => {
@@ -121,3 +121,5 @@ describe('Walkthrough Component', () => {
 		expect(screen.getByText(/Lexing, Parsing, and Code Generation/)).toBeInTheDocument();
 	});
 });
+
+

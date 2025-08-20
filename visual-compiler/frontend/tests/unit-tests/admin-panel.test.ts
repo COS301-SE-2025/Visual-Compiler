@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import AdminPanel from '../src/lib/components/main/admin-panel.svelte';
+import AdminPanel from '../../src/lib/components/main/admin-panel.svelte';
 
 // Mock localStorage
 const mockLocalStorage = {
@@ -334,7 +334,7 @@ describe('AdminPanel Component', () => {
 		await fireEvent.click(saveButton);
 
 		await waitFor(() => {
-			expect(screen.getByText('No changes were made')).toBeInTheDocument();
+			expect(screen.getByText('Update failed')).toBeInTheDocument();
 		});
 	});
 
@@ -370,7 +370,7 @@ describe('AdminPanel Component', () => {
 		await fireEvent.click(saveButton);
 
 		await waitFor(() => {
-			expect(screen.getByText('No changes were made')).toBeInTheDocument();
+			expect(screen.getByText('Failed to connect to server')).toBeInTheDocument();
 		});
 	});
 
@@ -592,5 +592,3 @@ describe('AdminPanel Component', () => {
 		expect(closeButton).toBeInTheDocument();
 	});
 });
-
-

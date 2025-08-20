@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, beforeEach } from 'vitest';
-import LexerPhaseTutorial from '../../src/lib/components/lexer/lexer-phase-tutorial.svelte';
+import LexerPhaseTutorial from '../src/lib/components/lexer/lexer-phase-tutorial.svelte';
 
 describe('LexerPhaseTutorial Component', () => {
 	beforeEach(() => {
@@ -184,3 +184,5 @@ describe('LexerPhaseTutorial Component', () => {
 		expect(container.innerHTML).toContain('type');
 	});
 });
+
+

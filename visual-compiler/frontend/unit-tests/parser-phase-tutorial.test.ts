@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, beforeEach } from 'vitest';
-import ParserPhaseTutorial from '../../src/lib/components/parser/parser-phase-tutorial.svelte';
+import ParserPhaseTutorial from '../src/lib/components/parser/parser-phase-tutorial.svelte';
 
 describe('ParserPhaseTutorial Component', () => {
 	beforeEach(() => {
@@ -313,3 +313,5 @@ describe('ParserPhaseTutorial Component', () => {
 		expect(tutorialContentArea).toBeInTheDocument();
 	});
 });
+
+

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { redirect } from '@sveltejs/kit';
-import { load } from '../../src/routes/+page.server';
+import { load } from '../src/routes/+page.server';
 
 // Mock the redirect function
 vi.mock('@sveltejs/kit', () => ({

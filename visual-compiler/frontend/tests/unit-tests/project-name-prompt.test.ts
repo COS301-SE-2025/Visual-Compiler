@@ -1,9 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import ProjectNamePrompt from '../src/lib/components/project-hub/project-name-prompt.svelte';
+import ProjectNamePrompt from '../../src/lib/components/project-hub/project-name-prompt.svelte';
 
 // Mock the AddToast store
-vi.mock('../src/lib/stores/toast', () => ({
+vi.mock('../../src/lib/stores/toast', () => ({
 	AddToast: vi.fn()
 }));
 
@@ -155,7 +155,7 @@ describe('ProjectNamePrompt Component', () => {
 	// Additional tests to improve coverage of duplicate name checking (lines 18-20)
 	it('TestDuplicateNameValidation_Success: Prevents duplicate project names', async () => {
 		// Mock AddToast
-		const { AddToast } = await import('../src/lib/stores/toast');
+		const { AddToast } = await import('../../src/lib/stores/toast');
 		vi.mocked(AddToast).mockClear();
 
 		const existingProjects = [
@@ -314,5 +314,3 @@ describe('ProjectNamePrompt Component', () => {
 		expect(input).toHaveValue('   ');
 	});
 });
-
-

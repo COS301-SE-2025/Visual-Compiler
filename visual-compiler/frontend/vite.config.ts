@@ -16,11 +16,11 @@ export default defineConfig(({ mode }) => ({
 					name: 'client',
 					environment: 'jsdom',
 					clearMocks: true,
-					include: ['tests/**/*.{test,spec}.{js,ts}'],
+					include: ['unit-tests/**/*.{test,spec}.{js,ts}'],
 					exclude: [
 						'src/lib/server/**',
 						'node_modules/**',
-						'tests/**/*.server.{test,spec}.{js,ts}'
+						'unit-tests/**/*.server.{test,spec}.{js,ts}'
 					],
 					setupFiles: ['./vitest-setup-client.ts']
 				},
@@ -33,8 +33,8 @@ export default defineConfig(({ mode }) => ({
 				test: {
 					name: 'server',
 					environment: 'node',
-					include: ['tests/**/*.server.{test,spec}.{js,ts}', 'src/**/*.server.{test,spec}.{js,ts}'],
-					exclude: ['tests/**/*.{test,spec}.{js,ts}', 'node_modules/**'],
+					include: ['unit-tests/**/*.server.{test,spec}.{js,ts}', 'src/**/*.server.{test,spec}.{js,ts}'],
+					exclude: ['unit-tests/**/*.{test,spec}.{js,ts}', 'node_modules/**'],
 					setupFiles: ['./vitest-setup-server.ts']
 				}
 			}

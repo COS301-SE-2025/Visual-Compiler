@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/svelte';
-import Layout from '../../src/routes/+layout.svelte';
+import Layout from '../src/routes/+layout.svelte';
 
 // Mock the ToastContainer component
 vi.mock('$lib/components/toast-conatiner.svelte', () => ({

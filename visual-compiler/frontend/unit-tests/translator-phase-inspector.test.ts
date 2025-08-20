@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import TranslatorPhaseInspector from '../../src/lib/components/translator/translator-phase-inspector.svelte';
+import TranslatorPhaseInspector from '../src/lib/components/translator/translator-phase-inspector.svelte';
 
 // Mock the toast store
 vi.mock('$lib/stores/toast', () => ({
@@ -66,7 +66,7 @@ describe('TranslatorPhaseInspector Component', () => {
 		await fireEvent.click(addRuleButton);
 
 		// Should have multiple rule sections
-		const tokenSequenceInputs = screen.getAllByPlaceholderText('Enter token sequence');
+		const tokenSequenceInputs = screen.getAllByPlaceholderText('Enter token sequence (e.g., KEYWORD, IDENTIFIER)');
 		expect(tokenSequenceInputs.length).toBeGreaterThan(1);
 	});
 
@@ -99,7 +99,7 @@ describe('TranslatorPhaseInspector Component', () => {
 	it('TestTokenSequenceInput_Success: Can input token sequence', async () => {
 		render(TranslatorPhaseInspector);
 
-		const tokenSequenceInput = screen.getByPlaceholderText('Enter token sequence');
+		const tokenSequenceInput = screen.getByPlaceholderText('Enter token sequence (e.g., KEYWORD, IDENTIFIER)');
 		await fireEvent.input(tokenSequenceInput, {
 			target: { value: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER' }
 		});
@@ -153,7 +153,7 @@ describe('TranslatorPhaseInspector Component', () => {
 
 			// Should have fewer rules
 			await waitFor(() => {
-				const tokenSequenceInputs = screen.getAllByPlaceholderText('Enter token sequence');
+				const tokenSequenceInputs = screen.getAllByPlaceholderText('Enter token sequence (e.g., KEYWORD, IDENTIFIER)');
 				expect(tokenSequenceInputs.length).toBe(1);
 			});
 		}
@@ -229,7 +229,10 @@ describe('TranslatorPhaseInspector Component', () => {
 		render(TranslatorPhaseInspector);
 
 		// Look for the actual placeholders that exist
-		expect(screen.getByPlaceholderText('Enter token sequence')).toBeInTheDocument();
+		expect(screen.getByPlaceholderText('Enter token sequence (e.g., KEYWORD, IDENTIFIER)')).toBeInTheDocument();
 		expect(screen.getByPlaceholderText('Line 1')).toBeInTheDocument();
 	});
 });
+
+
+

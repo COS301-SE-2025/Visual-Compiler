@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, beforeEach } from 'vitest';
-import DeleteConfirmation from '../../src/lib/components/project-hub/delete-confirmation.svelte';
+import DeleteConfirmation from '../src/lib/components/project-hub/delete-confirmation.svelte';
 
 describe('DeleteConfirmation Component', () => {
 	beforeEach(() => {
@@ -272,3 +272,5 @@ describe('DeleteConfirmation Component', () => {
 		// No errors should occur
 	});
 });
+
+

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import TranslatorArtifactViewer from '../../src/lib/components/translator/translator-artifact-viewer.svelte';
+import TranslatorArtifactViewer from '../src/lib/components/translator/translator-artifact-viewer.svelte';
 import { AddToast } from '$lib/stores/toast';
 
 // Mock the toast store
@@ -36,7 +36,7 @@ describe('TranslatorArtifactViewer Component', () => {
 			}
 		});
 
-		expect(screen.getByText('Translator Artifact')).toBeInTheDocument();
+		expect(screen.getByText('Translator Artefact')).toBeInTheDocument();
 		const container = document.querySelector('.artifact-container');
 		expect(container).toBeInTheDocument();
 	});

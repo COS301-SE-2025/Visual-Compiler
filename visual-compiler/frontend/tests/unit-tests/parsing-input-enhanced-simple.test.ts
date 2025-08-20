@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import ParsingInput from '../src/lib/components/parser/parsing-input.svelte';
+import ParsingInput from '../../src/lib/components/parser/parsing-input.svelte';
 import { AddToast } from '$lib/stores/toast';
 
 // Mock the stores and APIs
@@ -240,5 +240,3 @@ describe('ParsingInput Enhanced Coverage Tests', () => {
 		expect(rhsInputs[0]).toHaveValue('STATEMENT');
 	});
 });
-
-

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import HelpMenu from '../../src/lib/components/main/help-menu.svelte';
+import HelpMenu from '../src/lib/components/main/help-menu.svelte';
 
 describe('HelpMenu Component', () => {
 	beforeEach(() => {
@@ -152,3 +152,5 @@ describe('HelpMenu Component', () => {
 		});
 	});
 });
+
+

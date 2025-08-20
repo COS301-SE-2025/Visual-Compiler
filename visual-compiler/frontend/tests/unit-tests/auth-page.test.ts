@@ -1,8 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte';
-import page_comp from '../src/routes/auth-page/+page.svelte';
-import toasts from '../src/lib/components/toast-conatiner.svelte';
+import page_comp from '../../src/routes/auth-page/+page.svelte';
+import toasts from '../../src/lib/components/toast-conatiner.svelte';
 
 // Mock SvelteKit runtime
 (globalThis as any).__SVELTEKIT_PAYLOAD__ = {
@@ -628,5 +628,3 @@ describe('form validation edge cases', () => {
 		expect(test_button).toBeDisabled();
 	});
 });
-
-

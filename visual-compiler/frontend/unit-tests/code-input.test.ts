@@ -1,6 +1,6 @@
 import { render, fireEvent, waitFor, screen } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import CodeInput from '../../src/lib/components/main/code-input.svelte';
+import CodeInput from '../src/lib/components/main/code-input.svelte';
 
 // Mock the toast store
 vi.mock('$lib/stores/toast', () => ({
@@ -285,10 +285,12 @@ describe('CodeInput Component', () => {
 
 		// Click default button to insert default code
 		await fireEvent.click(defaultButton);
-		expect(textarea.value).toContain('int blue = 13 + 5;');
+		expect(textarea.value).toContain('int blue = 13;');
 
 		// Click again to restore custom code
 		await fireEvent.click(defaultButton);
 		expect(textarea.value).toBe('custom code');
 	});
 });
+
+

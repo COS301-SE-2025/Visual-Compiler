@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, it, expect } from 'vitest';
-import ArtifactViewer from '../../src/lib/components/lexer/lexer-artifact-viewer.svelte';
+import ArtifactViewer from '../src/lib/components/lexer/lexer-artifact-viewer.svelte';
 import type { Token } from '$lib/types';
 
 describe('ArtifactViewer Component', () => {
@@ -63,7 +63,7 @@ describe('ArtifactViewer Component', () => {
 			unexpected_tokens: mock_unexpected_tokens
 		});
 
-		expect(screen.getByText('Unidentified Input')).toBeInTheDocument();
+		expect(screen.getByText('Unidentified Token(s) Found')).toBeInTheDocument();
 		expect(screen.getByText('@')).toBeInTheDocument();
 		expect(screen.getByText('#')).toBeInTheDocument();
 	});
@@ -83,3 +83,5 @@ describe('ArtifactViewer Component', () => {
 		expect(screen.getByText('No tokens generated yet')).toBeInTheDocument();
 	});
 });
+
+

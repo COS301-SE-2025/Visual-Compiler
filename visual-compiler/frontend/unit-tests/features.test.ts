@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, it, expect } from 'vitest';
-import Features from '../../src/lib/components/landing/Features.svelte';
+import Features from '../src/lib/components/landing/Features.svelte';
 
 describe('Features Component', () => {
 	it('TestRender_Success: Renders features section with heading', () => {
@@ -100,3 +100,5 @@ describe('Features Component', () => {
 		expect(h3Headings).toHaveLength(3);
 	});
 });
+
+

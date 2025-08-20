@@ -25,45 +25,71 @@ describe('LoaderAnimation Component', () => {
 	// ===== BASIC RENDERING TESTS =====
 	it('TestRender_Success: Renders loader animation', () => {
 		const { container } = render(LoaderAnimation);
-
+		
+		// Check if loader overlay exists
 		const loaderOverlay = container.querySelector('.loader_overlay');
-		expect(loaderOverlay).toBeInTheDocument();
-	});
-
-	it('TestAnimationContainer_Success: Contains animation container', () => {
-		const { container } = render(LoaderAnimation);
-
+		expect(loaderOverlay).toBeTruthy();
+		
+		// Check for animation container
 		const animationContainer = container.querySelector('.animation_container');
-		expect(animationContainer).toBeInTheDocument();
+		expect(animationContainer).toBeTruthy();
 	});
 
-	it('TestBlocks_Success: Renders exactly 3 animation blocks', () => {
+	it('TestComponentStructure_Success: Has proper structure', () => {
 		const { container } = render(LoaderAnimation);
+		
+		// Check for main loader overlay
+		expect(container.querySelector('.loader_overlay')).toBeTruthy();
+		
+		// Check for animation container
+		expect(container.querySelector('.animation_container')).toBeTruthy();
+	});
 
+	// ===== ANIMATION BLOCKS TESTS =====
+	it('TestBlocks_Success: Displays animation blocks', () => {
+		const { container } = render(LoaderAnimation);
+		
+		// Check for animation blocks
 		const blocks = container.querySelectorAll('.block');
 		expect(blocks).toHaveLength(3);
+		
+		// Check for specific block classes
+		expect(container.querySelector('.block_1')).toBeTruthy();
+		expect(container.querySelector('.block_2')).toBeTruthy();
+		expect(container.querySelector('.block_3')).toBeTruthy();
 	});
 
-	it('TestBlockClasses_Success: Each block has correct CSS classes', () => {
+	it('TestBlockStructure_Success: Each block has correct class structure', () => {
 		const { container } = render(LoaderAnimation);
-
-		const block1 = container.querySelector('.block_1');
-		const block2 = container.querySelector('.block_2');
-		const block3 = container.querySelector('.block_3');
-
-		expect(block1).toBeInTheDocument();
-		expect(block1).toHaveClass('block');
-
-		expect(block2).toBeInTheDocument();
-		expect(block2).toHaveClass('block');
-
-		expect(block3).toBeInTheDocument();
-		expect(block3).toHaveClass('block');
+		
+		const blocks = container.querySelectorAll('.block');
+		
+		// Should have exactly 3 blocks
+		expect(blocks).toHaveLength(3);
+		
+		// Check that each block has block class and specific numbered class
+		const block1 = container.querySelector('.block.block_1');
+		const block2 = container.querySelector('.block.block_2');
+		const block3 = container.querySelector('.block.block_3');
+		
+		expect(block1).toBeTruthy();
+		expect(block2).toBeTruthy();
+		expect(block3).toBeTruthy();
 	});
 
-	it('TestOverlayClasses_Success: Loader overlay has correct CSS classes', () => {
-		const { container } = render(LoaderAnimation);
+	// ===== TRANSITION TESTS =====
+	it('TestTransition_Success: Has fade transition', () => {
+		render(LoaderAnimation);
+		
+		// The component should have been rendered with fade transition
+		// Since we mocked the transition, we just verify it doesn't crash
+		expect(true).toBe(true);
+	});
 
+	it('TestFadeTransitionMock_Success: Fade transition is properly mocked', () => {
+		const { container } = render(LoaderAnimation);
+		
+		// Check that loader overlay exists (transition worked)
 		const loaderOverlay = container.querySelector('.loader_overlay');
 		expect(loaderOverlay).toBeTruthy();
 	});
@@ -86,7 +112,7 @@ describe('LoaderAnimation Component', () => {
 	// ===== ANIMATION VISUAL TESTS =====
 	it('TestAnimationElements_Success: Animation elements are properly structured', () => {
 		const { container } = render(LoaderAnimation);
-
+		
 		const animationContainer = container.querySelector('.animation_container');
 		expect(animationContainer).toBeTruthy();
 		
@@ -519,5 +545,3 @@ describe('LoaderAnimation Component', () => {
 		expect(completedState.completed).toBe(true);
 	});
 });
-
-

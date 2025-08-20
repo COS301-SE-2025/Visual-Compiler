@@ -1,19 +1,19 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import Toolbox from '../src/lib/components/main/Toolbox.svelte';
+import Toolbox from '../../src/lib/components/main/Toolbox.svelte';
 
 // Mock the toast store at the top level
-vi.mock('../src/lib/stores/toast', () => ({
+vi.mock('../../src/lib/stores/toast', () => ({
 	AddToast: vi.fn()
 }));
 
 // Mock the theme store
-vi.mock('../src/lib/stores/theme', () => ({
+vi.mock('../../src/lib/stores/theme', () => ({
 	theme: { subscribe: vi.fn() }
 }));
 
 // Import the mocked function
-import { AddToast } from '../src/lib/stores/toast';
+import { AddToast } from '../../src/lib/stores/toast';
 
 // Mock tooltips to simplify the test
 const mockTooltips = {
@@ -297,5 +297,3 @@ describe('Toolbox Component', () => {
 		removeEventListenerSpy.mockRestore();
 	});
 });
-
-

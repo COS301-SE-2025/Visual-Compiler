@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import NavBar from '../src/lib/components/main/nav-bar.svelte';
+import NavBar from '../../src/lib/components/main/nav-bar.svelte';
 
 // --- Mock SvelteKit's navigation (this pattern is fine) ---
 const mockedGoto = vi.fn();
@@ -10,7 +10,7 @@ vi.mock('$app/navigation', () => ({
 }));
 
 // --- Mock the Theme Store (Correct Hoisting-Safe Pattern) ---
-vi.mock('../src/lib/stores/theme', async (importOriginal) => {
+vi.mock('../../src/lib/stores/theme', async (importOriginal) => {
 	const { writable } = await import('svelte/store');
 	const mockThemeStore = writable<'light' | 'dark'>('light');
 	return {
@@ -24,7 +24,7 @@ vi.mock('../src/lib/stores/theme', async (importOriginal) => {
 
 // We need to get a reference to the mocks that were created above.
 const { theme: mockThemeStore, ToggleTheme: mockedToggleTheme } = await import(
-	'../src/lib/stores/theme'
+	'../../src/lib/stores/theme'
 );
 
 describe('NavBar Component', () => {
@@ -448,5 +448,3 @@ describe('NavBar Component', () => {
 		expect(themeIcon).toHaveAttribute('src', '/darkmode.png');
 	});
 });
-
-

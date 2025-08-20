@@ -1,19 +1,28 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { writable } from 'svelte/store';
-import ProjectHub from '../../src/lib/components/project-hub/project-hub.svelte';
+import ProjectHub from '../src/lib/components/project-hub/project-hub.svelte';
 
 // Mock the project store
 vi.mock('$lib/stores/project', () => ({
-	projectName: writable('')
+	projectName: {
+		subscribe: vi.fn((callback) => {
+			callback(''); // Call with empty string initially
+			return vi.fn(); // Return unsubscribe function
+		}),
+		set: vi.fn(),
+		update: vi.fn()
+	}
 }));
 
+import { projectName } from '$lib/stores/project';
+
 // Mock the child components
-vi.mock('../../src/lib/components/project-hub/project-name-prompt.svelte', () => ({
+vi.mock('../src/lib/components/project-hub/project-name-prompt.svelte', () => ({
 	default: vi.fn()
 }));
 
-vi.mock('../../src/lib/components/project-hub/delete-confirmation.svelte', () => ({
+vi.mock('../src/lib/components/project-hub/delete-confirmation.svelte', () => ({
 	default: vi.fn()
 }));
 
@@ -304,7 +313,8 @@ describe('ProjectHub Component', () => {
 
 	// Enhanced Coverage Tests for Project Hub
 	it('TestFetchProjects_ErrorHandling: Handles fetch errors and resets projects', async () => {
-		localStorageMock.setItem('user_id', '123');
+		// Override the default mock return value for this test
+		localStorageMock.getItem.mockReturnValue('123');
 		
 		// Mock fetch to reject
 		mockFetch.mockRejectedValueOnce(new Error('Network error'));
@@ -469,7 +479,8 @@ describe('ProjectHub Component', () => {
 		render(ProjectHub, { show: true });
 		
 		// Verify store subscription was called
-		expect(projectName.subscribe).toHaveBeenCalled();
+		const mockedProjectName = vi.mocked(projectName);
+		expect(mockedProjectName.subscribe).toHaveBeenCalled();
 	});
 
 	it('TestHandleClose_WithExistingProject: Closes modal when existing project loaded', () => {

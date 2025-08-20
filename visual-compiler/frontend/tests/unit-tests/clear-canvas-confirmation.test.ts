@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, fireEvent, screen } from '@testing-library/svelte';
-import ClearCanvasConfirmation from '../src/lib/components/main/clear-canvas-confirmation.svelte';
+import ClearCanvasConfirmation from '../../src/lib/components/main/clear-canvas-confirmation.svelte';
 
 /**
  * Test suite for ClearCanvasConfirmation component
@@ -221,5 +221,3 @@ describe('ClearCanvasConfirmation Component', () => {
 		expect(cancelButton).toBeInTheDocument();
 	});
 });
-
-

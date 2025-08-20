@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, beforeEach } from 'vitest';
-import TranslatorPhaseTutorial from '../src/lib/components/translator/translator-phase-tutorial.svelte';
+import TranslatorPhaseTutorial from '../../src/lib/components/translator/translator-phase-tutorial.svelte';
 
 describe('TranslatorPhaseTutorial Component', () => {
 	beforeEach(() => {
@@ -17,7 +17,7 @@ describe('TranslatorPhaseTutorial Component', () => {
 	it('TestInitialStep_Success: Shows step 1 initially', () => {
 		render(TranslatorPhaseTutorial);
 
-		expect(screen.getByText('1. Complete Lexing and Parsing')).toBeInTheDocument();
+		expect(screen.getByText('1️⃣ Complete Lexing and Parsing')).toBeInTheDocument();
 		expect(screen.getByText(/Before using the translator, you must complete/)).toBeInTheDocument();
 	});
 
@@ -91,17 +91,18 @@ describe('TranslatorPhaseTutorial Component', () => {
 				await fireEvent.click(nextButtons[0]);
 			}
 
-		await waitFor(() => {
-			// Verify both example rules are rendered in the each loop
-			expect(screen.getByText('12 + 13')).toBeInTheDocument();
-			expect(screen.getByText('INTEGER, OPERATOR, INTEGER')).toBeInTheDocument();
-			expect(screen.getByText(/mov\s+rax, \{INTEGER\}/)).toBeInTheDocument();
-			expect(screen.getByText(/mov\s+rax, 12/)).toBeInTheDocument(); // Use regex for multi-line text
-			expect(screen.getByText('bool found = true;')).toBeInTheDocument();
-			expect(screen.getByText('KEYWORD, IDENTIFIER, ASSIGNMENT, BOOLEAN')).toBeInTheDocument();
-			expect(screen.getByText(/mov\s+rax, \[\{IDENTIFIER\}\]/)).toBeInTheDocument();
-			expect(screen.getByText(/mov\s+rax, \[found\]/)).toBeInTheDocument();
-		});
+			await waitFor(() => {
+				// Verify both example rules are rendered in the each loop
+				expect(screen.getByText('10 + 5')).toBeInTheDocument();
+				expect(screen.getByText('NUMBER, PLUS, NUMBER')).toBeInTheDocument();
+				expect(screen.getByText('ADD {NUMBER}, {NUMBER}')).toBeInTheDocument();
+				expect(screen.getByText(/ADD 10, 5/)).toBeInTheDocument(); // Use regex for multi-line text
+				
+				expect(screen.getByText('int count = 42;')).toBeInTheDocument();
+				expect(screen.getByText('KEYWORD, IDENTIFIER, ASSIGNMENT, NUMBER')).toBeInTheDocument();
+				expect(screen.getByText('MOV [{IDENTIFIER}], {NUMBER}')).toBeInTheDocument();
+				expect(screen.getByText('MOV [count], 42')).toBeInTheDocument();
+			});
 		}
 	});
 
@@ -120,14 +121,18 @@ describe('TranslatorPhaseTutorial Component', () => {
 			}
 
 			await waitFor(() => {
-				// Verify critical mistakes are rendered in the each loop
-				expect(screen.getByText('Not using token types')).toBeInTheDocument();
-				expect(screen.getByText('int, result, =, 1')).toBeInTheDocument();
-				expect(screen.getByText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER')).toBeInTheDocument();
+				// Verify all 3 critical mistakes are rendered in the each loop
+				expect(screen.getByText('🚫 Mixing token types')).toBeInTheDocument();
+				expect(screen.getByText('int, x, =, 5')).toBeInTheDocument();
+				expect(screen.getByText('KEYWORD, IDENTIFIER, ASSIGNMENT, NUMBER')).toBeInTheDocument();
 				
-				expect(screen.getByText('Skipping placeholders')).toBeInTheDocument();
-				expect(screen.getByText('mov [result], 1')).toBeInTheDocument();
-				expect(screen.getByText('MOV [{IDENTIFIER}], {INTEGER}')).toBeInTheDocument();
+				expect(screen.getByText('🚫 Skipping placeholders')).toBeInTheDocument();
+				expect(screen.getByText('MOV [result], 10')).toBeInTheDocument();
+				expect(screen.getByText('MOV [{IDENTIFIER}], {NUMBER}')).toBeInTheDocument();
+				
+				expect(screen.getByText('🚫 Skipping operators')).toBeInTheDocument();
+				expect(screen.getByText('a b')).toBeInTheDocument();
+				expect(screen.getByText('a TIMES b')).toBeInTheDocument();
 			});
 		}
 	});

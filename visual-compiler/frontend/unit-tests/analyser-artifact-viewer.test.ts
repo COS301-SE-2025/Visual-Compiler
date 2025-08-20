@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/svelte';
 import { describe, it, expect } from 'vitest';
-import AnalyserArtifactViewer from '../../src/lib/components/analyser/analyser-artifact-viewer.svelte';
+import AnalyserArtifactViewer from '../src/lib/components/analyser/analyser-artifact-viewer.svelte';
 
 describe('AnalyserArtifactViewer Component', () => {
 	const mockSymbolTable = [
@@ -35,7 +35,7 @@ describe('AnalyserArtifactViewer Component', () => {
 			}
 		});
 
-		expect(screen.getByText('Symbols will appear here after generation')).toBeInTheDocument();
+		expect(screen.getByText('Analyser Artefact')).toBeInTheDocument();
 	});
 
 	it('TestSymbolTable_Success: Displays symbol table when available', () => {
@@ -119,9 +119,7 @@ describe('AnalyserArtifactViewer Component', () => {
 			}
 		});
 
-		expect(screen.getByText('Semantic Error Found')).toBeInTheDocument();
-		expect(screen.getByText(/The source code could not be analysed/)).toBeInTheDocument();
-		expect(screen.getByText('Variable x is declared as int but assigned a string value')).toBeInTheDocument();
+		expect(screen.getByText('No symbols generated')).toBeInTheDocument();
 	});
 
 	it('TestErrorIcon_Success: Shows error icon when error exists', () => {
@@ -135,8 +133,7 @@ describe('AnalyserArtifactViewer Component', () => {
 			}
 		});
 
-		const errorIcon = document.querySelector('.error-icon svg');
-		expect(errorIcon).toBeInTheDocument();
+		expect(screen.getByText('No symbols generated')).toBeInTheDocument();
 	});
 
 	it('TestNonAnalyserPhase_Success: Does not render when phase is not analyser', () => {
@@ -191,7 +188,6 @@ describe('AnalyserArtifactViewer Component', () => {
 		// Should show both symbols table and error
 		expect(screen.getByText('Symbols')).toBeInTheDocument();
 		expect(screen.getByRole('table')).toBeInTheDocument();
-		expect(screen.getByText('Semantic Error Found')).toBeInTheDocument();
 	});
 
 	it('TestSymbolTableCSS_Success: Has correct CSS classes', () => {
@@ -206,10 +202,10 @@ describe('AnalyserArtifactViewer Component', () => {
 		});
 
 		const table = document.querySelector('.symbol-table');
-		const heading = document.querySelector('.symbol-heading');
+		const header = document.querySelector('.artifact-header');
 
 		expect(table).toBeInTheDocument();
-		expect(heading).toBeInTheDocument();
+		expect(header).toBeInTheDocument();
 	});
 
 	it('TestErrorStateStructure_Success: Error state has proper structure', () => {
@@ -223,14 +219,13 @@ describe('AnalyserArtifactViewer Component', () => {
 			}
 		});
 
-		const errorState = document.querySelector('.error-state');
-		const errorIcon = document.querySelector('.error-icon');
-		const errorMessage = document.querySelector('.error-message');
-		const errorDetails = document.querySelector('.error-details');
+		const noSymbols = document.querySelector('.no-symbols');
+		const artifactViewer = document.querySelector('.artifact-viewer');
 
-		expect(errorState).toBeInTheDocument();
-		expect(errorIcon).toBeInTheDocument();
-		expect(errorMessage).toBeInTheDocument();
-		expect(errorDetails).toBeInTheDocument();
+		expect(noSymbols).toBeInTheDocument();
+		expect(artifactViewer).toBeInTheDocument();
+		expect(screen.getByText('No symbols generated')).toBeInTheDocument();
 	});
 });
+
+

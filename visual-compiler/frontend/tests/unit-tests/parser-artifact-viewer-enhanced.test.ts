@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import ParserArtifactViewer from '../src/lib/components/parser/parser-artifact-viewer.svelte';
+import ParserArtifactViewer from '../../src/lib/components/parser/parser-artifact-viewer.svelte';
 import type { SyntaxTree } from '$lib/types';
 
 // Mock the vis-network library
@@ -133,10 +133,14 @@ describe('ParserArtifactViewer Enhanced Coverage Tests', () => {
 	});
 
 	it('TestParsingErrorDisplay_Success: Displays parsing errors correctly', () => {
+		const parsing_error = {
+			message: 'Syntax error at line 5',
+			details: 'Unexpected token'
+		};
+
 		render(ParserArtifactViewer, { 
 			syntaxTree: null, 
-			parsing_error: true,
-			parsing_error_details: 'Syntax error at line 5'
+			parsingError: parsing_error 
 		});
 
 		// Should display error information
@@ -239,5 +243,3 @@ describe('ParserArtifactViewer Enhanced Coverage Tests', () => {
 		expect(true).toBe(true); // Test completes without errors
 	});
 });
-
-

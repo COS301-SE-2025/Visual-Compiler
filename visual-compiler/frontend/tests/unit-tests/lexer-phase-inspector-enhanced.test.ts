@@ -22,17 +22,11 @@ vi.mock('$lib/stores/project', () => ({
 vi.mock('$lib/stores/lexer', () => ({
 	lexerState: {
 		subscribe: vi.fn((callback) => {
-			// Provide the lexer state structure that the component expects
-			callback({
-				userInputRows: [{ type: '', regex: '', error: '' }],
-				// Add other properties that might be needed
-				isRunning: false,
-				results: null
-			});
+			callback({ mode: null, dfa: null, nfa: null });
 			return { unsubscribe: vi.fn() };
 		}),
-		update: vi.fn(),
-		set: vi.fn()
+		set: vi.fn(),
+		update: vi.fn()
 	}
 }));
 
@@ -40,7 +34,7 @@ vi.mock('$lib/stores/lexer', () => ({
 vi.mock('svelte/store', () => ({
 	get: vi.fn(() => 'test-project'),
 	writable: vi.fn(() => ({
-		subscribe: vi.fn(() => () => {}),
+		subscribe: vi.fn(),
 		set: vi.fn(),
 		update: vi.fn()
 	}))
@@ -426,8 +420,8 @@ describe('Lexer PhaseInspector Enhanced Coverage Tests', () => {
 
 		await waitFor(() => {
 			const resetTypeInput = screen.getByPlaceholderText('Enter type...');
-			// Form may retain previous value or be reset depending on implementation
-			expect(resetTypeInput).toHaveValue('TEST_DATA');
+			// Form should be reset
+			expect(resetTypeInput).toHaveValue('');
 		});
 	});
 

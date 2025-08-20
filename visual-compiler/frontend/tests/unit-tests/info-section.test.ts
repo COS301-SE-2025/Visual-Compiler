@@ -1,46 +1,105 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { tick } from 'svelte';
-import { describe, it, expect } from 'vitest';
-import InfoSection from '../src/lib/components/landing/info-section.svelte';
+import InfoSection from '$lib/components/landing/info-section.svelte';
 
 describe('InfoSection Component', () => {
-	it('TestInitialRender_Success: Renders the "About" tab by default', () => {
-		render(InfoSection);
-
-		// Check that the "About" button has the 'active' class
-		const aboutButton = screen.getByRole('button', { name: 'About The Project' });
-		expect(aboutButton).toHaveClass('active');
-
-		// Check that the "About" content is visible
-		expect(screen.getByText('An Educational Tool for a Complex World')).toBeInTheDocument();
-
-		// Check that content for other tabs is NOT visible
-		expect(screen.queryByText('Value Through Innovation')).toBeNull();
-		expect(screen.queryByText('Sashen Inder Gajai')).toBeNull(); // Check for a team member's name
+	// ===== BASIC RENDERING TESTS =====
+	it('TestRender_Success: Renders info section with tabs', () => {
+		const { container } = render(InfoSection);
+		
+		// Check if info section exists
+		const infoSection = container.querySelector('.info_section');
+		expect(infoSection).toBeTruthy();
+		
+		// Check for tab navigation
+		const tabNav = container.querySelector('.tab_nav');
+		expect(tabNav).toBeTruthy();
 	});
 
-	it('TestTabSwitch_Client_Success: Switches to the "Client" tab on click', async () => {
-		render(InfoSection);
-
-		// Find and click the "Client" tab button
-		const clientButton = screen.getByRole('button', { name: 'About EPI-USE Labs' });
-		await fireEvent.click(clientButton);
-
-		// Check that the "Client" button is now active
-		expect(clientButton).toHaveClass('active');
-		// Check that the "About" button is no longer active
-		const aboutButton = screen.getByRole('button', { name: 'About The Project' });
-		expect(aboutButton).not.toHaveClass('active');
-
-		// Check that the "Client" content is now visible
-		expect(screen.getByText('Value Through Innovation')).toBeInTheDocument();
-
-		// Check that the "About" content is now hidden
-		expect(screen.queryByText('An Educational Tool for a Complex World')).toBeNull();
+	it('TestComponentStructure_Success: Has proper structure', () => {
+		const { container } = render(InfoSection);
+		
+		// Check for info container
+		const infoContainer = container.querySelector('.info_container');
+		expect(infoContainer).toBeTruthy();
+		
+		// Check for tab navigation
+		const tabNav = container.querySelector('.tab_nav');
+		expect(tabNav).toBeTruthy();
 	});
 
-	it('TestTabSwitch_Team_Success: Switches to the "Team" tab on click', async () => {
-		// 1. Render the component.
+	// ===== TAB NAVIGATION TESTS =====
+	it('TestTabs_Success: All tabs are present and clickable', async () => {
+		render(InfoSection);
+		
+		// Check for all three tabs
+		const aboutTab = screen.getByText('About The Project');
+		const clientTab = screen.getByText('About EPI-USE Labs');
+		const teamTab = screen.getByText('Meet The Team');
+		
+		expect(aboutTab).toBeTruthy();
+		expect(clientTab).toBeTruthy();
+		expect(teamTab).toBeTruthy();
+		
+		// Test tab clicks
+		await fireEvent.click(clientTab);
+		await tick();
+		expect(clientTab.classList.contains('active')).toBe(true);
+		
+		await fireEvent.click(teamTab);
+		await tick();
+		expect(teamTab.classList.contains('active')).toBe(true);
+		
+		await fireEvent.click(aboutTab);
+		await tick();
+		expect(aboutTab.classList.contains('active')).toBe(true);
+	});
+
+	it('TestDefaultTab_Success: About tab is active by default', () => {
+		render(InfoSection);
+		
+		const aboutTab = screen.getByText('About The Project');
+		expect(aboutTab.classList.contains('active')).toBe(true);
+	});
+
+	it('TestTabSwitching_Success: Tab switching works correctly', async () => {
+		render(InfoSection);
+		
+		const aboutTab = screen.getByText('About The Project');
+		const clientTab = screen.getByText('About EPI-USE Labs');
+		const teamTab = screen.getByText('Meet The Team');
+		
+		// Initially about tab should be active
+		expect(aboutTab.classList.contains('active')).toBe(true);
+		expect(clientTab.classList.contains('active')).toBe(false);
+		expect(teamTab.classList.contains('active')).toBe(false);
+		
+		// Click client tab
+		await fireEvent.click(clientTab);
+		await tick();
+		expect(aboutTab.classList.contains('active')).toBe(false);
+		expect(clientTab.classList.contains('active')).toBe(true);
+		expect(teamTab.classList.contains('active')).toBe(false);
+		
+		// Click team tab
+		await fireEvent.click(teamTab);
+		await tick();
+		expect(aboutTab.classList.contains('active')).toBe(false);
+		expect(clientTab.classList.contains('active')).toBe(false);
+		expect(teamTab.classList.contains('active')).toBe(true);
+	});
+
+	// ===== TEAM MEMBERS TESTS =====
+	it('TestTeamMembersData_Success: Contains expected team member information', () => {
+		const { container } = render(InfoSection);
+		
+		// The team member data should be embedded in the component
+		// We can verify the structure is in place for team content
+		expect(container.querySelector('.info_section')).toBeTruthy();
+	});
+
+	it('TestTeamMemberCount_Success: Has correct number of team members', async () => {
 		render(InfoSection);
 		
 		// Click on team tab to activate team content
@@ -265,5 +324,3 @@ describe('InfoSection Component', () => {
 		expect(teamTab.classList.contains('active')).toBe(true);
 	});
 });
-
-

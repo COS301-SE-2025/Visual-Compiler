@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, beforeEach } from 'vitest';
-import AnalyserPhaseTutorial from '../../src/lib/components/analyser/analyser-phase-tutorial.svelte';
+import AnalyserPhaseTutorial from '../src/lib/components/analyser/analyser-phase-tutorial.svelte';
 
 describe('AnalyserPhaseTutorial Component', () => {
 	beforeEach(() => {
@@ -166,3 +166,5 @@ describe('AnalyserPhaseTutorial Component', () => {
 		expect(screen.getByText('What is Semantic Analysis?')).toBeInTheDocument();
 	});
 });
+
+

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import AnalyserPhaseInspector from '../src/lib/components/analyser/analyser-phase-inspector.svelte';
+import AnalyserPhaseInspector from '../../src/lib/components/analyser/analyser-phase-inspector.svelte';
 
 // Mock the toast store
 vi.mock('$lib/stores/toast', () => ({
@@ -19,26 +19,9 @@ vi.mock('$lib/stores/project', () => ({
 	}
 }));
 
-// Mock lexer store
-vi.mock('$lib/stores/lexer', () => ({
-	lexerState: {
-		subscribe: vi.fn((callback) => {
-			callback({ mode: null, dfa: null, nfa: null });
-			return { unsubscribe: vi.fn() };
-		}),
-		set: vi.fn(),
-		update: vi.fn()
-	}
-}));
-
 // Mock svelte/store
 vi.mock('svelte/store', () => ({
-	get: vi.fn(() => 'test-project'),
-	writable: vi.fn(() => ({
-		subscribe: vi.fn(),
-		set: vi.fn(),
-		update: vi.fn()
-	}))
+	get: vi.fn(() => 'test-project')
 }));
 
 // Mock fetch

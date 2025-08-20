@@ -8,7 +8,7 @@ import {
     type PipelineNode,
     type NodeConnection,
     type Position
-} from '../../src/lib/stores/pipeline';
+} from '../src/lib/stores/pipeline';
 
 describe('Pipeline Store', () => {
     beforeEach(() => {
@@ -82,7 +82,9 @@ describe('Pipeline Store', () => {
                         sourceNodeId: 'source-1',
                         targetNodeId: 'lexer-1',
                         sourceType: 'source',
-                        targetType: 'lexer'
+                        targetType: 'lexer',
+                        sourceAnchor: 'bottom',
+                        targetAnchor: 'top'
                     },
                     {
                         id: 'conn-2',
@@ -124,7 +126,9 @@ describe('Pipeline Store', () => {
                         sourceNodeId: 'source-1',
                         targetNodeId: 'lexer-1',
                         sourceType: 'source',
-                        targetType: 'lexer'
+                        targetType: 'lexer',
+                        sourceAnchor: 'bottom',
+                        targetAnchor: 'top'
                     }
                 ],
                 lastSaved: '2023-01-01T10:00:00Z'
@@ -201,7 +205,9 @@ describe('Pipeline Store', () => {
                         sourceNodeId: 'source-1',
                         targetNodeId: 'lexer-1',
                         sourceType: 'source',
-                        targetType: 'lexer'
+                        targetType: 'lexer',
+                        sourceAnchor: 'bottom',
+                        targetAnchor: 'top'
                     }
                 ],
                 lastSaved: '2023-01-01T10:00:00Z'
@@ -299,6 +305,8 @@ describe('Pipeline Store', () => {
                 targetNodeId: 'lexer-1',
                 sourceType: 'source',
                 targetType: 'lexer',
+                        sourceAnchor: 'bottom',
+                        targetAnchor: 'top',
                 sourceAnchor: 'output',
                 targetAnchor: 'input'
             };
@@ -328,7 +336,9 @@ describe('Pipeline Store', () => {
                         sourceNodeId: 'analyser-1',
                         targetNodeId: 'translator-1',
                         sourceType: 'analyser',
-                        targetType: 'translator'
+                        targetType: 'translator',
+                        sourceAnchor: 'bottom',
+                        targetAnchor: 'top'
                     }
                 ],
                 lastSaved: '2023-01-03T14:30:00Z'
