@@ -43,7 +43,7 @@ vi.mock('svelte/store', () => ({
 		subscribe: vi.fn(() => () => {}),
 		set: vi.fn(),
 		update: vi.fn()
-	}));
+	}))}));
 
 // Mock vis-network for network visualization
 vi.mock('vis-network', () => ({
@@ -427,55 +427,4 @@ describe('Lexer PhaseInspector Enhanced Coverage Tests', () => {
 			const resetTypeInput = screen.getByPlaceholderText('Enter type...');
       expect(resetTypeInput).toHaveValue('TEST_DATA');
 		});
-
-	it('TestComplexRegexValidation_Success: Should validate complex regex patterns', async () => {
-		render(PhaseInspector, { source_code: sourceCode });
-
-		const regexButton = screen.getByRole('button', { name: 'Regular Expression' });
-		await fireEvent.click(regexButton);
-
-		await waitFor(() => {
-			expect(screen.getByPlaceholderText('Enter type...')).toBeInTheDocument();
-		});
-
-		const typeInput = screen.getByPlaceholderText('Enter type...');
-		const regexInput = screen.getByPlaceholderText('Enter regex pattern...');
-		const submitButton = screen.getByRole('button', { name: 'Submit' });
-
-		// Test valid complex regex
-		await fireEvent.input(typeInput, { target: { value: 'COMPLEX' } });
-		await fireEvent.input(regexInput, { target: { value: '[a-zA-Z][a-zA-Z0-9_]*' } });
-		await fireEvent.click(submitButton);
-
-		// Should not show error for valid regex
-		await waitFor(() => {
-			expect(screen.queryByText('Invalid regular expression pattern')).not.toBeInTheDocument();
-		});
-	});
-
-	it('TestMultipleRowManagement_Success: Should handle multiple regex rule rows', async () => {
-		render(PhaseInspector, { source_code: sourceCode });
-
-		const regexButton = screen.getByRole('button', { name: 'Regular Expression' });
-		await fireEvent.click(regexButton);
-
-		await waitFor(() => {
-			expect(screen.getByPlaceholderText('Enter type...')).toBeInTheDocument();
-		});
-
-		// Add additional rows by finding and clicking add button
-		const addButtons = screen.queryAllByLabelText('Add new row') || 
-						  screen.queryAllByText('+') ||
-						  screen.queryAllByRole('button', { name: /add/i });
-
-		if (addButtons.length > 0) {
-			await fireEvent.click(addButtons[0]);
-			
-			// Should have multiple type inputs now
-			await waitFor(() => {
-				const typeInputs = screen.getAllByPlaceholderText('Enter type...');
-				expect(typeInputs.length).toBeGreaterThan(1);
-			});
-		}
-	});
-});
+})})

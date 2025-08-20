@@ -38,7 +38,7 @@ vi.mock('svelte/store', () => ({
 		subscribe: vi.fn(),
 		set: vi.fn(),
 		update: vi.fn()
-	}));
+	}))}));
 
 // Mock fetch
 const mockFetch = vi.fn();
