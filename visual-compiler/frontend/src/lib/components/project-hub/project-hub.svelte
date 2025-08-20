@@ -361,10 +361,7 @@
 					</svg>
 					<span class="button-label">New Blank</span>
 				</button>
-				<button class="project-button">
-					<span class="default-project-text">Default</span>
-					<span class="button-label">Project</span>
-				</button>
+				
 			</div>
 
 			<div class="search-bar-container">
