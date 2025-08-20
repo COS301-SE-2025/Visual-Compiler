@@ -71,7 +71,7 @@ jobs:
           Mongo_username: ${{ secrets.MONGODB_USERNAME }}
           Mongo_password: ${{secrets.MONGODB_PASSWORD}}
           Mongo_URI: ${{secrets.MONGODB_URI}}
-        run: go test ./... -coverprofile=coverage.out
+        run: go test -tags=coverage -coverpkg=./... ./... -coverprofile=coverage.out
 
       - name: Upload coverage for backend
         uses: codecov/codecov-action@v4
@@ -100,3 +100,40 @@ jobs:
 
       - name: Docker Build and Compose for deployment
         run: docker compose --env-file backend.env up -d --build
+
+      - name: Making sure Backend is running
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/api/health > /dev/null; then
+              echo "Backend is running"
+              exit 0
+            fi
+            echo "Waiting..."
+            sleep 5
+          done
+          echo "Backend failed"
+          exit 1
+      - name: Making sure Frontend is running
+        run: |
+          for i in {1..30}; do
+            if curl -s http://localhost:5173 > /dev/null; then
+              echo "Frontend is running"
+              exit 0
+            fi
+            echo "Waiting..."
+            sleep 5
+          done
+          echo "Frontend failed"
+          exit 1
+
+      - name: Cypress Installation
+        working-directory: ./visual-compiler
+        run: npm install cypress --save-dev
+
+      - name: Run Cypress
+        working-directory: ./visual-compiler
+        run: npx cypress run
+
+      - name: Docker Compose Shut down
+        if: always()
+        run: docker compose down

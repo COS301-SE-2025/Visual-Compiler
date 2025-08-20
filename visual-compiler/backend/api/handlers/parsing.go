@@ -14,20 +14,30 @@ import (
 )
 
 type ReadGrammerFromUser struct {
-	UsersID   bson.ObjectID          `json:"users_id" binding:"required"`
-	Vars      []string               `json:"variables" binding:"required"`
-	Terminals []string               `json:"terminals" binding:"required"`
-	StartVar  string                 `json:"start" binding:"required"`
-	Rules     []services.ParsingRule `json:"rules" binding:"required"`
+	// User's ID for storing purposes
+	UsersID bson.ObjectID `json:"users_id" binding:"required" example:"685df259c1294de5546b045f"`
+	// User's defined variables
+	Vars []string `json:"variables" binding:"required" example:"S, Decl"`
+	// User's defined terminal variables
+	Terminals []string `json:"terminals" binding:"required" example:"KEYWORD, IDENTIFIER, OPERATOR, NUMBER, PUNCTUATION"`
+	// User's defined start variable
+	StartVar string `json:"start" binding:"required" example:"S"`
+	// User's defined rules
+	Rules []services.ParsingRule `json:"rules" binding:"required"`
+	// User's project name
+	Project_Name string `json:"project_name" binding:"required"`
 }
 
-// Name: ReadGrammar
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Reads the user's grammar and stores it in the database. If any syntax tree, or syntax tree string already exists, they are cleared
+// @Summary Processs and store user-defined grammer
+// @Description Accepts grammar variables, terminals, start variable, and rules from the user and stores them in the database. If it already exists, it updates the current grammar
+// @Tags Parsing
+// @Accept json
+// @Produce json
+// @Param request body ReadGrammerFromUser true "Read Grammer From User"
+// @Success 200 {object} map[string]string "Grammar successfully read and stored/updated"
+// @Failure 400 {object} map[string]string "Invalid input or Grammar failed to insert"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /parsing/grammar [post]
 func ReadGrammar(c *gin.Context) {
 	var req ReadGrammerFromUser
 
@@ -59,15 +69,16 @@ func ReadGrammar(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Grammar creation failed", "details": err.Error()})
 	}
 
-	filters := bson.M{"users_id": req.UsersID}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	var userexisting bson.M
 
 	err = collection.FindOne(ctx, filters).Decode(&userexisting)
 
 	if err == mongo.ErrNoDocuments {
 		_, err = collection.InsertOne(ctx, bson.M{
-			"users_id": req.UsersID,
-			"grammar":  grammar,
+			"users_id":     req.UsersID,
+			"grammar":      grammar,
+			"project_name": req.Project_Name,
 		})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Database Insertion error"})
@@ -96,13 +107,16 @@ func ReadGrammar(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Grammar successfully inserted. Ready to create Syntax Tree"})
 }
 
-// Name: CreateSyntaxTree
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Creates a syntax tree from the stored grammar. If there is no grammar saved, an error is returned. The tree is saved in the database
+// @Summary Create and store syntax tree from stored grammar and tokens
+// @Description Searches database for Grammar and Tokens. If found, and creates and stores the tree.
+// @Tags Parsing
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]string "Syntax tree successfully created and stored/updated"
+// @Failure 400 {object} map[string]string "Invalid input or Syntax Tree failed to insert"
+// @Failure 404 {object} map[string]string "Tokens or Grammer not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /parsing/tree [post]
 func CreateSyntaxTree(c *gin.Context) {
 	var req IDRequest
 
@@ -126,13 +140,13 @@ func CreateSyntaxTree(c *gin.Context) {
 		Grammar services.Grammar `bson:"grammar"`
 	}
 
-	err := lexing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&lexing_res)
+	err := lexing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&lexing_res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tokens code not found. Please go back to lexing"})
 		return
 	}
 
-	err = parsing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&parsing_res)
+	err = parsing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&parsing_res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Grammar code not found. Please create one"})
 		return
@@ -144,7 +158,7 @@ func CreateSyntaxTree(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": req.UsersID}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	update_users_tree := bson.M{"$set": bson.M{
 		"tree": tree,
 	}}
@@ -161,13 +175,16 @@ func CreateSyntaxTree(c *gin.Context) {
 	})
 }
 
-// Name: CreateSyntaxTree
-//
-// Parameters: Gin Context
-//
-// Return: None
-//
-// Creates a string version of the syntax tree from the stored syntax tree. If there is no syntax tree saved, an error is returned. The string version is saved in the database
+// @Summary Create and store syntax tree as a string from stored tree
+// @Description Searches database for an existing syntax tree. If found, and creates and stores the tree as a string.
+// @Tags Parsing
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]string "Syntax tree String successfully created and stored/updated"
+// @Failure 400 {object} map[string]string "Invalid input or Syntax Tree String failed to insert"
+// @Failure 404 {object} map[string]string "Syntax Tree not found"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /parsing/treeString [post]
 func TreeToString(c *gin.Context) {
 	var req IDRequest
 
@@ -186,7 +203,7 @@ func TreeToString(c *gin.Context) {
 		Tree services.SyntaxTree `bson:"tree"`
 	}
 
-	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Syntax tree not found. Please create one"})
 		return
@@ -194,7 +211,7 @@ func TreeToString(c *gin.Context) {
 
 	tree_as_string := services.ConvertTreeToString(res.Tree.Root, "", true)
 
-	filters := bson.M{"users_id": req.UsersID}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	update_users_tree_string := bson.M{"$set": bson.M{
 		"tree_string": tree_as_string,
 	}}

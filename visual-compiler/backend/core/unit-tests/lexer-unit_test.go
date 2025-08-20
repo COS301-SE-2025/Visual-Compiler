@@ -285,9 +285,7 @@ func TestCreateTokens_IdentifierTokensIdentified_Complex(t *testing.T) {
 		"=",
 		"3",
 		";",
-		"=",
 		"5",
-		";",
 	}
 
 	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
@@ -553,9 +551,11 @@ func TestCreateTokens_PunctuationTokensUnidentified(t *testing.T) {
 		"3",
 		"err",
 		",",
+		"_",
 		":=",
 		"service",
-		"()",
+		"(",
+		")",
 	}
 
 	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
@@ -780,6 +780,57 @@ func TestCreateTokensFromDFA_ValidDFA(t *testing.T) {
 	}
 }
 
+func TestCreateTokensFromDFA_SpacedUnidentifiedTokens(t *testing.T) {
+	expected_res := []services.TypeValue{
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "x"},
+		{Type: "NUMBER", Value: "3"},
+	}
+	expected_res_unidentified := []string{
+		"!=",
+		";",
+	}
+
+	source_code := "int x != 3;"
+	dfa := services.Automata{
+		States: []string{"START", "S1", "S2", "S3", "S4", "S5"},
+		Transitions: []services.Transition{
+			{From: "START", To: "S1", Label: "i"},
+			{From: "S1", To: "S5", Label: "n"},
+			{From: "S5", To: "S4", Label: "t"},
+			{From: "S1", To: "S6", Label: "f"},
+			{From: "START", To: "S2", Label: "0123456789"},
+			{From: "S2", To: "S2", Label: "0123456789"},
+			{From: "START", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz"},
+			{From: "S3", To: "S3", Label: "abcdefghijklmnopqrstuvwxyz0123456789"},
+		},
+		Start: "START",
+		Accepting: []services.AcceptingState{
+			{State: "S3", Type: "IDENTIFIER"},
+			{State: "S4", Type: "KEYWORD"},
+			{State: "S2", Type: "NUMBER"},
+			{State: "S6", Type: "KEYWORD"},
+		},
+	}
+
+	tokens, unidentified_tokens, err := services.CreateTokensFromDFA(source_code, dfa)
+
+	if err == nil {
+		for i, token := range tokens {
+			if token != expected_res[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			}
+		}
+		for i, token := range unidentified_tokens {
+			if token != expected_res_unidentified[i] {
+				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+			}
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
+}
+
 func TestCreateTokensFromDFA_ComplexDFAWithSimpleCode(t *testing.T) {
 	expected_res := []services.TypeValue{
 		{Type: "ID", Value: "int"},
@@ -862,8 +913,6 @@ func TestCreateTokensFromDFA_ComplexDFAWithComplexCode(t *testing.T) {
 		";",
 		"<",
 		"{",
-		"=",
-		";",
 		"}",
 	}
 
@@ -1110,9 +1159,9 @@ func TestConvertDFAToRegex_NoAcceptingStates(t *testing.T) {
 
 func TestConvertDFAToRegex_ValidDFA(t *testing.T) {
 	expected_res := []services.TypeRegex{
-		{Type: "IDENTIFIER", Regex: "[a-zA-Z_]\\w*"},
-		{Type: "KEYWORD", Regex: "\\b(int|if)\\b"},
-		{Type: "NUMBER", Regex: "\\d+"},
+		{Type: "IDENTIFIER", Regex: "[a-z][a-z0-9]+"},
+		{Type: "KEYWORD", Regex: "int|if"},
+		{Type: "NUMBER", Regex: "[0-9]+"},
 	}
 
 	dfa := services.Automata{
@@ -1197,9 +1246,9 @@ func TestConvertDFAToRegex_ValidDFANoRegex(t *testing.T) {
 
 func TestConvertDFAToRegex_ValidDFARanges(t *testing.T) {
 	expected_res := []services.TypeRegex{
-		{Type: "IDENTIFIER", Regex: "[a-zA-Z_]\\w*"},
-		{Type: "KEYWORD", Regex: "\\b(int|if)\\b"},
-		{Type: "NUMBER", Regex: "\\d+"},
+		{Type: "IDENTIFIER", Regex: "[a-z][a-z0-9]+"},
+		{Type: "KEYWORD", Regex: "int|if"},
+		{Type: "NUMBER", Regex: "[0-9]+"},
 	}
 
 	dfa := services.Automata{
@@ -1245,13 +1294,27 @@ func TestConvertDFAToRegex_ValidDFARanges(t *testing.T) {
 func TestConvertDFAToRegex_Complex(t *testing.T) {
 	expected_res := []services.TypeRegex{
 		{Type: "ID", Regex: "i"},
-		{Type: "ID", Regex: "[a-hj-zA-Z_]([a-zA-Z_0-9])*"},
-		{Type: "ID", Regex: "i[a-eg-zA-Z_0-9]([a-zA-Z_0-9])*"},
-		{Type: "ID", Regex: "if[a-zA-Z_0-9]([a-zA-Z_0-9])*"},
-		{Type: "IF", Regex: "\\bif\\b"},
-		{Type: "NUM", Regex: "[+-]?\\d+"},
-		{Type: "FLOAT", Regex: `\d+\.\d+`},
-		{Type: "FLOAT", Regex: `\d+[eE][+-]?\d+`},
+		{Type: "ID", Regex: "[a-hj-zA-Z_][a-zA-Z_0-9]+"},
+		{Type: "ID", Regex: "i[a-eg-zA-Z_0-9][a-zA-Z_0-9]+"},
+		{Type: "ID", Regex: "if[a-zA-Z_0-9][a-zA-Z_0-9]+"},
+		{Type: "IF", Regex: "if"},
+		{Type: "NUM", Regex: "[+-][0-9][0-9]+"},
+		{Type: "FLOAT", Regex: `\.[0-9][0-9]+`},
+		{Type: "FLOAT", Regex: `[0-9][.][0-9]+`},
+		{Type: "FLOAT", Regex: `[+-]\.[0-9][0-9]+`},
+		{Type: "FLOAT", Regex: `[+-][0-9][.][0-9]+`},
+		{Type: "FLOAT", Regex: `\.[0-9]\[eE[0-9][0-9]+`},
+		{Type: "FLOAT", Regex: `[+-][0-9][eE][0-9][0-9]+`},
+		{Type: "FLOAT", Regex: `[0-9][.]\[eE[0-9][0-9]+`},
+		{Type: "FLOAT", Regex: `[0-9][eE][+-][0-9][0-9]+`},
+		{Type: "FLOAT", Regex: `\.[0-9]\[eE[+-][0-9][0-9]+`},
+		{Type: "FLOAT", Regex: `[+-]\.[0-9]\[eE[0-9][0-9]+`},
+		{Type: "FLOAT", Regex: `[+-][0-9][.]\[eE[0-9][0-9]+`},
+		{Type: "FLOAT", Regex: `[+-][0-9][eE][+-][0-9][0-9]+`},
+		{Type: "FLOAT", Regex: `[0-9][.]\[eE[+-][0-9][0-9]+`},
+		{Type: "FLOAT", Regex: `[+-]\.[0-9]\[eE[+-][0-9][0-9]+`},
+		{Type: "FLOAT", Regex: `[+-][0-9][.]\[eE[+-][0-9][0-9]+`},
+		{Type: "FLOAT", Regex: `[0-9][eE][0-9][0-9]+`},
 	}
 
 	dfa := services.Automata{
@@ -1311,11 +1374,11 @@ func TestConvertDFAToRegex_Complex(t *testing.T) {
 
 func TestSimplifyRegex_Keyword(t *testing.T) {
 
-	regex := "\\b(if|else)\\b"
+	regex := "if|else"
 
 	output := services.SimplifyRegex(regex)
 
-	if output != nil {
+	if output[0] != regex {
 		t.Errorf("Function not working correctly")
 	}
 }
@@ -1346,213 +1409,10 @@ func TestSimplifyRegex_RemoveDuplictaes(t *testing.T) {
 	}
 }
 
-func TestConvertTypeToRegex_Valid(t *testing.T) {
-
-	expected_res := "\\bif\\b"
-
-	regex := "if"
-
-	services.ConvertTypeToRegex(&regex)
-
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-}
-func TestConvertTypeToRegex_ValidMultiple(t *testing.T) {
-
-	expected_res := "\\b(if|else)\\b"
-
-	regex := "if|else"
-
-	services.ConvertTypeToRegex(&regex)
-
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-}
-
-func TestConvertTypeToRegex_Invalid(t *testing.T) {
-
-	expected_res := "[0-9]"
-
-	regex := "[0-9]"
-
-	services.ConvertTypeToRegex(&regex)
-
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-}
-
-func TestConvertKeywordToRegex_Valid(t *testing.T) {
-
-	expected_res := "\\bif\\b"
-
-	regex := "if"
-
-	services.ConvertKeywordToRegex(&regex)
-
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-}
-func TestConvertKeywordToRegex_ValidMultiple(t *testing.T) {
-
-	expected_res := "\\b(if|else)\\b"
-
-	regex := "if|else"
-
-	services.ConvertKeywordToRegex(&regex)
-
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-}
-
-func TestConvertIdentifierToRegex_Valid(t *testing.T) {
-
-	expected_res := "[a-zA-Z_]\\w"
-
-	regex := "[a-z][a-z0-9]"
-
-	services.ConvertIdentifierToRegex(&regex)
-
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-}
-func TestConvertIdentifierToRegex_ValidLetterOrDigit(t *testing.T) {
-
-	expected_res := "\\w"
-
-	regex := "[a-z0-9]"
-
-	services.ConvertIdentifierToRegex(&regex)
-
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-}
-
-func TestConvertIdentifierToRegex_ValidLetter(t *testing.T) {
-
-	expected_res := "[a-zA-Z_]"
-
-	regex := "[a-z]"
-
-	services.ConvertIdentifierToRegex(&regex)
-
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-}
-
-func TestConvertNumberToRegex(t *testing.T) {
-
-	expected_res := `\d+`
-	regex := "([0-9])*"
-	services.ConvertNumberToRegex(&regex)
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-	expected_res = `\d`
-	regex = "[0-9]"
-	services.ConvertNumberToRegex(&regex)
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-	expected_res = `\d+`
-	regex = `\d(\d)*`
-	services.ConvertNumberToRegex(&regex)
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-	expected_res = `\d+`
-	regex = `\d\d+`
-	services.ConvertNumberToRegex(&regex)
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-	expected_res = "[+-]?\\d+"
-	regex = "\\d+|[+-]\\d+"
-	services.ConvertNumberToRegex(&regex)
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-}
-
-func TestConvertFloatToRegex(t *testing.T) {
-
-	expected_res := "\\d+\\.\\d+|\\d+[eE][+-]?\\d+"
-	regex := "\\d+[eE][+-]?\\d+"
-
-	services.ConvertFloatToRegex(&regex)
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-	expected_res = "\\d+(\\.\\d+)?"
-	regex = `\d+\.\d+`
-
-	services.ConvertFloatToRegex(&regex)
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-	regex = "([0-9])*"
-
-	services.ConvertFloatToRegex(&regex)
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-	regex = "[0-9]"
-
-	services.ConvertFloatToRegex(&regex)
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-	regex = `\d(\d)*`
-
-	services.ConvertFloatToRegex(&regex)
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-	regex = `\d\d+`
-
-	services.ConvertFloatToRegex(&regex)
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-	regex = "\\d+|[+-]\\d+"
-
-	services.ConvertFloatToRegex(&regex)
-	if regex != expected_res {
-		t.Errorf("Incorrect conversion: %v", regex)
-	}
-
-}
-
 func TestConvertRawRegexToRegexRules(t *testing.T) {
 
-	expected_res := "[a-z0-9]"
-	regex := "abcdefghijklmnopqrstuvwxyz0123456789"
+	expected_res := "[a-z0-9]+"
+	regex := "(abcdefghijklmnopqrstuvwxyz0123456789)*"
 
 	services.ConvertRawRegexToRegexRules(&regex)
 
@@ -1560,8 +1420,8 @@ func TestConvertRawRegexToRegexRules(t *testing.T) {
 		t.Errorf("Incorrect conversion: %v", regex)
 	}
 
-	expected_res = "[A-Z0-9]"
-	regex = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	expected_res = "[A-Z0-9]+"
+	regex = "(ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789)*"
 
 	services.ConvertRawRegexToRegexRules(&regex)
 
@@ -1569,8 +1429,8 @@ func TestConvertRawRegexToRegexRules(t *testing.T) {
 		t.Errorf("Incorrect conversion: %v", regex)
 	}
 
-	expected_res = "[a-z]"
-	regex = "abcdefghijklmnopqrstuvwxyz"
+	expected_res = "[a-z]+"
+	regex = "(abcdefghijklmnopqrstuvwxyz)*"
 
 	services.ConvertRawRegexToRegexRules(&regex)
 
@@ -1578,8 +1438,8 @@ func TestConvertRawRegexToRegexRules(t *testing.T) {
 		t.Errorf("Incorrect conversion: %v", regex)
 	}
 
-	expected_res = "[A-Z]"
-	regex = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	expected_res = "[A-Z]+"
+	regex = "(ABCDEFGHIJKLMNOPQRSTUVWXYZ)*"
 
 	services.ConvertRawRegexToRegexRules(&regex)
 
@@ -1587,8 +1447,82 @@ func TestConvertRawRegexToRegexRules(t *testing.T) {
 		t.Errorf("Incorrect conversion: %v", regex)
 	}
 
-	expected_res = "[0-9]"
-	regex = "0123456789"
+	expected_res = "[0-9]+"
+	regex = "(0123456789)*"
+
+	services.ConvertRawRegexToRegexRules(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+}
+
+func TestConvertRawRegexToRegexRules_Success(t *testing.T) {
+
+	expected_res := "[a-z][a-z0-9]+"
+	regex := "abcdefghijklmnopqrstuvwxyz(abcdefghijklmnopqrstuvwxyz0123456789)*"
+
+	services.ConvertRawRegexToRegexRules(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "[a-z0-9]+"
+	regex = "abcdefghijklmnopqrstuvwxyz0123456789(abcdefghijklmnopqrstuvwxyz0123456789)*"
+
+	services.ConvertRawRegexToRegexRules(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "[a-zA-Z0-9][a-z]+"
+	regex = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789(abcdefghijklmnopqrstuvwxyz)*"
+	services.ConvertRawRegexToRegexRules(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "[a-z0-9][a-z]+"
+	regex = "abcdefghijklmnopqrstuvwxyz0123456789(abcdefghijklmnopqrstuvwxyz)*"
+
+	services.ConvertRawRegexToRegexRules(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "[A-Z0-9][a-z]+"
+	regex = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789(abcdefghijklmnopqrstuvwxyz)*"
+
+	services.ConvertRawRegexToRegexRules(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "[a-zA-Z][a-z]+"
+	regex = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ(abcdefghijklmnopqrstuvwxyz)*"
+
+	services.ConvertRawRegexToRegexRules(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "[A-Z][a-z]+"
+	regex = "ABCDEFGHIJKLMNOPQRSTUVWXYZ(abcdefghijklmnopqrstuvwxyz)*"
+
+	services.ConvertRawRegexToRegexRules(&regex)
+
+	if regex != expected_res {
+		t.Errorf("Incorrect conversion: %v", regex)
+	}
+
+	expected_res = "[0-9][a-z]+"
+	regex = "0123456789(abcdefghijklmnopqrstuvwxyz)*"
 
 	services.ConvertRawRegexToRegexRules(&regex)
 

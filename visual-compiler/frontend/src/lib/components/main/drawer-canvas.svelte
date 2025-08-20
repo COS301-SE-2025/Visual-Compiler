@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Svelvet, Node } from 'svelvet';
 	import type { Writable } from 'svelte/store';
-	import type { NodeType } from '$lib/types';
+	import type { NodeType, NodeConnection } from '$lib/types';
 	import { theme } from '../../stores/theme';
 
 	interface CanvasNode {
@@ -12,12 +12,123 @@
 	}
 
 	export let nodes: Writable<CanvasNode[]>;
+	export let initialConnections: NodeConnection[] = [];
 
 	export let onPhaseSelect: (type: NodeType) => void = () => {};
+	export let onConnectionChange: (connections: NodeConnection[]) => void = () => {};
+
+	// Track physical connections between nodes
+	let nodeConnections: NodeConnection[] = [...initialConnections];
+
+	// Make nodeConnections reactive to changes in initialConnections
+	$: nodeConnections = [...initialConnections];
+
+	// Function to restore nodes to their original saved positions
+	function restoreOriginalPositions(nodesList: CanvasNode[]): CanvasNode[] {
+		// Simply return the nodes as they are - with their saved positions
+		// The displayNodes computed property will handle the override
+		console.log('Restoring nodes to original positions:', nodesList.map(n => ({ id: n.id, x: n.position.x, y: n.position.y })));
+		return nodesList;
+	}
+
+	// Track if we need to reposition nodes (to avoid infinite updates)
+	let hasRepositioned = false;
+	let lastNodeCount = 0;
+	let lastNodeIds: string[] = [];
+
+	// Create a computed store that always returns properly positioned nodes
+	$: displayNodes = (() => {
+		const currentNodeIds = $nodes.map(n => n.id).sort();
+		const nodeIdsChanged = JSON.stringify(currentNodeIds) !== JSON.stringify(lastNodeIds);
+		
+		if ($nodes.length > 0 && nodeIdsChanged) {
+			console.log('Nodes changed, ensuring positions are respected by Svelvet:', {
+				nodeCount: $nodes.length,
+				nodeIdsChanged,
+				currentPositions: $nodes.map(n => ({ id: n.id, x: n.position.x, y: n.position.y }))
+			});
+			
+			const restoredNodes = restoreOriginalPositions($nodes);
+			console.log('Restoring positions for Svelvet:', restoredNodes.map(n => ({ id: n.id, x: n.position.x, y: n.position.y })));
+			
+			// Update the tracking variables
+			hasRepositioned = true;
+			lastNodeCount = $nodes.length;
+			lastNodeIds = currentNodeIds;
+			
+			// Also update the original store to keep it in sync
+			setTimeout(() => {
+				nodes.set(restoredNodes);
+			}, 10);
+			
+			return restoredNodes;
+		} else if ($nodes.length === 0) {
+			hasRepositioned = false;
+			lastNodeCount = 0;
+			lastNodeIds = [];
+		}
+		
+		return $nodes;
+	})();
+
+	// Create a key that changes when display nodes change
+	$: canvasKey = displayNodes.length > 0 ? `${displayNodes.length}-${displayNodes.map(n => `${n.id}-${n.position.x}-${n.position.y}`).join('|')}` : 'empty';
 
 	let canvas_el: any;
 	let last_click = -Infinity;
 	const DOUBLE_CLICK_MILLISECONDS = 300;
+
+
+
+	// Handle new edge connections
+	function handleConnection(event: CustomEvent) {
+		const { sourceNode, targetNode } = event.detail;
+
+		const sourceNodeId = sourceNode.id.replace("N-", "");
+		const targetNodeId = targetNode.id.replace("N-", "");
+
+		//const sourceNodeId = sourceNode.id.replace("N-", "");
+		const sourceCanvasNode = displayNodes.find(node => node.id === sourceNodeId);
+		const targetCanvasNode = displayNodes.find(node => node.id === targetNodeId);
+
+		if (sourceCanvasNode && targetCanvasNode) {
+			const newConnection: NodeConnection = {
+				id: `${sourceNodeId}-${targetNodeId}`,
+				sourceNodeId: sourceCanvasNode.id,
+				targetNodeId: targetCanvasNode.id,
+				sourceType: sourceCanvasNode.type,
+				targetType: targetCanvasNode.type,
+				sourceAnchor: event.detail.sourceAnchor.id,
+				targetAnchor: event.detail.targetAnchor.id,
+			};
+
+			nodeConnections = [...nodeConnections, newConnection];
+			onConnectionChange(nodeConnections);
+		}
+	}
+
+	// Handle edge disconnections
+	function handleDisconnection(event: CustomEvent) {
+		console.log('Connection removed:', event.detail);
+		const { sourceNode, targetNode } = event.detail;
+		
+		// Extract node IDs from the node objects
+		const sourceNodeId = sourceNode.id.replace('N-', '');
+		const targetNodeId = targetNode.id.replace('N-', '');
+		
+		// Find the canvas nodes to get their actual IDs
+		const sourceCanvasNode = displayNodes.find(node => node.id === sourceNodeId);
+		const targetCanvasNode = displayNodes.find(node => node.id === targetNodeId);
+		
+		if (sourceCanvasNode && targetCanvasNode) {
+			nodeConnections = nodeConnections.filter(conn => 
+				!(conn.sourceNodeId === sourceCanvasNode.id && conn.targetNodeId === targetCanvasNode.id) &&
+				!(conn.sourceNodeId === targetCanvasNode.id && conn.targetNodeId === sourceCanvasNode.id)
+			);
+			onConnectionChange(nodeConnections);
+			console.log('Updated connections after removal:', nodeConnections);
+		}
+	};
 
 	// onNodeClick
 	// Return type: void
@@ -42,20 +153,40 @@
 
 <div class="drawer-canvas">
 	<div class="canvas-container" class:dark-mode={$theme === 'dark'}>
-		<Svelvet bind:this={canvas_el} theme={'custom-theme'}>
-			{#each $nodes as node (node.id)}
+		{#key canvasKey}
+		<Svelvet 
+			bind:this={canvas_el} 
+			theme={'custom-theme'}
+			on:connection={handleConnection}
+			on:disconnection={handleDisconnection}
+			on:nodeMove={(event) => {
+				const { node, position } = event.detail;
+				const nodeId = node.id.replace('N-', '');
+				const updatedNodes = $nodes.map(n => 
+					n.id === nodeId 
+						? { ...n, position: { x: position.x, y: position.y } }
+						: n
+				);
+				nodes.set(updatedNodes);
+			}}
+		>
+			{#each displayNodes as node (node.id)}
 				<Node
-					id={node.id}
-					label={node.label}
+					id={`N-${node.id}`}
 					position={node.position}
 					drop="center"
-					useDefaults
-					bgColor={$theme === 'dark' ? '#041a47' : '#041a47'}
-					textColor="#fff"
+					bgColor={$theme === 'dark' ? '#001A6E' : '#BED2E6'}
+					textColor={$theme === 'dark' ? '#ffffff' : '#000000'}
+					borderColor={$theme === 'dark' ? '#374151' : '#FFFFFF'}
+					label={node.label}
+					editable={false}
+					inputs={node.type !== 'source' ? 1 : 0}
+					outputs={node.type !== 'translator' ? 1 : 0}
 					on:nodeClicked={() => onNodeClick(node.type)}
 				/>
 			{/each}
 		</Svelvet>
+		{/key}
 	</div>
 </div>
 
@@ -63,9 +194,9 @@
 	:root[svelvet-theme='custom-theme'] {
 		--background-color: transparent;
 		--dot-color: transparent;
-		--node-color: #041a47;
-		--node-text-color: #ffffff;
-		--node-border-color: #374151;
+		--node-color: #BED2E6;
+		--node-text-color: #000000;
+		--node-border-color: #FFFFFF;
 		--node-selection-color: #3b82f6;
 	}
 
