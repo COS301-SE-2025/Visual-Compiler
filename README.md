@@ -43,7 +43,7 @@
         <td>Current presentation for the project</td>
     </tr>
     <tr>
-        <td><a href="">Demo 3 Video</a></td>
+        <td><a href="https://drive.google.com/file/d/1vjI0IOluIHuDEDIZc4F5Kw_zdzdTP7Q1/view?usp=sharing">Demo 3 Video</a></td>
         <td>Current presentation for the project</td>
     </tr>
     </table>
@@ -164,7 +164,7 @@
         <td style="vertical-align: middle; width: auto; border: 0; padding: 10px;">
             <h2><b style="font-size: 18px;">Keanu Ellary</b></h2>
             <h3><b style="font-size: 16px;">Integration Engineer and DevOps Engineer</b></h3>
-            I am a BSc Information & Knowledge Systems student with experience in full-stack development and development operations. I am highly skilled in JavaScript, C#, and Java, with knowledge in CI/CD and containerisation.
+            I am a BSc Information & Knowledge Systems student with much experience in full-stack development and DevOps. I am highly skilled in JavaScript, C#, and Java, with knowledge in CI/CD and containerisation.
             <br>
             <br>
             <a href="https://www.linkedin.com/in/keanu-ellary-187281355/">
