@@ -3940,7 +3940,6 @@ func TestHandleFunctionScope_SuccessParameter_NoType(t *testing.T) {
 	}
 }
 
-
 func TestHandleFunctionScope_ErrorParameter_MultipleChildren(t *testing.T) {
 
 	child := &services.TreeNode{
@@ -4186,6 +4185,8 @@ func TestHandleFunctionScope_ErrorParameter_MultipleChildren2(t *testing.T) {
 	err := services.HandleFunctionScope(&services.Symbol{}, child, symbol_table, symbol_table_artefact, rules)
 	if err == nil {
 		t.Fatalf("Error expected")
+	}
+}
 
 func TestAnalyse_DefaultExample(t *testing.T) {
 	scope_rules := []*services.ScopeRule{

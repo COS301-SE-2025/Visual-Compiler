@@ -1,6 +1,3 @@
-//go:build !coverage
-// +build !coverage
-
 // Package Main for the main entry into the API.
 package main
 
@@ -11,6 +8,7 @@ import (
 
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/routers"
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/db"
+	_ "github.com/COS301-SE-2025/Visual-Compiler/backend/docs"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -30,7 +28,7 @@ func main() {
 
 	// Attach CORS middleware
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"},
+		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "https://visual-compiler.co.za"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
 		ExposeHeaders:    []string{"Content-Length"},
