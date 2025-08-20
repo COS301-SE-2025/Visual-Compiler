@@ -27,7 +27,7 @@
     async function fetchUsers() {
         loading = true;
         try {
-            const res = await fetch('http://localhost:8080/api/users/getUsers', {
+            const res = await fetch('https://www.visual-compiler.co.za/api/users/getUsers', {
                 method: 'GET',
                 headers: {
                     'accept': 'application/json',
@@ -118,7 +118,7 @@
         }
 
         try {
-            const res = await fetch('http://localhost:8080/api/users/update', {
+            const res = await fetch('https://www.visual-compiler.co.za/api/users/update', {
                 method: 'PATCH',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -159,7 +159,7 @@
 
         const user = users[selectedUserIdx];
         try {
-            const res = await fetch('http://localhost:8080/api/users/delete', {
+            const res = await fetch('https://www.visual-compiler.co.za/api/users/delete', {
                 method: 'DELETE',
                 headers: { 
                     'Content-Type': 'application/json',
