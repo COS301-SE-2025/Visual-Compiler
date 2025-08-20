@@ -483,23 +483,17 @@ func ConvertRawRegexToRegexRules(regex *string) {
 					if !strings.Contains(build_string.String(), "[") {
 						if strings.Contains(build_string.String(), "a-zA-Z0-9") {
 							*regex = strings.Replace(*regex, "a-zA-Z0-9", "[a-zA-Z0-9]", 1)
-						}
-						if strings.Contains(build_string.String(), "a-z0-9") {
+						} else if strings.Contains(build_string.String(), "a-z0-9") {
 							*regex = strings.Replace(*regex, "a-z0-9", "[a-z0-9]", 1)
-						}
-						if strings.Contains(build_string.String(), "A-Z0-9") {
+						} else if strings.Contains(build_string.String(), "A-Z0-9") {
 							*regex = strings.Replace(*regex, "A-Z0-9", "[A-Z0-9]", 1)
-						}
-						if strings.Contains(build_string.String(), "a-zA-Z") {
+						} else if strings.Contains(build_string.String(), "a-zA-Z") {
 							*regex = strings.Replace(*regex, "a-zA-Z", "[a-zA-Z]", 1)
-						}
-						if strings.Contains(build_string.String(), "a-z") {
+						} else if strings.Contains(build_string.String(), "a-z") {
 							*regex = strings.Replace(*regex, "a-z", "[a-z]", 1)
-						}
-						if strings.Contains(build_string.String(), "A-Z") {
+						} else if strings.Contains(build_string.String(), "A-Z") {
 							*regex = strings.Replace(*regex, "A-Z", "[A-Z]", 1)
-						}
-						if strings.Contains(build_string.String(), "0-9") {
+						} else if strings.Contains(build_string.String(), "0-9") {
 							*regex = strings.Replace(*regex, "0-9", "[0-9]", 1)
 						}
 

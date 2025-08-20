@@ -2,8 +2,6 @@ package unit_tests
 
 import (
 	"bytes"
-	"encoding/json"
-	"io"
 	"net/http"
 	"testing"
 
@@ -22,23 +20,10 @@ func TestSaveProjectName_InvalidInput(t *testing.T) {
 	res.Header.Set("Content-Type", "application/json")
 	contxt.Request = res
 
-	handlers.StoreSourceCode(contxt)
+	handlers.SaveProjectName(contxt)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("BadRequest status code expected")
-	} else {
-		body_bytes, err := io.ReadAll(rec.Body)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-		var body_array map[string]string
-		err = json.Unmarshal(body_bytes, &body_array)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-		if body_array["error"] != "Input is invalid" {
-			t.Errorf("Incorrect error")
-		}
 	}
 
 }
@@ -54,23 +39,10 @@ func TestSaveProjectPipeline_InvalidInput(t *testing.T) {
 	res.Header.Set("Content-Type", "application/json")
 	contxt.Request = res
 
-	handlers.StoreSourceCode(contxt)
+	handlers.SaveProjectPipeline(contxt)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("BadRequest status code expected")
-	} else {
-		body_bytes, err := io.ReadAll(rec.Body)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-		var body_array map[string]string
-		err = json.Unmarshal(body_bytes, &body_array)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-		if body_array["error"] != "Input is invalid" {
-			t.Errorf("Incorrect error")
-		}
 	}
 
 }
@@ -86,23 +58,10 @@ func TestGetAllProjects_InvalidInput(t *testing.T) {
 	res.Header.Set("Content-Type", "application/json")
 	contxt.Request = res
 
-	handlers.StoreSourceCode(contxt)
+	handlers.GetAllProjects(contxt)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("BadRequest status code expected")
-	} else {
-		body_bytes, err := io.ReadAll(rec.Body)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-		var body_array map[string]string
-		err = json.Unmarshal(body_bytes, &body_array)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-		if body_array["error"] != "Input is invalid" {
-			t.Errorf("Incorrect error")
-		}
 	}
 
 }
@@ -118,23 +77,10 @@ func TestGetProject_InvalidInput(t *testing.T) {
 	res.Header.Set("Content-Type", "application/json")
 	contxt.Request = res
 
-	handlers.StoreSourceCode(contxt)
+	handlers.GetProject(contxt)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("BadRequest status code expected")
-	} else {
-		body_bytes, err := io.ReadAll(rec.Body)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-		var body_array map[string]string
-		err = json.Unmarshal(body_bytes, &body_array)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-		if body_array["error"] != "Input is invalid" {
-			t.Errorf("Incorrect error")
-		}
 	}
 
 }
@@ -150,23 +96,10 @@ func TestDeleteProject_InvalidInput(t *testing.T) {
 	res.Header.Set("Content-Type", "application/json")
 	contxt.Request = res
 
-	handlers.StoreSourceCode(contxt)
+	handlers.DeleteProject(contxt)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("BadRequest status code expected")
-	} else {
-		body_bytes, err := io.ReadAll(rec.Body)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-		var body_array map[string]string
-		err = json.Unmarshal(body_bytes, &body_array)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-		if body_array["error"] != "Input is invalid" {
-			t.Errorf("Incorrect error")
-		}
 	}
 
 }

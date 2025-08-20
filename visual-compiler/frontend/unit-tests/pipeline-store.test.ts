@@ -305,10 +305,8 @@ describe('Pipeline Store', () => {
                 targetNodeId: 'lexer-1',
                 sourceType: 'source',
                 targetType: 'lexer',
-                        sourceAnchor: 'bottom',
-                        targetAnchor: 'top',
-                sourceAnchor: 'output',
-                targetAnchor: 'input'
+                sourceAnchor: 'bottom',
+                targetAnchor: 'top',
             };
 
             expect(connection).toHaveProperty('id');

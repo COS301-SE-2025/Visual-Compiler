@@ -60,8 +60,7 @@ describe('Theme Store', () => {
 
     describe('theme store initialization', () => {
         it('should initialize with light theme when no stored theme', async () => {
-            const { theme } = await import('../src/lib/stores/theme');
-            
+            const { theme } = await import('../src/lib/stores/theme');           
             const currentTheme = get(theme);
             expect(currentTheme).toBe('light');
         });
@@ -96,6 +95,7 @@ describe('Theme Store', () => {
 
     describe('ToggleTheme function', () => {
         it('should toggle from light to dark theme', async () => {
+
             const { theme, ToggleTheme } = await import('../src/lib/stores/theme');
             
             expect(get(theme)).toBe('light');
@@ -120,6 +120,7 @@ describe('Theme Store', () => {
         });
 
         it('should handle multiple toggles correctly', async () => {
+
             const { theme, ToggleTheme } = await import('../src/lib/stores/theme');
             
             expect(get(theme)).toBe('light'); // Initial state
@@ -137,6 +138,7 @@ describe('Theme Store', () => {
         });
 
         it('should update DOM class correctly', async () => {
+
             const { ToggleTheme } = await import('../src/lib/stores/theme');
             
             ToggleTheme(); // light -> dark
@@ -149,6 +151,7 @@ describe('Theme Store', () => {
 
     describe('theme store subscription', () => {
         it('should support subscription to theme changes', async () => {
+          
             const { theme, ToggleTheme } = await import('../src/lib/stores/theme');
             
             const themes: string[] = [];
@@ -166,6 +169,7 @@ describe('Theme Store', () => {
         });
 
         it('should handle manual theme updates', async () => {
+          
             const { theme } = await import('../src/lib/stores/theme');
             
             theme.set('dark');
@@ -185,11 +189,14 @@ describe('Theme Store', () => {
                 configurable: true
             });
             
+
             const { theme } = await import('../src/lib/stores/theme');
+
             expect(get(theme)).toBe('light'); // Should default to light
         });
 
         it('should handle ToggleTheme function correctly', async () => {
+
             const { theme, ToggleTheme } = await import('../src/lib/stores/theme');
             
             // Should work with proper document mock

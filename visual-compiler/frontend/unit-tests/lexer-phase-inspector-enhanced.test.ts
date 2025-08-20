@@ -43,8 +43,7 @@ vi.mock('svelte/store', () => ({
 		subscribe: vi.fn(() => () => {}),
 		set: vi.fn(),
 		update: vi.fn()
-	}))
-}));
+	}));
 
 // Mock vis-network for network visualization
 vi.mock('vis-network', () => ({
@@ -426,10 +425,8 @@ describe('Lexer PhaseInspector Enhanced Coverage Tests', () => {
 
 		await waitFor(() => {
 			const resetTypeInput = screen.getByPlaceholderText('Enter type...');
-			// Form may retain previous value or be reset depending on implementation
-			expect(resetTypeInput).toHaveValue('TEST_DATA');
+      expect(resetTypeInput).toHaveValue('TEST_DATA');
 		});
-	});
 
 	it('TestComplexRegexValidation_Success: Should validate complex regex patterns', async () => {
 		render(PhaseInspector, { source_code: sourceCode });

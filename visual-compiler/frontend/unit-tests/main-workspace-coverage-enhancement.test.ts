@@ -76,7 +76,7 @@ vi.mock('$lib/stores/pipeline', () => ({
 		}),
 		set: vi.fn(),
 		update: vi.fn()
-	},
+  },
 	phase_completion_status: {
 		subscribe: vi.fn((fn) => {
 			fn({});
