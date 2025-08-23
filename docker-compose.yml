@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5173:5173"
+    mem_limit: 256m
+    cpus: 0.5
     volumes:
       - ./visual-compiler/frontend:/visual-compiler-frontend
       - /visual-compiler-frontend/node_modules
@@ -16,12 +18,16 @@ services:
     build: 
       context: ./visual-compiler/backend
       dockerfile: Dockerfile
+    env_file:
+      - backend.env
     ports:
       - "8080:8080"
+    mem_limit: 256m
+    cpus: 0.5
     volumes:
-      - ./visual-compiler/backend:/visual-compiler-backend
+      - ./visual-compiler/backend/.env:/visual-compiler-backend/backend.env:ro
     environment:
       - Mongo_username
       - Mongo_password
       - Mongo_URI
-    command: go run main.go
+    command: ./backend
