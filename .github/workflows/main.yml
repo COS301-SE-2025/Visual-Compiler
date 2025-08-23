@@ -126,12 +126,7 @@ jobs:
           echo "Frontend failed"
           exit 1
 
-      - name: Docker Compose Shut down
-        if: always()
-        run: docker compose down
-
       - name: Setting up SSH for EC2 instance
-        if: success()
         run: |
           mkdir -p ~/.ssh
           echo "${{secrets.EC2_SSH_KEY}}" > ~/.ssh/id_rsa
@@ -139,12 +134,10 @@ jobs:
           ssh-keyscan -H ${{secrets.EC2_HOST}} >> ~/.ssh/known_hosts
 
       - name: Copy image to instance
-        if: success()
         run: |
           rsync -az -e "ssh -i ~/.ssh/id_rsa" ./visual-compiler docker-compose.yml backend.env ${{secrets.EC2_USER}}@${{secrets.EC2_HOST}}:/home/${{secrets.EC2_USER}}/app/
 
       - name: SSH into instance and Compose
-        if: success()
         run: |
           ssh -i ~/.ssh/id_rsa ${{secrets.EC2_USER}}@${{secrets.EC2_HOST}} << EOF
             cd ~/app 
