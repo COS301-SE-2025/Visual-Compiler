@@ -7,6 +7,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5173:5173"
+    mem_limit: 256m
+    cpus: 0.5
     volumes:
       - ./visual-compiler/frontend:/visual-compiler-frontend
       - /visual-compiler-frontend/node_modules
@@ -20,6 +22,8 @@ services:
       - backend.env
     ports:
       - "8080:8080"
+    mem_limit: 256m
+    cpus: 0.5
     volumes:
       - ./visual-compiler/backend:/visual-compiler-backend
     environment:
