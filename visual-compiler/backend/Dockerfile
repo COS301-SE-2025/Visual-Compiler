@@ -4,6 +4,8 @@ WORKDIR /visual-compiler-backend
 
 COPY backend .
 
+RUN chmod +x ./backend
+
 ENV GOGC=50
 ENV GOMAXPROCS=1
 
