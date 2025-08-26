@@ -37,7 +37,7 @@
 		}
 
 		try {
-			const response = await fetch('http://localhost:8080/api/users/register', {
+			const response = await fetch('https://www.visual-compiler.co.za/api/users/register', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
@@ -85,7 +85,7 @@
 		if (is_login_button_disabled) return;
 
 		try {
-			const response = await fetch('http://localhost:8080/api/users/login', {
+			const response = await fetch('https://www.visual-compiler.co.za/api/users/login', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
