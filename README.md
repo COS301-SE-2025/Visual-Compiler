@@ -40,12 +40,9 @@
 <div align="center">
     <table style="border-width: 1px;">
     <tr>
+        <td>Latest Demonstration</td>
         <td><a href="https://www.canva.com/design/DAGwYsM0uMA/aBfNxmqGDzU5ckg6VD3t6w/view?utm_content=DAGwYsM0uMA&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h71a739a39d">Demo 3 Slides</a></td>
-        <td>Current presentation for the project</td>
-    </tr>
-    <tr>
         <td><a href="https://drive.google.com/file/d/1vjI0IOluIHuDEDIZc4F5Kw_zdzdTP7Q1/view?usp=sharing">Demo 3 Video</a></td>
-        <td>Current presentation for the project</td>
     </tr>
     </table>
 </div>
@@ -63,7 +60,7 @@
         <td>Overview of the system design</td>
     </tr>
     <tr>
-        <td><a href="https://docs.google.com/document/d/1zEM9TcM7d6pYfJ-2KkU4ibohllwaDNW_0YkOEJixTTM/edit?usp=sharing">User Manual</a></td>
+        <td><a href="https://docs.google.com/document/d/1JN1W5hr2VyBD-_ki6BEMUDh_v6PTM5hWpD2x2tIzAYg/edit?usp=sharing">User Manual</a></td>
         <td>Guidelines for navigating the web pages</td>
     </tr>
     <tr>
