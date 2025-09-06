@@ -13,7 +13,9 @@
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 	import WelcomeOverlay from '$lib/components/project-hub/project-hub.svelte';
 	import ClearCanvasConfirmation from '$lib/components/main/clear-canvas-confirmation.svelte';
+	import CanvasTutorial from '$lib/components/main/canvas-tutorial.svelte';
 	import { phase_completion_status } from '$lib/stores/pipeline';
+	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial } from '$lib/stores/tutorial';
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -46,6 +48,14 @@
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
 	let showClearCanvasModal = false;
+
+	// --- TUTORIAL STATE ---
+	let showCanvasTutorial = false;
+
+	// Subscribe to tutorial store
+	tutorialStore.subscribe(state => {
+		showCanvasTutorial = state.showCanvasTutorial;
+	});
 
 	// --- UNSAVED CHANGES TRACKING ---
 	let lastSavedState: string | null = null;
@@ -146,6 +156,10 @@
 			showWelcomeOverlay = true; // Trigger the overlay to show.
 		}
 
+		// --- TUTORIAL INITIALIZATION ---
+		// Check tutorial status on mount
+		checkTutorialStatus();
+
 		// --- UNSAVED CHANGES PROTECTION ---
 		// Only add event listener if we're in the browser
 		if (typeof window !== 'undefined') {
@@ -183,6 +197,11 @@
 
 	function handleWelcomeClose() {
 		showWelcomeOverlay = false;
+	}
+
+	// Handle tutorial close
+	function handleTutorialClose() {
+		hideCanvasTutorial();
 	}
 
 	// --- CANVAS STATE ---
@@ -836,6 +855,12 @@
 	bind:show={showClearCanvasModal} 
 	on:confirm={handleClearCanvasConfirm}
 	on:cancel={handleClearCanvasCancel}
+/>
+
+<!-- Canvas Tutorial Modal -->
+<CanvasTutorial 
+	bind:show={showCanvasTutorial} 
+	on:close={handleTutorialClose}
 />
 
 <style>

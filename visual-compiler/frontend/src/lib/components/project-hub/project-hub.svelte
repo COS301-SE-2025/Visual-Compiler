@@ -9,15 +9,11 @@
 	import { AddToast } from '$lib/stores/toast';
 	import { updateLexerStateFromProject, resetLexerState } from '$lib/stores/lexer';
 	import { phase_completion_status } from '$lib/stores/pipeline';
+	import { triggerTutorialForNewProject } from '$lib/stores/tutorial';
 
 	const dispatch = createEventDispatcher();
 
 	export let show = false;
-
-	// Watch for changes to the 'show' prop and refresh projects when modal opens
-	$: if (show) {
-		fetchProjects();
-	}
 
 	let userName = '';
 	let showProjectNamePrompt = false;
@@ -25,6 +21,7 @@
 	let projectToDelete = ''; // State to hold the name of the project to be deleted
 	let hasExistingProject = false; // Track if a project is already loaded
 	let currentProjectName = ''; // Track the current project name
+	let searchQuery = ''; // Search functionality
 
 	interface Project {
 		name: string;
@@ -32,7 +29,18 @@
 	}
 
 	let recentProjects: Project[] = [];
-	
+
+	// Reactive statement for filtered projects based on search
+	$: filteredProjects = recentProjects.filter(project => 
+		project.name.toLowerCase().includes(searchQuery.toLowerCase())
+	);
+
+	// Clear search when modal opens
+	$: if (show) {
+		searchQuery = '';
+		fetchProjects();
+	}
+
 	async function fetchProjects() {
 		const userId = localStorage.getItem('user_id');
 		if (!userId) return;
@@ -76,6 +84,10 @@
 
 	function createNewProject() {
 		showProjectNamePrompt = true;
+	}
+
+	function clearSearch() {
+		searchQuery = '';
 	}
 
 	function connectNode(pipeline: Pipeline) {
@@ -242,6 +254,12 @@
 			
 			showProjectNamePrompt = false;
 			await fetchProjects(); // Refresh the project list
+			
+			// Trigger tutorial for new projects
+			setTimeout(() => {
+				triggerTutorialForNewProject();
+			}, 500); // Small delay to ensure the workspace is loaded
+			
 			handleClose();
 		} catch (error) {
 			console.error('Error saving project:', error);
@@ -379,20 +397,35 @@
 						/>
 					</svg>
 				</div>
-				<input type="text" placeholder="Search projects..." class="search-input" />
+				<input 
+					type="text" 
+					placeholder="Search projects..." 
+					class="search-input" 
+					bind:value={searchQuery}
+				/>
+				{#if searchQuery}
+					<button class="clear-search-btn" on:click={clearSearch} title="Clear search">
+						<svg viewBox="0 0 20 20" fill="currentColor">
+							<path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+						</svg>
+					</button>
+				{/if}
 			</div>
 
-			<h3 class="section-heading">Recent Projects</h3>
+			<h3 class="section-heading">
+				{searchQuery ? `Search Results (${filteredProjects.length})` : 'Recent Projects'}
+			</h3>
 			<div class="project-list-container">
-				<div class="project-grid">
-					{#each recentProjects as project}
-						<div class="project-block" on:click={() => selectProject(project.name)}>
-							<button
-								class="delete-button"
-								on:click={(event) => handleDeleteClick(project.name, event)}
-								aria-label="Delete project"
-								title="Delete project"
-							>
+				{#if filteredProjects.length > 0}
+					<div class="project-grid">
+						{#each filteredProjects as project}
+							<div class="project-block" on:click={() => selectProject(project.name)}>
+								<button
+									class="delete-button"
+									on:click={(event) => handleDeleteClick(project.name, event)}
+									aria-label="Delete project"
+									title="Delete project"
+								>
 								<svg
 									xmlns="http://www.w3.org/2000/svg"
 									width="16"
@@ -415,6 +448,32 @@
 						</div>
 					{/each}
 				</div>
+			{:else}
+				<div class="no-results">
+					{#if searchQuery}
+						<div class="no-results-content">
+							<svg class="no-results-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<circle cx="11" cy="11" r="8"></circle>
+								<path d="m21 21-4.35-4.35"></path>
+								<path d="M8 11h6"></path>
+							</svg>
+							<h4>No projects found</h4>
+							<p>No projects match "{searchQuery}". Try a different search term.</p>
+						</div>
+					{:else}
+						<div class="no-results-content">
+							<svg class="no-results-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+								<rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+								<line x1="16" y1="2" x2="16" y2="6"></line>
+								<line x1="8" y1="2" x2="8" y2="6"></line>
+								<line x1="3" y1="10" x2="21" y2="10"></line>
+							</svg>
+							<h4>No projects yet</h4>
+							<p>You haven't created any projects yet. Create your first project to get started!</p>
+						</div>
+					{/if}
+				</div>
+			{/if}
 			</div>
 		</div>
 	</div>
@@ -576,6 +635,7 @@
 	.search-input {
 		padding: 0.75rem;
 		padding-left: 2.5rem;
+		padding-right: 2.5rem;
 		border: 1px solid #d1d5db;
 		border-radius: 0.375rem;
 		width: 100%;
@@ -585,6 +645,36 @@
 	.search-input:focus {
 		outline: none;
 		box-shadow: 0 0 0 2px #3b82f6;
+	}
+
+	.clear-search-btn {
+		position: absolute;
+		right: 8px;
+		top: 50%;
+		transform: translateY(-50%);
+		background: none;
+		border: none;
+		padding: 4px;
+		cursor: pointer;
+		border-radius: 4px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: background-color 0.2s ease;
+	}
+
+	.clear-search-btn:hover {
+		background-color: #f3f4f6;
+	}
+
+	.clear-search-btn svg {
+		width: 16px;
+		height: 16px;
+		color: #6b7280;
+	}
+
+	.clear-search-btn:hover svg {
+		color: #374151;
 	}
 
 	.project-list-container {
@@ -661,10 +751,43 @@
 		color: #6b7281;
 	}
 
-	:global(html.dark) .modal {
-		background: #2d3748;
+	/* No Results Styles */
+	.no-results {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		min-height: 200px;
+		padding: 2rem;
 	}
 
+	.no-results-content {
+		text-align: center;
+		max-width: 300px;
+	}
+
+	.no-results-icon {
+		width: 3rem;
+		height: 3rem;
+		color: #9ca3af;
+		margin: 0 auto 1rem;
+		display: block;
+	}
+
+	.no-results-content h4 {
+		font-size: 1.125rem;
+		font-weight: 600;
+		color: #374151;
+		margin: 0 0 0.5rem 0;
+	}
+
+	.no-results-content p {
+		font-size: 0.95rem;
+		color: #6b7280;
+		line-height: 1.5;
+		margin: 0;
+	}
+
+	/* Dark Mode Styles */
 	:global(html.dark) .greeting-header,
 	:global(html.dark) .default-project-text,
 	:global(html.dark) .project-name {
@@ -708,5 +831,17 @@
 
 	:global(html.dark) .close-icon {
 		color: #a0aec0;
+	}
+
+	:global(html.dark) .no-results-content h4 {
+		color: #f7fafc;
+	}
+
+	:global(html.dark) .no-results-content p {
+		color: #cbd5e0;
+	}
+
+	:global(html.dark) .no-results-icon {
+		color: #718096;
 	}
 </style>
