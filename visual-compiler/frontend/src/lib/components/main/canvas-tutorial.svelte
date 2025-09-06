@@ -188,7 +188,7 @@
 					{#each currentTutorialStep.details as detail, index}
 						<div 
 							class="detail-item"
-							in:fly={{ x: -20, duration: 300, delay: index * 100 }}
+							in:fly={{ x: -20, duration: 300, delay: 0 }}
 						>
 							<div class="detail-bullet"></div>
 							<span class="detail-text">{detail}</span>
@@ -264,9 +264,11 @@
 			0 0 0 1px rgba(255, 255, 255, 0.1);
 		width: 100%;
 		max-width: 600px;
-		max-height: 90vh;
+		height: 700px;
 		overflow: hidden;
 		position: relative;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.tutorial-header {
@@ -274,6 +276,7 @@
 		justify-content: space-between;
 		align-items: center;
 		padding: 1.5rem 2rem 0;
+		flex-shrink: 0;
 	}
 
 	.step-indicator {
@@ -312,6 +315,10 @@
 	.tutorial-content {
 		padding: 2rem;
 		text-align: center;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
 	}
 
 	.icon-container {
@@ -379,6 +386,7 @@
 		display: flex;
 		align-items: center;
 		gap: 1rem;
+		flex-shrink: 0;
 	}
 
 	.progress-bar {
@@ -410,6 +418,7 @@
 		align-items: center;
 		background: rgba(248, 250, 252, 0.8);
 		border-top: 1px solid rgba(226, 232, 240, 0.8);
+		flex-shrink: 0;
 	}
 
 	.nav-button {
@@ -475,46 +484,73 @@
 	}
 
 	/* Dark mode support */
-	:global([data-theme="dark"]) .tutorial-modal {
-		background: linear-gradient(145deg, #1e293b, #334155);
-		color: #f1f5f9;
+	:global(html.dark-mode) .tutorial-modal {
+		background: linear-gradient(145deg, #1a2a4a, #2d3748);
+		color: #f0f0f0;
 	}
 
-	:global([data-theme="dark"]) .tutorial-title {
-		color: #f1f5f9;
+	:global(html.dark-mode) .tutorial-title {
+		color: #ebeef1;
 	}
 
-	:global([data-theme="dark"]) .tutorial-description {
-		color: #cbd5e1;
+	:global(html.dark-mode) .tutorial-description {
+		color: #a0aec0;
 	}
 
-	:global([data-theme="dark"]) .detail-item {
-		background: rgba(4, 26, 71, 0.1);
-		border-left-color: #041a47;
+	:global(html.dark-mode) .detail-item {
+		background: rgba(0, 26, 110, 0.15);
+		border-left-color: #001A6E;
 	}
 
-	:global([data-theme="dark"]) .detail-text {
-		color: #e2e8f0;
-	}
-
-	:global([data-theme="dark"]) .progress-bar {
-		background: #475569;
-	}
-
-	:global([data-theme="dark"]) .tutorial-navigation {
-		background: rgba(15, 23, 42, 0.8);
-		border-top-color: rgba(71, 85, 105, 0.8);
-	}
-
-	:global([data-theme="dark"]) .nav-button.secondary {
-		background: #374151;
+	:global(html.dark-mode) .detail-text {
 		color: #d1d5db;
+	}
+
+	:global(html.dark-mode) .progress-bar {
+		background: #4a5568;
+	}
+
+	:global(html.dark-mode) .tutorial-navigation {
+		background: rgba(26, 42, 74, 0.9);
+		border-top-color: rgba(74, 85, 104, 0.8);
+	}
+
+	:global(html.dark-mode) .nav-button.secondary {
+		background: #4a5568;
+		color: #e2e8f0;
+		border-color: #718096;
+	}
+
+	:global(html.dark-mode) .nav-button.secondary:hover:not(:disabled) {
+		background: #2d3748;
 		border-color: #4b5563;
 	}
 
-	:global([data-theme="dark"]) .nav-button.secondary:hover:not(:disabled) {
-		background: #4b5563;
-		border-color: #6b7280;
+	:global(html.dark-mode) .nav-button.primary {
+		background: linear-gradient(135deg, #001A6E, #002a8e);
+		color: #ffffff;
+		border-color: #374151;
+	}
+
+	:global(html.dark-mode) .nav-button.primary:hover:not(:disabled) {
+		background: linear-gradient(135deg, #002a8e, #003bb3);
+	}
+
+	:global(html.dark-mode) .close-button {
+		color: #a0aec0;
+	}
+
+	:global(html.dark-mode) .close-button:hover {
+		background: rgba(74, 85, 104, 0.2);
+		color: #d1d5db;
+	}
+
+	:global(html.dark-mode) .step-indicator {
+		background: linear-gradient(135deg, #001A6E, #002a8e);
+	}
+
+	:global(html.dark-mode) .progress-text {
+		color: #a0aec0;
 	}
 
 	/* Responsive design */
@@ -522,6 +558,7 @@
 		.tutorial-modal {
 			margin: 1rem;
 			border-radius: 1rem;
+			height: 700px;
 		}
 
 		.tutorial-header,

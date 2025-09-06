@@ -209,6 +209,16 @@
 		background: linear-gradient(135deg, #052759, #0e3a75);
 	}
 
+	:global(html.dark-mode) .tutorial-btn {
+		background: linear-gradient(135deg, #001A6E, #002a8e);
+		box-shadow: 0 2px 4px rgba(0, 26, 110, 0.4);
+	}
+
+	:global(html.dark-mode) .tutorial-btn:hover {
+		background: linear-gradient(135deg, #002a8e, #003bb3);
+		box-shadow: 0 4px 8px rgba(0, 26, 110, 0.5);
+	}
+
 	:global(html.dark-mode) .help-popup {
 		background: #1a2a4a;
 		color: #f0f0f0;
@@ -241,6 +251,8 @@
 	
 	:global(html.dark-mode) .tutorial-section {
 		border-top-color: #2a3a5a;
-		background: linear-gradient(135deg, #1e293b, #334155);
+		background: #1a2a4a ;
 	}
+
+
 </style>

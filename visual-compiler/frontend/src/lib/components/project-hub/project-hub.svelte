@@ -788,60 +788,118 @@
 	}
 
 	/* Dark Mode Styles */
-	:global(html.dark) .greeting-header,
-	:global(html.dark) .default-project-text,
-	:global(html.dark) .project-name {
-		color: #edf2f7;
+	:global(html.dark-mode) .backdrop {
+		background: rgba(0, 0, 0, 0.7);
 	}
 
-	:global(html.dark) .section-heading,
-	:global(html.dark) .button-label,
-	:global(html.dark) .project-date {
+	:global(html.dark-mode) .modal {
+		background-color: #1a2a4a;
+		color: #f0f0f0;
+		box-shadow:
+			0 10px 15px -3px rgba(0, 0, 0, 0.3),
+			0 4px 6px -2px rgba(0, 0, 0, 0.2);
+	}
+
+	:global(html.dark-mode) .close-button:hover {
+		background-color: rgba(74, 85, 104, 0.2);
+	}
+
+	:global(html.dark-mode) .close-icon {
 		color: #a0aec0;
 	}
 
-	:global(html.dark) .project-button {
-		background-color: #4a5568;
-		border-color: #718096;
+	:global(html.dark-mode) .greeting-header,
+	:global(html.dark-mode) .default-project-text,
+	:global(html.dark-mode) .project-name {
+		color: #ebeef1;
 	}
 
-	:global(html.dark) .project-button:hover {
-		background-color: #2d3748;
+	:global(html.dark-mode) .section-heading,
+	:global(html.dark-mode) .button-label,
+	:global(html.dark-mode) .project-date {
+		color: #a0aec0;
 	}
 
-	:global(html.dark) .search-input {
-		background-color: #4a5568;
-		border-color: #718096;
-		color: #edf2f7;
+	:global(html.dark-mode) .project-button {
+		background-color: #041a47;
+		border: 2px solid #041a47;
+		color: #ffffff;
+		box-shadow: 0 2px 8px rgba(0, 26, 110, 0.3);
 	}
 
-	:global(html.dark) .project-block {
-		background-color: #4a5568;
-		border-color: #718096;
+	:global(html.dark-mode) .project-button:hover {
+		background-color: #002a8e;
+		border-color: #	;
+		box-shadow: 0 4px 12px rgba(0, 26, 110, 0.4);
+		transform: translateY(-1px);
 	}
 
-	:global(html.dark) .delete-button {
+	:global(html.dark-mode) .plus-icon {
+		color: #ffffff;
+	}
+
+	:global(html.dark-mode) .search-input {
+		background-color: #374151;
+		border: 2px solid #4b5563;
+		color: #ffffff;
+		font-weight: 500;
+	}
+
+	:global(html.dark-mode) .search-input::placeholder {
+		color: #9ca3af;
+		opacity: 1;
+	}
+
+	:global(html.dark-mode) .search-input:focus {
+		border-color: #001A6E;
+		background-color: #4b5563;
+		box-shadow: 0 0 0 3px rgba(0, 26, 110, 0.2);
+	}
+
+	:global(html.dark-mode) .search-icon {
+		color: #d1d5db;
+	}
+
+	:global(html.dark-mode) .clear-search-btn {
+		color: #d1d5db;
+	}
+
+	:global(html.dark-mode) .clear-search-btn:hover {
+		background-color: #6b7280;
+		color: #ffffff;
+	}
+
+	:global(html.dark-mode) .project-block {
+		background-color: #374151;
+		border: 2px solid #4b5563;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+	}
+
+	:global(html.dark-mode) .project-block:hover {
+		background-color: #4b5563;
+		border-color: #6b7280;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+		transform: translateY(-1px);
+	}
+
+	:global(html.dark-mode) .delete-button {
 		color: #9ca3af;
 	}
 
-	:global(html.dark) .delete-button:hover {
+	:global(html.dark-mode) .delete-button:hover {
 		background-color: #4a5568;
 		color: #f87171;
 	}
 
-	:global(html.dark) .close-icon {
+	:global(html.dark-mode) .no-results-content h4 {
+		color: #ebeef1;
+	}
+
+	:global(html.dark-mode) .no-results-content p {
 		color: #a0aec0;
 	}
 
-	:global(html.dark) .no-results-content h4 {
-		color: #f7fafc;
-	}
-
-	:global(html.dark) .no-results-content p {
-		color: #cbd5e0;
-	}
-
-	:global(html.dark) .no-results-icon {
+	:global(html.dark-mode) .no-results-icon {
 		color: #718096;
 	}
 </style>
