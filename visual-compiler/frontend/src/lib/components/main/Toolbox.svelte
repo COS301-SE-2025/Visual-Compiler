@@ -121,7 +121,9 @@
 		border: 1px solid #e0e0e0;
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
 		overflow-y: auto;
+		overflow-x: hidden;
 		min-height: 0;
+		width: 100%;
 	}
 
 	/* Minimalistic scrollbar styling */
