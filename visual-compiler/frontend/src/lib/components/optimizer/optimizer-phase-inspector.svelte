@@ -1,4 +1,6 @@
 <script lang="ts">
+    import { optimizerState } from '$lib/stores/optimizer';
+
     let selectedLanguage = 'Java';
     let selectedTechniques: string[] = [];
     let inputCode = '';
@@ -12,6 +14,57 @@
         } else {
             selectedTechniques = [...selectedTechniques, technique];
         }
+        updateStore();
+    }
+
+    function updateStore() {
+        optimizerState.update(state => ({
+            ...state,
+            selectedLanguage: selectedLanguage as 'Java' | 'Python' | 'Go',
+            selectedTechniques,
+            inputCode
+        }));
+    }
+
+    function handleSubmit() {
+        if (!inputCode.trim() || selectedTechniques.length === 0) {
+            return;
+        }
+
+        // Set optimizing state
+        optimizerState.update(state => ({
+            ...state,
+            isOptimizing: true,
+            optimizationError: null,
+            optimizedCode: null
+        }));
+
+        // TODO: Add backend API call here
+        console.log('Submitting optimization request:', {
+            language: selectedLanguage,
+            techniques: selectedTechniques,
+            code: inputCode
+        });
+
+        // Placeholder for backend integration
+        // This will be replaced with actual API call
+        setTimeout(() => {
+            optimizerState.update(state => ({
+                ...state,
+                isOptimizing: false
+            }));
+        }, 2000);
+    }
+
+    // React to store changes
+    $: selectedLanguage, updateStore();
+    $: inputCode, updateStore();
+
+    // Initialize from store
+    $: if ($optimizerState) {
+        selectedLanguage = $optimizerState.selectedLanguage;
+        selectedTechniques = $optimizerState.selectedTechniques;
+        inputCode = $optimizerState.inputCode;
     }
 </script>
 
@@ -57,6 +110,22 @@
                 rows="8"
             ></textarea>
         </div>
+    </div>
+
+    <div class="submit-section">
+        <button 
+            class="submit-button"
+            on:click={handleSubmit}
+            disabled={!inputCode.trim() || selectedTechniques.length === 0 || $optimizerState.isOptimizing}
+        >
+            {#if $optimizerState.isOptimizing}
+               
+                Optimizing...
+            {:else}
+                
+                Optimize Code
+            {/if}
+        </button>
     </div>
 </div>
 
@@ -203,6 +272,62 @@
         font-style: italic;
     }
 
+    /* Submit Section */
+    .submit-section {
+        display: flex;
+        justify-content: center;
+        padding-top: 1rem;
+        margin-top: auto;
+    }
+
+    .submit-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 2rem;
+        background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+        min-width: 160px;
+    }
+
+    .submit-button:hover:not(:disabled) {
+        background: linear-gradient(135deg, #7C3AED, #6D28D9);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
+    }
+
+    .submit-button:active:not(:disabled) {
+        transform: translateY(0);
+    }
+
+    .submit-button:disabled {
+        background: #9CA3AF;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    .spinner {
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
     /* Dark Mode Styles */
     :global(html.dark-mode) .inspector-container {
         background: #1a2a4a;
@@ -246,6 +371,11 @@
     }
 
     :global(html.dark-mode) .input-area textarea::placeholder {
+        color: #9CA3AF;
+    }
+
+    :global(html.dark-mode) .submit-button:disabled {
+        background: #4B5563;
         color: #9CA3AF;
     }
 </style>
