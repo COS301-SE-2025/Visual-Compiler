@@ -32,7 +32,8 @@
 		{ id: 'lexer', label: 'Lexer' },
 		{ id: 'parser', label: 'Parser' },
 		{ id: 'analyser', label: 'Analyser' },
-		{ id: 'translator', label: 'Translator' }
+		{ id: 'translator', label: 'Translator' },
+		{ id: 'optimizer', label: 'Optimizer' }
 	];
 
 	// createNode
@@ -93,8 +94,10 @@
 	{#each node_types as n, i}
 		<!-- Wrapper div to capture clicks even when the button is disabled -->
 		<div on:click={() => handleClick(n.id)}>
-			<button class="phase-btn" disabled={createdNodeTypes.has(n.id)}>
-				<span class="button-number-corner">{i + 1}</span>
+			<button class="phase-btn" class:optimizer-btn={n.id === 'optimizer'} disabled={createdNodeTypes.has(n.id)}>
+				{#if n.id !== 'optimizer'}
+					<span class="button-number-corner">{i + 1}</span>
+				{/if}
 				{n.label}
 				<span class="custom-tooltip">{tooltips[n.id]}</span>
 			</button>
@@ -198,6 +201,18 @@
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 	}
 
+	/* Special styling for optimizer button */
+	.optimizer-btn {
+		background-color: #C8A8E9; /* Lilac purple */
+		color: #4C1D95; /* Darker purple text */
+	}
+
+	.optimizer-btn:hover {
+		background-color: #B794E6; /* Darker lilac on hover */
+		transform: translateY(-2px);
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	}
+
 	.phase-btn:active {
 		transform: translateY(0);
 		background: #e8edf8;
@@ -212,6 +227,15 @@
 		transform: none;
 		box-shadow: none;
 		/* This makes the click event pass through to the parent div */
+		pointer-events: none;
+	}
+
+	.optimizer-btn:disabled {
+		background-color: #e6e6e6;
+		color: #666666;
+		cursor: not-allowed;
+		transform: none;
+		box-shadow: none;
 		pointer-events: none;
 	}
 
@@ -317,6 +341,23 @@
 
 	:global(html.dark-mode) .phase-btn:disabled:hover {
 		background-color: #2d3748;
+	}
+
+	/* Dark mode styles for optimizer button */
+	:global(html.dark-mode) .optimizer-btn {
+		background-color: #8B5CF6; /* Violet in dark mode */
+		color: #F3E8FF; /* Light purple text */
+		border: 1px solid #7C3AED;
+	}
+
+	:global(html.dark-mode) .optimizer-btn:hover {
+		background-color: #7C3AED; /* Darker violet on hover */
+	}
+
+	:global(html.dark-mode) .optimizer-btn:disabled {
+		background-color: #2d3748;
+		color: #a0aec0;
+		border-color: #4a5568;
 	}
 
 	:global(html.dark-mode) .custom-tooltip {
