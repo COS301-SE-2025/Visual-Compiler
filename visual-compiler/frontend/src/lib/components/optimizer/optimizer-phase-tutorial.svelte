@@ -28,13 +28,13 @@
     }
 
     h2 {
-        color: #8B5CF6;
+        color: #AFA2D7;
         margin-bottom: 1rem;
         font-size: 1.5rem;
     }
 
     h3 {
-        color: #7C3AED;
+        color: #AFA2D7;
         margin: 1.5rem 0 0.5rem 0;
     }
 
@@ -81,7 +81,7 @@
         background: #F3E8FF;
         padding: 0.75rem;
         border-radius: 8px;
-        border-left: 4px solid #8B5CF6;
+        border-left: 4px solid #AFA2D7;
     }
 
     .level-grid {
@@ -101,7 +101,7 @@
 
     .level-header {
         font-weight: 600;
-        color: #8B5CF6;
+        color: #AFA2D7;
         margin-bottom: 0.5rem;
     }
 
@@ -167,8 +167,8 @@
 
     .nav-button {
         padding: 0.5rem 1rem;
-        background: #C8A8E9;
-        color: #4C1D95;
+        background: #AFA2D7;
+        color: #fff;
         border: none;
         border-radius: 4px;
         cursor: pointer;
@@ -192,11 +192,11 @@
     }
 
     :global(html.dark-mode) h2 {
-        color: #C4B5FD;
+        color: #8451C7;
     }
 
     :global(html.dark-mode) h3 {
-        color: #A78BFA;
+        color: #8451C7;
     }
 
     :global(html.dark-mode) .description {
@@ -209,7 +209,7 @@
 
     :global(html.dark-mode) .opt-type {
         background: #2D1B69;
-        border-left-color: #8B5CF6;
+        border-left-color: #8451C7;
         color: #E0E7FF;
     }
 
@@ -219,7 +219,7 @@
     }
 
     :global(html.dark-mode) .level-header {
-        color: #C4B5FD;
+        color: #8451C7;
     }
 
     :global(html.dark-mode) .level-desc {
@@ -242,7 +242,7 @@
     }
 
     :global(html.dark-mode) .nav-button {
-        background: #8B5CF6;
+        background: #8451C7;
         color: #F3E8FF;
     }
 

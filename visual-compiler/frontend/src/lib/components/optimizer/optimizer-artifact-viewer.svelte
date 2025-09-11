@@ -183,13 +183,13 @@
 
     .artifact-title {
         margin: 0;
-        color: #8B5CF6;
+        color: #AFA2D7;
         font-family: 'Times New Roman', serif;
         font-size: 1.25rem;
     }
 
     h3 {
-        color: #8B5CF6;
+        color: #AFA2D7;
         font-size: 1.2rem;
         margin: 0 0 1rem 0;
         font-family: 'Times New Roman', serif;
@@ -200,8 +200,8 @@
         align-items: center;
         gap: 0.5rem;
         background-color: #F3E8FF;
-        color: #7C3AED;
-        border: 1px solid #C4B5FD;
+        color: #AFA2D7;
+        border: 1px solid #AFA2D7;
         padding: 0.4rem 0.8rem;
         border-radius: 6px;
         font-weight: 500;
@@ -211,7 +211,7 @@
 
     .copy-button:hover {
         background-color: #E0E7FF;
-        border-color: #8B5CF6;
+        border-color: #AFA2D7;
     }
 
     /* Performance Section */
@@ -219,7 +219,7 @@
         background: #F3E8FF;
         padding: 1rem;
         border-radius: 8px;
-        border-left: 4px solid #8B5CF6;
+        border-left: 4px solid #AFA2D7;
         margin-bottom: 1rem;
     }
 
@@ -267,7 +267,7 @@
     }
 
     .technique-badge {
-        background: #8B5CF6;
+        background: #AFA2D7;
         color: white;
         padding: 0.25rem 0.75rem;
         border-radius: 20px;
@@ -318,7 +318,7 @@
         align-items: center;
         justify-content: center;
         padding: 3rem 1rem;
-        color: #8B5CF6;
+        color: #AFA2D7;
         width: 100%;
         text-align: center;
     }
@@ -389,23 +389,23 @@
 
     :global(html.dark-mode) .artifact-title,
     :global(html.dark-mode) h3 {
-        color: #C4B5FD;
+        color: #8451C7;
     }
 
     :global(html.dark-mode) .copy-button {
         background-color: #2D1B69;
-        color: #E0E7FF;
-        border-color: #6B46C1;
+        color: #8451C7;
+        border-color: #8451C7;
     }
 
     :global(html.dark-mode) .copy-button:hover {
         background-color: #44337A;
-        border-color: #8B5CF6;
+        border-color: #8451C7;
     }
 
     :global(html.dark-mode) .performance-section {
         background: #2D1B69;
-        border-left-color: #8B5CF6;
+        border-left-color: #8451C7;
     }
 
     :global(html.dark-mode) .metric-card {

@@ -203,12 +203,12 @@
 
 	/* Special styling for optimizer button */
 	.optimizer-btn {
-		background-color: #C8A8E9; /* Lilac purple */
-		color: #4C1D95; /* Darker purple text */
+		background-color: #AFA2D7; /* New light mode optimizer */
+		color: #fff; /* White text for contrast */
 	}
 
 	.optimizer-btn:hover {
-		background-color: #B794E6; /* Darker lilac on hover */
+		background-color: #8C7AB8; /* Slightly darker for hover */
 		transform: translateY(-2px);
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 	}
@@ -345,13 +345,13 @@
 
 	/* Dark mode styles for optimizer button */
 	:global(html.dark-mode) .optimizer-btn {
-		background-color: #8B5CF6; /* Violet in dark mode */
-		color: #F3E8FF; /* Light purple text */
-		border: 1px solid #7C3AED;
+		background-color: #8451C7; /* New dark mode optimizer */
+		color: #fff;
+		border: 1px solid #8451C7;
 	}
 
 	:global(html.dark-mode) .optimizer-btn:hover {
-		background-color: #7C3AED; /* Darker violet on hover */
+		background-color: #6B3BAA; /* Darker for hover */
 	}
 
 	:global(html.dark-mode) .optimizer-btn:disabled {

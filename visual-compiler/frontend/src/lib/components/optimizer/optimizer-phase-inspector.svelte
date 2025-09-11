@@ -149,7 +149,7 @@
 
     .inspector-title {
         margin: 0;
-        color: #8B5CF6;
+    color: #AFA2D7;
         font-family: 'Times New Roman', serif;
         font-size: 1.5rem;
         text-align: center;
@@ -193,9 +193,9 @@
     }
 
     .language-btn.selected {
-        background: #8B5CF6;
+        background: #AFA2D7;
         color: #fff;
-        border-color: #8B5CF6;
+        border-color: #AFA2D7;
     }
 
     /* Technique Section */
@@ -229,9 +229,9 @@
     }
 
     .technique-btn.selected {
-        background: #8B5CF6;
+        background: #AFA2D7;
         color: #fff;
-        border-color: #8B5CF6;
+        border-color: #AFA2D7;
     }
 
     /* Input Section */
@@ -263,8 +263,8 @@
 
     .input-area textarea:focus {
         outline: none;
-        border-color: #8B5CF6;
-        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+        border-color: #AFA2D7;
+        box-shadow: 0 0 0 2px rgba(175, 162, 215, 0.2);
     }
 
     .input-area textarea::placeholder {
@@ -286,7 +286,7 @@
         justify-content: center;
         gap: 0.5rem;
         padding: 0.75rem 2rem;
-        background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+        background: linear-gradient(135deg, #AFA2D7, #AFA2D7);
         color: white;
         border: none;
         border-radius: 8px;
@@ -294,14 +294,14 @@
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
-        box-shadow: 0 2px 4px rgba(139, 92, 246, 0.2);
+        box-shadow: 0 2px 4px rgba(175, 162, 215, 0.2);
         min-width: 160px;
     }
 
     .submit-button:hover:not(:disabled) {
-        background: linear-gradient(135deg, #7C3AED, #6D28D9);
+        background: linear-gradient(135deg, #AFA2D7, #8451C7);
         transform: translateY(-1px);
-        box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
+        box-shadow: 0 4px 8px rgba(175, 162, 215, 0.3);
     }
 
     .submit-button:active:not(:disabled) {
@@ -334,7 +334,7 @@
     }
 
     :global(html.dark-mode) .inspector-title {
-        color: #C4B5FD;
+        color: #8451C7;
     }
 
     :global(html.dark-mode) .section-heading {
@@ -355,9 +355,9 @@
 
     :global(html.dark-mode) .language-btn.selected,
     :global(html.dark-mode) .technique-btn.selected {
-        background: #8B5CF6;
+        background: #8451C7;
         color: #fff;
-        border-color: #8B5CF6;
+        border-color: #8451C7;
     }
 
     :global(html.dark-mode) .input-area textarea {
@@ -367,7 +367,7 @@
     }
 
     :global(html.dark-mode) .input-area textarea:focus {
-        border-color: #8B5CF6;
+        border-color: #8451C7;
     }
 
     :global(html.dark-mode) .input-area textarea::placeholder {
