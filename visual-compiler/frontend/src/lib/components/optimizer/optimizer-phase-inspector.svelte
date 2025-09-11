@@ -1,3 +1,4 @@
+
 <script lang="ts">
     import { optimizerState } from '$lib/stores/optimizer';
 
@@ -71,6 +72,15 @@
 <div class="inspector-container">
     <div class="inspector-header">
         <h2 class="inspector-title">Optimizing</h2>
+    </div>
+
+    <div class="instructions-section">
+        <div class="instructions-content">
+            <h4 class="instructions-header">Instructions</h4>
+            <p class="instructions-text">
+                Select a language and one or more optimization techniques, then enter your code in the input area below. Click <b>Optimize Code</b> to apply the selected optimizations. Results will be shown in the artifact viewer.
+            </p>
+        </div>
     </div>
 
     <div class="language-section">
@@ -177,7 +187,7 @@
 
     .language-btn {
         padding: 0.75rem 1.5rem;
-        border: 2px solid #000;
+        border: 2px solid #AFA2D7;
         background: #fff;
         color: #000;
         font-size: 1rem;
@@ -212,7 +222,7 @@
 
     .technique-btn {
         padding: 0.75rem 1rem;
-        border: 2px solid #000;
+        border: 2px solid #AFA2D7;
         background: #fff;
         color: #000;
         font-size: 1rem;
@@ -251,7 +261,7 @@
         width: 100%;
         min-height: 120px;
         padding: 0.75rem;
-        border: 2px solid #000;
+        border: 2px solid #AFA2D7;
         border-radius: 4px;
         font-family: 'Courier New', monospace;
         font-size: 0.9rem;
@@ -259,6 +269,11 @@
         background: #fff;
         color: #000;
         flex: 1;
+    :global(html.dark-mode) .input-area textarea,
+    :global(html.dark-mode) .language-btn,
+    :global(html.dark-mode) .technique-btn {
+        border-color: #4a5568;
+    }
     }
 
     .input-area textarea:focus {
@@ -377,5 +392,40 @@
     :global(html.dark-mode) .submit-button:disabled {
         background: #4B5563;
         color: #9CA3AF;
+    }
+
+      .instructions-section {
+        margin: 1.5rem 0 0 0;
+        background: #F3E8FF;
+        border-radius: 8px;
+        border-left: 4px solid #AFA2D7;
+        transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+    .instructions-content {
+        padding: 1.25rem 1.5rem;
+    }
+    .instructions-header {
+        margin: 0 0 0.75rem 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #8451C7;
+        transition: color 0.3s ease;
+    }
+    .instructions-text {
+        margin: 0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: #4B3A6A;
+        transition: color 0.3s ease;
+    }
+    :global(html.dark-mode) .instructions-section {
+        background: #2D1B69;
+        border-left-color: #8451C7;
+    }
+    :global(html.dark-mode) .instructions-header {
+        color: #AFA2D7;
+    }
+    :global(html.dark-mode) .instructions-text {
+        color: #C4B5FD;
     }
 </style>

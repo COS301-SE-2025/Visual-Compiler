@@ -13,9 +13,7 @@
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 	import WelcomeOverlay from '$lib/components/project-hub/project-hub.svelte';
 	import ClearCanvasConfirmation from '$lib/components/main/clear-canvas-confirmation.svelte';
-	import CanvasTutorial from '$lib/components/main/canvas-tutorial.svelte';
 	import { phase_completion_status } from '$lib/stores/pipeline';
-	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial } from '$lib/stores/tutorial';
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -43,19 +41,14 @@
 	let TranslatorPhaseTutorial: any;
 	let TranslatorPhaseInspector: any;
 	let TranslatorArtifactViewer: any;
+	let OptimizerPhaseTutorial: any;
+	let OptimizerPhaseInspector: any;
+	let OptimizerArtifactViewer: any;
 
 	let showWelcomeOverlay = false;
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
 	let showClearCanvasModal = false;
-
-	// --- TUTORIAL STATE ---
-	let showCanvasTutorial = false;
-
-	// Subscribe to tutorial store
-	tutorialStore.subscribe(state => {
-		showCanvasTutorial = state.showCanvasTutorial;
-	});
 
 	// --- UNSAVED CHANGES TRACKING ---
 	let lastSavedState: string | null = null;
@@ -145,6 +138,15 @@
 		TranslatorArtifactViewer = (
 			await import('$lib/components/translator/translator-artifact-viewer.svelte')
 		).default;
+		OptimizerPhaseTutorial = (
+			await import('$lib/components/optimizer/optimizer-phase-tutorial.svelte')
+		).default;
+		OptimizerPhaseInspector = (
+			await import('$lib/components/optimizer/optimizer-phase-inspector.svelte')
+		).default;
+		OptimizerArtifactViewer = (
+			await import('$lib/components/optimizer/optimizer-artifact-viewer.svelte')
+		).default;
 
 		// Setup theme and UI state
 		document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
@@ -155,10 +157,6 @@
 		if (sessionStorage.getItem('showWelcomeOverlay') === 'true') {
 			showWelcomeOverlay = true; // Trigger the overlay to show.
 		}
-
-		// --- TUTORIAL INITIALIZATION ---
-		// Check tutorial status on mount
-		checkTutorialStatus();
 
 		// --- UNSAVED CHANGES PROTECTION ---
 		// Only add event listener if we're in the browser
@@ -197,11 +195,6 @@
 
 	function handleWelcomeClose() {
 		showWelcomeOverlay = false;
-	}
-
-	// Handle tutorial close
-	function handleTutorialClose() {
-		hideCanvasTutorial();
 	}
 
 	// --- CANVAS STATE ---
@@ -540,7 +533,8 @@
 		lexer: 'Converts source code into tokens for processing.',
 		parser: 'Analyzes the token stream to build a syntax tree.',
 		analyser: 'Performs semantic analysis on the syntax tree.',
-		translator: 'Translates the syntax tree into target code.'
+		translator: 'Translates the syntax tree into target code.',
+		optimizer: 'Advanced optimization techniques for code enhancement.'
 	};
 
 	const node_labels: Record<NodeType, string> = {
@@ -548,7 +542,8 @@
 		lexer: 'Lexer',
 		parser: 'Parser',
 		analyser: 'Analyser',
-		translator: 'Translator'
+		translator: 'Translator',
+		optimizer: 'Optimizer'
 	};
 
 	function handleCreateNode(type: NodeType) {
@@ -582,7 +577,7 @@
 
 	function handlePhaseSelect(type: NodeType) {
 		// Validate node access before proceeding
-		if (!validateNodeAccess(type)) {
+		if (type !== 'optimizer' && !validateNodeAccess(type)) {
 			return; // Toast message already shown by validateNodeAccess
 		}
 
@@ -593,11 +588,14 @@
 			show_code_input = true;
 		} else {
 			selected_phase = type;
-			const confirmedCode = get(confirmedSourceCode);
-			if (!confirmedCode.trim()) {
-				AddToast('Source code required: Please add source code to begin the compilation process', 'error');
-				selected_phase = null;
-				return;
+			// Only check for source code on non-optimizer phases
+			if (type !== 'optimizer') {
+				const confirmedCode = get(confirmedSourceCode);
+				if (!confirmedCode.trim()) {
+					AddToast('Source code required: Please add source code to begin the compilation process', 'error');
+					selected_phase = null;
+					return;
+				}
 			}
 		}
 	}
@@ -834,6 +832,12 @@
 							{translationError}
 						/>
 					{/if}
+
+					{#if selected_phase === 'optimizer' && OptimizerPhaseTutorial}
+						<svelte:component this={OptimizerPhaseTutorial} />
+						<svelte:component this={OptimizerPhaseInspector} />
+						<svelte:component this={OptimizerArtifactViewer} />
+					{/if}
 				</div>
 				<button on:click={returnToCanvas} class="return-button"> ← Return to Canvas </button>
 			</div>
@@ -855,12 +859,6 @@
 	bind:show={showClearCanvasModal} 
 	on:confirm={handleClearCanvasConfirm}
 	on:cancel={handleClearCanvasCancel}
-/>
-
-<!-- Canvas Tutorial Modal -->
-<CanvasTutorial 
-	bind:show={showCanvasTutorial} 
-	on:close={handleTutorialClose}
 />
 
 <style>
