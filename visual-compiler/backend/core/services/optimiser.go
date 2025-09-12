@@ -86,13 +86,13 @@ func StringifyAST(ast_file *ast.File, file_set *token.FileSet) (string, error) {
 	return structured_code, nil
 }
 
-// Name: StringifyAST
+// Name: RemoveExtraLines
 //
-// Parameters: *ast.File, *token.FileSet
+// Parameters: string
 //
 // Return: string
 //
-// Converts optimised AST to a string
+// Remove extra unneccessary blank lines from the optimised code
 func RemoveExtraLines(code string) string {
 	var result_code strings.Builder
 	is_first_empty_line := true
