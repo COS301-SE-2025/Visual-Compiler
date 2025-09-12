@@ -245,9 +245,24 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 												}
 											}
 
-										default:
-											//fmt.Printf("OTHER")
+										case *ast.UnaryExpr:
+											lhs, valid_cond := expression.X.(*ast.Ident)
+											if valid_cond {
+												unused_variable, is_unused := unused_variables[lhs.Name]
+												if is_unused {
+													operator := expression.Op.String()
+													switch operator {
+													case "!":
+														if unused_variable == "false" {
+															used = true
+															delete(unused_variables, lhs.Name)
+														}
+													}
+												}
 
+											}
+
+										default:
 										}
 										return true
 									})
@@ -287,14 +302,6 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 						new_values := []ast.Expr{}
 						for num, name := range value.Names {
 							variable := ast_info.Defs[name]
-							/*var value_str string
-							switch v := value.Values[num].(type) {
-							case *ast.BasicLit:
-								value_str = v.Value
-							case *ast.Ident:
-								value_str = v.Name
-							default:
-							}*/
 							unused_variables[name.Name] = "True"
 							used := false
 							for _, used_variable := range ast_info.Uses {
@@ -351,6 +358,16 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 							optimised_statements = append(optimised_statements, function_statements)
 						}
 					}
+
+				case *ast.UnaryExpr:
+					lhs, valid_expr := condition_variable.X.(*ast.Ident)
+					if valid_expr {
+						_, is_unused := unused_variables[lhs.Name]
+						if !is_unused {
+							optimised_statements = append(optimised_statements, function_statements)
+						}
+					}
+
 				default:
 					optimised_statements = append(optimised_statements, function_statements)
 				}
