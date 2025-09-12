@@ -8,6 +8,7 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"strings"
 )
 
 // Name: OptimiseGoCode
@@ -80,7 +81,38 @@ func StringifyAST(ast_file *ast.File, file_set *token.FileSet) (string, error) {
 		return "", err
 	}
 
-	return buffer.String(), nil
+	optimised_code := buffer.String()
+	structured_code := RemoveExtraLines(optimised_code)
+	return structured_code, nil
+}
+
+// Name: StringifyAST
+//
+// Parameters: *ast.File, *token.FileSet
+//
+// Return: string
+//
+// Converts optimised AST to a string
+func RemoveExtraLines(code string) string {
+	var result_code strings.Builder
+	is_first_empty_line := true
+	line_count := 0
+	for _, character := range code {
+		if character == '\n' {
+			line_count++
+			if line_count < 2 {
+				result_code.WriteRune(character)
+			} else if is_first_empty_line {
+				result_code.WriteRune(character)
+				is_first_empty_line = false
+			}
+		} else {
+			line_count = 0
+			result_code.WriteRune(character)
+		}
+	}
+
+	return result_code.String()
 }
 
 // Name: PerformConstantFolding
@@ -172,8 +204,6 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 						for _, function_statement_2 := range function.Body.List {
 							if_statement, valid_if := function_statement_2.(*ast.IfStmt)
 							if valid_if {
-								//cond_indent, valid_cond := if_statement.Cond.(*ast.Ident)
-								//if valid_cond
 								{
 									ast.Inspect(function_statement_2, func(node ast.Node) bool {
 										switch expression := node.(type) {
@@ -200,9 +230,9 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 											}
 
 										case *ast.BinaryExpr:
-											lhs, valid_cond := expression.X.(*ast.Ident) //if_statement.Cond.(*ast.BinaryExpr)
+											lhs, valid_cond := expression.X.(*ast.Ident)
 											if valid_cond {
-												rhs, valid_var := expression.Y.(*ast.BasicLit) //node.(*ast.BinaryExpr)
+												rhs, valid_var := expression.Y.(*ast.BasicLit)
 												if valid_var {
 													unused_variable, is_unused := unused_variables[lhs.Name]
 													if is_unused {

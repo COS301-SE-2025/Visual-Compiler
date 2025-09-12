@@ -100,7 +100,7 @@ func TestPerformDeadCodeElimination_Simple(t *testing.T) {
 
 	expected_result := "package main\n\n"
 	expected_result += "func NewFunction() int {\n"
-	expected_result += "\treturn 13\n\n"
+	expected_result += "\treturn 13\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -122,7 +122,7 @@ func TestPerformDeadCodeElimination_MultipleReturn(t *testing.T) {
 
 	expected_result := "package main\n\n"
 	expected_result += "func NewFunction() int {\n"
-	expected_result += "\treturn 13\n\n"
+	expected_result += "\treturn 13\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -144,7 +144,7 @@ func TestPerformDeadCodeElimination_UnusedVariableAfterReturn(t *testing.T) {
 
 	expected_result := "package main\n\n"
 	expected_result += "func NewFunction() int {\n"
-	expected_result += "\treturn 13\n\n"
+	expected_result += "\treturn 13\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -164,7 +164,7 @@ func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn(t *testing.T) {
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n\n"
+	expected_result += "func NewFunction() int {\n"
 	expected_result += "\treturn 13\n"
 	expected_result += "}\n"
 
@@ -185,7 +185,7 @@ func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn_2(t *testing.T) {
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n\n"
+	expected_result += "func NewFunction() int {\n"
 	expected_result += "\treturn 13\n"
 	expected_result += "}\n"
 
@@ -210,7 +210,7 @@ func TestPerformDeadCodeElimination_ConstantVariableIfStatement(t *testing.T) {
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n\n"
+	expected_result += "func NewFunction() int {\n"
 	expected_result += "\treturn 13\n"
 	expected_result += "}\n"
 
@@ -295,7 +295,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression(t *tes
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n\n"
+	expected_result += "func NewFunction() int {\n"
 	expected_result += "\treturn 13\n"
 	expected_result += "}\n"
 
@@ -319,7 +319,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_Constant(t *testing.T) 
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n\n"
+	expected_result += "func NewFunction() int {\n"
 	expected_result += "\treturn 13\n"
 	expected_result += "}\n"
 
@@ -372,7 +372,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_UnaryExpression(t *test
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n\n"
+	expected_result += "func NewFunction() int {\n"
 	expected_result += "\treturn 13\n"
 	expected_result += "}\n"
 
