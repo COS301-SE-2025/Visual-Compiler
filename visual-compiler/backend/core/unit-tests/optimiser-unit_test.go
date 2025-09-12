@@ -16,21 +16,16 @@ func TestOptimiseGo_NoInputCode(t *testing.T) {
 }
 
 func TestPerformDeadCodeElimination_Simple(t *testing.T) {
-	code := "func NewFunction *SymbolTable {"
-	code += "return &SymbolTable{"
-	code += "SymbolScopes: []map[string]Symbol{"
-	code += "	make(map[string]Symbol),"
-	code += "	},"
-	code += "}"
-	code += "random_string:= ''"
+	code := "package main\n"
+	code += "func NewFunction() int {\n"
+	code += "return 13\n"
+	code += "random_num := 5\n"
+	code += "return random_num\n"
 	code += "}"
 
-	expected_result := "func NewFunction *SymbolTable {"
-	expected_result += "return &SymbolTable{"
-	expected_result += "SymbolScopes: []map[string]Symbol{"
-	expected_result += "	make(map[string]Symbol),"
-	expected_result += "	},"
-	expected_result += "}"
+	expected_result := "package main\n"
+	expected_result += "func NewFunction() int {\n"
+	expected_result += "return 13\n"
 	expected_result += "}"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)

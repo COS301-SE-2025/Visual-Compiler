@@ -1,6 +1,10 @@
 package services
 
-import "fmt"
+import (
+	"fmt"
+	"go/ast"
+	"go/types"
+)
 
 // Name: OptimiseGoCode
 //
@@ -49,6 +53,10 @@ func PerformConstantFolding(code string) string {
 func PerformDeadCodeElimination(code string) string {
 
 	return code
+}
+
+func EliminateDeadCode(fn *ast.FuncDecl, info *types.Info) {
+
 }
 
 // Name: PerformLoopUnrolling
