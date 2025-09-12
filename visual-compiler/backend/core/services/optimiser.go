@@ -135,6 +135,7 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 
 	optimised_statements := []ast.Stmt{}
 	unreachable := false
+	unused_variables := make(map[string]string)
 
 	for _, function_statements := range function.Body.List {
 
@@ -143,7 +144,7 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 		}
 
 		switch statement := function_statements.(type) {
-		case *ast.AssignStmt:
+		case *ast.AssignStmt: // search for unused assigned variables
 			if statement.Tok == token.DEFINE {
 				new_lhs := []ast.Expr{}
 				new_rhs := []ast.Expr{}
@@ -151,11 +152,106 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 					ident, valid_ident := lhs.(*ast.Ident)
 					if valid_ident {
 						variable := ast_info.Defs[ident]
+						var value_str string
+						switch v := statement.Rhs[num].(type) {
+						case *ast.BasicLit:
+							value_str = v.Value
+						case *ast.Ident:
+							value_str = v.Name
+						default:
+						}
+						unused_variables[ident.Name] = value_str
 						used := false
 						for _, used_variable := range ast_info.Uses {
 							if used_variable == variable {
 								used = true
+								delete(unused_variables, ident.Name)
 								break
+							}
+						}
+						for _, function_statement_2 := range function.Body.List {
+							if_statement, valid_if := function_statement_2.(*ast.IfStmt)
+							if valid_if {
+								//cond_indent, valid_cond := if_statement.Cond.(*ast.Ident)
+								//if valid_cond
+								{
+									ast.Inspect(function_statement_2, func(node ast.Node) bool {
+										switch expression := node.(type) {
+										case *ast.Ident:
+											cond_indent, valid_cond := if_statement.Cond.(*ast.Ident)
+											if valid_cond {
+												ident, valid_var := node.(*ast.Ident)
+												if valid_var {
+													unused_variable, is_unused := unused_variables[cond_indent.Name]
+													if is_unused {
+
+														switch if_statement.Cond.(type) {
+														case *ast.Ident:
+															if unused_variable == "true" {
+																used = true
+																delete(unused_variables, ident.Name)
+															}
+
+														}
+
+													}
+												}
+
+											}
+
+										case *ast.BinaryExpr:
+											lhs, valid_cond := expression.X.(*ast.Ident) //if_statement.Cond.(*ast.BinaryExpr)
+											if valid_cond {
+												rhs, valid_var := expression.Y.(*ast.BasicLit) //node.(*ast.BinaryExpr)
+												if valid_var {
+													unused_variable, is_unused := unused_variables[lhs.Name]
+													if is_unused {
+														operator := expression.Op.String()
+														switch operator {
+														case "==":
+															if rhs.Value == unused_variable {
+																used = true
+																delete(unused_variables, lhs.Name)
+															}
+														case "!=":
+															if rhs.Value != unused_variable {
+																used = true
+																delete(unused_variables, lhs.Name)
+															}
+
+														case ">=":
+															if rhs.Value >= unused_variable {
+																used = true
+																delete(unused_variables, lhs.Name)
+															}
+														case "<=":
+															if rhs.Value <= unused_variable {
+																used = true
+																delete(unused_variables, lhs.Name)
+															}
+														case ">":
+															if rhs.Value > unused_variable {
+																used = true
+																delete(unused_variables, lhs.Name)
+															}
+														case "<":
+															if rhs.Value < unused_variable {
+																used = true
+																delete(unused_variables, lhs.Name)
+															}
+														}
+													}
+
+												}
+											}
+
+										default:
+											//fmt.Printf("OTHER")
+
+										}
+										return true
+									})
+								}
 							}
 						}
 						if used {
@@ -180,7 +276,7 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 				optimised_statements = append(optimised_statements, statement)
 			}
 
-		case *ast.DeclStmt:
+		case *ast.DeclStmt: //search for unused declared variables
 			declaration_info, valid_declaration := statement.Decl.(*ast.GenDecl)
 			if valid_declaration && declaration_info.Tok == token.VAR {
 				new_spec := []ast.Spec{}
@@ -191,10 +287,20 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 						new_values := []ast.Expr{}
 						for num, name := range value.Names {
 							variable := ast_info.Defs[name]
+							/*var value_str string
+							switch v := value.Values[num].(type) {
+							case *ast.BasicLit:
+								value_str = v.Value
+							case *ast.Ident:
+								value_str = v.Name
+							default:
+							}*/
+							unused_variables[name.Name] = "True"
 							used := false
 							for _, used_variable := range ast_info.Uses {
 								if used_variable == variable {
 									used = true
+									delete(unused_variables, name.Name)
 									break
 								}
 							}
@@ -221,6 +327,34 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 				}
 			} else {
 				optimised_statements = append(optimised_statements, function_statements)
+			}
+
+		case *ast.IfStmt:
+			if_statement, valid_ifstatement := function_statements.(*ast.IfStmt)
+			if valid_ifstatement {
+				switch condition_variable := if_statement.Cond.(type) {
+
+				case *ast.Ident:
+					_, is_unused := unused_variables[condition_variable.Name]
+					if !is_unused {
+						if condition_variable.Name != "false" {
+							optimised_statements = append(optimised_statements, function_statements)
+						}
+
+					}
+
+				case *ast.BinaryExpr:
+					lhs, valid_expr := condition_variable.X.(*ast.Ident)
+					if valid_expr {
+						_, is_unused := unused_variables[lhs.Name]
+						if !is_unused {
+							optimised_statements = append(optimised_statements, function_statements)
+						}
+					}
+				default:
+					optimised_statements = append(optimised_statements, function_statements)
+				}
+
 			}
 
 		default:
