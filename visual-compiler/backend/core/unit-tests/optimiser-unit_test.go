@@ -91,7 +91,28 @@ func TestOptimiseGo_NoInputCode(t *testing.T) {
 	}
 }
 
-/*func TestPerformDeadCodeElimination_Simple(t *testing.T) {
+func TestPerformDeadCodeElimination_Simple(t *testing.T) {
+	code := "package main\n"
+	code += "func NewFunction() int {\n"
+	code += "return 13\n"
+	code += "random_num := 5\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func NewFunction() int {\n"
+	expected_result += "\treturn 13\n\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_MultipleReturn(t *testing.T) {
 	code := "package main\n"
 	code += "func NewFunction() int {\n"
 	code += "return 13\n"
@@ -99,16 +120,80 @@ func TestOptimiseGo_NoInputCode(t *testing.T) {
 	code += "return random_num\n"
 	code += "}"
 
-	expected_result := "package main\n"
+	expected_result := "package main\n\n"
 	expected_result += "func NewFunction() int {\n"
-	expected_result += "return 13\n"
-	expected_result += "}"
+	expected_result += "\treturn 13\n\n"
+	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
 	if err != nil {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v", optmised_code)
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
 	}
-}*/
+}
+
+func TestPerformDeadCodeElimination_UnusedVariableAfterReturn(t *testing.T) {
+	code := "package main\n"
+	code += "func NewFunction() int {\n"
+	code += "return 13\n"
+	code += "random_num := 5\n"
+	code += "return 23\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func NewFunction() int {\n"
+	expected_result += "\treturn 13\n\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn(t *testing.T) {
+	code := "package main\n"
+	code += "func NewFunction() int {\n"
+	code += "random_num := 5\n"
+	code += "return 13\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func NewFunction() int {\n\n"
+	expected_result += "\treturn 13\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn_2(t *testing.T) {
+	code := "package main\n"
+	code += "func NewFunction() int {\n"
+	code += "var random_num int\n"
+	code += "return 13\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func NewFunction() int {\n\n"
+	expected_result += "\treturn 13\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
