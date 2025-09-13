@@ -137,7 +137,7 @@ func RemoveExtraLines(code string) string {
 //
 // Performs constant folding on the source code
 func PerformConstantFolding(ast_file *ast.File, file_set *token.FileSet) error {
-
+	return nil
 }
 
 // Name: PerformDeadCodeElimination
