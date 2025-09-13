@@ -8,6 +8,7 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -19,7 +20,7 @@ import (
 // Return: string, error
 //
 // Receives Go code and performs optimisation based on the selected techniques
-func OptimiseGoCode(code string, constant_folding bool, dead_code bool, loop_unroling bool) (string, error) {
+func OptimiseGoCode(code string, constant_folding bool, dead_code bool, loop_unrolling bool) (string, error) {
 
 	if code == "" {
 		return "", fmt.Errorf("source code is empty")
@@ -28,6 +29,13 @@ func OptimiseGoCode(code string, constant_folding bool, dead_code bool, loop_unr
 	ast_file, file_set, err := ParseGoCode(code)
 	if err != nil {
 		return "", err
+	}
+
+	if loop_unrolling {
+		err = PerformLoopUnrolling(ast_file, file_set)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	if constant_folding {
@@ -39,13 +47,6 @@ func OptimiseGoCode(code string, constant_folding bool, dead_code bool, loop_unr
 
 	if dead_code {
 		err = PerformDeadCodeElimination(ast_file, file_set)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	if loop_unroling {
-		err = PerformLoopUnrolling(ast_file, file_set)
 		if err != nil {
 			return "", err
 		}
@@ -175,19 +176,31 @@ func PerformDeadCodeElimination(ast_file *ast.File, file_set *token.FileSet) err
 //
 // Performs loop unrolling on the source code
 func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
-	var failed error
 
-	ast.Inspect(ast_file, func(n ast.Node) bool {
-		if block, is_block := n.(*ast.BlockStmt); is_block {
+	var failed error
+	changed := true
+
+	for changed {
+		changed = false
+
+		ast.Inspect(ast_file, func(n ast.Node) bool {
+			block, is_block := n.(*ast.BlockStmt)
+			if !is_block {
+				return true
+			}
+
 			new_stmts := make([]ast.Stmt, 0, len(block.List))
 
 			for _, statement := range block.List {
 				if for_statement, is_for := statement.(*ast.ForStmt); is_for {
-
-					if unrolled, err := UnrollForLoop(for_statement); err != nil {
+					unrolled, err := UnrollForLoop(for_statement)
+					if err != nil {
 						failed = err
 						return false
-					} else if unrolled != nil {
+					}
+
+					if unrolled != nil {
+						changed = true
 						new_stmts = append(new_stmts, unrolled...)
 					} else {
 						new_stmts = append(new_stmts, statement)
@@ -199,9 +212,9 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 			}
 
 			block.List = new_stmts
-		}
-		return true
-	})
+			return true
+		})
+	}
 
 	return failed
 }
