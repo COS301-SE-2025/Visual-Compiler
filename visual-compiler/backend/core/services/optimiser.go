@@ -177,15 +177,19 @@ func PerformDeadCodeElimination(ast_file *ast.File, file_set *token.FileSet) err
 //
 // Performs loop unrolling on the source code
 func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
+	var failed error
 
 	ast.Inspect(ast_file, func(n ast.Node) bool {
 		if block, is_block := n.(*ast.BlockStmt); is_block {
 			new_stmts := make([]ast.Stmt, 0, len(block.List))
 
 			for _, statement := range block.List {
-
 				if for_statement, is_for := statement.(*ast.ForStmt); is_for {
-					if unrolled, _ := UnrollForLoop(for_statement); unrolled != nil {
+
+					if unrolled, err := UnrollForLoop(for_statement); err != nil {
+						failed = err
+						return false
+					} else if unrolled != nil {
 						new_stmts = append(new_stmts, unrolled...)
 					} else {
 						new_stmts = append(new_stmts, statement)
@@ -201,7 +205,7 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 		return true
 	})
 
-	return nil
+	return failed
 }
 
 /* PerformConstantFolding Helper Functions */
@@ -583,11 +587,12 @@ func RemoveUnusedFunction(unused_variables map[string]string, function_statement
 
 // Struct for the parameters of a for loop
 type LoopInfo struct {
-	VarName    string
-	StartValue int
-	EndValue   int
-	Increment  int
-	Body       *ast.BlockStmt
+	VarName   string
+	Start     int
+	Stop      int
+	Step      int
+	Direction bool
+	Body      *ast.BlockStmt
 }
 
 // Name: UnrollForLoop
@@ -633,13 +638,31 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 	}
 	var_name := identifier.Name
 
-	start_literal, is_valid := assign_statement.Rhs[0].(*ast.BasicLit)
-	if !is_valid || start_literal.Kind != token.INT {
-		return nil, fmt.Errorf("")
-	}
+	var start_value int
+	switch rhs := assign_statement.Rhs[0].(type) {
+		
+	case *ast.BasicLit:
+		if rhs.Kind != token.INT {
+			return nil, fmt.Errorf("")
+		}
+		val, err := strconv.Atoi(rhs.Value)
+		if err != nil {
+			return nil, fmt.Errorf("")
+		}
+		start_value = val
 
-	start_value, err := strconv.Atoi(start_literal.Value)
-	if err != nil {
+	case *ast.UnaryExpr:
+		if basic, exists := rhs.X.(*ast.BasicLit); exists && rhs.Op == token.SUB && basic.Kind == token.INT {
+			val, err := strconv.Atoi(basic.Value)
+			if err != nil {
+				return nil, fmt.Errorf("")
+			}
+			start_value = -val
+		} else {
+			return nil, fmt.Errorf("")
+		}
+
+	default:
 		return nil, fmt.Errorf("")
 	}
 
@@ -657,17 +680,37 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 		return nil, fmt.Errorf("")
 	}
 
-	if binary_expression.Op != token.LSS {
+	var step_direction bool
+	if binary_expression.Op == token.LSS {
+		step_direction = true
+	} else if binary_expression.Op == token.GTR {
+		step_direction = false
+	} else {
 		return nil, fmt.Errorf("")
 	}
 
-	end_literal, is_valid := binary_expression.Y.(*ast.BasicLit)
-	if !is_valid || end_literal.Kind != token.INT {
-		return nil, fmt.Errorf("")
-	}
+	var stop_value int
+	switch y := binary_expression.Y.(type) {
 
-	end_value, err := strconv.Atoi(end_literal.Value)
-	if err != nil {
+	case *ast.BasicLit:
+		val, err := strconv.Atoi(y.Value)
+		if err != nil {
+			return nil, fmt.Errorf("")
+		}
+		stop_value = val
+
+	case *ast.UnaryExpr:
+		if basic, exists := y.X.(*ast.BasicLit); exists && y.Op == token.SUB && basic.Kind == token.INT {
+			val, err := strconv.Atoi(basic.Value)
+			if err != nil {
+				return nil, fmt.Errorf("")
+			}
+			stop_value = -val
+		} else {
+			return nil, fmt.Errorf("")
+		}
+
+	default:
 		return nil, fmt.Errorf("")
 	}
 
@@ -676,7 +719,16 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 	}
 
 	inc_statement, is_valid := for_statement.Post.(*ast.IncDecStmt)
-	if !is_valid || inc_statement.Tok != token.INC {
+	if !is_valid {
+		return nil, nil
+	}
+
+	var step int
+	if inc_statement.Tok == token.INC && step_direction {
+		step = 1
+	} else if inc_statement.Tok == token.DEC && !step_direction {
+		step = -1
+	} else {
 		return nil, fmt.Errorf("")
 	}
 
@@ -686,11 +738,12 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 	}
 
 	return &LoopInfo{
-		VarName:    var_name,
-		StartValue: start_value,
-		EndValue:   end_value,
-		Increment:  1,
-		Body:       for_statement.Body,
+		VarName:   var_name,
+		Start:     start_value,
+		Stop:      stop_value,
+		Step:      step,
+		Direction: step_direction,
+		Body:      for_statement.Body,
 	}, nil
 }
 
@@ -705,11 +758,20 @@ func GenerateStatements(info *LoopInfo) []ast.Stmt {
 
 	var unrolled_statements []ast.Stmt
 
-	for i := info.StartValue; i < info.EndValue; i++ {
+	if info.Direction {
+		for i := info.Start; i < info.Stop; i++ {
+			for _, statement := range info.Body.List {
+				new_stmt := UnrollStatements(statement, info.VarName, i)
+				unrolled_statements = append(unrolled_statements, new_stmt)
+			}
+		}
 
-		for _, statement := range info.Body.List {
-			new_stmt := UnrollStatements(statement, info.VarName, i)
-			unrolled_statements = append(unrolled_statements, new_stmt)
+	} else {
+		for i := info.Start; i > info.Stop; i-- {
+			for _, statement := range info.Body.List {
+				new_stmt := UnrollStatements(statement, info.VarName, i)
+				unrolled_statements = append(unrolled_statements, new_stmt)
+			}
 		}
 	}
 
@@ -727,72 +789,72 @@ func UnrollStatements(statement ast.Stmt, var_name string, value int) ast.Stmt {
 
 	switch s := statement.(type) {
 
-		case *ast.ExprStmt:
-			return &ast.ExprStmt{
-				X: UnrollExpressions(s.X, var_name, value),
-			}
+	case *ast.ExprStmt:
+		return &ast.ExprStmt{
+			X: UnrollExpressions(s.X, var_name, value),
+		}
 
-		case *ast.AssignStmt:
-			new_lhs := make([]ast.Expr, len(s.Lhs))
-			for i, lhs := range s.Lhs {
-				new_lhs[i] = UnrollExpressions(lhs, var_name, value)
-			}
-			new_rhs := make([]ast.Expr, len(s.Rhs))
-			for i, rhs := range s.Rhs {
-				new_rhs[i] = UnrollExpressions(rhs, var_name, value)
-			}
-			return &ast.AssignStmt{
-				Lhs: new_lhs,
-				Tok: s.Tok,
-				Rhs: new_rhs,
-			}
+	case *ast.AssignStmt:
+		new_lhs := make([]ast.Expr, len(s.Lhs))
+		for i, lhs := range s.Lhs {
+			new_lhs[i] = UnrollExpressions(lhs, var_name, value)
+		}
+		new_rhs := make([]ast.Expr, len(s.Rhs))
+		for i, rhs := range s.Rhs {
+			new_rhs[i] = UnrollExpressions(rhs, var_name, value)
+		}
+		return &ast.AssignStmt{
+			Lhs: new_lhs,
+			Tok: s.Tok,
+			Rhs: new_rhs,
+		}
 
-		case *ast.IfStmt:
-			var new_init ast.Stmt
-			if s.Init != nil {
-				new_init = UnrollStatements(s.Init, var_name, value)
-			}
-			var new_else ast.Stmt
-			if s.Else != nil {
-				new_else = UnrollStatements(s.Else, var_name, value)
-			}
-			return &ast.IfStmt{
-				If:   s.If,
-				Init: new_init,
-				Cond: UnrollExpressions(s.Cond, var_name, value),
-				Body: UnrollBlocks(s.Body, var_name, value),
-				Else: new_else,
-			}
+	case *ast.IfStmt:
+		var new_init ast.Stmt
+		if s.Init != nil {
+			new_init = UnrollStatements(s.Init, var_name, value)
+		}
+		var new_else ast.Stmt
+		if s.Else != nil {
+			new_else = UnrollStatements(s.Else, var_name, value)
+		}
+		return &ast.IfStmt{
+			If:   s.If,
+			Init: new_init,
+			Cond: UnrollExpressions(s.Cond, var_name, value),
+			Body: UnrollBlocks(s.Body, var_name, value),
+			Else: new_else,
+		}
 
-		case *ast.ForStmt:
-			var new_init ast.Stmt
-			if s.Init != nil {
-				new_init = UnrollStatements(s.Init, var_name, value)
-			}
-			var new_cond ast.Expr
-			if s.Cond != nil {
-				new_cond = UnrollExpressions(s.Cond, var_name, value)
-			}
-			var new_post ast.Stmt
-			if s.Post != nil {
-				new_post = UnrollStatements(s.Post, var_name, value)
-			}
-			return &ast.ForStmt{
-				For:  s.For,
-				Init: new_init,
-				Cond: new_cond,
-				Post: new_post,
-				Body: UnrollBlocks(s.Body, var_name, value),
-			}
+	case *ast.ForStmt:
+		var new_init ast.Stmt
+		if s.Init != nil {
+			new_init = UnrollStatements(s.Init, var_name, value)
+		}
+		var new_cond ast.Expr
+		if s.Cond != nil {
+			new_cond = UnrollExpressions(s.Cond, var_name, value)
+		}
+		var new_post ast.Stmt
+		if s.Post != nil {
+			new_post = UnrollStatements(s.Post, var_name, value)
+		}
+		return &ast.ForStmt{
+			For:  s.For,
+			Init: new_init,
+			Cond: new_cond,
+			Post: new_post,
+			Body: UnrollBlocks(s.Body, var_name, value),
+		}
 
-		case *ast.IncDecStmt:
-			return &ast.IncDecStmt{
-				X:   UnrollExpressions(s.X, var_name, value),
-				Tok: s.Tok,
-			}
+	case *ast.IncDecStmt:
+		return &ast.IncDecStmt{
+			X:   UnrollExpressions(s.X, var_name, value),
+			Tok: s.Tok,
+		}
 
-		default:
-			return statement
+	default:
+		return statement
 	}
 }
 
@@ -831,51 +893,51 @@ func UnrollExpressions(expr ast.Expr, var_name string, value int) ast.Expr {
 
 	switch e := expr.(type) {
 
-		case *ast.Ident:
-			if e.Name == var_name {
-				return &ast.BasicLit{
-					Kind:  token.INT,
-					Value: strconv.Itoa(value),
-				}
-			}
-			return &ast.Ident{Name: e.Name}
-
-		case *ast.CallExpr:
-			new_args := make([]ast.Expr, len(e.Args))
-			for i, arg := range e.Args {
-				new_args[i] = UnrollExpressions(arg, var_name, value)
-			}
-			return &ast.CallExpr{
-				Fun:  UnrollExpressions(e.Fun, var_name, value),
-				Args: new_args,
-			}
-
-		case *ast.SelectorExpr:
-			return &ast.SelectorExpr{
-				X:   UnrollExpressions(e.X, var_name, value),
-				Sel: &ast.Ident{Name: e.Sel.Name},
-			}
-
-		case *ast.BinaryExpr:
-			return &ast.BinaryExpr{
-				X:  UnrollExpressions(e.X, var_name, value),
-				Op: e.Op,
-				Y:  UnrollExpressions(e.Y, var_name, value),
-			}
-
-		case *ast.UnaryExpr:
-			return &ast.UnaryExpr{
-				Op: e.Op,
-				X:  UnrollExpressions(e.X, var_name, value),
-			}
-
-		case *ast.BasicLit:
+	case *ast.Ident:
+		if e.Name == var_name {
 			return &ast.BasicLit{
-				Kind:  e.Kind,
-				Value: e.Value,
+				Kind:  token.INT,
+				Value: strconv.Itoa(value),
 			}
+		}
+		return &ast.Ident{Name: e.Name}
 
-		default:
-			return expr
+	case *ast.CallExpr:
+		new_args := make([]ast.Expr, len(e.Args))
+		for i, arg := range e.Args {
+			new_args[i] = UnrollExpressions(arg, var_name, value)
+		}
+		return &ast.CallExpr{
+			Fun:  UnrollExpressions(e.Fun, var_name, value),
+			Args: new_args,
+		}
+
+	case *ast.SelectorExpr:
+		return &ast.SelectorExpr{
+			X:   UnrollExpressions(e.X, var_name, value),
+			Sel: &ast.Ident{Name: e.Sel.Name},
+		}
+
+	case *ast.BinaryExpr:
+		return &ast.BinaryExpr{
+			X:  UnrollExpressions(e.X, var_name, value),
+			Op: e.Op,
+			Y:  UnrollExpressions(e.Y, var_name, value),
+		}
+
+	case *ast.UnaryExpr:
+		return &ast.UnaryExpr{
+			Op: e.Op,
+			X:  UnrollExpressions(e.X, var_name, value),
+		}
+
+	case *ast.BasicLit:
+		return &ast.BasicLit{
+			Kind:  e.Kind,
+			Value: e.Value,
+		}
+
+	default:
+		return expr
 	}
 }
