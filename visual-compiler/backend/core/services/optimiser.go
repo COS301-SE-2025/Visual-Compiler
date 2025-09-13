@@ -156,7 +156,10 @@ func PerformDeadCodeElimination(ast_file *ast.File, file_set *token.FileSet) err
 	type_check_conf := types.Config{Importer: nil}
 	_, _ = type_check_conf.Check("", file_set, []*ast.File{ast_file}, ast_info)
 
-	RemoveUnusedFunctions(ast_file, ast_info)
+	err := RemoveUnusedFunctions(ast_file, ast_info)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -212,7 +215,7 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 //
 // Determines if the statement contains any unused functions and removes them from the AST
 func RemoveUnusedFunctions(ast_file *ast.File, ast_info *types.Info) error {
-	//optimised_code := []ast.Stmt{}
+	optimised_functions := []ast.Decl{}
 	used_functions := make(map[string]bool)
 	used_functions["main"] = true
 	ast.Inspect(ast_file, func(node ast.Node) bool {
@@ -241,13 +244,17 @@ func RemoveUnusedFunctions(ast_file *ast.File, ast_info *types.Info) error {
 			_, is_called := used_functions[function.Name.Name]
 			if is_called {
 				err := EliminateFunctionDeadCode(function, ast_info)
-				//optimised_code = append(optimised_code, function.Body)
+				optimised_functions = append(optimised_functions, function)
 				if err != nil {
 					return err
 				}
 			}
+		} else {
+			optimised_functions = append(optimised_functions, declaration)
 		}
 	}
+
+	ast_file.Decls = optimised_functions
 
 	return nil
 }
@@ -276,7 +283,7 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 
 		switch statement := function_statements.(type) {
 		case *ast.AssignStmt: // search for unused assigned variables
-			RemoveUnusedAssignedVariables(statement, unused_variables, ast_info, function, &optimised_statements)
+			RemoveUnusedAssignedVariables(statement, &unused_variables, ast_info, function, &optimised_statements)
 		case *ast.DeclStmt: //search for unused declared variables
 			RemoveUnusedDeclaredVariables(statement, unused_variables, ast_info, function_statements, &optimised_statements)
 		case *ast.IfStmt:
@@ -304,124 +311,148 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 // Return:
 //
 // Determines if the statement contains any unused assigned variables and removes them from the AST
-func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, unused_variables map[string]string, ast_info *types.Info, function *ast.FuncDecl, optimised_statements *[]ast.Stmt) {
+func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, unused_variables *map[string]string, ast_info *types.Info, function *ast.FuncDecl, optimised_statements *[]ast.Stmt) {
 	if statement.Tok == token.DEFINE {
 		new_lhs := []ast.Expr{}
 		new_rhs := []ast.Expr{}
 		for num, lhs := range statement.Lhs {
 			ident, valid_ident := lhs.(*ast.Ident)
 			if valid_ident {
-				//variable := ast_info.Defs[ident]
+				variable := ast_info.Defs[ident]
+				used := false
+				for _, used_variable := range ast_info.Uses {
+					if used_variable == variable {
+						used = true
+						delete(*unused_variables, ident.Name)
+						break
+					}
+				}
 				var value_str string
 				switch v := statement.Rhs[num].(type) {
 				case *ast.BasicLit:
 					value_str = v.Value
 				case *ast.Ident:
 					value_str = v.Name
-				default:
 				}
-				unused_variables[ident.Name] = value_str
-				used := false
-				/*for _, used_variable := range ast_info.Uses {
-					if used_variable == variable {
-						used = true
-						delete(unused_variables, ident.Name)
-						break
-					}
-				}*/
+				(*unused_variables)[ident.Name] = value_str
+
+				//used = false
 				for _, function_statement_2 := range function.Body.List {
 					if_statement, valid_if := function_statement_2.(*ast.IfStmt)
 					if valid_if {
-						{
-							ast.Inspect(function_statement_2, func(node ast.Node) bool {
-								switch expression := node.(type) {
-								case *ast.Ident:
 
-									cond_indent, valid_cond := if_statement.Cond.(*ast.Ident)
-									if valid_cond {
-										ident, valid_var := node.(*ast.Ident)
+						ast.Inspect(function_statement_2, func(node ast.Node) bool {
+							switch expression := node.(type) {
+							case *ast.Ident:
+								cond_indent, valid_cond := if_statement.Cond.(*ast.Ident)
+								if valid_cond {
+									ident, valid_var := node.(*ast.Ident)
 
-										if valid_var {
-											unused_variable, is_unused := unused_variables[cond_indent.Name]
-											if is_unused {
-												switch if_statement.Cond.(type) {
-												case *ast.Ident:
-													if unused_variable == "true" {
-														used = true
-														delete(unused_variables, ident.Name)
-													}
-
+									if valid_var {
+										unused_variable, is_unused := (*unused_variables)[cond_indent.Name]
+										if is_unused {
+											switch if_statement.Cond.(type) {
+											case *ast.Ident:
+												if unused_variable == "true" {
+													used = true
+													delete((*unused_variables), ident.Name)
+												} else {
+													used = false
+													(*unused_variables)[ident.Name] = value_str
 												}
+
 											}
 										}
 									}
+								}
 
-								case *ast.BinaryExpr:
-									lhs, valid_cond := expression.X.(*ast.Ident)
-									if valid_cond {
-										rhs, valid_var := expression.Y.(*ast.BasicLit)
-										if valid_var {
-											unused_variable, is_unused := unused_variables[lhs.Name]
-											if is_unused {
-												operator := expression.Op.String()
-												switch operator {
-												case "==":
-													if rhs.Value == unused_variable {
-														used = true
-														delete(unused_variables, lhs.Name)
-													}
-												case "!=":
-													if rhs.Value != unused_variable {
-														used = true
-														delete(unused_variables, lhs.Name)
-													}
-
-												case ">=":
-													if rhs.Value >= unused_variable {
-														used = true
-														delete(unused_variables, lhs.Name)
-													}
-												case "<=":
-													if rhs.Value <= unused_variable {
-														used = true
-														delete(unused_variables, lhs.Name)
-													}
-												case ">":
-													if rhs.Value > unused_variable {
-														used = true
-														delete(unused_variables, lhs.Name)
-													}
-												case "<":
-													if rhs.Value < unused_variable {
-														used = true
-														delete(unused_variables, lhs.Name)
-													}
-												}
-											}
-										}
-									}
-
-								case *ast.UnaryExpr:
-									lhs, valid_cond := expression.X.(*ast.Ident)
-									if valid_cond {
-										unused_variable, is_unused := unused_variables[lhs.Name]
+							case *ast.BinaryExpr:
+								lhs, valid_cond := expression.X.(*ast.Ident)
+								if valid_cond {
+									rhs, valid_var := expression.Y.(*ast.BasicLit)
+									if valid_var {
+										unused_variable, is_unused := (*unused_variables)[lhs.Name]
 										if is_unused {
 											operator := expression.Op.String()
 											switch operator {
-											case "!":
-												if unused_variable == "false" {
+											case "==":
+												if rhs.Value == unused_variable {
 													used = true
-													delete(unused_variables, lhs.Name)
+													delete((*unused_variables), lhs.Name)
+												} else {
+													used = false
+													(*unused_variables)[ident.Name] = value_str
+												}
+											case "!=":
+												if rhs.Value != unused_variable {
+													used = true
+													delete((*unused_variables), lhs.Name)
+												} else {
+													used = false
+													(*unused_variables)[ident.Name] = value_str
+												}
+
+											case ">=":
+												if rhs.Value >= unused_variable {
+													used = true
+													delete(*unused_variables, lhs.Name)
+												} else {
+													used = false
+													(*unused_variables)[ident.Name] = value_str
+												}
+											case "<=":
+												if rhs.Value <= unused_variable {
+													used = true
+													delete(*unused_variables, lhs.Name)
+												} else {
+													used = false
+													(*unused_variables)[ident.Name] = value_str
+												}
+											case ">":
+												if rhs.Value > unused_variable {
+													used = true
+													delete(*unused_variables, lhs.Name)
+												} else {
+													used = false
+													(*unused_variables)[ident.Name] = value_str
+												}
+											case "<":
+												if rhs.Value < unused_variable {
+													used = true
+													delete(*unused_variables, lhs.Name)
+												} else {
+													used = false
+													(*unused_variables)[ident.Name] = value_str
 												}
 											}
 										}
 									}
-
-								default:
 								}
-								return true
-							})
-						}
+
+							case *ast.UnaryExpr:
+								lhs, valid_cond := expression.X.(*ast.Ident)
+								if valid_cond {
+									unused_variable, is_unused := (*unused_variables)[lhs.Name]
+									if is_unused {
+										operator := expression.Op.String()
+										switch operator {
+										case "!":
+											if unused_variable == "false" {
+												used = true
+												delete(*unused_variables, lhs.Name)
+											} else {
+												used = false
+												(*unused_variables)[ident.Name] = value_str
+											}
+										}
+									}
+								}
+
+							default:
+							}
+							return true
+						})
+
 					}
 				}
 				if used {
@@ -429,18 +460,21 @@ func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, unused_variables m
 					if num < len(statement.Rhs) {
 						new_rhs = append(new_rhs, statement.Rhs[num])
 					}
+
 				}
 			} else {
 				new_lhs = append(new_lhs, lhs)
 				if num < len(statement.Rhs) {
 					new_rhs = append(new_rhs, statement.Rhs[num])
 				}
+
 			}
 		}
 		if len(new_lhs) > 0 {
 			statement.Lhs = new_lhs
 			statement.Rhs = new_rhs
 			*optimised_statements = append(*optimised_statements, statement)
+
 		}
 	} else {
 		*optimised_statements = append(*optimised_statements, statement)
@@ -524,7 +558,7 @@ func RemoveUnusedIfStatement(unused_variables map[string]string, function_statem
 
 						switch statement := body_statement.(type) {
 						case *ast.AssignStmt: // search for unused assigned variables
-							RemoveUnusedAssignedVariables(statement, unused_variables, ast_info, function, &optimised_if_body)
+							RemoveUnusedAssignedVariables(statement, &unused_variables, ast_info, function, &optimised_if_body)
 						case *ast.DeclStmt: //search for unused declared variables
 							RemoveUnusedDeclaredVariables(statement, unused_variables, ast_info, function_statements, &optimised_if_body)
 						case *ast.IfStmt:
@@ -555,7 +589,7 @@ func RemoveUnusedIfStatement(unused_variables map[string]string, function_statem
 
 						switch statement := body_statement.(type) {
 						case *ast.AssignStmt: // search for unused assigned variables
-							RemoveUnusedAssignedVariables(statement, unused_variables, ast_info, function, &optimised_if_body)
+							RemoveUnusedAssignedVariables(statement, &unused_variables, ast_info, function, &optimised_if_body)
 						case *ast.DeclStmt: //search for unused declared variables
 							RemoveUnusedDeclaredVariables(statement, unused_variables, ast_info, function_statements, &optimised_if_body)
 						case *ast.IfStmt:
@@ -586,7 +620,7 @@ func RemoveUnusedIfStatement(unused_variables map[string]string, function_statem
 
 						switch statement := body_statement.(type) {
 						case *ast.AssignStmt: // search for unused assigned variables
-							RemoveUnusedAssignedVariables(statement, unused_variables, ast_info, function, &optimised_if_body)
+							RemoveUnusedAssignedVariables(statement, &unused_variables, ast_info, function, &optimised_if_body)
 						case *ast.DeclStmt: //search for unused declared variables
 							RemoveUnusedDeclaredVariables(statement, unused_variables, ast_info, function_statements, &optimised_if_body)
 						case *ast.IfStmt:
@@ -668,7 +702,7 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 
 	var start_value int
 	switch rhs := assign_statement.Rhs[0].(type) {
-		
+
 	case *ast.BasicLit:
 		if rhs.Kind != token.INT {
 			return nil, fmt.Errorf("")
