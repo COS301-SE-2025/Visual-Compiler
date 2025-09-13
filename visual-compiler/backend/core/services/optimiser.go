@@ -208,6 +208,32 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 
 /* PerformConstantFolding Helper Functions */
 
+// Struct for tracking constant values by variable name
+type Folder struct {
+	constants map[string]float64
+}
+
+// Name: Visit
+//
+// Parameters: ast.Node
+//
+// Return: ast.Visitor
+//
+// Implements the ast visitor interface for the constant folder
+func (constant_folder *Folder) Visit(node ast.Node) ast.Visitor {
+
+	switch n := node.(type) {
+
+	case *ast.AssignStmt:
+		constant_folder.HandleAssignment(n)
+
+	case *ast.CallExpr:
+		constant_folder.HandleFunctionCall(n)
+	}
+
+	return constant_folder
+}
+
 // Name: HandleAssignment
 //
 // Parameters: *ast.AssignStmt
@@ -261,6 +287,72 @@ func (constant_folder *Folder) HandleFunctionCall(call *ast.CallExpr) {
 			call.Args[i] = StructureConstant(value)
 		}
 	}
+}
+
+// Name: EvaluateExpression
+//
+// Parameters: ast.Expr
+//
+// Return: int, bool
+//
+// Evaluates an expression to a constant value
+func (constant_folder *Folder) EvaluateExpression(expr ast.Expr) (float64, bool) {
+
+	switch e := expr.(type) {
+
+	case *ast.BasicLit:
+
+		switch e.Kind {
+
+		case token.INT:
+			if val, err := strconv.Atoi(e.Value); err == nil {
+				return float64(val), true
+			}
+		case token.FLOAT:
+			if val, err := strconv.ParseFloat(e.Value, 64); err == nil {
+				return val, true
+			}
+		}
+
+	case *ast.Ident:
+		if val, yes := constant_folder.constants[e.Name]; yes {
+			return val, true
+		}
+
+	case *ast.BinaryExpr:
+		lhs, lok := constant_folder.EvaluateExpression(e.X)
+		rhs, rok := constant_folder.EvaluateExpression(e.Y)
+
+		if lok && rok {
+
+			switch e.Op {
+
+			case token.ADD:
+				return lhs + rhs, true
+
+			case token.SUB:
+				return lhs - rhs, true
+
+			case token.MUL:
+				return lhs * rhs, true
+
+			case token.QUO:
+				if rhs != 0 {
+					return lhs / rhs, true
+				}
+
+			case token.REM:
+				if rhs != 0 {
+					return math.Mod(lhs, rhs), true
+				}
+			}
+		}
+
+	case *ast.ParenExpr:
+		return constant_folder.EvaluateExpression(e.X)
+	}
+
+	return 0, false
 }
 
 // Name: StructureConstant
