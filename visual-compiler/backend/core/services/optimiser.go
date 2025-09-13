@@ -8,6 +8,7 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -30,6 +31,13 @@ func OptimiseGoCode(code string, constant_folding bool, dead_code bool, loop_unr
 		return "", err
 	}
 
+	if loop_unrolling {
+		err = PerformLoopUnrolling(ast_file, file_set)
+		if err != nil {
+			return "", err
+		}
+	}
+
 	if constant_folding {
 		err = PerformConstantFolding(ast_file, file_set)
 		if err != nil {
@@ -39,13 +47,6 @@ func OptimiseGoCode(code string, constant_folding bool, dead_code bool, loop_unr
 
 	if dead_code {
 		err = PerformDeadCodeElimination(ast_file, file_set)
-		if err != nil {
-			return "", err
-		}
-	}
-
-	if loop_unrolling {
-		err = PerformLoopUnrolling(ast_file, file_set)
 		if err != nil {
 			return "", err
 		}
@@ -137,6 +138,12 @@ func RemoveExtraLines(code string) string {
 //
 // Performs constant folding on the source code
 func PerformConstantFolding(ast_file *ast.File, file_set *token.FileSet) error {
+	
+	constant_folder := &Folder{
+		constants: make(map[string]float64),
+	}
+
+	ast.Walk(constant_folder, ast_file)
 	return nil
 }
 
@@ -172,19 +179,31 @@ func PerformDeadCodeElimination(ast_file *ast.File, file_set *token.FileSet) err
 //
 // Performs loop unrolling on the source code
 func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
-	var failed error
 
-	ast.Inspect(ast_file, func(n ast.Node) bool {
-		if block, is_block := n.(*ast.BlockStmt); is_block {
+	var failed error
+	changed := true
+
+	for changed {
+		changed = false
+
+		ast.Inspect(ast_file, func(n ast.Node) bool {
+			block, is_block := n.(*ast.BlockStmt)
+			if !is_block {
+				return true
+			}
+
 			new_stmts := make([]ast.Stmt, 0, len(block.List))
 
 			for _, statement := range block.List {
 				if for_statement, is_for := statement.(*ast.ForStmt); is_for {
-
-					if unrolled, err := UnrollForLoop(for_statement); err != nil {
+					unrolled, err := UnrollForLoop(for_statement)
+					if err != nil {
 						failed = err
 						return false
-					} else if unrolled != nil {
+					}
+
+					if unrolled != nil {
+						changed = true
 						new_stmts = append(new_stmts, unrolled...)
 					} else {
 						new_stmts = append(new_stmts, statement)
@@ -196,14 +215,186 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 			}
 
 			block.List = new_stmts
-		}
-		return true
-	})
+			return true
+		})
+	}
 
 	return failed
 }
 
 /* PerformConstantFolding Helper Functions */
+
+// Struct for tracking constant values by variable name
+type Folder struct {
+	constants map[string]float64
+}
+
+// Name: Visit
+//
+// Parameters: ast.Node
+//
+// Return: ast.Visitor
+//
+// Implements the ast visitor interface for the constant folder
+func (constant_folder *Folder) Visit(node ast.Node) ast.Visitor {
+
+	switch n := node.(type) {
+
+	case *ast.AssignStmt:
+		constant_folder.HandleAssignment(n)
+
+	case *ast.CallExpr:
+		constant_folder.HandleFunctionCall(n)
+	}
+
+	return constant_folder
+}
+
+// Name: HandleAssignment
+//
+// Parameters: *ast.AssignStmt
+//
+// Return: none
+//
+// Folds constatnts in assignment statements
+func (constant_folder *Folder) HandleAssignment(assign *ast.AssignStmt) {
+
+	if assign.Tok != token.ASSIGN && assign.Tok != token.DEFINE {
+		return
+	}
+
+	for i, lhs := range assign.Lhs {
+
+		if i >= len(assign.Rhs) {
+			continue
+		}
+
+		rhs := assign.Rhs[i]
+
+		var var_name string
+		if identifier, exists := lhs.(*ast.Ident); exists {
+			var_name = identifier.Name
+		} else {
+			continue
+		}
+
+		if value, valid := constant_folder.EvaluateExpression(rhs); valid {
+
+			constant_folder.constants[var_name] = value
+
+			assign.Rhs[i] = StructureConstant(value)
+		}
+	}
+}
+
+// Name: HandleFunctionCall
+//
+// Parameters: *ast.CallExpr
+//
+// Return: none
+//
+// Folds constants in arguments of function calls
+func (constant_folder *Folder) HandleFunctionCall(call *ast.CallExpr) {
+
+	for i, arg := range call.Args {
+
+		if value, valid := constant_folder.EvaluateExpression(arg); valid {
+
+			call.Args[i] = StructureConstant(value)
+		}
+	}
+}
+
+// Name: EvaluateExpression
+//
+// Parameters: ast.Expr
+//
+// Return: int, bool
+//
+// Evaluates an expression to a constant value
+func (constant_folder *Folder) EvaluateExpression(expr ast.Expr) (float64, bool) {
+
+	switch e := expr.(type) {
+
+	case *ast.BasicLit:
+
+		switch e.Kind {
+
+		case token.INT:
+			if val, err := strconv.Atoi(e.Value); err == nil {
+				return float64(val), true
+			}
+		case token.FLOAT:
+			if val, err := strconv.ParseFloat(e.Value, 64); err == nil {
+				return val, true
+			}
+		}
+
+	case *ast.Ident:
+		if val, yes := constant_folder.constants[e.Name]; yes {
+			return val, true
+		}
+
+	case *ast.BinaryExpr:
+		lhs, lok := constant_folder.EvaluateExpression(e.X)
+		rhs, rok := constant_folder.EvaluateExpression(e.Y)
+
+		if lok && rok {
+
+			switch e.Op {
+
+			case token.ADD:
+				return lhs + rhs, true
+
+			case token.SUB:
+				return lhs - rhs, true
+
+			case token.MUL:
+				return lhs * rhs, true
+
+			case token.QUO:
+				if rhs != 0 {
+					return lhs / rhs, true
+				}
+
+			case token.REM:
+				if rhs != 0 {
+					return math.Mod(lhs, rhs), true
+				}
+			}
+		}
+
+	case *ast.ParenExpr:
+		return constant_folder.EvaluateExpression(e.X)
+	}
+
+	return 0, false
+}
+
+// Name: StructureConstant
+//
+// Parameters: float64
+//
+// Return: *ast.BasicLit
+//
+// Converts and formats int and float constants to string
+func StructureConstant(value float64) *ast.BasicLit {
+
+	if value == float64(int(value)) {
+		return &ast.BasicLit{
+			Kind:  token.INT,
+			Value: strconv.Itoa(int(value)),
+		}
+	}
+
+	str_dec := strconv.FormatFloat(value, 'f', 5, 64)
+	str_dec = strings.TrimRight(strings.TrimRight(str_dec, "0"), ".")
+
+	return &ast.BasicLit{
+		Kind:  token.FLOAT,
+		Value: str_dec,
+	}
+}
 
 /* PerformDeadCodeElimination Helper Functions */
 
