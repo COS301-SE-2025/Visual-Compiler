@@ -169,15 +169,19 @@ func PerformDeadCodeElimination(ast_file *ast.File, file_set *token.FileSet) err
 //
 // Performs loop unrolling on the source code
 func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
+	var failed error
 
 	ast.Inspect(ast_file, func(n ast.Node) bool {
 		if block, is_block := n.(*ast.BlockStmt); is_block {
 			new_stmts := make([]ast.Stmt, 0, len(block.List))
 
 			for _, statement := range block.List {
-
 				if for_statement, is_for := statement.(*ast.ForStmt); is_for {
-					if unrolled, _ := UnrollForLoop(for_statement); unrolled != nil {
+
+					if unrolled, err := UnrollForLoop(for_statement); err != nil {
+						failed = err
+						return false
+					} else if unrolled != nil {
 						new_stmts = append(new_stmts, unrolled...)
 					} else {
 						new_stmts = append(new_stmts, statement)
@@ -193,7 +197,7 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 		return true
 	})
 
-	return nil
+	return failed
 }
 
 /* PerformConstantFolding Helper Functions */
@@ -611,11 +615,12 @@ func RemoveUnusedIfStatement(unused_variables map[string]string, function_statem
 
 // Struct for the parameters of a for loop
 type LoopInfo struct {
-	VarName    string
-	StartValue int
-	EndValue   int
-	Increment  int
-	Body       *ast.BlockStmt
+	VarName   string
+	Start     int
+	Stop      int
+	Step      int
+	Direction bool
+	Body      *ast.BlockStmt
 }
 
 // Name: UnrollForLoop
@@ -661,13 +666,31 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 	}
 	var_name := identifier.Name
 
-	start_literal, is_valid := assign_statement.Rhs[0].(*ast.BasicLit)
-	if !is_valid || start_literal.Kind != token.INT {
-		return nil, fmt.Errorf("")
-	}
+	var start_value int
+	switch rhs := assign_statement.Rhs[0].(type) {
+		
+	case *ast.BasicLit:
+		if rhs.Kind != token.INT {
+			return nil, fmt.Errorf("")
+		}
+		val, err := strconv.Atoi(rhs.Value)
+		if err != nil {
+			return nil, fmt.Errorf("")
+		}
+		start_value = val
 
-	start_value, err := strconv.Atoi(start_literal.Value)
-	if err != nil {
+	case *ast.UnaryExpr:
+		if basic, exists := rhs.X.(*ast.BasicLit); exists && rhs.Op == token.SUB && basic.Kind == token.INT {
+			val, err := strconv.Atoi(basic.Value)
+			if err != nil {
+				return nil, fmt.Errorf("")
+			}
+			start_value = -val
+		} else {
+			return nil, fmt.Errorf("")
+		}
+
+	default:
 		return nil, fmt.Errorf("")
 	}
 
@@ -685,17 +708,37 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 		return nil, fmt.Errorf("")
 	}
 
-	if binary_expression.Op != token.LSS {
+	var step_direction bool
+	if binary_expression.Op == token.LSS {
+		step_direction = true
+	} else if binary_expression.Op == token.GTR {
+		step_direction = false
+	} else {
 		return nil, fmt.Errorf("")
 	}
 
-	end_literal, is_valid := binary_expression.Y.(*ast.BasicLit)
-	if !is_valid || end_literal.Kind != token.INT {
-		return nil, fmt.Errorf("")
-	}
+	var stop_value int
+	switch y := binary_expression.Y.(type) {
 
-	end_value, err := strconv.Atoi(end_literal.Value)
-	if err != nil {
+	case *ast.BasicLit:
+		val, err := strconv.Atoi(y.Value)
+		if err != nil {
+			return nil, fmt.Errorf("")
+		}
+		stop_value = val
+
+	case *ast.UnaryExpr:
+		if basic, exists := y.X.(*ast.BasicLit); exists && y.Op == token.SUB && basic.Kind == token.INT {
+			val, err := strconv.Atoi(basic.Value)
+			if err != nil {
+				return nil, fmt.Errorf("")
+			}
+			stop_value = -val
+		} else {
+			return nil, fmt.Errorf("")
+		}
+
+	default:
 		return nil, fmt.Errorf("")
 	}
 
@@ -704,7 +747,16 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 	}
 
 	inc_statement, is_valid := for_statement.Post.(*ast.IncDecStmt)
-	if !is_valid || inc_statement.Tok != token.INC {
+	if !is_valid {
+		return nil, nil
+	}
+
+	var step int
+	if inc_statement.Tok == token.INC && step_direction {
+		step = 1
+	} else if inc_statement.Tok == token.DEC && !step_direction {
+		step = -1
+	} else {
 		return nil, fmt.Errorf("")
 	}
 
@@ -714,11 +766,12 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 	}
 
 	return &LoopInfo{
-		VarName:    var_name,
-		StartValue: start_value,
-		EndValue:   end_value,
-		Increment:  1,
-		Body:       for_statement.Body,
+		VarName:   var_name,
+		Start:     start_value,
+		Stop:      stop_value,
+		Step:      step,
+		Direction: step_direction,
+		Body:      for_statement.Body,
 	}, nil
 }
 
@@ -733,11 +786,20 @@ func GenerateStatements(info *LoopInfo) []ast.Stmt {
 
 	var unrolled_statements []ast.Stmt
 
-	for i := info.StartValue; i < info.EndValue; i++ {
+	if info.Direction {
+		for i := info.Start; i < info.Stop; i++ {
+			for _, statement := range info.Body.List {
+				new_stmt := UnrollStatements(statement, info.VarName, i)
+				unrolled_statements = append(unrolled_statements, new_stmt)
+			}
+		}
 
-		for _, statement := range info.Body.List {
-			new_stmt := UnrollStatements(statement, info.VarName, i)
-			unrolled_statements = append(unrolled_statements, new_stmt)
+	} else {
+		for i := info.Start; i > info.Stop; i-- {
+			for _, statement := range info.Body.List {
+				new_stmt := UnrollStatements(statement, info.VarName, i)
+				unrolled_statements = append(unrolled_statements, new_stmt)
+			}
 		}
 	}
 
