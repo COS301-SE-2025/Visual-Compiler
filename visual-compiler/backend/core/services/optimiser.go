@@ -603,3 +603,167 @@ func GenerateStatements(info *LoopInfo) []ast.Stmt {
 
 	return unrolled_statements
 }
+
+// Name: UnrollStatements
+//
+// Parameters: ast.Stmt, string, int
+//
+// Return: ast.Stmt
+//
+// Clones the statement and substitutes the loop variable
+func UnrollStatements(statement ast.Stmt, var_name string, value int) ast.Stmt {
+
+	switch s := statement.(type) {
+
+		case *ast.ExprStmt:
+			return &ast.ExprStmt{
+				X: UnrollExpressions(s.X, var_name, value),
+			}
+
+		case *ast.AssignStmt:
+			new_lhs := make([]ast.Expr, len(s.Lhs))
+			for i, lhs := range s.Lhs {
+				new_lhs[i] = UnrollExpressions(lhs, var_name, value)
+			}
+			new_rhs := make([]ast.Expr, len(s.Rhs))
+			for i, rhs := range s.Rhs {
+				new_rhs[i] = UnrollExpressions(rhs, var_name, value)
+			}
+			return &ast.AssignStmt{
+				Lhs: new_lhs,
+				Tok: s.Tok,
+				Rhs: new_rhs,
+			}
+
+		case *ast.IfStmt:
+			var new_init ast.Stmt
+			if s.Init != nil {
+				new_init = UnrollStatements(s.Init, var_name, value)
+			}
+			var new_else ast.Stmt
+			if s.Else != nil {
+				new_else = UnrollStatements(s.Else, var_name, value)
+			}
+			return &ast.IfStmt{
+				If:   s.If,
+				Init: new_init,
+				Cond: UnrollExpressions(s.Cond, var_name, value),
+				Body: UnrollBlocks(s.Body, var_name, value),
+				Else: new_else,
+			}
+
+		case *ast.ForStmt:
+			var new_init ast.Stmt
+			if s.Init != nil {
+				new_init = UnrollStatements(s.Init, var_name, value)
+			}
+			var new_cond ast.Expr
+			if s.Cond != nil {
+				new_cond = UnrollExpressions(s.Cond, var_name, value)
+			}
+			var new_post ast.Stmt
+			if s.Post != nil {
+				new_post = UnrollStatements(s.Post, var_name, value)
+			}
+			return &ast.ForStmt{
+				For:  s.For,
+				Init: new_init,
+				Cond: new_cond,
+				Post: new_post,
+				Body: UnrollBlocks(s.Body, var_name, value),
+			}
+
+		case *ast.IncDecStmt:
+			return &ast.IncDecStmt{
+				X:   UnrollExpressions(s.X, var_name, value),
+				Tok: s.Tok,
+			}
+
+		default:
+			return statement
+	}
+}
+
+// Name: UnrollBlocks
+//
+// Parameters: *ast.BlockStmt, string, int
+//
+// Return: *ast.BlockStmt
+//
+// Clones the statements in a block and substitutes the loop variable
+func UnrollBlocks(block *ast.BlockStmt, var_name string, value int) *ast.BlockStmt {
+
+	if block == nil {
+		return nil
+	}
+
+	new_statements := make([]ast.Stmt, len(block.List))
+
+	for i, statement := range block.List {
+		new_statements[i] = UnrollStatements(statement, var_name, value)
+	}
+
+	return &ast.BlockStmt{
+		List: new_statements,
+	}
+}
+
+// Name: UnrollExpressions
+//
+// Parameters: ast.Expr, string, int
+//
+// Return: ast.Expr
+//
+// Clones the expression and substitutes the loop variable
+func UnrollExpressions(expr ast.Expr, var_name string, value int) ast.Expr {
+
+	switch e := expr.(type) {
+
+		case *ast.Ident:
+			if e.Name == var_name {
+				return &ast.BasicLit{
+					Kind:  token.INT,
+					Value: strconv.Itoa(value),
+				}
+			}
+			return &ast.Ident{Name: e.Name}
+
+		case *ast.CallExpr:
+			new_args := make([]ast.Expr, len(e.Args))
+			for i, arg := range e.Args {
+				new_args[i] = UnrollExpressions(arg, var_name, value)
+			}
+			return &ast.CallExpr{
+				Fun:  UnrollExpressions(e.Fun, var_name, value),
+				Args: new_args,
+			}
+
+		case *ast.SelectorExpr:
+			return &ast.SelectorExpr{
+				X:   UnrollExpressions(e.X, var_name, value),
+				Sel: &ast.Ident{Name: e.Sel.Name},
+			}
+
+		case *ast.BinaryExpr:
+			return &ast.BinaryExpr{
+				X:  UnrollExpressions(e.X, var_name, value),
+				Op: e.Op,
+				Y:  UnrollExpressions(e.Y, var_name, value),
+			}
+
+		case *ast.UnaryExpr:
+			return &ast.UnaryExpr{
+				Op: e.Op,
+				X:  UnrollExpressions(e.X, var_name, value),
+			}
+
+		case *ast.BasicLit:
+			return &ast.BasicLit{
+				Kind:  e.Kind,
+				Value: e.Value,
+			}
+
+		default:
+			return expr
+	}
+}
