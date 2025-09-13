@@ -208,6 +208,68 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 
 /* PerformConstantFolding Helper Functions */
 
+// Name: HandleAssignment
+//
+// Parameters: *ast.AssignStmt
+//
+// Return: none
+//
+// Folds constatnts in assignment statements
+func (constant_folder *Folder) HandleAssignment(assign *ast.AssignStmt) {
+
+	if assign.Tok != token.ASSIGN && assign.Tok != token.DEFINE {
+		return
+	}
+
+	for i, lhs := range assign.Lhs {
+
+		if i >= len(assign.Rhs) {
+			continue
+		}
+
+		rhs := assign.Rhs[i]
+
+		var var_name string
+		if identifier, exists := lhs.(*ast.Ident); exists {
+			var_name = identifier.Name
+		} else {
+			continue
+		}
+
+		if value, valid := constant_folder.EvaluateExpression(rhs); valid {
+
+			constant_folder.constants[var_name] = value
+
+			assign.Rhs[i] = StructureConstant(value)
+		}
+	}
+}
+
+// Name: HandleFunctionCall
+//
+// Parameters: *ast.CallExpr
+//
+// Return: none
+//
+// Folds constants in arguments of function calls
+func (constant_folder *Folder) HandleFunctionCall(call *ast.CallExpr) {
+
+	for i, arg := range call.Args {
+
+		if value, valid := constant_folder.EvaluateExpression(arg); valid {
+
+			call.Args[i] = StructureConstant(value)
+		}
+	}
+}
+
+// Name: StructureConstant
+//
+// Parameters: float64
+//
+// Return: *ast.BasicLit
+//
+// Converts and formats int and float constants to string
 func StructureConstant(value float64) *ast.BasicLit {
 
 	if value == float64(int(value)) {
