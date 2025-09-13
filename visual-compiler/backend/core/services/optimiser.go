@@ -19,7 +19,7 @@ import (
 // Return: string, error
 //
 // Receives Go code and performs optimisation based on the selected techniques
-func OptimiseGoCode(code string, constant_folding bool, dead_code bool, loop_unroling bool) (string, error) {
+func OptimiseGoCode(code string, constant_folding bool, dead_code bool, loop_unrolling bool) (string, error) {
 
 	if code == "" {
 		return "", fmt.Errorf("source code is empty")
@@ -44,7 +44,7 @@ func OptimiseGoCode(code string, constant_folding bool, dead_code bool, loop_unr
 		}
 	}
 
-	if loop_unroling {
+	if loop_unrolling {
 		err = PerformLoopUnrolling(ast_file, file_set)
 		if err != nil {
 			return "", err
