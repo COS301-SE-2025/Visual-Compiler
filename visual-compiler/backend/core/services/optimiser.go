@@ -176,6 +176,30 @@ func PerformDeadCodeElimination(ast_file *ast.File, file_set *token.FileSet) err
 // Performs loop unrolling on the source code
 func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 
+	ast.Inspect(ast_file, func(n ast.Node) bool {
+		if block, is_block := n.(*ast.BlockStmt); is_block {
+			new_stmts := make([]ast.Stmt, 0, len(block.List))
+
+			for _, statement := range block.List {
+				
+				if for_statement, is_for := statement.(*ast.ForStmt); is_for {
+					if unrolled, _ := UnrollForLoop(for_statement); unrolled != nil {
+						new_stmts = append(new_stmts, unrolled...)
+					} else {
+						new_stmts = append(new_stmts, statement)
+					}
+
+				} else {
+					new_stmts = append(new_stmts, statement)
+				}
+			}
+
+			block.List = new_stmts
+		}
+		return true
+	})
+
+	return nil
 }
 
 /* PerformConstantFolding Helper Functions */
