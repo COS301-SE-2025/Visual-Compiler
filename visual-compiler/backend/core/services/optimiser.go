@@ -156,15 +156,7 @@ func PerformDeadCodeElimination(ast_file *ast.File, file_set *token.FileSet) err
 	type_check_conf := types.Config{Importer: nil}
 	_, _ = type_check_conf.Check("", file_set, []*ast.File{ast_file}, ast_info)
 
-	for _, declaration := range ast_file.Decls {
-		function, valid_function := declaration.(*ast.FuncDecl)
-		if valid_function {
-			err := EliminateFunctionDeadCode(function, ast_info)
-			if err != nil {
-				return err
-			}
-		}
-	}
+	RemoveUnusedFunctions(ast_file, ast_info)
 
 	return nil
 }
@@ -208,6 +200,54 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 
 /* PerformDeadCodeElimination Helper Functions */
 
+// Name:RemoveUnusedFunction
+//
+// Parameters:  *ast.File, *types.Info
+//
+// Return: error
+//
+// Determines if the statement contains any unused functions and removes them from the AST
+func RemoveUnusedFunctions(ast_file *ast.File, ast_info *types.Info) error {
+	//optimised_code := []ast.Stmt{}
+	used_functions := make(map[string]bool)
+	used_functions["main"] = true
+	ast.Inspect(ast_file, func(node ast.Node) bool {
+		function_call, valid_call := node.(*ast.CallExpr)
+		if !valid_call {
+			return true
+		}
+
+		ident, valid_ident := function_call.Fun.(*ast.Ident)
+		if valid_ident {
+			used_function := ast_info.Uses[ident]
+			if used_function != nil {
+				function, valid_function := used_function.(*types.Func)
+				if valid_function {
+					used_functions[function.Name()] = true
+				}
+			}
+		}
+
+		return true
+	})
+
+	for _, declaration := range ast_file.Decls {
+		function, valid_function := declaration.(*ast.FuncDecl)
+		if valid_function {
+			_, is_called := used_functions[function.Name.Name]
+			if is_called {
+				err := EliminateFunctionDeadCode(function, ast_info)
+				//optimised_code = append(optimised_code, function.Body)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 // Name: EliminateFunctionDeadCode
 //
 // Parameters: *ast.FuncDecl, *types.Info
@@ -237,7 +277,6 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 			RemoveUnusedDeclaredVariables(statement, unused_variables, ast_info, function_statements, &optimised_statements)
 		case *ast.IfStmt:
 			RemoveUnusedIfStatement(unused_variables, function_statements, &optimised_statements, ast_info, function)
-		//case *ast.ExprStmt:
 
 		case *ast.ReturnStmt, *ast.BranchStmt, *ast.GoStmt, *ast.DeferStmt:
 			optimised_statements = append(optimised_statements, function_statements)
@@ -568,17 +607,6 @@ func RemoveUnusedIfStatement(unused_variables map[string]string, function_statem
 	}
 }
 
-// Name:RemoveUnusedFunction
-//
-// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt
-//
-// Return:
-//
-// Determines if the statement contains any unused if statements and removes them from the AST
-func RemoveUnusedFunction(unused_variables map[string]string, function_statements ast.Stmt, optimised_statements *[]ast.Stmt) {
-
-}
-
 /* PerformLoopUnrolling Helper Functions */
 
 // Struct for the parameters of a for loop
@@ -727,72 +755,72 @@ func UnrollStatements(statement ast.Stmt, var_name string, value int) ast.Stmt {
 
 	switch s := statement.(type) {
 
-		case *ast.ExprStmt:
-			return &ast.ExprStmt{
-				X: UnrollExpressions(s.X, var_name, value),
-			}
+	case *ast.ExprStmt:
+		return &ast.ExprStmt{
+			X: UnrollExpressions(s.X, var_name, value),
+		}
 
-		case *ast.AssignStmt:
-			new_lhs := make([]ast.Expr, len(s.Lhs))
-			for i, lhs := range s.Lhs {
-				new_lhs[i] = UnrollExpressions(lhs, var_name, value)
-			}
-			new_rhs := make([]ast.Expr, len(s.Rhs))
-			for i, rhs := range s.Rhs {
-				new_rhs[i] = UnrollExpressions(rhs, var_name, value)
-			}
-			return &ast.AssignStmt{
-				Lhs: new_lhs,
-				Tok: s.Tok,
-				Rhs: new_rhs,
-			}
+	case *ast.AssignStmt:
+		new_lhs := make([]ast.Expr, len(s.Lhs))
+		for i, lhs := range s.Lhs {
+			new_lhs[i] = UnrollExpressions(lhs, var_name, value)
+		}
+		new_rhs := make([]ast.Expr, len(s.Rhs))
+		for i, rhs := range s.Rhs {
+			new_rhs[i] = UnrollExpressions(rhs, var_name, value)
+		}
+		return &ast.AssignStmt{
+			Lhs: new_lhs,
+			Tok: s.Tok,
+			Rhs: new_rhs,
+		}
 
-		case *ast.IfStmt:
-			var new_init ast.Stmt
-			if s.Init != nil {
-				new_init = UnrollStatements(s.Init, var_name, value)
-			}
-			var new_else ast.Stmt
-			if s.Else != nil {
-				new_else = UnrollStatements(s.Else, var_name, value)
-			}
-			return &ast.IfStmt{
-				If:   s.If,
-				Init: new_init,
-				Cond: UnrollExpressions(s.Cond, var_name, value),
-				Body: UnrollBlocks(s.Body, var_name, value),
-				Else: new_else,
-			}
+	case *ast.IfStmt:
+		var new_init ast.Stmt
+		if s.Init != nil {
+			new_init = UnrollStatements(s.Init, var_name, value)
+		}
+		var new_else ast.Stmt
+		if s.Else != nil {
+			new_else = UnrollStatements(s.Else, var_name, value)
+		}
+		return &ast.IfStmt{
+			If:   s.If,
+			Init: new_init,
+			Cond: UnrollExpressions(s.Cond, var_name, value),
+			Body: UnrollBlocks(s.Body, var_name, value),
+			Else: new_else,
+		}
 
-		case *ast.ForStmt:
-			var new_init ast.Stmt
-			if s.Init != nil {
-				new_init = UnrollStatements(s.Init, var_name, value)
-			}
-			var new_cond ast.Expr
-			if s.Cond != nil {
-				new_cond = UnrollExpressions(s.Cond, var_name, value)
-			}
-			var new_post ast.Stmt
-			if s.Post != nil {
-				new_post = UnrollStatements(s.Post, var_name, value)
-			}
-			return &ast.ForStmt{
-				For:  s.For,
-				Init: new_init,
-				Cond: new_cond,
-				Post: new_post,
-				Body: UnrollBlocks(s.Body, var_name, value),
-			}
+	case *ast.ForStmt:
+		var new_init ast.Stmt
+		if s.Init != nil {
+			new_init = UnrollStatements(s.Init, var_name, value)
+		}
+		var new_cond ast.Expr
+		if s.Cond != nil {
+			new_cond = UnrollExpressions(s.Cond, var_name, value)
+		}
+		var new_post ast.Stmt
+		if s.Post != nil {
+			new_post = UnrollStatements(s.Post, var_name, value)
+		}
+		return &ast.ForStmt{
+			For:  s.For,
+			Init: new_init,
+			Cond: new_cond,
+			Post: new_post,
+			Body: UnrollBlocks(s.Body, var_name, value),
+		}
 
-		case *ast.IncDecStmt:
-			return &ast.IncDecStmt{
-				X:   UnrollExpressions(s.X, var_name, value),
-				Tok: s.Tok,
-			}
+	case *ast.IncDecStmt:
+		return &ast.IncDecStmt{
+			X:   UnrollExpressions(s.X, var_name, value),
+			Tok: s.Tok,
+		}
 
-		default:
-			return statement
+	default:
+		return statement
 	}
 }
 
@@ -831,51 +859,51 @@ func UnrollExpressions(expr ast.Expr, var_name string, value int) ast.Expr {
 
 	switch e := expr.(type) {
 
-		case *ast.Ident:
-			if e.Name == var_name {
-				return &ast.BasicLit{
-					Kind:  token.INT,
-					Value: strconv.Itoa(value),
-				}
-			}
-			return &ast.Ident{Name: e.Name}
-
-		case *ast.CallExpr:
-			new_args := make([]ast.Expr, len(e.Args))
-			for i, arg := range e.Args {
-				new_args[i] = UnrollExpressions(arg, var_name, value)
-			}
-			return &ast.CallExpr{
-				Fun:  UnrollExpressions(e.Fun, var_name, value),
-				Args: new_args,
-			}
-
-		case *ast.SelectorExpr:
-			return &ast.SelectorExpr{
-				X:   UnrollExpressions(e.X, var_name, value),
-				Sel: &ast.Ident{Name: e.Sel.Name},
-			}
-
-		case *ast.BinaryExpr:
-			return &ast.BinaryExpr{
-				X:  UnrollExpressions(e.X, var_name, value),
-				Op: e.Op,
-				Y:  UnrollExpressions(e.Y, var_name, value),
-			}
-
-		case *ast.UnaryExpr:
-			return &ast.UnaryExpr{
-				Op: e.Op,
-				X:  UnrollExpressions(e.X, var_name, value),
-			}
-
-		case *ast.BasicLit:
+	case *ast.Ident:
+		if e.Name == var_name {
 			return &ast.BasicLit{
-				Kind:  e.Kind,
-				Value: e.Value,
+				Kind:  token.INT,
+				Value: strconv.Itoa(value),
 			}
+		}
+		return &ast.Ident{Name: e.Name}
 
-		default:
-			return expr
+	case *ast.CallExpr:
+		new_args := make([]ast.Expr, len(e.Args))
+		for i, arg := range e.Args {
+			new_args[i] = UnrollExpressions(arg, var_name, value)
+		}
+		return &ast.CallExpr{
+			Fun:  UnrollExpressions(e.Fun, var_name, value),
+			Args: new_args,
+		}
+
+	case *ast.SelectorExpr:
+		return &ast.SelectorExpr{
+			X:   UnrollExpressions(e.X, var_name, value),
+			Sel: &ast.Ident{Name: e.Sel.Name},
+		}
+
+	case *ast.BinaryExpr:
+		return &ast.BinaryExpr{
+			X:  UnrollExpressions(e.X, var_name, value),
+			Op: e.Op,
+			Y:  UnrollExpressions(e.Y, var_name, value),
+		}
+
+	case *ast.UnaryExpr:
+		return &ast.UnaryExpr{
+			Op: e.Op,
+			X:  UnrollExpressions(e.X, var_name, value),
+		}
+
+	case *ast.BasicLit:
+		return &ast.BasicLit{
+			Kind:  e.Kind,
+			Value: e.Value,
+		}
+
+	default:
+		return expr
 	}
 }

@@ -415,7 +415,6 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_UnaryExpression(t *testin
 	}
 }
 
-/*
 func TestPerformDeadCodeElimination_UnreachedFunction(t *testing.T) {
 	code := "package main\n"
 	code += "func main() {\n"
@@ -453,4 +452,3 @@ func TestPerformDeadCodeElimination_UnreachedFunction(t *testing.T) {
 		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
 	}
 }
-*/
