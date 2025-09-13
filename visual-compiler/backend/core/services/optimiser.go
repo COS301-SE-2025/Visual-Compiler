@@ -137,6 +137,12 @@ func RemoveExtraLines(code string) string {
 //
 // Performs constant folding on the source code
 func PerformConstantFolding(ast_file *ast.File, file_set *token.FileSet) error {
+	
+	constant_folder := &Folder{
+		constants: make(map[string]float64),
+	}
+
+	ast.Walk(constant_folder, ast_file)
 	return nil
 }
 
@@ -201,6 +207,24 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 }
 
 /* PerformConstantFolding Helper Functions */
+
+func StructureConstant(value float64) *ast.BasicLit {
+
+	if value == float64(int(value)) {
+		return &ast.BasicLit{
+			Kind:  token.INT,
+			Value: strconv.Itoa(int(value)),
+		}
+	}
+
+	str_dec := strconv.FormatFloat(value, 'f', 5, 64)
+	str_dec = strings.TrimRight(strings.TrimRight(str_dec, "0"), ".")
+
+	return &ast.BasicLit{
+		Kind:  token.FLOAT,
+		Value: str_dec,
+	}
+}
 
 /* PerformDeadCodeElimination Helper Functions */
 
