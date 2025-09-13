@@ -469,3 +469,137 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 
 /* PerformLoopUnrolling Helper Functions */
 
+// Struct for the parameters of a for loop
+type LoopInfo struct {
+	VarName    string
+	StartValue int
+	EndValue   int
+	Increment  int
+	Body       *ast.BlockStmt
+}
+
+// Name: UnrollForLoop
+//
+// Parameters: *ast.ForStmt
+//
+// Return: []ast.Stmt, error
+//
+// Attempts to unroll a standard for loop with a constant boundary
+func UnrollForLoop(for_statement *ast.ForStmt) ([]ast.Stmt, error) {
+
+	loop_info, err := AnalyseForLoop(for_statement)
+
+	if err != nil || loop_info == nil {
+		return nil, fmt.Errorf("This loop cannot be unrolled. Please input a standard for loop with a constant boundary.")
+	}
+
+	unrolled_statements := GenerateStatements(loop_info)
+	return unrolled_statements, nil
+}
+
+// Name: AnalyseForLoop
+//
+// Parameters: *ast.ForStmt
+//
+// Return: *LoopInfo, error
+//
+// Analyses for loop to determine if it can be unrolled
+func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
+
+	if for_statement.Init == nil {
+		return nil, nil
+	}
+
+	assign_statement, is_valid := for_statement.Init.(*ast.AssignStmt)
+	if !is_valid || len(assign_statement.Lhs) != 1 || len(assign_statement.Rhs) != 1 {
+		return nil, nil
+	}
+
+	identifier, is_valid := assign_statement.Lhs[0].(*ast.Ident)
+	if !is_valid {
+		return nil, nil
+	}
+	var_name := identifier.Name
+
+	start_literal, is_valid := assign_statement.Rhs[0].(*ast.BasicLit)
+	if !is_valid || start_literal.Kind != token.INT {
+		return nil, nil
+	}
+
+	start_value, err := strconv.Atoi(start_literal.Value)
+	if err != nil {
+		return nil, nil
+	}
+
+	if for_statement.Cond == nil {
+		return nil, nil
+	}
+
+	binary_expression, is_valid := for_statement.Cond.(*ast.BinaryExpr)
+	if !is_valid {
+		return nil, nil
+	}
+
+	condition, is_valid := binary_expression.X.(*ast.Ident)
+	if !is_valid || condition.Name != var_name {
+		return nil, nil
+	}
+
+	if binary_expression.Op != token.LSS {
+		return nil, nil
+	}
+
+	end_literal, is_valid := binary_expression.Y.(*ast.BasicLit)
+	if !is_valid || end_literal.Kind != token.INT {
+		return nil, nil
+	}
+
+	end_value, err := strconv.Atoi(end_literal.Value)
+	if err != nil {
+		return nil, nil
+	}
+
+	if for_statement.Post == nil {
+		return nil, nil
+	}
+
+	inc_statement, is_valid := for_statement.Post.(*ast.IncDecStmt)
+	if !is_valid || inc_statement.Tok != token.INC {
+		return nil, nil
+	}
+
+	post_identifier, is_valid := inc_statement.X.(*ast.Ident)
+	if !is_valid || post_identifier.Name != var_name {
+		return nil, nil
+	}
+
+	return &LoopInfo{
+		VarName:    var_name,
+		StartValue: start_value,
+		EndValue:   end_value,
+		Increment:  1,
+		Body:       for_statement.Body,
+	}, nil
+}
+
+// Name: GenerateStatements
+//
+// Parameters: *LoopInfo
+//
+// Return: []ast.Stmt
+//
+// Generates the body statements for the unrolled loop
+func GenerateStatements(info *LoopInfo) []ast.Stmt {
+
+	var unrolled_statements []ast.Stmt
+
+	for i := info.StartValue; i < info.EndValue; i++ {
+
+		for _, statement := range info.Body.List {
+			new_stmt := UnrollStatements(statement, info.VarName, i)
+			unrolled_statements = append(unrolled_statements, new_stmt)
+		}
+	}
+
+	return unrolled_statements
+}
