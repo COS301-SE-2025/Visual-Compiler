@@ -9,8 +9,8 @@ import (
 
 func TestParseCode_Success(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
-	code += "return 13\n"
+	code += "func main() {\n"
+	code += "return\n"
 	code += "}"
 
 	ast, _, err := services.ParseGoCode(code)
@@ -33,13 +33,13 @@ func TestParseCode_NoPackage(t *testing.T) {
 
 func TestStringifyAST_Success(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
-	code += "return 13\n"
+	code += "func main(){\n"
+	code += "return\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	ast, file_set, err := services.ParseGoCode(code)
@@ -62,7 +62,7 @@ func TestStringifyAST_Success(t *testing.T) {
 
 func TestStringifyAST_Fail(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
+	code += "func main() {\n"
 	code += "return 13\n"
 	code += "}"
 
@@ -93,14 +93,14 @@ func TestOptimiseGo_NoInputCode(t *testing.T) {
 
 func TestPerformDeadCodeElimination_Simple(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
-	code += "return 13\n"
+	code += "func main() {\n"
+	code += "return\n"
 	code += "random_num := 5\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -114,15 +114,15 @@ func TestPerformDeadCodeElimination_Simple(t *testing.T) {
 
 func TestPerformDeadCodeElimination_MultipleReturn(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
-	code += "return 13\n"
+	code += "func main() {\n"
+	code += "return\n"
 	code += "random_num := 5\n"
-	code += "return random_num\n"
+	code += "return\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -136,15 +136,15 @@ func TestPerformDeadCodeElimination_MultipleReturn(t *testing.T) {
 
 func TestPerformDeadCodeElimination_UnusedVariableAfterReturn(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
-	code += "return 13\n"
+	code += "func main() {\n"
+	code += "return\n"
 	code += "random_num := 5\n"
-	code += "return 23\n"
+	code += "return\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -158,14 +158,14 @@ func TestPerformDeadCodeElimination_UnusedVariableAfterReturn(t *testing.T) {
 
 func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
+	code += "func main() {\n"
 	code += "random_num := 5\n"
-	code += "return 13\n"
+	code += "return\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -179,14 +179,14 @@ func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn(t *testing.T) {
 
 func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn_2(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
+	code += "func main() {\n"
 	code += "var random_num int\n"
-	code += "return 13\n"
+	code += "return\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -200,18 +200,18 @@ func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn_2(t *testing.T) {
 
 func TestPerformDeadCodeElimination_ConstantVariableIfStatement(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
+	code += "func main() {\n"
 	code += "false_bool := false\n"
 	code += "if false_bool {\n"
 	code += "random_num := 5\n"
-	code += "return random_num\n"
+	code += "return\n"
 	code += "}\n"
-	code += "return 13\n"
+	code += "return\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -225,23 +225,26 @@ func TestPerformDeadCodeElimination_ConstantVariableIfStatement(t *testing.T) {
 
 func TestPerformDeadCodeElimination_ReachedIfStatement_Identifier(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
 	code += "true_bool := true\n"
 	code += "if true_bool{\n"
+	code += "fmt.Printf(\"Hi\")\n"
 	code += "random_num := 5\n"
-	code += "return random_num\n"
+	code += "return\n"
 	code += "}\n"
-	code += "return 13\n"
+	code += "return\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
 	expected_result += "\ttrue_bool := true\n"
 	expected_result += "\tif true_bool {\n"
-	expected_result += "\t\trandom_num := 5\n"
-	expected_result += "\t\treturn random_num\n"
+	expected_result += "\t\tfmt.Printf(\"Hi\")\n"
+	expected_result += "\t\treturn\n"
 	expected_result += "\t}\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -255,23 +258,22 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_Identifier(t *testing.T) 
 
 func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
+	code += "func main() {\n"
 	code += "true_bool := \"halfstack\"\n"
 	code += "if true_bool==\"halfstack\"{\n"
 	code += "random_num := 5\n"
-	code += "return random_num\n"
+	code += "return\n"
 	code += "}\n"
-	code += "return 13\n"
+	code += "return\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
+	expected_result += "func main() {\n"
 	expected_result += "\ttrue_bool := \"halfstack\"\n"
 	expected_result += "\tif true_bool == \"halfstack\" {\n"
-	expected_result += "\t\trandom_num := 5\n"
-	expected_result += "\t\treturn random_num\n"
+	expected_result += "\t\treturn\n"
 	expected_result += "\t}\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -285,18 +287,18 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression(t *testi
 
 func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
+	code += "func main() {\n"
 	code += "true_bool := \"halfstack\"\n"
 	code += "if true_bool!=\"halfstack\"{\n"
 	code += "random_num := 5\n"
-	code += "return random_num\n"
+	code += "return\n"
 	code += "}\n"
-	code += "return 13\n"
+	code += "return\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -310,17 +312,17 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression(t *tes
 
 func TestPerformDeadCodeElimination_UnreachedIfStatement_Constant(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
+	code += "func main() {\n"
 	code += "if false{\n"
 	code += "random_num := 5\n"
-	code += "return random_num\n"
+	code += "return\n"
 	code += "}\n"
-	code += "return 13\n"
+	code += "return\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -334,21 +336,20 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_Constant(t *testing.T) 
 
 func TestPerformDeadCodeElimination_UnreachedIfStatement_UnaryConstant(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
+	code += "func main() {\n"
 	code += "if !false{\n"
 	code += "random_num := 5\n"
-	code += "return random_num\n"
+	code += "return\n"
 	code += "}\n"
-	code += "return 13\n"
+	code += "return\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
+	expected_result += "func main() {\n"
 	expected_result += "\tif !false {\n"
-	expected_result += "\t\trandom_num := 5\n"
-	expected_result += "\t\treturn random_num\n"
+	expected_result += "\t\treturn\n"
 	expected_result += "\t}\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -362,18 +363,18 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_UnaryConstant(t *testin
 
 func TestPerformDeadCodeElimination_UnreachedIfStatement_UnaryExpression(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
+	code += "func main() {\n"
 	code += "true_bool := true\n"
 	code += "if !true_bool{\n"
 	code += "random_num := 5\n"
-	code += "return random_num\n"
+	code += "return\n"
 	code += "}\n"
-	code += "return 13\n"
+	code += "return\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -387,23 +388,22 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_UnaryExpression(t *test
 
 func TestPerformDeadCodeElimination_ReachedIfStatement_UnaryExpression(t *testing.T) {
 	code := "package main\n"
-	code += "func NewFunction() int {\n"
+	code += "func main() {\n"
 	code += "true_bool := false\n"
 	code += "if !true_bool{\n"
 	code += "random_num := 5\n"
-	code += "return random_num\n"
+	code += "return\n"
 	code += "}\n"
-	code += "return 13\n"
+	code += "return\n"
 	code += "}"
 
 	expected_result := "package main\n\n"
-	expected_result += "func NewFunction() int {\n"
+	expected_result += "func main() {\n"
 	expected_result += "\ttrue_bool := false\n"
 	expected_result += "\tif !true_bool {\n"
-	expected_result += "\t\trandom_num := 5\n"
-	expected_result += "\t\treturn random_num\n"
+	expected_result += "\t\treturn\n"
 	expected_result += "\t}\n"
-	expected_result += "\treturn 13\n"
+	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
@@ -414,3 +414,43 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_UnaryExpression(t *testin
 		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
 	}
 }
+
+/*
+func TestPerformDeadCodeElimination_UnreachedFunction(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "true_bool := false\n"
+	code += "if !true_bool{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}\n"
+	code += "func other_function() int {\n"
+	code += "true_bool := false\n"
+	code += "if !true_bool{\n"
+	code += "random_num := 5\n"
+	code += "return random_num\n"
+	code += "}\n\n"
+	code += "return 13\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\ttrue_bool := false\n"
+	expected_result += "\tif !true_bool {\n"
+	expected_result += "\t\trandom_num := 5\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+*/
