@@ -8,6 +8,7 @@ import (
 	"go/parser"
 	"go/token"
 	"go/types"
+	"strconv"
 	"strings"
 )
 
@@ -15,13 +16,13 @@ import (
 //
 // Parameters: string, bool, bool, bool
 //
-// Return: string,error
+// Return: string, error
 //
-// Receive Go lang code and perform optimisation based on the techniques selected
+// Receives Go code and performs optimisation based on the selected techniques
 func OptimiseGoCode(code string, constant_folding bool, dead_code bool, loop_unroling bool) (string, error) {
 
 	if code == "" {
-		return "", fmt.Errorf("code is empty")
+		return "", fmt.Errorf("Source code is empty.")
 	}
 
 	ast_file, file_set, err := ParseGoCode(code)
@@ -30,16 +31,24 @@ func OptimiseGoCode(code string, constant_folding bool, dead_code bool, loop_unr
 	}
 
 	if constant_folding {
-		PerformConstantFolding(ast_file, file_set)
+		err = PerformConstantFolding(ast_file, file_set)
+		if err != nil {
+			return "", err
+		}
 	}
+
 	if dead_code {
 		err = PerformDeadCodeElimination(ast_file, file_set)
 		if err != nil {
 			return "", err
 		}
 	}
+
 	if loop_unroling {
-		PerformLoopUnrolling(ast_file, file_set)
+		err = PerformLoopUnrolling(ast_file, file_set)
+		if err != nil {
+			return "", err
+		}
 	}
 
 	code, err = StringifyAST(ast_file, file_set)
@@ -54,12 +63,14 @@ func OptimiseGoCode(code string, constant_folding bool, dead_code bool, loop_unr
 //
 // Parameters: string
 //
-// Return: *ast.File,error
+// Return: *ast.File, error
 //
-// Receive Go lang code and create an Abstract Syntax Tree
+// Receives Go code and creates an abstract syntax tree
 func ParseGoCode(code string) (*ast.File, *token.FileSet, error) {
+
 	file_set := token.NewFileSet()
 	ast_file, err := parser.ParseFile(file_set, "", code, parser.AllErrors)
+
 	if err != nil {
 		return nil, nil, err
 	}
@@ -73,8 +84,9 @@ func ParseGoCode(code string) (*ast.File, *token.FileSet, error) {
 //
 // Return: string
 //
-// Converts optimised AST to a string
+// Converts the optimised AST to a string
 func StringifyAST(ast_file *ast.File, file_set *token.FileSet) (string, error) {
+
 	var buffer bytes.Buffer
 	err := format.Node(&buffer, file_set, ast_file)
 	if err != nil {
@@ -92,11 +104,13 @@ func StringifyAST(ast_file *ast.File, file_set *token.FileSet) (string, error) {
 //
 // Return: string
 //
-// Remove extra unneccessary blank lines from the optimised code
+// Removes extra unneccessary blank lines from the optimised code
 func RemoveExtraLines(code string) string {
+
 	var result_code strings.Builder
 	is_first_empty_line := true
 	line_count := 0
+
 	for _, character := range code {
 		if character == '\n' {
 			line_count++
@@ -121,8 +135,8 @@ func RemoveExtraLines(code string) string {
 //
 // Return: string
 //
-// Perform constant folding on the source code
-func PerformConstantFolding(ast_file *ast.File, file_set *token.FileSet) {
+// Performs constant folding on the source code
+func PerformConstantFolding(ast_file *ast.File, file_set *token.FileSet) error {
 
 }
 
@@ -132,7 +146,7 @@ func PerformConstantFolding(ast_file *ast.File, file_set *token.FileSet) {
 //
 // Return: string
 //
-// Perform dead code elimination on the source code
+// Performs dead code elimination on the source code
 func PerformDeadCodeElimination(ast_file *ast.File, file_set *token.FileSet) error {
 	ast_info := &types.Info{
 		Types: make(map[ast.Expr]types.TypeAndValue),
@@ -152,6 +166,23 @@ func PerformDeadCodeElimination(ast_file *ast.File, file_set *token.FileSet) err
 
 	return nil
 }
+
+// Name: PerformLoopUnrolling
+//
+// Parameters: *ast.File
+//
+// Return: string
+//
+// Performs loop unrolling on the source code
+func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
+
+}
+
+/* PerformConstantFolding Helper Functions */
+
+
+
+/* PerformDeadCodeElimination Helper Functions */
 
 // Name: EliminateFunctionDeadCode
 //
@@ -223,10 +254,8 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 															}
 
 														}
-
 													}
 												}
-
 											}
 
 										case *ast.BinaryExpr:
@@ -271,7 +300,6 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 															}
 														}
 													}
-
 												}
 											}
 
@@ -289,7 +317,6 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 														}
 													}
 												}
-
 											}
 
 										default:
@@ -355,7 +382,6 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 						}
 					} else {
 						new_spec = append(new_spec, spec)
-
 					}
 				}
 				if len(new_spec) > 0 {
@@ -377,7 +403,6 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 						if condition_variable.Name != "false" {
 							optimised_statements = append(optimised_statements, function_statements)
 						}
-
 					}
 
 				case *ast.BinaryExpr:
@@ -401,7 +426,6 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 				default:
 					optimised_statements = append(optimised_statements, function_statements)
 				}
-
 			}
 
 		default:
@@ -419,13 +443,5 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_info *types.Info) err
 	return nil
 }
 
-// Name: PerformLoopUnrolling
-//
-// Parameters: *ast.File
-//
-// Return: string
-//
-// Perform loop unrolling on the source code
-func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) {
+/* PerformLoopUnrolling Helper Functions */
 
-}
