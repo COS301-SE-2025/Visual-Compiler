@@ -13,8 +13,6 @@ import (
 )
 
 type AnalyseUserInputs struct {
-	// User's ID for storing purposes
-	UsersID bson.ObjectID `json:"users_id" binding:"required" example:"685df259c1294de5546b045f"`
 	// Scope rules for the variables/functions scopes
 	ScopeRules []*services.ScopeRule `json:"scope_rules" binding:"required"`
 	// Grammar rules to be analysed
@@ -37,6 +35,12 @@ type AnalyseUserInputs struct {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /analysing/analyse [post]
 func Analyse(c *gin.Context) {
+	authID, is_existing := c.Get("auth0_id")
+	if !is_existing {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	var req AnalyseUserInputs
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -45,17 +49,29 @@ func Analyse(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
+	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	parsing_collection := mongo_cli.Database("visual-compiler").Collection("parsing")
 	analyse_collection := mongo_cli.Database("visual-compiler").Collection("analysing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	var dbUser struct {
+		UsersID bson.ObjectID `bson:"_id"`
+		Auth0ID string        `bson:"auth0_id"`
+	}
+
+	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
 	var parsing_res struct {
 		Tree services.SyntaxTree `bson:"tree"`
 	}
 
-	err := parsing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&parsing_res)
+	err = parsing_collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}).Decode(&parsing_res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tree not found. Please go back to parsing"})
 		return
@@ -67,14 +83,14 @@ func Analyse(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}
 	var userexisting bson.M
 
 	err = analyse_collection.FindOne(ctx, filters).Decode(&userexisting)
 
 	if err == mongo.ErrNoDocuments {
 		_, err = analyse_collection.InsertOne(ctx, bson.M{
-			"users_id":              req.UsersID,
+			"users_id":              dbUser.UsersID,
 			"symbol_table_artefact": artefact,
 			"project_name":          req.Project_Name,
 			"scope_rules":           req.ScopeRules,
