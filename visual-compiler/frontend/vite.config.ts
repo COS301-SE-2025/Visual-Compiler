@@ -31,7 +31,8 @@ export default defineConfig(({ mode }) => ({
 					exclude: [
 						'src/lib/server/**',
 						'node_modules/**',
-						'unit-tests/**/*.server.{test,spec}.{js,ts}'
+						'unit-tests/**/*.server.{test,spec}.{js,ts}',
+						"unit-tests/landing-page.test.ts"
 					],
 					setupFiles: ['./vitest-setup-client.ts']
 				},

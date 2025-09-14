@@ -50,11 +50,13 @@
                 </div>
             {/if}
         {#if phase === 'analyser' && show_symbol_table}
-            <div class="artifact-header">
-                <h3>Symbols</h3>
-            </div>
 
             {#if symbol_table && symbol_table.length > 0}
+
+            <div class="artifact-header">
+                    <h3>Symbols</h3>
+                </div>
+                
                 <table class="symbol-table">
                     <thead>
                         <tr>

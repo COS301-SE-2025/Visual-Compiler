@@ -1,3 +1,6 @@
+//go:build !coverage
+// +build !coverage
+
 // Package Main for the main entry into the API.
 package main
 

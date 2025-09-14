@@ -3,6 +3,7 @@
     <br>
     <h1 align="center">Visual Compiler</h1>
     <h2 align="center">Capstone Project for <a href="https://www.epiuselabs.com/">EPI-USE Labs</a></h2>
+    <h2 align="center"><a href="https://www.visual-compiler.co.za/">Visual Compiler Website</a></h2>
 </div>
 
 <br>
@@ -16,7 +17,7 @@
 
 <div align="center">
     <img src="https://github.com/COS301-SE-2025/Visual-Compiler/actions/workflows/main.yml/badge.svg"> &nbsp;
-    <img src="https://codecov.io/gh/COS301-SE-2025/Visual-Compiler/branch/main/graph/badge.svg"> &nbsp;
+    <img src="https://codecov.io/gh/COS301-SE-2025/Visual-Compiler/branch/main/graph/badge.svg?flag=backend"> &nbsp;
     <img src="https://img.shields.io/github/issues/COS301-SE-2025/Visual-Compiler?label=Issues">
 </div>
 
@@ -39,27 +40,27 @@
 <div align="center">
     <table style="border-width: 1px;">
     <tr>
-        <td><a href="https://www.canva.com/design/DAGrSSVK-QU/i083d2b_sUAxhoaNYEf4iQ/view?utm_content=DAGrSSVK-QU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h6a916b7fee">Demo 2 Slides</a></td>
-        <td>Current presentation for the project</td>
+        <td>Latest Demonstration</td>
+        <td><a href="https://www.canva.com/design/DAGwYsM0uMA/aBfNxmqGDzU5ckg6VD3t6w/view?utm_content=DAGwYsM0uMA&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h71a739a39d">Demo 3 Slides</a></td>
+        <td><a href="https://drive.google.com/file/d/1vjI0IOluIHuDEDIZc4F5Kw_zdzdTP7Q1/view?usp=sharing">Demo 3 Video</a></td>
     </tr>
-    <tr>
-        <td><a href="https://drive.google.com/file/d/1fS6YWn5QtnTmdgO1mV9lTeiBdilVLFUY/view?usp=sharing">Demo 2 Video</a></td>
-        <td>Current presentation for the project</td>
-    </tr>
+    </table>
+</div>
+
+<br>
+
+<div align="center">
+    <table style="border-width: 1px;">
     <tr>
         <td><a href="https://docs.google.com/document/d/1YySkwjKvmzA8BFvnIsnu1KxFNTHO1EYEotQ1GqLGK7Y/edit?usp=sharing">Software Requirements Specification</a></td>
         <td>Overview of the system requirements</td>
-    </tr>
-    <tr>
-        <td><a href="https://drive.google.com/file/d/1_qOSHfDT9nNCDGBcoHH1gqHGKmcSndQe/view?usp=sharing">Architectural Diagram</a></td>
-        <td>Diagram of the system design</td>
     </tr>
     <tr>
         <td><a href="https://docs.google.com/document/d/1-cqSy6rzK-4FLwIRygRXbVL5P1QcKGJljU8ixQVEWP8/edit?usp=sharing">Architectural Specification</a></td>
         <td>Overview of the system design</td>
     </tr>
     <tr>
-        <td><a href="https://docs.google.com/document/d/1zEM9TcM7d6pYfJ-2KkU4ibohllwaDNW_0YkOEJixTTM/edit?usp=sharing">User Manual</a></td>
+        <td><a href="https://docs.google.com/document/d/1JN1W5hr2VyBD-_ki6BEMUDh_v6PTM5hWpD2x2tIzAYg/edit?usp=sharing">User Manual</a></td>
         <td>Guidelines for navigating the web pages</td>
     </tr>
     <tr>
@@ -69,10 +70,6 @@
     <tr>
         <td><a href="https://docs.google.com/document/d/1uddlkfJpo1DAB3ONdb8VOSqM3NrbCV-Hk9RB0lpWYEg/edit?usp=sharing">Coding Standards</a></td>
         <td>Guidelines for coding, testing and git</td>
-    </tr>
-    <tr>
-        <td><a href="https://drive.google.com/file/d/13NJdZvrVv6CiGIblz37mhN9dTZShmij7/view?usp=sharing">Deployment Model</a></td>
-        <td>Structure of project deployment</td>
     </tr>
     </table>
 </div>
@@ -131,7 +128,7 @@
         <td style="vertical-align: middle; width: auto; border: 0; padding: 10px;">
             <h2><b style="font-size: 18px;">Shinn-Ru Hung</b></h2>
             <h3><b style="font-size: 16px;">UI Engineer and Integration Engineer</b></h3>
-            I am a BSc Computer Science student experienced in building intuitive, responsive front-end interfaces and robust backend integrations. I am well-versed in git workflows, API design, and clear technical documentation.
+            I am a BSc Computer Science student experienced in building intuitive and responsive front-end interfaces and robust backend integrations. I am well-versed in git workflows, API design, and clear technical documentation.
             <br>
             <br>
             <a href="https://www.linkedin.com/in/shinn-ru-hung-au5tin-r/">
@@ -165,7 +162,7 @@
         <td style="vertical-align: middle; width: auto; border: 0; padding: 10px;">
             <h2><b style="font-size: 18px;">Keanu Ellary</b></h2>
             <h3><b style="font-size: 16px;">Integration Engineer and DevOps Engineer</b></h3>
-            I am a BSc Information & Knowledge Systems student with full-stack development and DevOps experience. I am highly skilled in JavaScript, Java, and C#, with knowledge of CI/CD, containerization, and UML modeling.
+            I am a BSc Information & Knowledge Systems student with much experience in full-stack development and DevOps. I am highly skilled in JavaScript, C#, and Java, with knowledge in CI/CD and containerisation.
             <br>
             <br>
             <a href="https://www.linkedin.com/in/keanu-ellary-187281355/">
@@ -208,16 +205,16 @@
         │   │   ├───📁handlers
         │   │   ├───📁routers
         │   │   └───📁unit-tests
+        │   ├───📁docs
         │   ├───📁core
         │   │   ├───📁db
         │   │   ├───📁services
         │   │   └───📁unit-tests
         │   └───📁integration-tests
-        ├───📁frontend
-        │   ├───📁src
-        │   │   ├───📁lib
-        │   │   └───📁routes
-        │   └───📁unit-tests
-        └───📁e2e-tests
-             └───📁e2e
+        ├───📁e2e-tests        
+        └───📁frontend
+            ├───📁src
+            │   ├───📁lib
+            │   └───📁routes
+            └───📁unit-tests
 ```

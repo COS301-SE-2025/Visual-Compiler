@@ -127,11 +127,11 @@ jobs:
           exit 1
 
       - name: Cypress Installation
-        working-directory: ./visual-compiler/frontend
+        working-directory: ./visual-compiler
         run: npm install cypress --save-dev
 
       - name: Run Cypress
-        working-directory: ./visual-compiler/frontend
+        working-directory: ./visual-compiler
         run: npx cypress run
 
       - name: Docker Compose Shut down
