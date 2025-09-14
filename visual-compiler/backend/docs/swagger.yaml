@@ -80,6 +80,27 @@ definitions:
     - login
     - password
     type: object
+  handlers.OptimiseCodeRequest:
+    properties:
+      constant_folding:
+        description: Simplify any code before execution (3 + 4 becomes 7 before execution)
+        type: boolean
+      dead_code:
+        description: Remove any code that will never be executed
+        type: boolean
+      loop_unrolling:
+        description: Expand any loops
+        type: boolean
+      project_name:
+        description: User's project name
+        type: string
+      users_id:
+        description: Represents the User's ID from frontend
+        type: string
+    required:
+    - project_name
+    - users_id
+    type: object
   handlers.ProjectRequest:
     properties:
       pipeline:
@@ -765,6 +786,78 @@ paths:
       summary: Create rules from stored source code
       tags:
       - Lexing
+  /optimising/optimise:
+    post:
+      consumes:
+      - application/json
+      description: Optimises the user's stored code with parameters for optimisation
+      parameters:
+      - description: Optimise code
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.OptimiseCodeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Code successfully optimised and stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Optimises stored code
+      tags:
+      - Optimising
+  /optimising/source_code:
+    post:
+      consumes:
+      - application/json
+      description: Reads in new code from the user. Starts the optimising process
+      parameters:
+      - description: Read optimising code from User
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SourceCodeOnlyRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Optimising code successfully and stored
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Reads new code for optimising
+      tags:
+      - Optimising
   /parsing/grammar:
     post:
       consumes:
