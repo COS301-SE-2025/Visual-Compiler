@@ -661,7 +661,7 @@ func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, unused_variables *
 												}
 
 											case ">=":
-												if rhs.Value >= unused_variable {
+												if unused_variable >= rhs.Value {
 													used = true
 													delete(*unused_variables, lhs.Name)
 												} else {
@@ -669,7 +669,7 @@ func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, unused_variables *
 													(*unused_variables)[ident.Name] = value_str
 												}
 											case "<=":
-												if rhs.Value <= unused_variable {
+												if unused_variable <= rhs.Value {
 													used = true
 													delete(*unused_variables, lhs.Name)
 												} else {
@@ -677,7 +677,7 @@ func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, unused_variables *
 													(*unused_variables)[ident.Name] = value_str
 												}
 											case ">":
-												if rhs.Value > unused_variable {
+												if unused_variable > rhs.Value {
 													used = true
 													delete(*unused_variables, lhs.Name)
 												} else {
@@ -685,7 +685,7 @@ func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, unused_variables *
 													(*unused_variables)[ident.Name] = value_str
 												}
 											case "<":
-												if rhs.Value < unused_variable {
+												if unused_variable < rhs.Value {
 													used = true
 													delete(*unused_variables, lhs.Name)
 												} else {

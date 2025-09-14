@@ -374,7 +374,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_Identifier(t *testing.T) 
 	}
 }
 
-func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression(t *testing.T) {
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_Equal(t *testing.T) {
 	code := "package main\n"
 	code += "func main() {\n"
 	code += "true_bool := \"halfstack\"\n"
@@ -403,13 +403,274 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression(t *testi
 	}
 }
 
-func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression(t *testing.T) {
+func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Equal(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "true_bool := \"half\"\n"
+	code += "if true_bool==\"halfstack\"{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_NotEqual(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "true_bool := \"half\"\n"
+	code += "if true_bool!=\"halfstack\"{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\ttrue_bool := \"half\"\n"
+	expected_result += "\tif true_bool != \"halfstack\" {\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_NotEqual(t *testing.T) {
 	code := "package main\n"
 	code += "func main() {\n"
 	code += "true_bool := \"halfstack\"\n"
 	code += "if true_bool!=\"halfstack\"{\n"
 	code += "random_num := 5\n"
 	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_LessEqual(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "true_bool := 5\n"
+	code += "if true_bool<=5{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\ttrue_bool := 5\n"
+	expected_result += "\tif true_bool <= 5 {\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_LessEqual(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "true_bool := 6\n"
+	code += "if true_bool<=5{\n"
+	code += "random_num := 5\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_Less(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "true_bool := 4\n"
+	code += "if true_bool<5{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\ttrue_bool := 4\n"
+	expected_result += "\tif true_bool < 5 {\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Less(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "true_bool := 6\n"
+	code += "if true_bool<5{\n"
+	code += "random_num := 5\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_GreaterEqual(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "true_bool := 5\n"
+	code += "if true_bool>=5{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\ttrue_bool := 5\n"
+	expected_result += "\tif true_bool >= 5 {\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_GreaterEqual(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "true_bool := 4\n"
+	code += "if true_bool>=5{\n"
+	code += "random_num := 5\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_Greater(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "true_bool := 6\n"
+	code += "if true_bool > 5{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\ttrue_bool := 6\n"
+	expected_result += "\tif true_bool > 5 {\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Greater(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "true_bool := 4\n"
+	code += "if true_bool > 5{\n"
+	code += "random_num := 5\n"
 	code += "}\n"
 	code += "return\n"
 	code += "}"
