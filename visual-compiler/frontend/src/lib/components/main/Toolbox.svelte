@@ -32,7 +32,8 @@
 		{ id: 'lexer', label: 'Lexer' },
 		{ id: 'parser', label: 'Parser' },
 		{ id: 'analyser', label: 'Analyser' },
-		{ id: 'translator', label: 'Translator' }
+		{ id: 'translator', label: 'Translator' },
+		{ id: 'optimizer', label: 'Optimizer' }
 	];
 
 	// createNode
@@ -93,8 +94,10 @@
 	{#each node_types as n, i}
 		<!-- Wrapper div to capture clicks even when the button is disabled -->
 		<div on:click={() => handleClick(n.id)}>
-			<button class="phase-btn" disabled={createdNodeTypes.has(n.id)}>
-				<span class="button-number-corner">{i + 1}</span>
+			<button class="phase-btn" class:optimizer-btn={n.id === 'optimizer'} disabled={createdNodeTypes.has(n.id)}>
+				{#if n.id !== 'optimizer'}
+					<span class="button-number-corner">{i + 1}</span>
+				{/if}
 				{n.label}
 				<span class="custom-tooltip">{tooltips[n.id]}</span>
 			</button>
@@ -118,7 +121,9 @@
 		border: 1px solid #e0e0e0;
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
 		overflow-y: auto;
+		overflow-x: hidden;
 		min-height: 0;
+		width: 100%;
 	}
 
 	/* Minimalistic scrollbar styling */
@@ -198,6 +203,18 @@
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 	}
 
+	/* Special styling for optimizer button */
+	.optimizer-btn {
+		background-color: #AFA2D7; /* New light mode optimizer */
+		color: #fff; /* White text for contrast */
+	}
+
+	.optimizer-btn:hover {
+		background-color: #8C7AB8; /* Slightly darker for hover */
+		transform: translateY(-2px);
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+	}
+
 	.phase-btn:active {
 		transform: translateY(0);
 		background: #e8edf8;
@@ -212,6 +229,15 @@
 		transform: none;
 		box-shadow: none;
 		/* This makes the click event pass through to the parent div */
+		pointer-events: none;
+	}
+
+	.optimizer-btn:disabled {
+		background-color: #e6e6e6;
+		color: #666666;
+		cursor: not-allowed;
+		transform: none;
+		box-shadow: none;
 		pointer-events: none;
 	}
 
@@ -317,6 +343,23 @@
 
 	:global(html.dark-mode) .phase-btn:disabled:hover {
 		background-color: #2d3748;
+	}
+
+	/* Dark mode styles for optimizer button */
+	:global(html.dark-mode) .optimizer-btn {
+		background-color: #8451C7; /* New dark mode optimizer */
+		color: #fff;
+		border: 1px solid #8451C7;
+	}
+
+	:global(html.dark-mode) .optimizer-btn:hover {
+		background-color: #6B3BAA; /* Darker for hover */
+	}
+
+	:global(html.dark-mode) .optimizer-btn:disabled {
+		background-color: #2d3748;
+		color: #a0aec0;
+		border-color: #4a5568;
 	}
 
 	:global(html.dark-mode) .custom-tooltip {
