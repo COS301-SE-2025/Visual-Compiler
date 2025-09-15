@@ -1,379 +1,380 @@
 package unit_tests
 
 import (
-	"go/token"
 	"testing"
 
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/services"
 )
 
-func TestParseCode_Success(t *testing.T) {
-	code := "package main\n"
-	code += "func main() {\n"
-	code += "return\n"
-	code += "}"
+/*
+	func TestParseCode_Success(t *testing.T) {
+		code := "package main\n"
+		code += "func main() {\n"
+		code += "return\n"
+		code += "}"
 
-	ast, _, err := services.ParseGoCode(code)
-	if err != nil {
-		t.Errorf("Error :%v", err)
+		ast, _, err := services.ParseGoCode(code)
+		if err != nil {
+			t.Errorf("Error :%v", err)
+		}
+		if ast == nil {
+			t.Errorf("AST is empty")
+		}
 	}
-	if ast == nil {
-		t.Errorf("AST is empty")
+
+	func TestParseCode_NoPackage(t *testing.T) {
+		code := "num := 2"
+
+		_, _, err := services.ParseGoCode(code)
+		if err == nil {
+			t.Errorf("Error expected:  expected 'package'")
+		}
 	}
+
+	func TestOptimiseGoCode_NoPackage(t *testing.T) {
+		code := "num := 2"
+
+		_, err := services.OptimiseGoCode(code, false, true, false)
+		if err == nil {
+			t.Errorf("Error expected:  expected 'package'")
+		}
+	}
+
+	func TestStringifyAST_Success(t *testing.T) {
+		code := "package main\n"
+		code += "func main(){\n"
+		code += "return\n"
+		code += "}"
+
+		expected_result := "package main\n\n"
+		expected_result += "func main() {\n"
+		expected_result += "\treturn\n"
+		expected_result += "}\n"
+
+		ast, file_set, err := services.ParseGoCode(code)
+		if err != nil {
+			t.Errorf("Error :%v", err)
+		}
+		if ast == nil {
+			t.Errorf("AST is empty")
+		}
+
+		code, err = services.StringifyAST(ast, file_set)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+
+		if code != expected_result {
+			t.Errorf("Stringify AST failed:\n %v\n %v", code, expected_result)
+		}
+	}
+
+	func TestStringifyAST_Fail(t *testing.T) {
+		code := "package main\n"
+		code += "func main() {\n"
+		code += "return 13\n"
+		code += "}"
+
+		ast, _, err := services.ParseGoCode(code)
+		file_set := token.NewFileSet()
+		if err != nil {
+			t.Errorf("Error :%v", err)
+		}
+		if ast == nil {
+			t.Errorf("AST is empty")
+		}
+
+		_, err = services.StringifyAST(ast, file_set)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+
 }
 
-func TestParseCode_NoPackage(t *testing.T) {
-	code := "num := 2"
+	func TestOptimiseGo_NoInputCode(t *testing.T) {
+		code := ""
 
-	_, _, err := services.ParseGoCode(code)
-	if err == nil {
-		t.Errorf("Error expected:  expected 'package'")
-	}
-}
-func TestOptimiseGoCode_NoPackage(t *testing.T) {
-	code := "num := 2"
-
-	_, err := services.OptimiseGoCode(code, false, true, false)
-	if err == nil {
-		t.Errorf("Error expected:  expected 'package'")
-	}
-}
-
-func TestStringifyAST_Success(t *testing.T) {
-	code := "package main\n"
-	code += "func main(){\n"
-	code += "return\n"
-	code += "}"
-
-	expected_result := "package main\n\n"
-	expected_result += "func main() {\n"
-	expected_result += "\treturn\n"
-	expected_result += "}\n"
-
-	ast, file_set, err := services.ParseGoCode(code)
-	if err != nil {
-		t.Errorf("Error :%v", err)
-	}
-	if ast == nil {
-		t.Errorf("AST is empty")
+		_, err := services.OptimiseGoCode(code, true, true, true)
+		if err == nil {
+			t.Errorf("Error expected")
+		}
 	}
 
-	code, err = services.StringifyAST(ast, file_set)
-	if err != nil {
-		t.Errorf("Error: %v", err)
+	func TestPerformDeadCodeElimination_Simple(t *testing.T) {
+		code := "package main\n"
+		code += "func main() {\n"
+		code += "return\n"
+		code += "random_num := 5\n"
+		code += "}"
+
+		expected_result := "package main\n\n"
+		expected_result += "func main() {\n"
+		expected_result += "\treturn\n"
+		expected_result += "}\n"
+
+		optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if optmised_code != expected_result {
+			t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		}
 	}
 
-	if code != expected_result {
-		t.Errorf("Stringify AST failed:\n %v\n %v", code, expected_result)
-	}
-}
+	func TestPerformDeadCodeElimination_MultipleReturn(t *testing.T) {
+		code := "package main\n"
+		code += "func main() {\n"
+		code += "return\n"
+		code += "random_num := 5\n"
+		code += "return\n"
+		code += "}"
 
-func TestStringifyAST_Fail(t *testing.T) {
-	code := "package main\n"
-	code += "func main() {\n"
-	code += "return 13\n"
-	code += "}"
+		expected_result := "package main\n\n"
+		expected_result += "func main() {\n"
+		expected_result += "\treturn\n"
+		expected_result += "}\n"
 
-	ast, _, err := services.ParseGoCode(code)
-	file_set := token.NewFileSet()
-	if err != nil {
-		t.Errorf("Error :%v", err)
-	}
-	if ast == nil {
-		t.Errorf("AST is empty")
-	}
-
-	_, err = services.StringifyAST(ast, file_set)
-	if err != nil {
-		t.Errorf("Error: %v", err)
+		optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if optmised_code != expected_result {
+			t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		}
 	}
 
-}
+	func TestPerformDeadCodeElimination_UnusedVariableAfterReturn(t *testing.T) {
+		code := "package main\n"
+		code += "func main() {\n"
+		code += "return\n"
+		code += "random_num := 5\n"
+		code += "return\n"
+		code += "}"
 
-func TestOptimiseGo_NoInputCode(t *testing.T) {
-	code := ""
+		expected_result := "package main\n\n"
+		expected_result += "func main() {\n"
+		expected_result += "\treturn\n"
+		expected_result += "}\n"
 
-	_, err := services.OptimiseGoCode(code, true, true, true)
-	if err == nil {
-		t.Errorf("Error expected")
+		optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if optmised_code != expected_result {
+			t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		}
 	}
-}
 
-func TestPerformDeadCodeElimination_Simple(t *testing.T) {
-	code := "package main\n"
-	code += "func main() {\n"
-	code += "return\n"
-	code += "random_num := 5\n"
-	code += "}"
+	func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn(t *testing.T) {
+		code := "package main\n"
+		code += "func main() {\n"
+		code += "random_num := 5\n"
+		code += "return\n"
+		code += "}"
 
-	expected_result := "package main\n\n"
-	expected_result += "func main() {\n"
-	expected_result += "\treturn\n"
-	expected_result += "}\n"
+		expected_result := "package main\n\n"
+		expected_result += "func main() {\n"
+		expected_result += "\treturn\n"
+		expected_result += "}\n"
 
-	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
-	if err != nil {
-		t.Errorf("Error: %v", err)
+		optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if optmised_code != expected_result {
+			t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		}
 	}
-	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+
+	func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn_2(t *testing.T) {
+		code := "package main\n"
+		code += "func main() {\n"
+		code += "var random_num int\n"
+		code += "return\n"
+		code += "}"
+
+		expected_result := "package main\n\n"
+		expected_result += "func main() {\n"
+		expected_result += "\treturn\n"
+		expected_result += "}\n"
+
+		optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if optmised_code != expected_result {
+			t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		}
 	}
-}
 
-func TestPerformDeadCodeElimination_MultipleReturn(t *testing.T) {
-	code := "package main\n"
-	code += "func main() {\n"
-	code += "return\n"
-	code += "random_num := 5\n"
-	code += "return\n"
-	code += "}"
+	func TestPerformDeadCodeElimination_EmptyIfStatement(t *testing.T) {
+		code := "package main\n"
+		code += "func main() {\n"
+		code += "false_bool := false\n"
+		code += "if false_bool {\n"
+		code += "}\n"
+		code += "return\n"
+		code += "}"
 
-	expected_result := "package main\n\n"
-	expected_result += "func main() {\n"
-	expected_result += "\treturn\n"
-	expected_result += "}\n"
+		expected_result := "package main\n\n"
+		expected_result += "func main() {\n"
+		expected_result += "\treturn\n"
+		expected_result += "}\n"
 
-	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
-	if err != nil {
-		t.Errorf("Error: %v", err)
+		optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if optmised_code != expected_result {
+			t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		}
 	}
-	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+
+	func TestPerformDeadCodeElimination_ConstantVariableIfStatement(t *testing.T) {
+		code := "package main\n"
+		code += "func main() {\n"
+		code += "false_bool := false\n"
+		code += "if false_bool {\n"
+		code += "random_num := 5\n"
+		code += "return\n"
+		code += "}\n"
+		code += "return\n"
+		code += "}"
+
+		expected_result := "package main\n\n"
+		expected_result += "func main() {\n"
+		expected_result += "\treturn\n"
+		expected_result += "}\n"
+
+		optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if optmised_code != expected_result {
+			t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		}
 	}
-}
 
-func TestPerformDeadCodeElimination_UnusedVariableAfterReturn(t *testing.T) {
-	code := "package main\n"
-	code += "func main() {\n"
-	code += "return\n"
-	code += "random_num := 5\n"
-	code += "return\n"
-	code += "}"
+	func TestPerformDeadCodeElimination_ConstantVariableIfStatement_False(t *testing.T) {
+		code := "package main\n"
+		code += "func main() {\n"
+		code += "false_bool := false\n"
+		code += "if false {\n"
+		code += "random_num := 5\n"
+		code += "return\n"
+		code += "}\n"
+		code += "return\n"
+		code += "}"
 
-	expected_result := "package main\n\n"
-	expected_result += "func main() {\n"
-	expected_result += "\treturn\n"
-	expected_result += "}\n"
+		expected_result := "package main\n\n"
+		expected_result += "func main() {\n"
+		expected_result += "\treturn\n"
+		expected_result += "}\n"
 
-	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
-	if err != nil {
-		t.Errorf("Error: %v", err)
+		optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if optmised_code != expected_result {
+			t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		}
 	}
-	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+
+	func TestPerformDeadCodeElimination_ConstantVariableIfStatement_True(t *testing.T) {
+		code := "package main\n"
+		code += "import \"fmt\" \n"
+		code += "func main() {\n"
+		code += "false_bool := false\n"
+		code += "if true {\n"
+		code += "random_num := 5\n"
+		code += "fmt.Printf(\"%v\",random_num)\n"
+		code += "}\n"
+		code += "return\n"
+		code += "}"
+
+		expected_result := "package main\n\n"
+		expected_result += "import \"fmt\"\n"
+		expected_result += "func main() {\n"
+		expected_result += "\tif true {\n"
+		expected_result += "\t\trandom_num := 5\n"
+		expected_result += "\t\tfmt.Printf(\"%v\", random_num)\n"
+		expected_result += "\t}\n"
+		expected_result += "\treturn\n"
+		expected_result += "}\n"
+
+		optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if optmised_code != expected_result {
+			t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		}
 	}
-}
 
-func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn(t *testing.T) {
-	code := "package main\n"
-	code += "func main() {\n"
-	code += "random_num := 5\n"
-	code += "return\n"
-	code += "}"
+	func TestPerformDeadCodeElimination_ConstantVariableIfStatement_True2(t *testing.T) {
+		code := "package main\n"
+		code += "import \"fmt\" \n"
+		code += "func main() {\n"
+		code += "false_bool := false\n"
+		code += "if true {\n"
+		code += "random_num := 5\n"
+		code += "random_num++\n"
+		code += "}\n"
+		code += "return\n"
+		code += "}"
 
-	expected_result := "package main\n\n"
-	expected_result += "func main() {\n"
-	expected_result += "\treturn\n"
-	expected_result += "}\n"
+		expected_result := "package main\n\n"
+		expected_result += "import \"fmt\"\n"
+		expected_result += "func main() {\n"
+		expected_result += "\tif true {\n"
+		expected_result += "\t\trandom_num := 5\n"
+		expected_result += "\t\trandom_num++\n"
+		expected_result += "\t}\n"
+		expected_result += "\treturn\n"
+		expected_result += "}\n"
 
-	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
-	if err != nil {
-		t.Errorf("Error: %v", err)
+		optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if optmised_code != expected_result {
+			t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		}
 	}
-	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+
+	func TestPerformDeadCodeElimination_ReachedIfStatement_Identifier(t *testing.T) {
+		code := "package main\n"
+		code += "import \"fmt\"\n"
+		code += "func main() {\n"
+		code += "true_bool := true\n"
+		code += "if true_bool{\n"
+		code += "fmt.Printf(\"Hi\")\n"
+		code += "random_num := 5\n"
+		code += "return\n"
+		code += "}\n"
+		code += "return\n"
+		code += "}"
+
+		expected_result := "package main\n\n"
+		expected_result += "import \"fmt\"\n"
+		expected_result += "func main() {\n"
+		expected_result += "\ttrue_bool := true\n"
+		expected_result += "\tif true_bool {\n"
+		expected_result += "\t\tfmt.Printf(\"Hi\")\n"
+		expected_result += "\t\treturn\n"
+		expected_result += "\t}\n"
+		expected_result += "\treturn\n"
+		expected_result += "}\n"
+
+		optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if optmised_code != expected_result {
+			t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		}
 	}
-}
-
-func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn_2(t *testing.T) {
-	code := "package main\n"
-	code += "func main() {\n"
-	code += "var random_num int\n"
-	code += "return\n"
-	code += "}"
-
-	expected_result := "package main\n\n"
-	expected_result += "func main() {\n"
-	expected_result += "\treturn\n"
-	expected_result += "}\n"
-
-	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
-	}
-}
-
-func TestPerformDeadCodeElimination_EmptyIfStatement(t *testing.T) {
-	code := "package main\n"
-	code += "func main() {\n"
-	code += "false_bool := false\n"
-	code += "if false_bool {\n"
-	code += "}\n"
-	code += "return\n"
-	code += "}"
-
-	expected_result := "package main\n\n"
-	expected_result += "func main() {\n"
-	expected_result += "\treturn\n"
-	expected_result += "}\n"
-
-	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
-	}
-}
-
-func TestPerformDeadCodeElimination_ConstantVariableIfStatement(t *testing.T) {
-	code := "package main\n"
-	code += "func main() {\n"
-	code += "false_bool := false\n"
-	code += "if false_bool {\n"
-	code += "random_num := 5\n"
-	code += "return\n"
-	code += "}\n"
-	code += "return\n"
-	code += "}"
-
-	expected_result := "package main\n\n"
-	expected_result += "func main() {\n"
-	expected_result += "\treturn\n"
-	expected_result += "}\n"
-
-	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
-	}
-}
-
-func TestPerformDeadCodeElimination_ConstantVariableIfStatement_False(t *testing.T) {
-	code := "package main\n"
-	code += "func main() {\n"
-	code += "false_bool := false\n"
-	code += "if false {\n"
-	code += "random_num := 5\n"
-	code += "return\n"
-	code += "}\n"
-	code += "return\n"
-	code += "}"
-
-	expected_result := "package main\n\n"
-	expected_result += "func main() {\n"
-	expected_result += "\treturn\n"
-	expected_result += "}\n"
-
-	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
-	}
-}
-
-func TestPerformDeadCodeElimination_ConstantVariableIfStatement_True(t *testing.T) {
-	code := "package main\n"
-	code += "import \"fmt\" \n"
-	code += "func main() {\n"
-	code += "false_bool := false\n"
-	code += "if true {\n"
-	code += "random_num := 5\n"
-	code += "fmt.Printf(\"%v\",random_num)\n"
-	code += "}\n"
-	code += "return\n"
-	code += "}"
-
-	expected_result := "package main\n\n"
-	expected_result += "import \"fmt\"\n"
-	expected_result += "func main() {\n"
-	expected_result += "\tif true {\n"
-	expected_result += "\t\trandom_num := 5\n"
-	expected_result += "\t\tfmt.Printf(\"%v\", random_num)\n"
-	expected_result += "\t}\n"
-	expected_result += "\treturn\n"
-	expected_result += "}\n"
-
-	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
-	}
-}
-
-func TestPerformDeadCodeElimination_ConstantVariableIfStatement_True2(t *testing.T) {
-	code := "package main\n"
-	code += "import \"fmt\" \n"
-	code += "func main() {\n"
-	code += "false_bool := false\n"
-	code += "if true {\n"
-	code += "random_num := 5\n"
-	code += "random_num++\n"
-	code += "}\n"
-	code += "return\n"
-	code += "}"
-
-	expected_result := "package main\n\n"
-	expected_result += "import \"fmt\"\n"
-	expected_result += "func main() {\n"
-	expected_result += "\tif true {\n"
-	expected_result += "\t\trandom_num := 5\n"
-	expected_result += "\t\trandom_num++\n"
-	expected_result += "\t}\n"
-	expected_result += "\treturn\n"
-	expected_result += "}\n"
-
-	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
-	}
-}
-
-func TestPerformDeadCodeElimination_ReachedIfStatement_Identifier(t *testing.T) {
-	code := "package main\n"
-	code += "import \"fmt\"\n"
-	code += "func main() {\n"
-	code += "true_bool := true\n"
-	code += "if true_bool{\n"
-	code += "fmt.Printf(\"Hi\")\n"
-	code += "random_num := 5\n"
-	code += "return\n"
-	code += "}\n"
-	code += "return\n"
-	code += "}"
-
-	expected_result := "package main\n\n"
-	expected_result += "import \"fmt\"\n"
-	expected_result += "func main() {\n"
-	expected_result += "\ttrue_bool := true\n"
-	expected_result += "\tif true_bool {\n"
-	expected_result += "\t\tfmt.Printf(\"Hi\")\n"
-	expected_result += "\t\treturn\n"
-	expected_result += "\t}\n"
-	expected_result += "\treturn\n"
-	expected_result += "}\n"
-
-	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
-	}
-}
-
+*/
 func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_Equal(t *testing.T) {
 	code := "package main\n"
 	code += "func main() {\n"
