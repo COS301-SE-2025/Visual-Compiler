@@ -565,7 +565,6 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_data AstData) error {
 
 	optimised_statements := []ast.Stmt{}
 	unreachable := false
-	unused_variables := make(map[string]string)
 
 	for _, function_statements := range function.Body.List {
 
@@ -573,7 +572,7 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_data AstData) error {
 			continue
 		}
 
-		SearchStructureBody(&unused_variables, function_statements, function_statements, &optimised_statements, ast_data, function, &unreachable)
+		SearchStructureBody(function_statements, &optimised_statements, ast_data, function, &unreachable)
 
 	}
 
@@ -582,14 +581,14 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_data AstData) error {
 	return nil
 }
 
-// Name:RemoveUnusedVariables
+// Name:RemoveUnusedAssignedVariables
 //
-// Parameters: *ast.AssignStmt, map[string]string, *types.Info, *ast.FuncDecl, *[]ast.Stmt
+// Parameters: *ast.AssignStmt, *types.Info, *[]ast.Stmt
 //
 // Return:
 //
 // Determines if the statement contains any unused assigned variables and removes them from the AST
-func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, unused_variables *map[string]string, ast_data AstData, function *ast.FuncDecl, optimised_statements *[]ast.Stmt) {
+func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, ast_data AstData, optimised_statements *[]ast.Stmt) {
 	if statement.Tok == token.DEFINE {
 		new_lhs := []ast.Expr{}
 		new_rhs := []ast.Expr{}
@@ -602,19 +601,9 @@ func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, unused_variables *
 				for _, used_variable := range ast_data.ast_info.Uses {
 					if used_variable == variable {
 						used = true
-						delete(*unused_variables, ident.Name)
 						break
 					}
 				}
-				var value_str string
-				switch v := statement.Rhs[num].(type) {
-				case *ast.BasicLit:
-					value_str = v.Value
-				case *ast.Ident:
-					value_str = v.Name
-				}
-				(*unused_variables)[ident.Name] = value_str
-
 				if used {
 					new_lhs = append(new_lhs, lhs)
 					if num < len(statement.Rhs) {
@@ -641,14 +630,14 @@ func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, unused_variables *
 	}
 }
 
-// Name:RemoveDeclaredVariables
+// Name:RemoveUnusedDeclaredVariables
 //
-// Parameters: *ast.AssignStmt, map[string]string, *types.Info, *ast.FuncDecl, *[]ast.Stmt
+// Parameters: *ast.AssignStmt, *types.Info, *[]ast.Stmt
 //
 // Return:
 //
 // Determines if the statement contains any unused assigned variables and removes them from the AST
-func RemoveUnusedDeclaredVariables(statement *ast.DeclStmt, unused_variables *map[string]string, ast_data AstData, function_statements ast.Stmt, optimised_statements *[]ast.Stmt) {
+func RemoveUnusedDeclaredVariables(statement *ast.DeclStmt, ast_data AstData, optimised_statements *[]ast.Stmt) {
 	declaration_info, valid_declaration := statement.Decl.(*ast.GenDecl)
 	if valid_declaration && declaration_info.Tok == token.VAR {
 		new_spec := []ast.Spec{}
@@ -659,12 +648,11 @@ func RemoveUnusedDeclaredVariables(statement *ast.DeclStmt, unused_variables *ma
 				new_values := []ast.Expr{}
 				for num, name := range value.Names {
 					variable := ast_data.ast_info.Defs[name]
-					(*unused_variables)[name.Name] = "True"
+
 					used := false
 					for _, used_variable := range ast_data.ast_info.Uses {
 						if used_variable == variable {
 							used = true
-							delete(*unused_variables, name.Name)
 							break
 						}
 					}
@@ -686,21 +674,21 @@ func RemoveUnusedDeclaredVariables(statement *ast.DeclStmt, unused_variables *ma
 		}
 		if len(new_spec) > 0 {
 			declaration_info.Specs = new_spec
-			*optimised_statements = append(*optimised_statements, function_statements)
+			*optimised_statements = append(*optimised_statements, statement)
 		}
 	} else {
-		*optimised_statements = append(*optimised_statements, function_statements)
+		*optimised_statements = append(*optimised_statements, statement)
 	}
 }
 
 // Name:RemoveUnusedIfStatement
 //
-// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, AstData
+// Parameters:   *ast.FuncDecl, *[]ast.Stmt, AstData
 //
 // Return:
 //
 // Determines if the statement contains any unused if statements and removes them from the AST
-func RemoveUnusedIfStatement(unused_variables *map[string]string, function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
+func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
 	if_statement, valid_ifstatement := function_statements.(*ast.IfStmt)
 	unreachable := false
 	var optimised_if_body []ast.Stmt
@@ -721,7 +709,7 @@ func RemoveUnusedIfStatement(unused_variables *map[string]string, function_state
 									continue
 								}
 
-								SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
+								SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
 							}
 							if_statement.Body.List = optimised_if_body
 							*optimised_statements = append(*optimised_statements, if_statement)
@@ -733,7 +721,7 @@ func RemoveUnusedIfStatement(unused_variables *map[string]string, function_state
 									continue
 								}
 
-								SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
+								SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
 							}
 							if_statement.Body.List = optimised_if_body
 							*optimised_statements = append(*optimised_statements, if_statement)
@@ -833,7 +821,7 @@ func RemoveUnusedIfStatement(unused_variables *map[string]string, function_state
 					continue
 				}
 
-				SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
+				SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
 			}
 			if_statement.Body.List = optimised_if_body
 			*optimised_statements = append(*optimised_statements, if_statement)
@@ -858,7 +846,7 @@ func RemoveUnusedIfStatement(unused_variables *map[string]string, function_state
 										continue
 									}
 
-									SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
+									SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
 								}
 								if_statement.Body.List = optimised_if_body
 								*optimised_statements = append(*optimised_statements, if_statement)
@@ -872,7 +860,7 @@ func RemoveUnusedIfStatement(unused_variables *map[string]string, function_state
 									continue
 								}
 
-								SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
+								SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
 							}
 							if_statement.Body.List = optimised_if_body
 							*optimised_statements = append(*optimised_statements, if_statement)
@@ -909,7 +897,7 @@ func ConvertToConstant(lit *ast.BasicLit) (constant.Value, error) {
 // Return:
 //
 // Determines if the statement contains any unused for statements and removes them from the AST
-func RemoveUnusedForStatement(unused_variables *map[string]string, function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
+func RemoveUnusedForStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
 	for_statement, valid_forstatement := function_statements.(*ast.ForStmt)
 	unreachable := false
 	var optimised_for_body []ast.Stmt
@@ -961,7 +949,7 @@ func RemoveUnusedForStatement(unused_variables *map[string]string, function_stat
 								continue
 							}
 
-							SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_for_body, ast_data, function, &unreachable)
+							SearchStructureBody(body_statement, &optimised_for_body, ast_data, function, &unreachable)
 						}
 						for_statement.Body.List = optimised_for_body
 						*optimised_statements = append(*optimised_statements, for_statement)
@@ -985,7 +973,7 @@ func RemoveUnusedForStatement(unused_variables *map[string]string, function_stat
 // Return:
 //
 // Determines if the statement contains any unused switch statements and removes them from the AST
-func RemoveUnusedSwitchStatement(unused_variables *map[string]string, function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
+func RemoveUnusedSwitchStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
 	switch_statement, valid_switchstatement := function_statements.(*ast.SwitchStmt)
 	unreachable := false
 	var optimised_body []ast.Stmt
@@ -1002,7 +990,7 @@ func RemoveUnusedSwitchStatement(unused_variables *map[string]string, function_s
 
 			switch statement := body_statement.(type) {
 			case *ast.CaseClause:
-				RemoveUnusedSwitchCase(unused_variables, statement, &optimised_body, ast_data, function)
+				RemoveUnusedSwitchCase(statement, &optimised_body, ast_data, function)
 			}
 		}
 		if optimised_body != nil {
@@ -1021,7 +1009,7 @@ func RemoveUnusedSwitchStatement(unused_variables *map[string]string, function_s
 // Return:
 //
 // Determines if the statement contains any unused switch case statements and removes them from the AST
-func RemoveUnusedSwitchCase(unused_variables *map[string]string, function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
+func RemoveUnusedSwitchCase(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
 	switch_statement, valid_switchstatement := function_statements.(*ast.CaseClause)
 	unreachable := false
 	var optimised_body []ast.Stmt
@@ -1036,7 +1024,7 @@ func RemoveUnusedSwitchCase(unused_variables *map[string]string, function_statem
 				continue
 			}
 
-			SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_body, ast_data, function, &unreachable)
+			SearchStructureBody(body_statement, &optimised_body, ast_data, function, &unreachable)
 		}
 		switch_statement.Body = optimised_body
 		*optimised_statements = append(*optimised_statements, switch_statement)
@@ -1047,23 +1035,23 @@ func RemoveUnusedSwitchCase(unused_variables *map[string]string, function_statem
 
 // Name:SearchStructureBody
 //
-// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, AstData
+// Parameters:   ast.Stmt, *[]ast.Stmt, AstData, *ast.FuncDecl,*bool
 //
 // Return:
 //
 // Determines type of statement and performs the necessary dead code elimination
-func SearchStructureBody(unused_variables *map[string]string, function_statements ast.Stmt, body_statement ast.Stmt, optimised_body *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl, unreachable *bool) {
+func SearchStructureBody(body_statement ast.Stmt, optimised_body *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl, unreachable *bool) {
 	switch statement := body_statement.(type) {
 	case *ast.AssignStmt: // search for unused assigned variables
-		RemoveUnusedAssignedVariables(statement, unused_variables, ast_data, function, optimised_body)
+		RemoveUnusedAssignedVariables(statement, ast_data, optimised_body)
 	case *ast.DeclStmt: //search for unused declared variables
-		RemoveUnusedDeclaredVariables(statement, unused_variables, ast_data, function_statements, optimised_body)
+		RemoveUnusedDeclaredVariables(statement, ast_data, optimised_body)
 	case *ast.IfStmt:
-		RemoveUnusedIfStatement(unused_variables, statement, optimised_body, ast_data, function)
+		RemoveUnusedIfStatement(statement, optimised_body, ast_data, function)
 	case *ast.ForStmt:
-		RemoveUnusedForStatement(unused_variables, statement, optimised_body, ast_data, function)
+		RemoveUnusedForStatement(statement, optimised_body, ast_data, function)
 	case *ast.SwitchStmt:
-		RemoveUnusedSwitchStatement(unused_variables, statement, optimised_body, ast_data, function)
+		RemoveUnusedSwitchStatement(statement, optimised_body, ast_data, function)
 
 	case *ast.ReturnStmt, *ast.BranchStmt, *ast.GoStmt, *ast.DeferStmt:
 		*optimised_body = append(*optimised_body, statement)
