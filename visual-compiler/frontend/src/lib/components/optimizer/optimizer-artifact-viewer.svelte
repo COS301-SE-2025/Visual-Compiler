@@ -94,40 +94,6 @@
                 <pre class="error-details">{optimizationError.message || String(optimizationError)}</pre>
             </div>
         {:else if optimizedCode && optimizedCode.optimized && optimizedCode.optimized.length > 0}
-            <!-- Performance Gains Section -->
-            {#if optimizedCode.performanceGains}
-                <div class="performance-section">
-                    <h3>Performance Improvements</h3>
-                    <div class="metrics-grid">
-                        <div class="metric-card">
-                            <div class="metric-label">Execution Time</div>
-                            <div class="metric-value">{optimizedCode.performanceGains.executionTime}</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">Memory Usage</div>
-                            <div class="metric-value">{optimizedCode.performanceGains.memoryUsage}</div>
-                        </div>
-                        <div class="metric-card">
-                            <div class="metric-label">Code Size</div>
-                            <div class="metric-value">{optimizedCode.performanceGains.codeSize}</div>
-                        </div>
-                    </div>
-                </div>
-            {/if}
-
-            <!-- Applied Techniques Section -->
-            {#if optimizedCode.techniques && optimizedCode.techniques.length > 0}
-                <div class="techniques-section">
-                    <h3>Applied Techniques</h3>
-                    <div class="techniques-list">
-                        {#each optimizedCode.techniques as technique}
-                            <span class="technique-badge">{technique}</span>
-                        {/each}
-                    </div>
-                </div>
-            {/if}
-
-            <!-- Code Output Section -->
             <div class="artifact-subheader">
                 <h3>Optimized Code ({optimizedCode.language})</h3>
             </div>
@@ -214,67 +180,6 @@
     .copy-button:hover {
         background-color: #E0E7FF;
         border-color: #AFA2D7;
-    }
-
-    /* Performance Section */
-    .performance-section {
-        background: #F3E8FF;
-        padding: 1rem;
-        border-radius: 8px;
-        border-left: 4px solid #AFA2D7;
-        margin-bottom: 1rem;
-    }
-
-    .metrics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 0.75rem;
-        margin-top: 1rem;
-    }
-
-    .metric-card {
-        background: white;
-        padding: 0.75rem;
-        border-radius: 6px;
-        text-align: center;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    }
-
-    .metric-label {
-        font-size: 0.8rem;
-        color: #6B7280;
-        margin-bottom: 0.25rem;
-    }
-
-    .metric-value {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #059669;
-    }
-
-    /* Techniques Section */
-    .techniques-section {
-        background: #F8FAFC;
-        padding: 1rem;
-        border-radius: 8px;
-        border: 1px solid #E5E7EB;
-        margin-bottom: 1rem;
-    }
-
-    .techniques-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-        margin-top: 1rem;
-    }
-
-    .technique-badge {
-        background: #AFA2D7;
-        color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
     }
 
     /* Code Section */
@@ -403,29 +308,6 @@
     :global(html.dark-mode) .copy-button:hover {
         background-color: #44337A;
         border-color: #8451C7;
-    }
-
-    :global(html.dark-mode) .performance-section {
-        background: #2D1B69;
-        border-left-color: #8451C7;
-    }
-
-    :global(html.dark-mode) .metric-card {
-        background: #374151;
-        color: #E5E7EB;
-    }
-
-    :global(html.dark-mode) .metric-label {
-        color: #9CA3AF;
-    }
-
-    :global(html.dark-mode) .metric-value {
-        color: #34D399;
-    }
-
-    :global(html.dark-mode) .techniques-section {
-        background: #2d3748;
-        border-color: #4a5568;
     }
 
     :global(html.dark-mode) .code-wrapper {
