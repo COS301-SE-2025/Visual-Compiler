@@ -635,63 +635,237 @@ func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, unused_variables *
 								}
 
 							case *ast.BinaryExpr:
+								valid_rhs := false
+								valid_lhs := false
+								var rhs_value string
+								var lhs_value string
+								rhs_is_num := false
+								lhs_is_num := false
+								var rhs_name string
+								var lhs_name string
+
 								lhs, valid_cond := expression.X.(*ast.Ident)
 								if valid_cond {
 									rhs, valid_var := expression.Y.(*ast.BasicLit)
 									if valid_var {
-										unused_variable, is_unused := (*unused_variables)[lhs.Name]
+										lhs_var, is_unused := (*unused_variables)[lhs.Name]
+										lhs_name = lhs.Name
 										if is_unused {
-											operator := expression.Op.String()
-											switch operator {
-											case "==":
-												if rhs.Value == unused_variable {
-													used = true
-													delete((*unused_variables), lhs.Name)
-												} else {
-													used = false
-													(*unused_variables)[ident.Name] = value_str
+											valid_lhs = true
+											valid_rhs = true
+											lhs_value = lhs_var
+											rhs_value = rhs.Value
+											rhs_is_num = true
+										}
+									} else {
+										rhs, valid_var := expression.Y.(*ast.Ident)
+										if valid_var {
+											lhs_var, is_unused := (*unused_variables)[lhs.Name]
+											lhs_name = lhs.Name
+											rhs_var, rhs_is_unused := (*unused_variables)[rhs.Name]
+											rhs_name = rhs.Name
+											if is_unused && rhs_is_unused {
+												for _, use := range ast_data.ast_info.Defs {
+													if use != nil {
+														if use.Name() == rhs.Name {
+															if use.Type().String() == "int" || use.Type().String() == "float32" || use.Type().String() == "float64" {
+																rhs_is_num = true
+															}
+														}
+														if use.Name() == lhs.Name {
+															if use.Type().String() == "int" || use.Type().String() == "float32" || use.Type().String() == "float64" {
+																lhs_is_num = true
+															}
+														}
+													}
 												}
-											case "!=":
-												if rhs.Value != unused_variable {
-													used = true
-													delete((*unused_variables), lhs.Name)
-												} else {
-													used = false
-													(*unused_variables)[ident.Name] = value_str
+												valid_lhs = true
+												valid_rhs = true
+												lhs_value = lhs_var
+												rhs_value = rhs_var
+											}
+										}
+									}
+								} else {
+									lhs, valid_cond := expression.X.(*ast.BasicLit)
+									if valid_cond {
+										valid_lhs = true
+										lhs_value = lhs.Value
+										lhs_is_num = true
+										rhs, valid_var := expression.Y.(*ast.Ident)
+										if valid_var {
+											rhs_var, rhs_is_unused := (*unused_variables)[rhs.Name]
+											rhs_name = rhs.Name
+											if rhs_is_unused {
+												for _, use := range ast_data.ast_info.Defs {
+													if use != nil {
+														if use.Name() == rhs.Name {
+															if use.Type().String() == "int" || use.Type().String() == "float32" || use.Type().String() == "float64" {
+																rhs_is_num = true
+															}
+														}
+													}
 												}
+												valid_rhs = true
+												rhs_value = rhs_var
+											}
+										}
+									}
+								}
 
-											case ">=":
-												if unused_variable >= rhs.Value {
+								if valid_lhs && valid_rhs {
+									operator := expression.Op.String()
+									switch operator {
+									case "==":
+										if rhs_value == lhs_value {
+											if lhs_name != "" {
+												used = true
+												delete(*unused_variables, lhs_name)
+											}
+											if rhs_name != "" {
+												used = true
+												delete(*unused_variables, rhs_name)
+											}
+										} else {
+											used = false
+											(*unused_variables)[ident.Name] = value_str
+										}
+									case "!=":
+										if rhs_value != lhs_value {
+											if lhs_name != "" {
+												used = true
+												delete(*unused_variables, lhs_name)
+											}
+											if rhs_name != "" {
+												used = true
+												delete(*unused_variables, rhs_name)
+											}
+										} else {
+											used = false
+											(*unused_variables)[ident.Name] = value_str
+										}
+
+									case ">=":
+										if lhs_is_num && rhs_is_num {
+											lhs_val, _ := strconv.ParseFloat(lhs_value, 64)
+											rhs_val, _ := strconv.ParseFloat(rhs_value, 64)
+											if lhs_val >= rhs_val {
+												if lhs_name != "" {
 													used = true
-													delete(*unused_variables, lhs.Name)
-												} else {
-													used = false
-													(*unused_variables)[ident.Name] = value_str
+													delete(*unused_variables, lhs_name)
 												}
-											case "<=":
-												if unused_variable <= rhs.Value {
+												if rhs_name != "" {
 													used = true
-													delete(*unused_variables, lhs.Name)
-												} else {
-													used = false
-													(*unused_variables)[ident.Name] = value_str
+													delete(*unused_variables, rhs_name)
 												}
-											case ">":
-												if unused_variable > rhs.Value {
+											} else {
+												used = false
+												(*unused_variables)[ident.Name] = value_str
+											}
+										} else {
+											if lhs_value >= rhs_value {
+												if lhs_name != "" {
 													used = true
-													delete(*unused_variables, lhs.Name)
-												} else {
-													used = false
-													(*unused_variables)[ident.Name] = value_str
+													delete(*unused_variables, lhs_name)
 												}
-											case "<":
-												if unused_variable < rhs.Value {
+												if rhs_name != "" {
 													used = true
-													delete(*unused_variables, lhs.Name)
-												} else {
-													used = false
-													(*unused_variables)[ident.Name] = value_str
+													delete(*unused_variables, rhs_name)
 												}
+											} else {
+												used = false
+												(*unused_variables)[ident.Name] = value_str
+											}
+										}
+
+									case "<=":
+										if lhs_is_num && rhs_is_num {
+											lhs_val, _ := strconv.ParseFloat(lhs_value, 64)
+											rhs_val, _ := strconv.ParseFloat(rhs_value, 64)
+											if lhs_val <= rhs_val {
+												if lhs_name != "" {
+													used = true
+													delete(*unused_variables, lhs_name)
+												}
+												if rhs_name != "" {
+													used = true
+													delete(*unused_variables, rhs_name)
+												}
+											} else {
+												used = false
+												(*unused_variables)[ident.Name] = value_str
+											}
+										} else {
+											if lhs_value <= rhs_value {
+												if lhs_name != "" {
+													used = true
+													delete(*unused_variables, lhs_name)
+												}
+												if rhs_name != "" {
+													used = true
+													delete(*unused_variables, rhs_name)
+												}
+											} else {
+												used = false
+												(*unused_variables)[ident.Name] = value_str
+											}
+										}
+									case ">":
+										if lhs_is_num && rhs_is_num {
+											lhs_val, _ := strconv.ParseFloat(lhs_value, 64)
+											rhs_val, _ := strconv.ParseFloat(rhs_value, 64)
+											if lhs_val > rhs_val {
+												if lhs_name != "" {
+													used = true
+													delete(*unused_variables, lhs_name)
+												}
+												if rhs_name != "" {
+													used = true
+													delete(*unused_variables, rhs_name)
+												}
+											} else {
+												used = false
+												(*unused_variables)[ident.Name] = value_str
+											}
+										} else {
+											if lhs_value > rhs_value {
+												used = true
+												delete(*unused_variables, lhs.Name)
+											} else {
+												used = false
+												(*unused_variables)[ident.Name] = value_str
+											}
+										}
+									case "<":
+										if lhs_is_num && rhs_is_num {
+											lhs_val, _ := strconv.ParseFloat(lhs_value, 64)
+											rhs_val, _ := strconv.ParseFloat(rhs_value, 64)
+											if lhs_val < rhs_val {
+												if lhs_name != "" {
+													used = true
+													delete(*unused_variables, lhs_name)
+												}
+												if rhs_name != "" {
+													used = true
+													delete(*unused_variables, rhs_name)
+												}
+											} else {
+												used = false
+												(*unused_variables)[ident.Name] = value_str
+											}
+										} else {
+											if lhs_value < rhs_value {
+												if lhs_name != "" {
+													used = true
+													delete(*unused_variables, lhs_name)
+												}
+												if rhs_name != "" {
+													used = true
+													delete(*unused_variables, rhs_name)
+												}
+											} else {
+												used = false
+												(*unused_variables)[ident.Name] = value_str
 											}
 										}
 									}
@@ -881,6 +1055,71 @@ func RemoveUnusedIfStatement(unused_variables *map[string]string, function_state
 					}
 					if_statement.Body.List = optimised_if_body
 					*optimised_statements = append(*optimised_statements, if_statement)
+				}
+			} else {
+				_, valid_expr := condition_variable.X.(*ast.BasicLit)
+				if valid_expr {
+					rhs, valid_expr_rhs := condition_variable.Y.(*ast.Ident)
+					if valid_expr_rhs {
+						_, is_unused := (*unused_variables)[rhs.Name]
+						if !is_unused {
+							for _, body_statement := range if_statement.Body.List {
+								if unreachable {
+									continue
+								}
+
+								switch statement := body_statement.(type) {
+								case *ast.AssignStmt: // search for unused assigned variables
+									RemoveUnusedAssignedVariables(statement, unused_variables, ast_data, function, &optimised_if_body)
+								case *ast.DeclStmt: //search for unused declared variables
+									RemoveUnusedDeclaredVariables(statement, unused_variables, ast_data, function_statements, &optimised_if_body)
+								case *ast.IfStmt:
+									RemoveUnusedIfStatement(unused_variables, statement, &optimised_if_body, ast_data, function)
+								case *ast.ForStmt:
+									RemoveUnusedForStatement(unused_variables, statement, &optimised_if_body, ast_data, function)
+								case *ast.SwitchStmt:
+									RemoveUnusedSwitchStatement(unused_variables, statement, &optimised_if_body, ast_data, function)
+
+								case *ast.ReturnStmt, *ast.BranchStmt, *ast.GoStmt, *ast.DeferStmt:
+									optimised_if_body = append(optimised_if_body, statement)
+									unreachable = true
+
+								default:
+									optimised_if_body = append(optimised_if_body, statement)
+								}
+							}
+							if_statement.Body.List = optimised_if_body
+							*optimised_statements = append(*optimised_statements, if_statement)
+						}
+					} else {
+						for _, body_statement := range if_statement.Body.List {
+							if unreachable {
+								continue
+							}
+
+							switch statement := body_statement.(type) {
+							case *ast.AssignStmt: // search for unused assigned variables
+								RemoveUnusedAssignedVariables(statement, unused_variables, ast_data, function, &optimised_if_body)
+							case *ast.DeclStmt: //search for unused declared variables
+								RemoveUnusedDeclaredVariables(statement, unused_variables, ast_data, function_statements, &optimised_if_body)
+							case *ast.IfStmt:
+								RemoveUnusedIfStatement(unused_variables, statement, &optimised_if_body, ast_data, function)
+							case *ast.ForStmt:
+								RemoveUnusedForStatement(unused_variables, statement, &optimised_if_body, ast_data, function)
+							case *ast.SwitchStmt:
+								RemoveUnusedSwitchStatement(unused_variables, statement, &optimised_if_body, ast_data, function)
+
+							case *ast.ReturnStmt, *ast.BranchStmt, *ast.GoStmt, *ast.DeferStmt:
+								optimised_if_body = append(optimised_if_body, statement)
+								unreachable = true
+
+							default:
+								optimised_if_body = append(optimised_if_body, statement)
+							}
+						}
+						if_statement.Body.List = optimised_if_body
+						*optimised_statements = append(*optimised_statements, if_statement)
+					}
 				}
 			}
 

@@ -456,6 +456,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_NotEqual
 		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
 	}
 }
+
 func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_NotEqual(t *testing.T) {
 	code := "package main\n"
 	code += "func main() {\n"
@@ -677,6 +678,400 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Greate
 
 	expected_result := "package main\n\n"
 	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_EqualVariables(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var1 := \"halfstack\"\n"
+	code += "var2 := \"halfstack\"\n"
+	code += "if var1 == var2{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tvar1 := \"halfstack\"\n"
+	expected_result += "\tvar2 := \"halfstack\"\n"
+	expected_result += "\tif var1 == var2 {\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_EqualVariables(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var1 := \"halfstack\"\n"
+	code += "var2 := \"half\"\n"
+	code += "if var1==var2{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_NotEqualVariables(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var1 := \"halfstack\"\n"
+	code += "var2 := \"half\"\n"
+	code += "if var1!=var2{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tvar1 := \"halfstack\"\n"
+	expected_result += "\tvar2 := \"half\"\n"
+	expected_result += "\tif var1 != var2 {\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_NotEqualVariables(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var1 := \"halfstack\"\n"
+	code += "var2 := \"halfstack\"\n"
+	code += "if var1!=var2{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_LessEqualVariables(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var1 := 5\n"
+	code += "var2 := 5\n"
+	code += "if var1<=var2{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tvar1 := 5\n"
+	expected_result += "\tvar2 := 5\n"
+	expected_result += "\tif var1 <= var2 {\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_LessEqualVariables(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var1 := 6\n"
+	code += "var2 := 5\n"
+	code += "if var1<=var2{\n"
+	code += "random_num := 5\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_LessVariables(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var1 := 4\n"
+	code += "var2 := 5\n"
+	code += "if var1<var2{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tvar1 := 4\n"
+	expected_result += "\tvar2 := 5\n"
+	expected_result += "\tif var1 < var2 {\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_LessVariables(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var1 := 6\n"
+	code += "var2 := 5\n"
+	code += "if var1<var2{\n"
+	code += "random_num := 5\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_GreaterEqualVariables(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var1 := 13\n"
+	code += "var2 := 5\n"
+	code += "if var1 >= var2{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tvar1 := 13\n"
+	expected_result += "\tvar2 := 5\n"
+	expected_result += "\tif var1 >= var2 {\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_GreaterEqualVariables(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var1 := 1\n"
+	code += "var2 := 5\n"
+	code += "if var1>=var2{\n"
+	code += "random_num := 5\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_GreaterVariables(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var1 := 13\n"
+	code += "var2 := 5\n"
+	code += "if var1>var2{\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tvar1 := 13\n"
+	expected_result += "\tvar2 := 5\n"
+	expected_result += "\tif var1 > var2 {\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_GreaterVariables(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var1 := 1\n"
+	code += "var2 := 5\n"
+	code += "if var1>var2{\n"
+	code += "random_num := 5\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_Greater2(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var1 := 13\n"
+	code += "if 13==var1 {\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tvar1 := 13\n"
+	expected_result += "\tif 13 == var1 {\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_GreaterConstants(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "if 13==13 {\n"
+	code += "random_num := 5\n"
+	code += "return\n"
+	code += "}\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tif 13 == 13 {\n"
+	expected_result += "\t\treturn\n"
+	expected_result += "\t}\n"
 	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
