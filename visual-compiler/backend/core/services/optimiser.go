@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
+	"go/constant"
 	"go/format"
 	"go/importer"
 	"go/parser"
@@ -149,9 +150,10 @@ func PerformConstantFolding(ast_file *ast.File, file_set *token.FileSet) error {
 }
 
 type AstData struct {
-	ast_info *types.Info
-	ast_file *ast.File
-	file_set *token.FileSet
+	ast_info        *types.Info
+	ast_file        *ast.File
+	file_set        *token.FileSet
+	variable_values map[string]interface{}
 }
 
 // Name: PerformDeadCodeElimination
@@ -170,7 +172,33 @@ func PerformDeadCodeElimination(ast_file *ast.File, file_set *token.FileSet) err
 	type_check_conf := types.Config{Importer: importer.Default()}
 	_, _ = type_check_conf.Check("", file_set, []*ast.File{ast_file}, ast_info)
 
-	ast_data := AstData{ast_info, ast_file, file_set}
+	variable_values := make(map[string]interface{})
+
+	ast.Inspect(ast_file, func(n ast.Node) bool {
+		assign, ok := n.(*ast.AssignStmt)
+		if !ok {
+			return true
+		}
+
+		for i, lhs := range assign.Lhs {
+			if ident, ok := lhs.(*ast.Ident); ok {
+				obj := ast_info.Defs[ident]
+				if obj == nil {
+					continue
+				}
+				if i < len(assign.Rhs) {
+					rhs := assign.Rhs[i]
+					var_value, valid_val := ast_info.Types[rhs]
+					if valid_val && var_value.Value != nil {
+						variable_values[ident.Name] = var_value.Value
+					}
+				}
+			}
+		}
+		return true
+	})
+
+	ast_data := AstData{ast_info, ast_file, file_set, variable_values}
 
 	err := RemoveUnusedFunctions(ast_data)
 	if err != nil {
@@ -682,63 +710,12 @@ func RemoveUnusedIfStatement(unused_variables *map[string]string, function_state
 		case *ast.Ident:
 			cond_variable, valid_cond := if_statement.Cond.(*ast.Ident)
 			if valid_cond {
-				for _, used_variable := range ast_data.ast_info.Uses {
-					fmt.Printf("used_variable.Name(): %v\n", used_variable.Name())
-					fmt.Printf("cond_variable.Name: %v\n", cond_variable.Name)
-					fmt.Printf("condition_variable.Name: %v\n", condition_variable.Name)
-					if used_variable.Name() == cond_variable.Name {
-						if condition_variable.Name != "false" {
-							for _, body_statement := range if_statement.Body.List {
-								if unreachable {
-									continue
-								}
-
-								SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
-							}
-							if_statement.Body.List = optimised_if_body
-							*optimised_statements = append(*optimised_statements, if_statement)
-						}
-					}
-				}
-			}
-
-			/*_, is_unused := (*unused_variables)[condition_variable.Name]
-			if !is_unused {
-				if condition_variable.Name != "false" {
-					for _, body_statement := range if_statement.Body.List {
-						if unreachable {
-							continue
-						}
-
-						SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
-					}
-					if_statement.Body.List = optimised_if_body
-					*optimised_statements = append(*optimised_statements, if_statement)
-				}
-			}*/
-
-		case *ast.BinaryExpr:
-			lhs, valid_expr := condition_variable.X.(*ast.Ident)
-			if valid_expr {
-				_, is_unused := (*unused_variables)[lhs.Name]
-				if !is_unused {
-					for _, body_statement := range if_statement.Body.List {
-						if unreachable {
-							continue
-						}
-
-						SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
-					}
-					if_statement.Body.List = optimised_if_body
-					*optimised_statements = append(*optimised_statements, if_statement)
-				}
-			} else {
-				_, valid_expr := condition_variable.X.(*ast.BasicLit)
-				if valid_expr {
-					rhs, valid_expr_rhs := condition_variable.Y.(*ast.Ident)
-					if valid_expr_rhs {
-						_, is_unused := (*unused_variables)[rhs.Name]
-						if !is_unused {
+				_, exists := ast_data.ast_info.Uses[cond_variable]
+				if exists {
+					variable_value, def_exists := ast_data.variable_values[cond_variable.Name]
+					if def_exists {
+						bool_value, is_bool := variable_value.(constant.Value)
+						if is_bool && bool_value.Kind() == constant.Bool && constant.BoolVal(bool_value) {
 							for _, body_statement := range if_statement.Body.List {
 								if unreachable {
 									continue
@@ -750,39 +727,178 @@ func RemoveUnusedIfStatement(unused_variables *map[string]string, function_state
 							*optimised_statements = append(*optimised_statements, if_statement)
 						}
 					} else {
-						for _, body_statement := range if_statement.Body.List {
-							if unreachable {
-								continue
-							}
+						if cond_variable.Name == "true" {
+							for _, body_statement := range if_statement.Body.List {
+								if unreachable {
+									continue
+								}
 
-							SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
+								SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
+							}
+							if_statement.Body.List = optimised_if_body
+							*optimised_statements = append(*optimised_statements, if_statement)
 						}
-						if_statement.Body.List = optimised_if_body
-						*optimised_statements = append(*optimised_statements, if_statement)
 					}
 				}
 			}
 
-		case *ast.UnaryExpr:
-			lhs, valid_expr := condition_variable.X.(*ast.Ident)
-			if valid_expr {
-				_, is_unused := (*unused_variables)[lhs.Name]
-				if !is_unused {
-					for _, body_statement := range if_statement.Body.List {
-						if unreachable {
-							continue
+		case *ast.BinaryExpr:
+			valid_rhs := false
+			valid_lhs := false
+			var rhs_value constant.Value
+			var lhs_value constant.Value
+
+			switch lhs := condition_variable.X.(type) {
+			case *ast.Ident:
+				_, exists := ast_data.ast_info.Uses[lhs]
+				if exists {
+					lhs_val, def_exists := ast_data.variable_values[lhs.Name]
+					if def_exists {
+						lhs_constant, is_constant := lhs_val.(constant.Value)
+						if is_constant {
+							valid_lhs = true
+							lhs_value = lhs_constant
 						}
 
-						SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
 					}
-					if_statement.Body.List = optimised_if_body
-					*optimised_statements = append(*optimised_statements, if_statement)
+				}
+			case *ast.BasicLit:
+				lhs_constant, err := ConvertToConstant(lhs)
+				if err != nil {
+					return
+				}
+				lhs_value = lhs_constant
+				valid_lhs = true
+			}
+			switch rhs := condition_variable.Y.(type) {
+			case *ast.Ident:
+				_, exists := ast_data.ast_info.Uses[rhs]
+				if exists {
+					rhs_val, def_exists := ast_data.variable_values[rhs.Name]
+					if def_exists {
+						rhs_constant, is_constant := rhs_val.(constant.Value)
+						if is_constant {
+							valid_rhs = true
+							rhs_value = rhs_constant
+						}
+					}
+				}
+			case *ast.BasicLit:
+				rhs_constant, err := ConvertToConstant(rhs)
+				if err != nil {
+					return
+				}
+				rhs_value = rhs_constant
+				valid_rhs = true
+			}
+
+			if valid_lhs && valid_rhs {
+				operator := condition_variable.Op.String()
+				switch operator {
+				case "==":
+					if constant.Compare(lhs_value, token.NEQ, rhs_value) {
+						return
+					}
+
+				case "!=":
+					if constant.Compare(lhs_value, token.EQL, rhs_value) {
+						return
+					}
+
+				case ">=":
+					if constant.Compare(lhs_value, token.LSS, rhs_value) {
+						return
+					}
+
+				case "<=":
+					if constant.Compare(lhs_value, token.GTR, rhs_value) {
+						return
+					}
+
+				case ">":
+					if constant.Compare(lhs_value, token.LEQ, rhs_value) {
+						return
+					}
+
+				case "<":
+					if constant.Compare(lhs_value, token.GEQ, rhs_value) {
+						return
+					}
+
+				}
+			}
+
+			for _, body_statement := range if_statement.Body.List {
+				if unreachable {
+					continue
+				}
+
+				SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
+			}
+			if_statement.Body.List = optimised_if_body
+			*optimised_statements = append(*optimised_statements, if_statement)
+
+		case *ast.UnaryExpr:
+			operator := condition_variable.Op.String()
+			cond_variable, valid_cond := condition_variable.X.(*ast.Ident)
+			if valid_cond {
+				_, exists := ast_data.ast_info.Uses[cond_variable]
+				if exists {
+					variable_value, def_exists := ast_data.variable_values[cond_variable.Name]
+					if def_exists {
+						bool_value, is_bool := variable_value.(constant.Value)
+						switch operator {
+						case "!":
+							bool_value := constant.BoolVal(bool_value)
+							bool_value = !bool_value
+							if is_bool && bool_value {
+
+								for _, body_statement := range if_statement.Body.List {
+									if unreachable {
+										continue
+									}
+
+									SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
+								}
+								if_statement.Body.List = optimised_if_body
+								*optimised_statements = append(*optimised_statements, if_statement)
+							}
+						}
+
+					} else {
+						if cond_variable.Name == "false" {
+							for _, body_statement := range if_statement.Body.List {
+								if unreachable {
+									continue
+								}
+
+								SearchStructureBody(unused_variables, function_statements, body_statement, &optimised_if_body, ast_data, function, &unreachable)
+							}
+							if_statement.Body.List = optimised_if_body
+							*optimised_statements = append(*optimised_statements, if_statement)
+						}
+					}
 				}
 			}
 
 		default:
 			*optimised_statements = append(*optimised_statements, function_statements)
 		}
+	}
+}
+
+func ConvertToConstant(lit *ast.BasicLit) (constant.Value, error) {
+	switch lit.Kind {
+	case token.INT:
+		return constant.MakeFromLiteral(lit.Value, token.INT, 0), nil
+	case token.FLOAT:
+		return constant.MakeFromLiteral(lit.Value, token.FLOAT, 0), nil
+	case token.CHAR:
+		return constant.MakeFromLiteral(lit.Value, token.CHAR, 0), nil
+	case token.STRING:
+		return constant.MakeFromLiteral(lit.Value, token.STRING, 0), nil
+	default:
+		return nil, fmt.Errorf("unexpected kind: %v", lit.Kind)
 	}
 }
 
