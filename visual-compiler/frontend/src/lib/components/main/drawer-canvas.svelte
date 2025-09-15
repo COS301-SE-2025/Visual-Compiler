@@ -176,7 +176,7 @@
 					position={node.position}
 					drop="center"
 					bgColor={node.type === 'optimizer' ? ($theme === 'dark' ? '#8451C7' : '#AFA2D7') : ($theme === 'dark' ? '#001A6E' : '#BED2E6')}
-					textColor={node.type === 'optimizer' ? '#fff' : ($theme === 'dark' ? '#ffffff' : '#000000')}
+					textColor={node.type === 'optimizer' ? ($theme === 'dark' ? '#fff' : '#000') : ($theme === 'dark' ? '#ffffff' : '#000000')}
 					borderColor={node.type === 'optimizer' ? ($theme === 'dark' ? '#374151' : '#FFFFFF') : ($theme === 'dark' ? '#374151' : '#FFFFFF')}
 					label={node.label}
 					editable={false}
