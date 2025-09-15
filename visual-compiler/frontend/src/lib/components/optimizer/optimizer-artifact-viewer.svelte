@@ -39,7 +39,7 @@
 
 <div class="artifact-container">
     <div class="artifact-header">
-        <h2 class="artifact-title">Optimizer Artefact</h2>
+        <h2 class="artifact-title">Optimiser Artefact</h2>
         {#if optimizedCode && optimizedCode.optimized && optimizedCode.optimized.length > 0}
             <button class="copy-button" on:click={copy_to_clipboard} title="Copy to clipboard">
                 <svg
@@ -158,7 +158,6 @@
 <style>
     .artifact-container {
         padding: 1.5rem;
-        background-color: #f8f9fa;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         display: flex;
@@ -170,7 +169,6 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid #e5e7eb;
         padding-bottom: 0.75rem;
     }
 
@@ -183,8 +181,7 @@
 
     .artifact-title {
         margin: 0;
-        color: #AFA2D7;
-        font-family: 'Times New Roman', serif;
+        color: #8451C7;
         font-size: 1.25rem;
     }
 

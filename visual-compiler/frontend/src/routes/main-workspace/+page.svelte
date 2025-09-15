@@ -534,7 +534,7 @@
 		parser: 'Analyzes the token stream to build a syntax tree.',
 		analyser: 'Performs semantic analysis on the syntax tree.',
 		translator: 'Translates the syntax tree into target code.',
-		optimizer: 'Advanced optimization techniques for code enhancement.'
+		optimizer: 'Advanced optimisation techniques for code enhancement.'
 	};
 
 	const node_labels: Record<NodeType, string> = {
@@ -543,7 +543,7 @@
 		parser: 'Parser',
 		analyser: 'Analyser',
 		translator: 'Translator',
-		optimizer: 'Optimizer'
+		optimizer: 'Optimiser'
 	};
 
 	function handleCreateNode(type: NodeType) {

@@ -33,7 +33,7 @@
 		{ id: 'parser', label: 'Parser' },
 		{ id: 'analyser', label: 'Analyser' },
 		{ id: 'translator', label: 'Translator' },
-		{ id: 'optimizer', label: 'Optimizer' }
+		{ id: 'optimizer', label: 'Optimiser' }
 	];
 
 	// createNode
@@ -206,11 +206,12 @@
 	/* Special styling for optimizer button */
 	.optimizer-btn {
 		background-color: #AFA2D7; /* New light mode optimizer */
-		color: #fff; /* White text for contrast */
+		color: #000; /* Black text for better readability */
 	}
 
 	.optimizer-btn:hover {
 		background-color: #8C7AB8; /* Slightly darker for hover */
+		color: #000; /* Keep black text on hover */
 		transform: translateY(-2px);
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 	}
@@ -348,12 +349,13 @@
 	/* Dark mode styles for optimizer button */
 	:global(html.dark-mode) .optimizer-btn {
 		background-color: #8451C7; /* New dark mode optimizer */
-		color: #fff;
+		color: #fff; /* White text for dark mode */
 		border: 1px solid #8451C7;
 	}
 
 	:global(html.dark-mode) .optimizer-btn:hover {
 		background-color: #6B3BAA; /* Darker for hover */
+		color: #fff; /* Keep white text in dark mode */
 	}
 
 	:global(html.dark-mode) .optimizer-btn:disabled {
