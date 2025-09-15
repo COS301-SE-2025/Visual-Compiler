@@ -30,7 +30,7 @@ func OptimiseGoCode(code string, constant_folding bool, dead_code bool, loop_unr
 
 	ast_file, file_set, err := ParseGoCode(code)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("source code is not valid go")
 	}
 
 	if loop_unrolling {
@@ -959,7 +959,6 @@ func RemoveUnusedForStatement(function_statements ast.Stmt, optimised_statements
 						}
 						for_statement.Body.List = optimised_for_body
 						*optimised_statements = append(*optimised_statements, for_statement)
-
 					}
 				}
 			}
@@ -967,9 +966,7 @@ func RemoveUnusedForStatement(function_statements ast.Stmt, optimised_statements
 		default:
 			*optimised_statements = append(*optimised_statements, function_statements)
 		}
-
 	}
-
 }
 
 // Name:RemoveUnusedSwitchStatement
@@ -1076,6 +1073,7 @@ type LoopInfo struct {
 	Start     int
 	Stop      int
 	Step      int
+	Operator  token.Token
 	Direction bool
 	Body      *ast.BlockStmt
 }
@@ -1166,9 +1164,9 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 	}
 
 	var step_direction bool
-	if binary_expression.Op == token.LSS {
+	if binary_expression.Op == token.LSS || binary_expression.Op == token.LEQ {
 		step_direction = true
-	} else if binary_expression.Op == token.GTR {
+	} else if binary_expression.Op == token.GTR || binary_expression.Op == token.GEQ {
 		step_direction = false
 	} else {
 		return nil, fmt.Errorf("")
@@ -1227,6 +1225,7 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 		Start:     start_value,
 		Stop:      stop_value,
 		Step:      step,
+		Operator:  binary_expression.Op,
 		Direction: step_direction,
 		Body:      for_statement.Body,
 	}, nil
@@ -1244,18 +1243,37 @@ func GenerateStatements(info *LoopInfo) []ast.Stmt {
 	var unrolled_statements []ast.Stmt
 
 	if info.Direction {
-		for i := info.Start; i < info.Stop; i++ {
-			for _, statement := range info.Body.List {
-				new_stmt := UnrollStatements(statement, info.VarName, i)
-				unrolled_statements = append(unrolled_statements, new_stmt)
+		if info.Operator == token.LSS {
+			for i := info.Start; i < info.Stop; i++ {
+				for _, statement := range info.Body.List {
+					new_stmt := UnrollStatements(statement, info.VarName, i)
+					unrolled_statements = append(unrolled_statements, new_stmt)
+				}
 			}
 		}
-
+		if info.Operator == token.LEQ {
+			for i := info.Start; i <= info.Stop; i++ {
+				for _, statement := range info.Body.List {
+					new_stmt := UnrollStatements(statement, info.VarName, i)
+					unrolled_statements = append(unrolled_statements, new_stmt)
+				}
+			}
+		}
 	} else {
-		for i := info.Start; i > info.Stop; i-- {
-			for _, statement := range info.Body.List {
-				new_stmt := UnrollStatements(statement, info.VarName, i)
-				unrolled_statements = append(unrolled_statements, new_stmt)
+		if info.Operator == token.GTR {
+			for i := info.Start; i > info.Stop; i-- {
+				for _, statement := range info.Body.List {
+					new_stmt := UnrollStatements(statement, info.VarName, i)
+					unrolled_statements = append(unrolled_statements, new_stmt)
+				}
+			}
+		}
+		if info.Operator == token.GEQ {
+			for i := info.Start; i >= info.Stop; i++ {
+				for _, statement := range info.Body.List {
+					new_stmt := UnrollStatements(statement, info.VarName, i)
+					unrolled_statements = append(unrolled_statements, new_stmt)
+				}
 			}
 		}
 	}
