@@ -692,6 +692,10 @@ func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements 
 	if_statement, valid_ifstatement := function_statements.(*ast.IfStmt)
 	unreachable := false
 	var optimised_if_body []ast.Stmt
+
+	if if_statement.Body.List == nil {
+		return
+	}
 	if valid_ifstatement {
 		switch condition_variable := if_statement.Cond.(type) {
 
