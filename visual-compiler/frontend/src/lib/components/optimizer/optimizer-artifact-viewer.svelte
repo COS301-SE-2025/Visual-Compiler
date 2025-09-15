@@ -83,8 +83,13 @@
                 </div>
                 <h4>Optimization Failed</h4>
                 <p class="error-message">
-                    The optimization could not be completed with the provided code. Please check your input and
-                    try again.
+                    {#if optimizationError.message?.includes('source code is not valid go')}
+                        The provided code contains syntax errors. Please check your Go code syntax and try again.
+                    {:else if optimizationError.message?.includes('User ID not found')}
+                        Authentication error. Please refresh the page and try again.
+                    {:else}
+                        The optimization could not be completed with the provided code. Please check your input and try again.
+                    {/if}
                 </p>
                 <pre class="error-details">{optimizationError.message || String(optimizationError)}</pre>
             </div>

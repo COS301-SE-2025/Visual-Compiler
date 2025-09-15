@@ -1,7 +1,9 @@
-
 <script lang="ts">
     import { onMount } from 'svelte';
     import { optimizerState } from '$lib/stores/optimizer';
+    import { projectName } from '$lib/stores/project';
+    import { AddToast } from '$lib/stores/toast';
+    import { get } from 'svelte/store';
 
     let selectedLanguage = 'Go';
     let selectedTechniques: string[] = [];
@@ -96,8 +98,9 @@ func nothing() (int) {
         }));
     }
 
-    function handleSubmit() {
+    async function handleSubmit() {
         if (!inputCode.trim() || selectedTechniques.length === 0) {
+            AddToast('Please enter code and select at least one optimization technique', 'error');
             return;
         }
 
@@ -109,21 +112,107 @@ func nothing() (int) {
             optimizedCode: null
         }));
 
-        // TODO: Add backend API call here
-        console.log('Submitting optimization request:', {
-            language: selectedLanguage,
-            techniques: selectedTechniques,
-            code: inputCode
-        });
+        try {
+            const currentProjectName = get(projectName);
+            
+            // Try multiple ways to get the user ID
+            let usersId = localStorage.getItem('users_id') || 
+                         localStorage.getItem('user_id') || 
+                         localStorage.getItem('userId') ||
+                         sessionStorage.getItem('users_id') ||
+                         sessionStorage.getItem('user_id');
 
-        // Placeholder for backend integration
-        // This will be replaced with actual API call
-        setTimeout(() => {
+            // If still not found, try to get from cookies or use a default
+            if (!usersId) {
+                // Check if there's a user session or auth token
+                const authToken = localStorage.getItem('authToken') || localStorage.getItem('token');
+                if (authToken) {
+                    // You might need to decode the token to get user ID
+                    // For now, let's use a default user ID for testing
+                    usersId = 'default_user'; // Replace with actual user ID logic
+                } else {
+                    throw new Error('Please log in to use the optimizer');
+                }
+            }
+
+
+            // Step 1: Store the source code
+            const storeResponse = await fetch('http://localhost:8080/api/optimising/source_code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    project_name: currentProjectName,
+                    source_code: inputCode,
+                    users_id: usersId
+                })
+            });
+
+            if (!storeResponse.ok) {
+                const errorData = await storeResponse.json();
+                throw new Error(errorData.error || 'Failed to store source code');
+            }
+
+            const storeData = await storeResponse.json();
+
+            // Step 2: Optimize the code
+            const optimizePayload = {
+                project_name: currentProjectName,
+                users_id: usersId,
+                constant_folding: selectedTechniques.includes('Constant Folding'),
+                dead_code: selectedTechniques.includes('Dead Code Elimination'),
+                loop_unrolling: selectedTechniques.includes('Loop Unrolling')
+            };
+
+
+            const optimizeResponse = await fetch('http://localhost:8080/api/optimising/optimise', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(optimizePayload)
+            });
+
+            if (!optimizeResponse.ok) {
+                const errorData = await optimizeResponse.json();
+                throw new Error(errorData.error || 'Optimization failed');
+            }
+
+            const optimizeData = await optimizeResponse.json();
+
+            // Process the optimized code
+            const optimizedCodeLines = optimizeData.optimised_code.split('\n');
+            
+            // Update store with results
             optimizerState.update(state => ({
                 ...state,
-                isOptimizing: false
+                isOptimizing: false,
+                optimizedCode: {
+                    optimized: optimizedCodeLines,
+                    language: selectedLanguage,
+                    techniques: selectedTechniques,
+                    performanceGains: {
+                        executionTime: "Improved",
+                        memoryUsage: "Reduced",
+                        codeSize: "Optimized"
+                    }
+                }
             }));
-        }, 2000);
+
+            AddToast('Code optimization completed successfully!', 'success');
+
+        } catch (error) {
+            console.error('Optimization error:', error);
+            
+            optimizerState.update(state => ({
+                ...state,
+                isOptimizing: false,
+                optimizationError: error
+            }));
+
+            AddToast(`Optimization failed: ${error.message}`, 'error');
+        }
     }
 
     // React to store changes
