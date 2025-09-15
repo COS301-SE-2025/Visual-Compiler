@@ -160,7 +160,7 @@ process(2)</code></pre>
     }
 
     h2 {
-        color: #AFA2D7;
+        color: #8451C7;
         margin-bottom: 1rem;
         font-size: 1.5rem;
     }

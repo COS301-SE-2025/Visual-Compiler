@@ -1,13 +1,82 @@
 
 <script lang="ts">
+    import { onMount } from 'svelte';
     import { optimizerState } from '$lib/stores/optimizer';
 
-    let selectedLanguage = 'Java';
+    let selectedLanguage = 'Go';
     let selectedTechniques: string[] = [];
-    let inputCode = '';
+    let inputCode = `package main
+
+func main() {
+	
+}`;
+
+    // Default button functionality variables
+    let showDefault = false;
+    let userSelectedLanguage = 'Go';
+    let userSelectedTechniques: string[] = [];
+    let userInputCode = `package main
+
+func main() {
+	
+}`;
 
     const languages = ['Java', 'Python', 'Go'];
     const techniques = ['Constant Folding', 'Dead Code Elimination', 'Loop Unrolling'];
+
+    // Default constants
+    const DEFAULT_LANGUAGE = 'Go';
+    const DEFAULT_TECHNIQUES = ['Constant Folding', 'Dead Code Elimination', 'Loop Unrolling'];
+    const DEFAULT_INPUT_CODE = `package main
+
+import "fmt"
+
+func main() {
+	for blue := 1; blue < 5; blue++ {
+		fmt.Println("[Block " + blue + "]")
+		for red := 1; red <= blue; red++ {
+			fmt.Println("	-> " + red)
+			if blue == red {
+				fmt.Println(blue + red)
+			}
+		}
+	}
+}
+	
+func nothing() (int) {
+	var random int = 13
+}`;
+
+    // Initialize the store with default values on mount
+    onMount(() => {
+        updateStore();
+    });
+
+    // Default button functions
+    function insertDefault() {
+        // Save current user selections
+        userSelectedLanguage = selectedLanguage;
+        userSelectedTechniques = [...selectedTechniques];
+        userInputCode = inputCode;
+        
+        // Set to default values
+        selectedLanguage = DEFAULT_LANGUAGE;
+        selectedTechniques = [...DEFAULT_TECHNIQUES];
+        inputCode = DEFAULT_INPUT_CODE;
+        showDefault = true;
+        
+        updateStore();
+    }
+
+    function removeDefault() {
+        // Restore user selections
+        selectedLanguage = userSelectedLanguage;
+        selectedTechniques = [...userSelectedTechniques];
+        inputCode = userInputCode;
+        showDefault = false;
+        
+        updateStore();
+    }
 
     function toggleTechnique(technique: string) {
         if (selectedTechniques.includes(technique)) {
@@ -61,44 +130,68 @@
     $: selectedLanguage, updateStore();
     $: inputCode, updateStore();
 
-    // Initialize from store
+    // Store user input when not showing default
+    $: if (!showDefault && inputCode) {
+        userInputCode = inputCode;
+    }
+
+    // Initialize from store, but keep default code if store is empty
     $: if ($optimizerState) {
-        selectedLanguage = $optimizerState.selectedLanguage;
-        selectedTechniques = $optimizerState.selectedTechniques;
-        inputCode = $optimizerState.inputCode;
+        if (!showDefault) {
+            selectedLanguage = $optimizerState.selectedLanguage;
+            selectedTechniques = $optimizerState.selectedTechniques;
+            // Only update inputCode from store if it's not empty, otherwise keep default
+            if ($optimizerState.inputCode.trim()) {
+                inputCode = $optimizerState.inputCode;
+            }
+        }
     }
 </script>
 
 <div class="inspector-container">
     <div class="inspector-header">
-        <h2 class="inspector-title">Optimizing</h2>
+        <h2 class="inspector-title">Optimising</h2>
     </div>
 
     <div class="instructions-section">
         <div class="instructions-content">
             <h4 class="instructions-header">Instructions</h4>
             <p class="instructions-text">
-                Select a language and one or more optimization techniques, then enter your code in the input area below. Click <b>Optimize Code</b> to apply the selected optimizations. Results will be shown in the artifact viewer.
+                Select a language and one or more optimization techniques, then enter your code in the input area below. Click <b>Optimise Code</b> to apply the selected optimizations. Results will be shown in the artifact viewer.
             </p>
         </div>
     </div>
 
-    <div class="language-section">
-        <h3 class="section-heading">Language</h3>
-        <div class="language-buttons">
-            {#each languages as language}
-                <button 
-                    class="language-btn {selectedLanguage === language ? 'selected' : ''}"
-                    on:click={() => selectedLanguage = language}
-                >
-                    {language}
-                </button>
-            {/each}
-        </div>
-    </div>
+    
 
     <div class="technique-section">
-        <h3 class="section-heading">Technique</h3>
+        <div class="technique-header">
+            <h3 class="section-heading">Technique</h3>
+            <div class="default-section">
+                {#if !showDefault}
+                    <button
+                        class="default-toggle-btn"
+                        on:click={insertDefault}
+                        type="button"
+                        aria-label="Insert default input"
+                        title="Insert default input"
+                    >
+                        <span class="icon">🪄</span>
+                    </button>
+                {/if}
+                {#if showDefault}
+                    <button
+                        class="default-toggle-btn selected"
+                        on:click={removeDefault}
+                        type="button"
+                        aria-label="Remove default input"
+                        title="Remove default input"
+                    >
+                        <span class="icon">🧹</span>
+                    </button>
+                {/if}
+            </div>
+        </div>
         <div class="technique-buttons">
             {#each techniques as technique}
                 <button 
@@ -142,12 +235,11 @@
 <style>
     .inspector-container {
         padding: 1.5rem;
-        background-color: #F8FAFC;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         display: flex;
         flex-direction: column;
-        gap: 2rem;
+        gap: 1.5rem;
         height: 100%;
         font-family: Arial, sans-serif;
     }
@@ -159,9 +251,8 @@
 
     .inspector-title {
         margin: 0;
-    color: #AFA2D7;
-        font-family: 'Times New Roman', serif;
-        font-size: 1.5rem;
+    color: #8451C7;
+        font-size: 2rem;
         text-align: center;
         font-weight: bold;
     }
@@ -173,45 +264,17 @@
         font-weight: bold;
     }
 
-    /* Language Section */
-    .language-section {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .language-buttons {
-        display: flex;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-    }
-
-    .language-btn {
-        padding: 0.75rem 1.5rem;
-        border: 2px solid #AFA2D7;
-        background: #fff;
-        color: #000;
-        font-size: 1rem;
-        font-weight: 500;
-        cursor: pointer;
-        border-radius: 4px;
-        transition: all 0.2s ease;
-        min-width: 80px;
-    }
-
-    .language-btn:hover {
-        background: #f0f0f0;
-    }
-
-    .language-btn.selected {
-        background: #AFA2D7;
-        color: #fff;
-        border-color: #AFA2D7;
-    }
-
     /* Technique Section */
     .technique-section {
         display: flex;
         flex-direction: column;
+    }
+
+    .technique-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
     }
 
     .technique-buttons {
@@ -244,6 +307,39 @@
         border-color: #AFA2D7;
     }
 
+    /* Default Section */
+    .default-section {
+        display: flex;
+        align-items: center;
+    }
+
+    .default-toggle-btn {
+        padding: 0.4rem 0.7rem;
+        border-radius: 50%;
+        border: 2px solid #AFA2D7;
+        background: white;
+        color: #8451C7;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.3rem;
+        width: 2.3rem;
+    }
+
+    .default-toggle-btn.selected {
+        background: #F3E8FF;
+        border-color: #8451C7;
+    }
+
+    .default-toggle-btn:hover,
+    .default-toggle-btn:focus {
+        background: #F3E8FF;
+        border-color: #8451C7;
+        transform: scale(1.05);
+    }
+
     /* Input Section */
     .input-section {
         display: flex;
@@ -269,11 +365,6 @@
         background: #fff;
         color: #000;
         flex: 1;
-    :global(html.dark-mode) .input-area textarea,
-    :global(html.dark-mode) .language-btn,
-    :global(html.dark-mode) .technique-btn {
-        border-color: #4a5568;
-    }
     }
 
     .input-area textarea:focus {
@@ -330,19 +421,6 @@
         box-shadow: none;
     }
 
-    .spinner {
-        animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-        from {
-            transform: rotate(0deg);
-        }
-        to {
-            transform: rotate(360deg);
-        }
-    }
-
     /* Dark Mode Styles */
     :global(html.dark-mode) .inspector-container {
         background: #1a2a4a;
@@ -356,19 +434,16 @@
         color: #E5E7EB;
     }
 
-    :global(html.dark-mode) .language-btn,
     :global(html.dark-mode) .technique-btn {
         background: #2d3748;
         color: #E5E7EB;
         border-color: #4a5568;
     }
 
-    :global(html.dark-mode) .language-btn:hover,
     :global(html.dark-mode) .technique-btn:hover {
         background: #374151;
     }
 
-    :global(html.dark-mode) .language-btn.selected,
     :global(html.dark-mode) .technique-btn.selected {
         background: #8451C7;
         color: #fff;
@@ -392,6 +467,23 @@
     :global(html.dark-mode) .submit-button:disabled {
         background: #4B5563;
         color: #9CA3AF;
+    }
+
+    :global(html.dark-mode) .default-toggle-btn {
+        background: transparent;
+        color: #AFA2D7;
+        border-color: #4a5568;
+    }
+
+    :global(html.dark-mode) .default-toggle-btn.selected {
+        background: #2d3748;
+        border-color: #8451C7;
+        color: #AFA2D7;
+    }
+
+    :global(html.dark-mode) .default-toggle-btn:hover {
+        background: rgba(45, 55, 72, 0.5);
+        border-color: #8451C7;
     }
 
       .instructions-section {
