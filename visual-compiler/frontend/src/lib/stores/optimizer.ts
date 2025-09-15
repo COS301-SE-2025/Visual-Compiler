@@ -1,43 +1,40 @@
 import { writable } from 'svelte/store';
 
-export interface OptimizedCode {
-    original: string[];
-    optimized: string[];
-    language: 'Java' | 'Python' | 'Go';
-    techniques: string[];
-    performanceGains?: {
-        executionTime: string;
-        memoryUsage: string;
-        codeSize: string;
-    };
-}
-
 export interface OptimizerState {
     selectedLanguage: 'Java' | 'Python' | 'Go';
     selectedTechniques: string[];
     inputCode: string;
-    optimizedCode: OptimizedCode | null;
-    optimizationError: any;
     isOptimizing: boolean;
+    optimizedCode: {
+        optimized: string[];
+        language: string;
+        techniques?: string[];
+        performanceGains?: {
+            executionTime: string;
+            memoryUsage: string;
+            codeSize: string;
+        };
+    } | null;
+    optimizationError: any;
 }
 
 export const optimizerState = writable<OptimizerState>({
-    selectedLanguage: 'Java',
+    selectedLanguage: 'Go',
     selectedTechniques: [],
     inputCode: '',
+    isOptimizing: false,
     optimizedCode: null,
-    optimizationError: null,
-    isOptimizing: false
+    optimizationError: null
 });
 
 export function resetOptimizerState() {
     optimizerState.set({
-        selectedLanguage: 'Java',
+        selectedLanguage: 'Go',
         selectedTechniques: [],
         inputCode: '',
+        isOptimizing: false,
         optimizedCode: null,
-        optimizationError: null,
-        isOptimizing: false
+        optimizationError: null
     });
 }
 
@@ -48,13 +45,12 @@ export function updateOptimizerStateFromProject(projectData: any) {
 
     optimizerState.update(state => ({
         ...state,
-        selectedLanguage: optimizingData.language || 'Java',
+        selectedLanguage: optimizingData.language || 'Go',
         selectedTechniques: optimizingData.techniques || [],
         inputCode: optimizingData.input_code || '',
         optimizedCode: optimizingData.optimized_code ? {
-            original: optimizingData.optimized_code.original || [],
             optimized: optimizingData.optimized_code.optimized || [],
-            language: optimizingData.optimized_code.language || 'Java',
+            language: optimizingData.optimized_code.language || 'Go',
             techniques: optimizingData.optimized_code.techniques || [],
             performanceGains: optimizingData.optimized_code.performance_gains
         } : null,
