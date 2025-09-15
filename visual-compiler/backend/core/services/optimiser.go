@@ -665,7 +665,9 @@ func RemoveUnusedDeclaredVariables(statement *ast.DeclStmt, ast_data AstData, op
 				}
 				if len(new_names) > 0 {
 					value.Names = new_names
-					value.Values = new_values
+					if len(new_values) > 0 {
+						value.Values = new_values
+					}
 					new_spec = append(new_spec, value)
 				}
 			} else {

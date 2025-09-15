@@ -1,6 +1,7 @@
 package unit_tests
 
 import (
+	"go/ast"
 	"go/token"
 	"testing"
 
@@ -87,6 +88,34 @@ func TestStringifyAST_Fail(t *testing.T) {
 	_, err = services.StringifyAST(ast, file_set)
 	if err != nil {
 		t.Errorf("Error: %v", err)
+	}
+
+}
+
+func TestConvertToConstant_Float(t *testing.T) {
+
+	value := &ast.BasicLit{Kind: token.FLOAT, Value: "13.2"}
+	_, err := services.ConvertToConstant(value)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+}
+func TestConvertToConstant_Char(t *testing.T) {
+
+	value := &ast.BasicLit{Kind: token.CHAR, Value: "C"}
+	_, err := services.ConvertToConstant(value)
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+
+}
+func TestConvertToConstant_Error(t *testing.T) {
+
+	value := &ast.BasicLit{Kind: token.EQL, Value: "=="}
+	_, err := services.ConvertToConstant(value)
+	if err == nil {
+		t.Errorf("error expected")
 	}
 
 }
@@ -195,6 +224,30 @@ func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn_2(t *testing.T) {
 
 	expected_result := "package main\n\n"
 	expected_result += "func main() {\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_UsedVariableBeforeReturn_2(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "var random_num int\n"
+	code += "random_num = 5\n"
+	code += "return\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tvar random_num int\n"
+	expected_result += "\trandom_num = 5\n"
 	expected_result += "\treturn\n"
 	expected_result += "}\n"
 
@@ -1228,6 +1281,159 @@ func TestPerformDeadCodeElimination_ReachedForStatement(t *testing.T) {
 	expected_result += "\tfor i := 0; i < 10; i++ {\n"
 	expected_result += "\t\tfmt.Printf(\"%v\", i)\n"
 	expected_result += "\t}\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedForStatement_GTR(t *testing.T) {
+	code := "package main\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "for i := 15; i > 10; i-- {\n"
+	code += "fmt.Printf(\"%v\",i)\n"
+	code += "}\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfor i := 15; i > 10; i-- {\n"
+	expected_result += "\t\tfmt.Printf(\"%v\", i)\n"
+	expected_result += "\t}\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedForStatement_GEQ(t *testing.T) {
+	code := "package main\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "for i := 15; i >= 10; i-- {\n"
+	code += "fmt.Printf(\"%v\",i)\n"
+	code += "}\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfor i := 15; i >= 10; i-- {\n"
+	expected_result += "\t\tfmt.Printf(\"%v\", i)\n"
+	expected_result += "\t}\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedForStatement_LEQ(t *testing.T) {
+	code := "package main\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "for i := 0; i <= 10; i++ {\n"
+	code += "fmt.Printf(\"%v\",i)\n"
+	code += "}\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfor i := 0; i <= 10; i++ {\n"
+	expected_result += "\t\tfmt.Printf(\"%v\", i)\n"
+	expected_result += "\t}\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedForStatement_NEQ(t *testing.T) {
+	code := "package main\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "for i := 15; i != 10; i-- {\n"
+	code += "fmt.Printf(\"%v\",i)\n"
+	code += "}\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfor i := 15; i != 10; i-- {\n"
+	expected_result += "\t\tfmt.Printf(\"%v\", i)\n"
+	expected_result += "\t}\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedForStatement_EQL(t *testing.T) {
+	code := "package main\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "for i := 10; i == 10; i-- {\n"
+	code += "fmt.Printf(\"%v\",i)\n"
+	code += "}\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfor i := 10; i == 10; i-- {\n"
+	expected_result += "\t\tfmt.Printf(\"%v\", i)\n"
+	expected_result += "\t}\n"
+	expected_result += "}\n"
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ReachedForStatement_Other(t *testing.T) {
+	code := "package main\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "for i := 15; i * 10; i-- {\n"
+	code += "fmt.Printf(\"%v\",i)\n"
+	code += "}\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
 	expected_result += "}\n"
 
 	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
