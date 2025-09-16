@@ -299,7 +299,7 @@ func nothing() (int) {
             <textarea 
                 bind:value={inputCode}
                 placeholder="Enter your code here..."
-                rows="8"
+                rows="18"
             ></textarea>
         </div>
     </div>
@@ -444,7 +444,7 @@ func nothing() (int) {
 
     .input-area textarea {
         width: 100%;
-        min-height: 120px;
+        min-height: 350px;
         padding: 0.75rem;
         border: 2px solid #AFA2D7;
         border-radius: 4px;
