@@ -15,7 +15,7 @@ describe('Canvas Test', ()=> {
 
         cy.visit('http://localhost:5173/main-workspace');
 
-        cy.wait(1000);
+        cy.wait(500);
 
         const project_name = `canvas_project`;
         //delete project
@@ -48,7 +48,7 @@ describe('Canvas Test', ()=> {
         cy.get('.canvas-container').should('contain','Lexer');
         cy.get('#A-1\\/N-source-1').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-lexer-2').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
-        cy.wait(1000);
+        cy.wait(500);
         
         //parser node
         cy.get('button').should('contain', 'Parser');
@@ -56,7 +56,7 @@ describe('Canvas Test', ()=> {
         cy.get('.canvas-container').should('contain','Parser');
         cy.get('#A-2\\/N-lexer-2').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-parser-3').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
-        cy.wait(1000);
+        cy.wait(500);
 
         //analyser node
         cy.get('button').should('contain', 'Analyser');
@@ -64,7 +64,7 @@ describe('Canvas Test', ()=> {
         cy.get('.canvas-container').should('contain','Analyser');
         cy.get('#A-2\\/N-parser-3').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-analyser-4').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
-        cy.wait(1000);
+        cy.wait(500);
 
         //translator node
         cy.get('button').should('contain', 'Translator');
