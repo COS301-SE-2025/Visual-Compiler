@@ -1,13 +1,17 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/db"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"golang.org/x/crypto/bcrypt"
@@ -62,6 +66,7 @@ func Login(c *gin.Context) {
 		ID       bson.ObjectID `bson:"_id"`
 		Is_Admin bool          `bson:"is_admin"`
 		Projects []bson.M      `bson:"projects"`
+		AuthID   string        `bson:"auth0_id"`
 	}
 
 	err := users_collection.FindOne(ctx, filter_login).Decode(&db_user)
@@ -79,10 +84,65 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	auth_domain := os.Getenv("AUTH0_DOMAIN")
+	client_id := os.Getenv("CLIENT_ID")
+	client_secret := os.Getenv("CLIENT_SECRET")
+	audience := os.Getenv("CUSTOM_API")
+	// default_aud := auth_domain + "/api/v2/"
+
+	token_request := map[string]string{
+		"grant_type":    "password",
+		"username":      db_user.Email,
+		"password":      req.Password,
+		"audience":      audience,
+		"scope":         "openid profile email",
+		"client_id":     client_id,
+		"client_secret": client_secret,
+	}
+
+	json_token, _ := json.Marshal(token_request)
+	response, err := http.Post(auth_domain+"/oauth/token", "application/json", bytes.NewBuffer(json_token))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Contacting Auth0 failed"})
+		return
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != http.StatusOK {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Credentials were rejected (Auth0)"})
+		return
+	}
+
+	var token_resp struct {
+		AccessToken string `json:"access_token"`
+		IDToken     string `json:"id_token"`
+		Expires     int    `json:"expires_in"`
+		TokenType   string `json:"token_type"`
+	}
+	json.NewDecoder(response.Body).Decode(&token_resp)
+
+	parse_token, _, err := new(jwt.Parser).ParseUnverified(token_resp.IDToken, jwt.MapClaims{})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "ID token invalid (Auth0)"})
+		return
+	}
+
+	jwt_claims, ok := parse_token.Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Parsing failed (Auth0, JWT)"})
+		return
+	}
+
+	if email_verified, existing := jwt_claims["email_verified"].(bool); !existing || !email_verified {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email is not verified. Please check your emails"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
-		"message":  "Login Successful. Welcome " + db_user.Username,
-		"id":       db_user.ID,
-		"is_admin": db_user.Is_Admin,
-		"projects": db_user.Projects,
+		"message":    "Login Successful. Welcome " + db_user.Username,
+		"id":         db_user.ID,
+		"is_admin":   db_user.Is_Admin,
+		"projects":   db_user.Projects,
+		"auth_token": token_resp.AccessToken,
 	})
 }
