@@ -442,7 +442,7 @@
 		console.log('Pipeline saved with anchors:', get(pipelineStore));
 
 		try {
-			const response = await fetch('http://localhost:8080/api/users/savePipeline', {
+			const response = await fetch('https://www.visual-compiler.co.za/api/users/savePipeline', {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'

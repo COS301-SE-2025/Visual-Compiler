@@ -153,7 +153,7 @@
 		console.log('Submitting translation input:', JSON.stringify(apiPayload, null, 2));
 
 		try {
-			const response = await fetch('http://localhost:8080/api/translating/readRules', {
+			const response = await fetch('https://www.visual-compiler.co.za/api/translating/readRules', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(apiPayload)
@@ -194,7 +194,7 @@
 		console.log('Requesting final translation from backend...');
 
 		try {
-			const response = await fetch('http://localhost:8080/api/translating/translate', {
+			const response = await fetch('https://www.visual-compiler.co.za/api/translating/translate', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ users_id: user_id, project_name: project }) 

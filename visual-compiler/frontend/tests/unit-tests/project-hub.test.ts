@@ -91,7 +91,7 @@ describe('ProjectHub Component', () => {
 
 		await waitFor(() => {
 			expect(mockFetch).toHaveBeenCalledWith(
-				'http://localhost:8080/api/users/getProjects?users_id=123',
+				'https://www.visual-compiler.co.za/api/users/getProjects?users_id=123',
 				{
 					method: 'GET',
 					headers: { 'accept': 'application/json' }
@@ -398,7 +398,7 @@ describe('ProjectHub Component', () => {
 		
 		await waitFor(() => {
 			expect(mockFetch).toHaveBeenCalledWith(
-				'http://localhost:8080/api/users/getProjects?users_id=123',
+				'https://www.visual-compiler.co.za/api/users/getProjects?users_id=123',
 				{
 					method: 'GET',
 					headers: { 'accept': 'application/json' }
