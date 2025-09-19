@@ -2593,7 +2593,7 @@ func TestPerformDeadCodeElimination_ForLoop_UnaryCondition_Error2(t *testing.T) 
 	import "fmt"
 	func main() {
 		red := true
-		for blue:=1; *red; blue++ {
+		for blue:=1; /red; blue++ {
 			fmt.Printf("%v", blue)
 		
 		}

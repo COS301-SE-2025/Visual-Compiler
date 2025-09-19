@@ -1089,6 +1089,9 @@ func RemoveUnusedForStatement(function_statements ast.Stmt, optimised_statements
 					variable_value, def_exists := ast_data.variable_values[cond_variable.Name]
 					if def_exists {
 						bool_value, is_bool := variable_value.(constant.Value)
+						if bool_value.Kind() != constant.Bool {
+							return fmt.Errorf("non-boolean condition in for statement")
+						}
 						switch operator {
 						case "!":
 							bool_value := constant.BoolVal(bool_value)
@@ -1129,6 +1132,8 @@ func RemoveUnusedForStatement(function_statements ast.Stmt, optimised_statements
 						}
 					}
 				}
+			} else {
+				return fmt.Errorf("non-boolean condition in for statement")
 			}
 
 		default:
