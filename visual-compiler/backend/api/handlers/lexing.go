@@ -15,6 +15,8 @@ import (
 
 // Specifies the JSON body request for storing source code
 type SourceCodeOnlyRequest struct {
+	// Represents the User's ID from frontend
+	UsersID bson.ObjectID `json:"users_id" binding:"required"`
 	// Represents the User's source code
 	Code string `json:"source_code" binding:"required"`
 	// User's project name
@@ -25,11 +27,8 @@ type SourceCodeOnlyRequest struct {
 type RulesRequest struct {
 	// Represents the pairs of Type and Regex
 	Pairs []services.TypeRegex `json:"pairs" binding:"required"`
-	// User's project name
-	Project_Name string `json:"project_name" binding:"required"`
-}
-
-type ProjectNameRequest struct {
+	// Represents the User's ID from frontend
+	UsersID bson.ObjectID `json:"users_id" binding:"required"`
 	// User's project name
 	Project_Name string `json:"project_name" binding:"required"`
 }
@@ -53,12 +52,6 @@ type IDRequest struct {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/code [post]
 func StoreSourceCode(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
 	var req SourceCodeOnlyRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -67,35 +60,23 @@ func StoreSourceCode(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
-
 	filters := bson.M{
-		"users_id":     dbUser.UsersID,
+		"users_id":     req.UsersID,
 		"project_name": req.Project_Name,
 	}
 	var userexisting bson.M
 
-	err = collection.FindOne(ctx, filters).Decode(&userexisting)
+	err := collection.FindOne(ctx, filters).Decode(&userexisting)
 
 	if err == mongo.ErrNoDocuments {
 		_, err = collection.InsertOne(ctx, bson.M{
 			"code":         req.Code,
-			"users_id":     dbUser.UsersID,
+			"users_id":     req.UsersID,
 			"project_name": req.Project_Name,
 		})
 		if err != nil {
@@ -140,12 +121,6 @@ func StoreSourceCode(c *gin.Context) {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/rules [post]
 func CreateRulesFromCode(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
 	var req RulesRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -166,35 +141,23 @@ func CreateRulesFromCode(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err = users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
-
 	var res struct {
 		Code string `bson:"code"`
 	}
 
-	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID}).Decode(&res)
+	err = collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Source code not found. Please enter a source code"})
 		return
 	}
 
 	filters := bson.M{
-		"users_id":     dbUser.UsersID,
+		"users_id":     req.UsersID,
 		"project_name": req.Project_Name,
 	}
 	update_users_rules := bson.M{
@@ -224,13 +187,7 @@ func CreateRulesFromCode(c *gin.Context) {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/lexer [post]
 func Lexing(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	var req ProjectNameRequest
+	var req IDRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
@@ -238,29 +195,17 @@ func Lexing(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
 
 	var res struct {
 		Code  string               `bson:"code"`
 		Rules []services.TypeRegex `bson:"rules"`
 	}
 
-	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Source code not found"})
 		return
@@ -272,7 +217,7 @@ func Lexing(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	update_users_lexing := bson.M{"$set": bson.M{
 		"tokens":              tokens,
 		"tokens_unidentified": unidentified,
@@ -285,7 +230,7 @@ func Lexing(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"users_id":            dbUser.UsersID,
+		"users_id":            req.UsersID,
 		"message":             "Successfully tokenised your code",
 		"tokens":              tokens,
 		"tokens_unidentified": unidentified,
@@ -302,6 +247,8 @@ type readDFARequest struct {
 	Start string `json:"start_state"`
 	// Represents the accepting states of the automata
 	Accepting []services.AcceptingState `json:"accepting_states"`
+	// Represents the User's ID from frontend
+	UsersID bson.ObjectID `json:"users_id" binding:"required"`
 	// User's project name
 	Project_Name string `json:"project_name" binding:"required"`
 }
@@ -317,12 +264,6 @@ type readDFARequest struct {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/dfa [post]
 func ReadDFAFromUser(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
 	var req readDFARequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -345,25 +286,13 @@ func ReadDFAFromUser(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err = users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
-
 	filters := bson.M{
-		"users_id":     dbUser.UsersID,
+		"users_id":     req.UsersID,
 		"project_name": req.Project_Name,
 	}
 
@@ -419,13 +348,7 @@ func ReadDFAFromUser(c *gin.Context) {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/dfaToTokens [post]
 func TokensFromDFA(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	var req ProjectNameRequest
+	var req IDRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
@@ -433,29 +356,17 @@ func TokensFromDFA(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
 
 	var res struct {
 		Code string            `bson:"code"`
 		DFA  services.Automata `bson:"dfa"`
 	}
 
-	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Source code not found"})
 		return
@@ -468,7 +379,7 @@ func TokensFromDFA(c *gin.Context) {
 	}
 
 	filters := bson.M{
-		"users_id":     dbUser.UsersID,
+		"users_id":     req.UsersID,
 		"project_name": req.Project_Name,
 	}
 	update_users_lexing := bson.D{
@@ -504,13 +415,7 @@ func TokensFromDFA(c *gin.Context) {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/dfaToRegex [post]
 func ConvertDFAToRG(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	var req ProjectNameRequest
+	var req IDRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
@@ -518,28 +423,16 @@ func ConvertDFAToRG(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
-
 	var res struct {
 		DFA services.Automata `bson:"dfa"`
 	}
 
-	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "DFA not found. Please create one"})
 		return
@@ -552,7 +445,7 @@ func ConvertDFAToRG(c *gin.Context) {
 	}
 
 	filters := bson.M{
-		"users_id":     dbUser.UsersID,
+		"users_id":     req.UsersID,
 		"project_name": req.Project_Name,
 	}
 	update_users_lexing := bson.M{"$set": bson.M{
@@ -583,13 +476,7 @@ func ConvertDFAToRG(c *gin.Context) {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/regexToNFA [post]
 func ConvertRGToNFA(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	var req ProjectNameRequest
+	var req IDRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
@@ -597,28 +484,16 @@ func ConvertRGToNFA(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
-
 	var res struct {
 		Rules []services.TypeRegex `bson:"rules"`
 	}
 
-	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Regex rules not found. Please create one"})
 		return
@@ -635,7 +510,7 @@ func ConvertRGToNFA(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	update_users_lexing := bson.M{"$set": bson.M{
 		"nfa": nfa,
 	}}
@@ -664,13 +539,7 @@ func ConvertRGToNFA(c *gin.Context) {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/regexToDFA [post]
 func ConvertRGToDFA(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	var req ProjectNameRequest
+	var req IDRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
@@ -678,28 +547,16 @@ func ConvertRGToDFA(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
-
 	var res struct {
 		Rules []services.TypeRegex `bson:"rules"`
 	}
 
-	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Regex rules not found. Please create one"})
 		return
@@ -716,7 +573,7 @@ func ConvertRGToDFA(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	update_users_lexing := bson.M{"$set": bson.M{
 		"dfa": dfa,
 	}}
@@ -745,13 +602,7 @@ func ConvertRGToDFA(c *gin.Context) {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/nfaToDFA [post]
 func ConvertNFAToDFA(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	var req ProjectNameRequest
+	var req IDRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
@@ -759,28 +610,16 @@ func ConvertNFAToDFA(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
-
 	var res struct {
 		NFA services.Automata `bson:"nfa"`
 	}
 
-	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "NFA not found. Please create one"})
 		return
@@ -792,7 +631,7 @@ func ConvertNFAToDFA(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	update_users_lexing := bson.M{"$set": bson.M{
 		"dfa": dfa,
 	}}

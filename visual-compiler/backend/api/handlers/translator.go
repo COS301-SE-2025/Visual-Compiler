@@ -14,6 +14,8 @@ import (
 )
 
 type TranslatorRules struct {
+	// User's ID for searching and storing purposes
+	UsersID bson.ObjectID `json:"users_id" binding:"required" example:"685df259c1294de5546b045f"`
 	// Translation Rules
 	Rules []services.TranslationRule `json:"translation_rules" binding:"required"`
 	// User's project name
@@ -31,12 +33,6 @@ type TranslatorRules struct {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /translating/rules [post]
 func ReadRules(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
 	var req TranslatorRules
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -55,24 +51,12 @@ func ReadRules(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("translating")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err = users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
-
-	filters := bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	var userexisting bson.M
 
 	err = collection.FindOne(ctx, filters).Decode(&userexisting)
@@ -80,7 +64,7 @@ func ReadRules(c *gin.Context) {
 	if err == mongo.ErrNoDocuments {
 		_, err = collection.InsertOne(ctx, bson.M{
 			"translating_rules": rules,
-			"users_id":          dbUser.UsersID,
+			"users_id":          req.UsersID,
 			"project_name":      req.Project_Name,
 		})
 		if err != nil {
@@ -121,13 +105,7 @@ func ReadRules(c *gin.Context) {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /translating/translate [post]
 func TranslateCode(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	var req ProjectNameRequest
+	var req IDRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
@@ -135,23 +113,11 @@ func TranslateCode(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	parsing_collection := mongo_cli.Database("visual-compiler").Collection("parsing")
 	translating_collection := mongo_cli.Database("visual-compiler").Collection("translating")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
 
 	var parsing_res struct {
 		Tree services.SyntaxTree `bson:"tree"`
@@ -161,13 +127,13 @@ func TranslateCode(c *gin.Context) {
 		Rules []services.TranslationRule `bson:"translating_rules"`
 	}
 
-	err = parsing_collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}).Decode(&parsing_res)
+	err := parsing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&parsing_res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tree not found. Please go back to parsing"})
 		return
 	}
 
-	err = translating_collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}).Decode(&translating_res)
+	err = translating_collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&translating_res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Translating rules not found. Please go back to Translation"})
 		return
@@ -179,7 +145,7 @@ func TranslateCode(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	update_users_translating := bson.M{"$set": bson.M{
 		"code": translated_code,
 	}}
