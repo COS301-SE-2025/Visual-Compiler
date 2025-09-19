@@ -100,7 +100,7 @@ func nothing() (int) {
 
     async function handleSubmit() {
         if (!inputCode.trim() || selectedTechniques.length === 0) {
-            AddToast('Please enter code and select at least one optimization technique', 'error');
+            AddToast('Please enter code and select at least one optimisation technique', 'error');
             return;
         }
 
@@ -176,7 +176,7 @@ func nothing() (int) {
 
             if (!optimizeResponse.ok) {
                 const errorData = await optimizeResponse.json();
-                throw new Error(errorData.details || 'Optimization failed');
+                throw new Error(errorData.details || 'optimisation failed');
             }
 
             const optimizeData = await optimizeResponse.json();
@@ -200,10 +200,10 @@ func nothing() (int) {
                 }
             }));
 
-            AddToast('Code optimization completed successfully!', 'success');
+            AddToast('Code optimisation completed successfully!', 'success');
 
         } catch (error) {
-            console.error('Optimization error:', error);
+            console.error('Optimisation error:', error);
             
             optimizerState.update(state => ({
                 ...state,
@@ -211,7 +211,7 @@ func nothing() (int) {
                 optimizationError: error
             }));
 
-            AddToast(`Optimization failed: ${error.message}`, 'error');
+            AddToast(`Optimisation failed: ${error.message}`, 'error');
         }
     }
 
