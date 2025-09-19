@@ -15,7 +15,7 @@ describe('Canvas Test', ()=> {
 
         cy.visit('http://localhost:5173/main-workspace');
 
-        cy.wait(1000);
+        cy.wait(4000);
 
         const project_name = `canvas_project`;
         //delete project
