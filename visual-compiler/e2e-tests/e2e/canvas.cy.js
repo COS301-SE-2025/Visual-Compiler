@@ -19,6 +19,7 @@ describe('Canvas Test', ()=> {
 
         const project_name = `canvas_project`;
         //delete project
+        cy.get('.section-heading', { timeout: 10000 }).should('be.visible')
         cy.get('.section-heading').should('contain', 'Start a new project');
         cy.get('.project-block').contains(project_name).get('.delete-button').click();
         cy.get('.delete-confirm-button').click();
