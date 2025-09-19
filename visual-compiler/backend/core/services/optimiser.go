@@ -690,7 +690,7 @@ func RemoveUnusedDeclaredVariables(statement *ast.DeclStmt, ast_data ASTData, op
 // Return:
 //
 // Determines if the statement contains any unused if statements and removes them from the AST
-func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) error {
+func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl) error {
 	if_statement, valid_ifstatement := function_statements.(*ast.IfStmt)
 	unreachable := false
 	var optimised_if_body []ast.Stmt
@@ -920,7 +920,7 @@ func ConvertToConstant(lit *ast.BasicLit) (constant.Value, error) {
 //
 // Determines if the statement contains any unused for statements and removes them from the AST
 
-func RemoveUnusedForStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) error {
+func RemoveUnusedForStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl) error {
 	for_statement, valid_forstatement := function_statements.(*ast.ForStmt)
 	unreachable := false
 	var optimised_for_body []ast.Stmt
@@ -1145,7 +1145,7 @@ func RemoveUnusedForStatement(function_statements ast.Stmt, optimised_statements
 // Return:
 //
 // Determines if the statement contains any unused switch statements and removes them from the AST
-func RemoveUnusedSwitchStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) error {
+func RemoveUnusedSwitchStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl) error {
 	switch_statement, valid_switchstatement := function_statements.(*ast.SwitchStmt)
 	unreachable := false
 	var optimised_body []ast.Stmt
@@ -1186,7 +1186,7 @@ func RemoveUnusedSwitchStatement(function_statements ast.Stmt, optimised_stateme
 // Return:
 //
 // Determines if the statement contains any unused switch case statements and removes them from the AST
-func RemoveUnusedSwitchCase(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) error {
+func RemoveUnusedSwitchCase(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl) error {
 	switch_statement, valid_switchstatement := function_statements.(*ast.CaseClause)
 	unreachable := false
 	var optimised_body []ast.Stmt
@@ -1222,7 +1222,7 @@ func RemoveUnusedSwitchCase(function_statements ast.Stmt, optimised_statements *
 //
 // Determines type of statement and performs the necessary dead code elimination
 
-func SearchStructureBody(body_statement ast.Stmt, optimised_body *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl, unreachable *bool) error {
+func SearchStructureBody(body_statement ast.Stmt, optimised_body *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl, unreachable *bool) error {
 	switch statement := body_statement.(type) {
 	case *ast.AssignStmt: // search for unused assigned variables
 		RemoveUnusedAssignedVariables(statement, ast_data, optimised_body)
