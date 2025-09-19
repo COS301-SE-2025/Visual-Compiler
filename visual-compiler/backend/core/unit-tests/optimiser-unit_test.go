@@ -2365,6 +2365,22 @@ func TestPerformLoopUnrolling_NonStandardLoop2(t *testing.T) {
 	}
 }
 
+func TestPerformLoopUnrolling_NonStandardLoop3(t *testing.T) {
+    invalid_loops := []string{
+		"for ; i < 2; i++ {}", 
+        "for i := 1; ; i++ {}",
+        "for i := 1; i < 2; {}",
+    }
+
+    for _, loop := range invalid_loops {
+        _, err := services.OptimiseGoCode(loop, false, false, true)
+		if err == nil {
+			t.Errorf("Expected error for invalid loop structure")
+		}
+    }
+}
+
+
 func TestPerformLoopUnrolling_Increment(t *testing.T) {
 	code := "package main\n\n"
 	code += "import \"fmt\"\n"
