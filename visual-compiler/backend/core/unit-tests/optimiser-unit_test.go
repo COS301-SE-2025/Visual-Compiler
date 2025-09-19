@@ -2750,14 +2750,22 @@ func TestPerformLoopUnrolling_NonStandardLoop2(t *testing.T) {
 }
 
 func TestPerformLoopUnrolling_NonStandardLoop3(t *testing.T) {
-	invalid_loops := []string{
-		"for ; i < 2; i++ {}",
-		"for i := 1; ; i++ {}",
-		"for i := 1; i < 2; {}",
-	}
+    invalid_loops := []string{
+        "for ; i < 2; i++ {}", 
+        "for x,y := 1; i < 2; x++ {}",
+        "for i := 'x'; i < 100; x++ {}",
+        "for i := 1; i < 1+1; i++ {}",
+        "for i := 1; i < 2; x++ {}",
+        "for i := 1; ; i++ {}",
+        "for i := 1; i % 2; i++ {}",
+		"for i := 1; i < 'a'; x++ {}",
+        "for i := 1; i < 2; i = i+1 {}",
+        "for i := 1; i < 2; {}",
+    }
 
-	for _, loop := range invalid_loops {
-		_, err := services.OptimiseGoCode(loop, false, false, true)
+    for _, loop := range invalid_loops {
+        _, err := services.OptimiseGoCode(loop, false, false, true)
+
 		if err == nil {
 			t.Errorf("Expected error for invalid loop structure")
 		}
@@ -3187,21 +3195,21 @@ func TestPerformLoopUnrolling_SingleIteration(t *testing.T) {
 
 func TestPerformLoopUnrolling_MultipleIterations(t *testing.T) {
 	code := "package main\n\n"
-	code += "import \"fmt\"\n"
 	code += "func main() {\n"
+	code += "\ttester := 1\n"
 	code += "\tfor i := 1; i < 5; i++ {\n"
-	code += "\t\tfmt.Printf(i)\n"
+	code += "\t\ttester++\n"
 	code += "\t}\n"
 	code += "\tfmt.Println(\"Execution Complete!\")\n"
 	code += "}\n"
 
 	expected_result := "package main\n\n"
-	expected_result += "import \"fmt\"\n"
 	expected_result += "func main() {\n"
-	expected_result += "\tfmt.Printf(1)\n"
-	expected_result += "\tfmt.Printf(2)\n"
-	expected_result += "\tfmt.Printf(3)\n"
-	expected_result += "\tfmt.Printf(4)\n"
+	expected_result += "\ttester := 1\n"
+	expected_result += "\ttester++\n"
+	expected_result += "\ttester++\n"
+	expected_result += "\ttester++\n"
+	expected_result += "\ttester++\n"
 	expected_result += "\tfmt.Println(\"Execution Complete!\")\n"
 	expected_result += "}\n"
 
