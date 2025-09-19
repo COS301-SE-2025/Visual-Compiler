@@ -2666,3 +2666,151 @@ func TestPerformLoopUnrolling_FunctionCalls(t *testing.T) {
 		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
 	}
 }
+
+func TestPerformLoopUnrolling_IfStatement(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 0; i <= 2; i++ {\n"
+	code += "\t\tif i == 1 {\n"
+	code += "\t\t\tfmt.Printf(i)\n"
+	code += "\t\t}\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tif 0 == 1 {\n"
+	expected_result += "\t\tfmt.Printf(0)\n"
+	expected_result += "\t}\n"
+	expected_result += "\tif 1 == 1 {\n"
+	expected_result += "\t\tfmt.Printf(1)\n"
+	expected_result += "\t}\n"
+	expected_result += "\tif 2 == 1 {\n"
+	expected_result += "\t\tfmt.Printf(2)\n"
+	expected_result += "\t}\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_NestedLoops(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 0; i <= 2; i++ {\n"
+	code += "\t\tfor j := 0; j <= 2; j++ {\n"
+	code += "\t\t\tfmt.Printf(\"Outer: %d Inner: %d\", i, j)\n"
+	code += "\t\t}\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 0, 0)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 0, 1)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 0, 2)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 1, 0)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 1, 1)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 1, 2)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 2, 0)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 2, 1)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 2, 2)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_ZeroIterations(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 1; i < 1; i++ {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "\tfmt.Println(\"Execution Complete!\")\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Println(\"Execution Complete!\")\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_SingleIteration(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 1; i < 2; i++ {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "\tfmt.Println(\"Execution Complete!\")\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(1)\n"
+	expected_result += "\tfmt.Println(\"Execution Complete!\")\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_MultipleIterations(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 1; i < 5; i++ {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "\tfmt.Println(\"Execution Complete!\")\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(1)\n"
+	expected_result += "\tfmt.Printf(2)\n"
+	expected_result += "\tfmt.Printf(3)\n"
+	expected_result += "\tfmt.Printf(4)\n"
+	expected_result += "\tfmt.Println(\"Execution Complete!\")\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
