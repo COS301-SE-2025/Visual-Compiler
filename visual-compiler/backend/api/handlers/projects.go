@@ -225,6 +225,7 @@ func DeleteProject(c *gin.Context) {
 	parsing_collection := mongo_cli.Database("visual-compiler").Collection("parsing")
 	analysing_collection := mongo_cli.Database("visual-compiler").Collection("analysing")
 	translating_collection := mongo_cli.Database("visual-compiler").Collection("translating")
+	optimising_collection := mongo_cli.Database("visual-compiler").Collection("optimising")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -280,6 +281,11 @@ func DeleteProject(c *gin.Context) {
 		return
 	}
 
+	if _, err := optimising_collection.DeleteOne(ctx, filters_for_collections); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete project"})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Successfully deleted your projects",
 	})
@@ -309,7 +315,7 @@ func GetProject(c *gin.Context) {
 	database := "visual-compiler"
 
 	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
-	db_collections := []string{"lexing", "parsing", "analysing", "translating"}
+	db_collections := []string{"lexing", "parsing", "analysing", "translating", "optimising"}
 	res := make(map[string]any)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
