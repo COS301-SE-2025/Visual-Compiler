@@ -66,7 +66,7 @@ func TestStringifyAST_Success(t *testing.T) {
 	}
 
 	if code != expected_result {
-		t.Errorf("Stringify AST failed:\n %v\n %v", code, expected_result)
+		t.Errorf("Stringify AST failed:\n%v\n%v", code, expected_result)
 	}
 }
 
@@ -115,7 +115,7 @@ func TestConvertToConstant_Error(t *testing.T) {
 	value := &ast.BasicLit{Kind: token.EQL, Value: "=="}
 	_, err := services.ConvertToConstant(value)
 	if err == nil {
-		t.Errorf("error expected")
+		t.Errorf("Error expected")
 	}
 
 }
@@ -146,7 +146,7 @@ func TestPerformDeadCodeElimination_Simple(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -168,7 +168,7 @@ func TestPerformDeadCodeElimination_MultipleReturn(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -190,7 +190,7 @@ func TestPerformDeadCodeElimination_UnusedVariableAfterReturn(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -211,7 +211,7 @@ func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -232,7 +232,7 @@ func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn_2(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -256,7 +256,7 @@ func TestPerformDeadCodeElimination_UsedVariableBeforeReturn_2(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -279,7 +279,7 @@ func TestPerformDeadCodeElimination_EmptyIfStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -304,7 +304,7 @@ func TestPerformDeadCodeElimination_ConstantVariableIfStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -329,7 +329,7 @@ func TestPerformDeadCodeElimination_ConstantVariableIfStatement_False(t *testing
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -360,7 +360,7 @@ func TestPerformDeadCodeElimination_ConstantVariableIfStatement_True(t *testing.
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -391,7 +391,7 @@ func TestPerformDeadCodeElimination_ConstantVariableIfStatement_True2(t *testing
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -424,7 +424,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_Identifier(t *testing.T) 
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -453,7 +453,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_Equal(t 
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -478,7 +478,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Equal(
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -507,7 +507,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_NotEqual
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -532,7 +532,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_NotEqu
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -561,7 +561,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_LessEqua
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_LessEqual(t *testing.T) {
@@ -584,7 +584,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_LessEq
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -613,7 +613,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_Less(t *
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Less(t *testing.T) {
@@ -636,7 +636,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Less(t
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -665,7 +665,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_GreaterE
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_GreaterEqual(t *testing.T) {
@@ -688,7 +688,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Greate
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -717,7 +717,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_Greater(
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Greater(t *testing.T) {
@@ -740,7 +740,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Greate
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -771,7 +771,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_EqualVar
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -797,7 +797,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_EqualV
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -828,7 +828,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_NotEqual
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -854,7 +854,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_NotEqu
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -885,7 +885,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_LessEqua
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -910,7 +910,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_LessEq
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -941,7 +941,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_LessVari
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -966,7 +966,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_LessVa
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -997,7 +997,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_GreaterE
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1022,7 +1022,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Greate
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1053,7 +1053,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_GreaterV
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1078,7 +1078,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Greate
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1107,7 +1107,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_Greater2
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1134,7 +1134,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_GreaterC
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1158,7 +1158,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_Constant(t *testing.T) 
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1185,7 +1185,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_UnaryConstant(t *testin
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1210,7 +1210,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_UnaryExpression(t *test
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1239,7 +1239,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_UnaryExpression(t *testin
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1262,7 +1262,7 @@ func TestPerformDeadCodeElimination_UnreachedForStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1288,7 +1288,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1314,7 +1314,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement_GTR(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1340,7 +1340,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement_GEQ(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1366,7 +1366,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement_LEQ(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1392,7 +1392,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement_NEQ(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1418,7 +1418,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement_EQL(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1441,7 +1441,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement_Other(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1465,7 +1465,7 @@ func TestPerformDeadCodeElimination_EmptyForStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1491,7 +1491,7 @@ func TestPerformDeadCodeElimination_EmptySwitchStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1531,7 +1531,7 @@ func TestPerformDeadCodeElimination_ReachedSwitchStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1560,7 +1560,7 @@ func TestPerformDeadCodeElimination_UnreachedSwitchStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 func TestPerformDeadCodeElimination_UnreachedSwitchStatement_InFor(t *testing.T) {
@@ -1591,7 +1591,7 @@ func TestPerformDeadCodeElimination_UnreachedSwitchStatement_InFor(t *testing.T)
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1628,7 +1628,7 @@ func TestPerformDeadCodeElimination_UnreachedFunction(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1676,7 +1676,7 @@ func TestPerformDeadCodeElimination_ReachedFunction(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1710,7 +1710,7 @@ func TestPerformDeadCodeElimination_ReachedFunction_Empty(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1794,7 +1794,7 @@ func TestPerformDeadCodeElimination_Complex(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1874,7 +1874,7 @@ func TestPerformDeadCodeElimination_Complex_2(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1964,6 +1964,6 @@ func TestPerformDeadCodeElimination_Complex_3(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
