@@ -2528,3 +2528,53 @@ func TestPerformLoopUnrolling_WrongDecrementDirection(t *testing.T) {
 		t.Errorf("Expected error for wrong decrement direction")
 	}
 }
+
+func TestPerformLoopUnrolling_MultipleAssignments(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tfor i := 0; i <= 2; i++ {\n"
+	code += "\t\tx, y := i, i+1\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tx, y := 0, 0+1\n"
+	expected_result += "\tx, y := 1, 1+1\n"
+	expected_result += "\tx, y := 2, 2+1\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_MultipleSubstitutions(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tarr := []int{1, 2, 3}\n"
+	code += "\tfor i := 0; i <= 2; i++ {\n"
+	code += "\t\tarr[i] = arr[i] * 2\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tarr := []int{1, 2, 3}\n"
+	expected_result += "\tarr[0] = arr[0] * 2\n"
+	expected_result += "\tarr[1] = arr[1] * 2\n"
+	expected_result += "\tarr[2] = arr[2] * 2\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
