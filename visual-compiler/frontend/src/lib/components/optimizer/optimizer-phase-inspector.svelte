@@ -176,7 +176,7 @@ func nothing() (int) {
 
             if (!optimizeResponse.ok) {
                 const errorData = await optimizeResponse.json();
-                throw new Error(errorData.error || 'Optimization failed');
+                throw new Error(errorData.details || 'Optimization failed');
             }
 
             const optimizeData = await optimizeResponse.json();
