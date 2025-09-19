@@ -15,11 +15,10 @@ describe('Canvas Test', ()=> {
 
         cy.visit('http://localhost:5173/main-workspace');
 
-        cy.wait(4000);
+        cy.wait(1000);
 
         const project_name = `canvas_project`;
         //delete project
-        //cy.get('.section-heading', { timeout: 10000 }).should('be.visible')
         cy.get('.section-heading').should('contain', 'Start a new project');
         cy.get('.project-block').contains(project_name).get('.delete-button').click();
         cy.get('.delete-confirm-button').click();
@@ -78,6 +77,9 @@ describe('Canvas Test', ()=> {
         cy.get('button').should('contain', 'Optimiser');
         cy.get('button').contains('Optimiser').click();
         cy.get('.canvas-container').should('contain','Optimiser');
+
+        //logout
+         cy.get('button').contains('Logout').click();
 
     })
 
