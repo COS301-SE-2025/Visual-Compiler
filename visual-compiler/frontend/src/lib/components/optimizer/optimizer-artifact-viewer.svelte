@@ -18,7 +18,7 @@
             navigator.clipboard
                 .writeText(code_as_string)
                 .then(() => {
-                    AddToast('Code copied! Your optimized code is now in the clipboard', 'success');
+                    AddToast('Code copied! Your optimised code is now in the clipboard', 'success');
                 })
                 .catch((err) => {
                     console.error('Failed to copy text: ', err);
@@ -27,9 +27,9 @@
         }
     }
 
-    // Add reactive statement for optimizer data
     $: if ($optimizerState?.optimizedCode) {
         optimizedCode = $optimizerState.optimizedCode;
+        optimizationError = null;
     }
 
     $: if ($optimizerState?.optimizationError) {
@@ -88,7 +88,7 @@
                     {:else if optimizationError.message?.includes('User ID not found')}
                         Authentication error. Please refresh the page and try again.
                     {:else}
-                        The optimization could not be completed with the provided code. Please check your input and try again.
+                        The optimisation could not be completed with the provided code. Please check your input and try again.
                     {/if}
                 </p>
                 <pre class="error-details">{optimizationError.message || String(optimizationError)}</pre>
