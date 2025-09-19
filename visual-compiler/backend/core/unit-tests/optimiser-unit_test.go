@@ -137,7 +137,7 @@ func TestPerformConstantFolding_SimpleExpression(t *testing.T) {
 	code := "package main\n\n"
 	code += "func main() {\n"
 	code += "\tresult := 12 + 13\n"
-	code += "}"
+	code += "}\n"
 
 	expected_result := "package main\n\n"
 	expected_result += "func main() {\n"
@@ -157,7 +157,7 @@ func TestPerformConstantFolding_ComplexExpression(t *testing.T) {
 	code := "package main\n\n"
 	code += "func main() {\n"
 	code += "\tresult := (12 + 13) * (28 % 10)\n"
-	code += "}"
+	code += "}\n"
 
 	expected_result := "package main\n\n"
 	expected_result += "func main() {\n"
@@ -183,7 +183,7 @@ func TestPerformConstantFolding_BasicIntegerArithmetic(t *testing.T) {
 	code += "\tmul := num1 * num2\n"
 	code += "\tdiv := num1 / num2\n"
 	code += "\tmod := num1 % num2\n"
-	code += "}"
+	code += "}\n"
 
 	expected_result := "package main\n\n"
 	expected_result += "func main() {\n"
@@ -215,7 +215,7 @@ func TestPerformConstantFolding_BasicFloatArithmetic(t *testing.T) {
 	code += "\tmul := num1 * num2\n"
 	code += "\tdiv := num1 / num2\n"
 	code += "\tmod := num1 % num2\n"
-	code += "}"
+	code += "}\n"
 
 	expected_result := "package main\n\n"
 	expected_result += "func main() {\n"
@@ -237,11 +237,31 @@ func TestPerformConstantFolding_BasicFloatArithmetic(t *testing.T) {
 	}
 }
 
+func TestPerformConstantFolding_NegativeNumbers(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tresult := -12 - -4\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tresult := -8\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
 func TestPerformConstantFolding_DivisionByZero(t *testing.T) {
 	code := "package main\n\n"
 	code += "func main() {\n"
 	code += "\tresult := 10 / 0\n"
-	code += "}"
+	code += "}\n"
 
 	_, err := services.OptimiseGoCode(code, true, false, false)
 	if err == nil {
@@ -253,7 +273,7 @@ func TestPerformConstantFolding_ModuloByZero(t *testing.T) {
 	code := "package main\n\n"
 	code += "func main() {\n"
 	code += "\tresult := 10 % 0\n"
-	code += "}"
+	code += "}\n"
 
 	_, err := services.OptimiseGoCode(code, true, false, false)
 	if err == nil {
@@ -265,7 +285,7 @@ func TestPerformConstantFolding_FloatToIntegerConversion(t *testing.T) {
 	code := "package main\n\n"
 	code += "func main() {\n"
 	code += "\tresult := 2.0 + 8.0\n"
-	code += "}"
+	code += "}\n"
 
 	expected_result := "package main\n\n"
 	expected_result += "func main() {\n"
@@ -288,7 +308,7 @@ func TestPerformConstantFolding_ChainedVariables(t *testing.T) {
 	code += "\ty := x + 1\n"
 	code += "\tz := y + 1\n"
 	code += "\ttotal := x + y + z + x + y + z\n"
-	code += "}"
+	code += "}\n"
 
 	expected_result := "package main\n\n"
 	expected_result += "func main() {\n"
@@ -296,6 +316,58 @@ func TestPerformConstantFolding_ChainedVariables(t *testing.T) {
 	expected_result += "\ty := 2\n"
 	expected_result += "\tz := 3\n"
 	expected_result += "\ttotal := 12\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformConstantFolding_FunctionArguments(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfmt.Printf(132 / 11)\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(12)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformConstantFolding_NothingFolded(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 1; i < 13; i++ {\n"
+	code += "\t\tif i%2 != 1 {\n"
+	code += "\t\t\tfmt.Printf(i)\n"
+	code += "\t\t}\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfor i := 1; i < 13; i++ {\n"
+	expected_result += "\t\tif i%2 != 1 {\n"
+	expected_result += "\t\t\tfmt.Printf(1)\n"
+	expected_result += "\t\t}\n"
+	expected_result += "\t}\n"
 	expected_result += "}\n"
 
 	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
