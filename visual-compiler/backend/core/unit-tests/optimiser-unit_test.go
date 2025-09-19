@@ -8,6 +8,8 @@ import (
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/services"
 )
 
+// Tests for Lexing and Parsing
+
 func TestParseCode_Success(t *testing.T) {
 	code := "package main\n"
 	code += "func main() {\n"
@@ -89,7 +91,6 @@ func TestStringifyAST_Fail(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error: %v", err)
 	}
-
 }
 
 func TestConvertToConstant_Float(t *testing.T) {
@@ -99,8 +100,8 @@ func TestConvertToConstant_Float(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-
 }
+
 func TestConvertToConstant_Char(t *testing.T) {
 
 	value := &ast.BasicLit{Kind: token.CHAR, Value: "C"}
@@ -108,8 +109,8 @@ func TestConvertToConstant_Char(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-
 }
+
 func TestConvertToConstant_Error(t *testing.T) {
 
 	value := &ast.BasicLit{Kind: token.EQL, Value: "=="}
@@ -117,8 +118,9 @@ func TestConvertToConstant_Error(t *testing.T) {
 	if err == nil {
 		t.Errorf("Error expected")
 	}
-
 }
+
+// Tests for Combined Optimisation
 
 func TestOptimiseGo_NoInputCode(t *testing.T) {
 	code := ""
@@ -128,6 +130,78 @@ func TestOptimiseGo_NoInputCode(t *testing.T) {
 		t.Errorf("Error expected")
 	}
 }
+
+// Tests for Constant Folding
+
+func TestPerformConstantFolding_BasicIntegerArithmetic(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "\tnum1 := 20\n"
+	code += "\tnum2 := 10\n"
+	code += "\tadd := num1 + num2\n"
+	code += "\tsub := num1 - num2\n"
+	code += "\tmul := num1 * num2\n"
+	code += "\tdiv := num1 / num2\n"
+	code += "\tmod := num1 % num2\n"
+	code += "\treturn\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tnum1 := 20\n"
+	expected_result += "\tnum2 := 10\n"
+	expected_result += "\tadd := 30\n"
+	expected_result += "\tsub := 10\n"
+	expected_result += "\tmul := 200\n"
+	expected_result += "\tdiv := 2\n"
+	expected_result += "\tmod := 0\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformConstantFolding_BasicFloatArithmetic(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "\tnum1 := 121.3\n"
+	code += "\tnum2 := 19.89\n"
+	code += "\tadd := num1 + num2\n"
+	code += "\tsub := num1 - num2\n"
+	code += "\tmul := num1 * num2\n"
+	code += "\tdiv := num1 / num2\n"
+	code += "\tmod := num1 % num2\n"
+	code += "\treturn\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tnum1 := 121.3\n"
+	expected_result += "\tnum2 := 19.89\n"
+	expected_result += "\tadd := 141.19\n"
+	expected_result += "\tsub := 101.41\n"
+	expected_result += "\tmul := 2412.657\n"
+	expected_result += "\tdiv := 6.09854\n"
+	expected_result += "\tmod := 1.96\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+// Tests for Dead Code Elimination
 
 func TestPerformDeadCodeElimination_Simple(t *testing.T) {
 	code := "package main\n"
@@ -1967,3 +2041,5 @@ func TestPerformDeadCodeElimination_Complex_3(t *testing.T) {
 		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
+
+// Tests for Loop Unrolling
