@@ -79,7 +79,7 @@ describe('Canvas Test', ()=> {
         cy.get('.canvas-container').should('contain','Optimiser');
 
         //logout
-         cy.get('button').contains('Logout').click();
+        cy.get('button[aria-label="Logout"]').click();
 
     })
 
