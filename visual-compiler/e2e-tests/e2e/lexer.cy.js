@@ -15,7 +15,7 @@ describe('Lexer Test', ()=> {
 
         cy.visit('http://localhost:5173/main-workspace');
 
-        cy.wait(500);
+        cy.wait(1000);
 
         const project_name = `canvas_project`;
         //delete project
@@ -37,6 +37,7 @@ describe('Lexer Test', ()=> {
         cy.get('button').contains('Source Code').click();
         cy.get('.canvas-container').should('contain','Source Code');
         cy.get('.canvas-container').contains('Source Code').dblclick();
+        cy.wait(500);
         cy.get('.code-input-container').should('contain', 'Source Code Input');
         cy.get('.code-input-header-row button').click();
         cy.get('.confirm-btn').contains('Confirm Code');
@@ -50,6 +51,7 @@ describe('Lexer Test', ()=> {
         cy.get('#A-1\\/N-source-1').trigger('mousedown', { which: 1, force: true });
         cy.get('#A-1\\/N-lexer-2').trigger('mousemove', { force: true }).trigger('mouseup', { force: true });
         cy.get('.canvas-container').contains('Lexer').dblclick();
+        cy.wait(500);
 
         cy.get('.phase-inspector').should('contain','LEXING');
         cy.get('.automaton-btn').contains('Regular Expression').click();
@@ -93,7 +95,7 @@ describe('Lexer Test', ()=> {
 
         cy.visit('http://localhost:5173/main-workspace');
 
-        cy.wait(500);
+        cy.wait(1000);
 
         const project_name = `canvas_project`;
         //delete project
@@ -115,6 +117,7 @@ describe('Lexer Test', ()=> {
         cy.get('button').contains('Source Code').click();
         cy.get('.canvas-container').should('contain','Source Code');
         cy.get('.canvas-container').contains('Source Code').dblclick();
+        cy.wait(500);
         cy.get('.code-input-container').should('contain', 'Source Code Input');
         cy.get('.code-input-header-row button').click();
         cy.get('.confirm-btn').contains('Confirm Code');
@@ -128,6 +131,7 @@ describe('Lexer Test', ()=> {
         cy.get('#A-1\\/N-source-1').trigger('mousedown', { which: 1, force: true });
         cy.get('#A-1\\/N-lexer-2').trigger('mousemove', { force: true }).trigger('mouseup', { force: true });
         cy.get('.canvas-container').contains('Lexer').dblclick();
+        cy.wait(500);
 
         cy.get('.phase-inspector').should('contain','LEXING');
         cy.get('.automaton-btn').contains('Automata').click();

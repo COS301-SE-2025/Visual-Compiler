@@ -37,6 +37,7 @@ describe('Translator Test', ()=> {
         cy.get('button').contains('Source Code').click();
         cy.get('.canvas-container').should('contain','Source Code');
         cy.get('.canvas-container').contains('Source Code').dblclick();
+        cy.wait(500);
         cy.get('.code-input-container').should('contain', 'Source Code Input');
         cy.get('.code-input-header-row button').click();
         cy.get('.confirm-btn').contains('Confirm Code');
@@ -50,6 +51,7 @@ describe('Translator Test', ()=> {
         cy.get('#A-1\\/N-source-1').trigger('mousedown', { which: 1, force: true });
         cy.get('#A-1\\/N-lexer-2').trigger('mousemove', { force: true }).trigger('mouseup', { force: true });
         cy.get('.canvas-container').contains('Lexer').dblclick();
+        cy.wait(500);
         cy.get('.phase-inspector').should('contain','LEXING');
         cy.get('.automaton-btn').contains('Regular Expression').click();
         cy.get('.default-toggle-btn').click();
@@ -65,6 +67,7 @@ describe('Translator Test', ()=> {
         cy.get('#A-2\\/N-lexer-2').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-parser-3').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
         cy.get('.canvas-container').contains('Parser').dblclick();
+        cy.wait(500);
         cy.get('.phase-inspector').should('contain','PARSING');
         cy.get('.grammar-header').should('contain','Context-Free Grammar');
         cy.get('.default-toggle-btn').click();
@@ -83,6 +86,7 @@ describe('Translator Test', ()=> {
         cy.get('#A-2\\/N-parser-3').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-analyser-4').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
         cy.get('.canvas-container').contains('Analyser').dblclick();
+        cy.wait(500);
         cy.get('.analyser-heading').should('contain','ANALYSING');
         cy.get('.default-toggle-btn').click();
         cy.get('.submit-button').contains('Submit All Rules').click();
@@ -103,6 +107,7 @@ describe('Translator Test', ()=> {
         cy.get('#A-1\\/N-translator-5').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
 
         cy.get('.canvas-container').contains('Translator').dblclick();
+        cy.wait(500);
 
         cy.get('.heading').should('contain','TRANSLATING');
         cy.get('.default-toggle-btn').click();
