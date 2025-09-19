@@ -11,7 +11,7 @@ describe('Registration Test', () => {
         cy.contains('button', 'Login').should('have.class', 'active');
         cy.contains('button', 'Register').should('not.have.class', 'active');
 
-        cy.wait(1000); 
+        cy.wait(500); 
         cy.get('.tab-nav button').contains("Register").click();
         cy.get('.tab-nav button').contains("Register").should('have.class', 'active');
 
@@ -41,7 +41,7 @@ describe('Registration Test', () => {
         cy.contains('button', 'Login').should('have.class', 'active');
         cy.contains('button', 'Register').should('not.have.class', 'active');
 
-        cy.wait(1000); 
+        cy.wait(500); 
         cy.get('.tab-nav button').contains("Register").click();
         cy.get('.tab-nav button').contains("Register").should('have.class', 'active');
 
