@@ -8,6 +8,8 @@ import (
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/services"
 )
 
+// Tests for Lexing and Parsing
+
 func TestParseCode_Success(t *testing.T) {
 	code := "package main\n"
 	code += "func main() {\n"
@@ -66,7 +68,7 @@ func TestStringifyAST_Success(t *testing.T) {
 	}
 
 	if code != expected_result {
-		t.Errorf("Stringify AST failed:\n %v\n %v", code, expected_result)
+		t.Errorf("Stringify AST failed:\n%v\n%v", code, expected_result)
 	}
 }
 
@@ -89,7 +91,6 @@ func TestStringifyAST_Fail(t *testing.T) {
 	if err != nil {
 		t.Errorf("Error: %v", err)
 	}
-
 }
 
 func TestConvertToConstant_Float(t *testing.T) {
@@ -99,8 +100,8 @@ func TestConvertToConstant_Float(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-
 }
+
 func TestConvertToConstant_Char(t *testing.T) {
 
 	value := &ast.BasicLit{Kind: token.CHAR, Value: "C"}
@@ -108,19 +109,20 @@ func TestConvertToConstant_Char(t *testing.T) {
 	if err != nil {
 		t.Errorf("%v", err)
 	}
-
 }
+
 func TestConvertToConstant_Error(t *testing.T) {
 
 	value := &ast.BasicLit{Kind: token.EQL, Value: "=="}
 	_, err := services.ConvertToConstant(value)
 	if err == nil {
-		t.Errorf("error expected")
+		t.Errorf("Error expected")
 	}
-
 }
 
-func TestOptimiseGo_NoInputCode(t *testing.T) {
+// Tests for Optimisation
+
+func TestOptimiseGoCode_NoInputCode(t *testing.T) {
 	code := ""
 
 	_, err := services.OptimiseGoCode(code, true, true, true)
@@ -128,6 +130,337 @@ func TestOptimiseGo_NoInputCode(t *testing.T) {
 		t.Errorf("Error expected")
 	}
 }
+
+func TestOptimiseGoCode_AllThreeCombined(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n\n"
+	code += "func main() {\n"
+	code += "\tfor blue := 1; blue < 5; blue++ {\n"
+	code += "\t\tfmt.Println(\"[Block \" + fmt.Sprint(blue) + \"]\")\n"
+	code += "\t\tfor red := 1; red <= blue; red++ {\n"
+	code += "\t\t\tfmt.Println(\"\\t-> \" + fmt.Sprint(red))\n"
+	code += "\t\t\tif blue == red {\n"
+	code += "\t\t\t\tfmt.Println(blue + red)\n"
+	code += "\t\t\t}\n"
+	code += "\t\t}\n"
+	code += "\t}\n"
+	code += "}\n\n"
+	code += "func nothing() int {\n"
+	code += "\tvar random int = 13\n"
+	code += "\treturn random\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Println(\"[Block \" + fmt.Sprint(1) + \"]\")\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(1))\n"
+	expected_result += "\tif 1 == 1 {\n"
+	expected_result += "\t\tfmt.Println(2)\n"
+	expected_result += "\t}\n"
+	expected_result += "\tfmt.Println(\"[Block \" + fmt.Sprint(2) + \"]\")\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(1))\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(2))\n"
+	expected_result += "\tif 2 == 2 {\n"
+	expected_result += "\t\tfmt.Println(4)\n"
+	expected_result += "\t}\n"
+	expected_result += "\tfmt.Println(\"[Block \" + fmt.Sprint(3) + \"]\")\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(1))\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(2))\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(3))\n"
+	expected_result += "\tif 3 == 3 {\n"
+	expected_result += "\t\tfmt.Println(6)\n"
+	expected_result += "\t}\n"
+	expected_result += "\tfmt.Println(\"[Block \" + fmt.Sprint(4) + \"]\")\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(1))\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(2))\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(3))\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(4))\n"
+	expected_result += "\tif 4 == 4 {\n"
+	expected_result += "\t\tfmt.Println(8)\n"
+	expected_result += "\t}\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, true, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Optimisation Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+// Tests for Constant Folding
+
+func TestPerformConstantFolding_SimpleExpression(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tresult := 12 + 13\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tresult := 25\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformConstantFolding_ComplexExpression(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tresult := (12 + 13) * (28 % 10)\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tresult := 200\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformConstantFolding_BasicIntegerArithmetic(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tnum1 := 20\n"
+	code += "\tnum2 := 10\n"
+	code += "\tadd := num1 + num2\n"
+	code += "\tsub := num1 - num2\n"
+	code += "\tmul := num1 * num2\n"
+	code += "\tdiv := num1 / num2\n"
+	code += "\tmod := num1 % num2\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tnum1 := 20\n"
+	expected_result += "\tnum2 := 10\n"
+	expected_result += "\tadd := 30\n"
+	expected_result += "\tsub := 10\n"
+	expected_result += "\tmul := 200\n"
+	expected_result += "\tdiv := 2\n"
+	expected_result += "\tmod := 0\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformConstantFolding_BasicFloatArithmetic(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tnum1 := 121.3\n"
+	code += "\tnum2 := 19.89\n"
+	code += "\tadd := num1 + num2\n"
+	code += "\tsub := num1 - num2\n"
+	code += "\tmul := num1 * num2\n"
+	code += "\tdiv := num1 / num2\n"
+	code += "\tmod := num1 % num2\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tnum1 := 121.3\n"
+	expected_result += "\tnum2 := 19.89\n"
+	expected_result += "\tadd := 141.19\n"
+	expected_result += "\tsub := 101.41\n"
+	expected_result += "\tmul := 2412.657\n"
+	expected_result += "\tdiv := 6.09854\n"
+	expected_result += "\tmod := 1.96\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformConstantFolding_NegativeNumbers(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tresult := -12 - -4\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tresult := -8\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformConstantFolding_DivisionByZero(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tresult := 10 / 0\n"
+	code += "}\n"
+
+	_, err := services.OptimiseGoCode(code, true, false, false)
+	if err == nil {
+		t.Errorf("Expected error for division by zero")
+	}
+}
+
+func TestPerformConstantFolding_ModuloByZero(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tresult := 10 % 0\n"
+	code += "}\n"
+
+	_, err := services.OptimiseGoCode(code, true, false, false)
+	if err == nil {
+		t.Errorf("Expected error for modulo by zero")
+	}
+}
+
+func TestPerformConstantFolding_FloatToIntegerConversion(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tresult := 2.0 + 8.0\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tresult := 10\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformConstantFolding_Reassignment(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tblue := 20\n"
+	code += "\tblue = blue + 2\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tblue := 20\n"
+	expected_result += "\tblue = 22\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformConstantFolding_ChainedVariables(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tx := 1\n"
+	code += "\ty := x + 1\n"
+	code += "\tz := y + 1\n"
+	code += "\ttotal := x + y + z + x + y + z\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tx := 1\n"
+	expected_result += "\ty := 2\n"
+	expected_result += "\tz := 3\n"
+	expected_result += "\ttotal := 12\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformConstantFolding_FunctionArguments(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfmt.Printf(132 / 11)\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(12)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformConstantFolding_NothingFolded(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 1; i < 13; i++ {\n"
+	code += "\t\tif i%2 != 1 {\n"
+	code += "\t\t\tfmt.Printf(random + i)\n"
+	code += "\t\t}\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfor i := 1; i < 13; i++ {\n"
+	expected_result += "\t\tif i%2 != 1 {\n"
+	expected_result += "\t\t\tfmt.Printf(random + i)\n"
+	expected_result += "\t\t}\n"
+	expected_result += "\t}\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+// Tests for Dead Code Elimination
 
 func TestPerformDeadCodeElimination_Simple(t *testing.T) {
 	code := "package main\n"
@@ -146,7 +479,7 @@ func TestPerformDeadCodeElimination_Simple(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -168,7 +501,7 @@ func TestPerformDeadCodeElimination_MultipleReturn(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -190,7 +523,7 @@ func TestPerformDeadCodeElimination_UnusedVariableAfterReturn(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -211,7 +544,7 @@ func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -232,7 +565,7 @@ func TestPerformDeadCodeElimination_UnusedVariableBeforeReturn_2(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -256,7 +589,7 @@ func TestPerformDeadCodeElimination_UsedVariableBeforeReturn_2(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -279,7 +612,7 @@ func TestPerformDeadCodeElimination_EmptyIfStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -304,7 +637,7 @@ func TestPerformDeadCodeElimination_ConstantVariableIfStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -329,7 +662,7 @@ func TestPerformDeadCodeElimination_ConstantVariableIfStatement_False(t *testing
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -360,7 +693,7 @@ func TestPerformDeadCodeElimination_ConstantVariableIfStatement_True(t *testing.
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -391,7 +724,7 @@ func TestPerformDeadCodeElimination_ConstantVariableIfStatement_True2(t *testing
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -424,7 +757,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_Identifier(t *testing.T) 
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -453,7 +786,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_Equal(t 
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -478,7 +811,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Equal(
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -507,7 +840,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_NotEqual
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -532,7 +865,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_NotEqu
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -561,7 +894,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_LessEqua
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_LessEqual(t *testing.T) {
@@ -584,7 +917,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_LessEq
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -613,7 +946,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_Less(t *
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Less(t *testing.T) {
@@ -636,7 +969,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Less(t
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -665,7 +998,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_GreaterE
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_GreaterEqual(t *testing.T) {
@@ -688,7 +1021,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Greate
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -717,7 +1050,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_Greater(
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Greater(t *testing.T) {
@@ -740,7 +1073,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Greate
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -771,7 +1104,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_EqualVar
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -797,7 +1130,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_EqualV
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -828,7 +1161,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_NotEqual
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -854,7 +1187,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_NotEqu
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -885,7 +1218,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_LessEqua
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -910,7 +1243,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_LessEq
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -941,7 +1274,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_LessVari
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -966,7 +1299,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_LessVa
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -997,7 +1330,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_GreaterE
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1022,7 +1355,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Greate
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1053,7 +1386,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_GreaterV
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1078,7 +1411,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_BinaryExpression_Greate
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1107,7 +1440,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_Greater2
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1134,7 +1467,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_BinaryExpression_GreaterC
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1158,7 +1491,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_Constant(t *testing.T) 
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1185,7 +1518,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_UnaryConstant(t *testin
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1210,7 +1543,7 @@ func TestPerformDeadCodeElimination_UnreachedIfStatement_UnaryExpression(t *test
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1239,7 +1572,7 @@ func TestPerformDeadCodeElimination_ReachedIfStatement_UnaryExpression(t *testin
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1262,7 +1595,7 @@ func TestPerformDeadCodeElimination_UnreachedForStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1288,7 +1621,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1314,7 +1647,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement_GTR(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1340,7 +1673,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement_GEQ(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1366,7 +1699,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement_LEQ(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1392,7 +1725,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement_NEQ(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1418,7 +1751,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement_EQL(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1441,7 +1774,7 @@ func TestPerformDeadCodeElimination_ReachedForStatement_Other(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1465,7 +1798,7 @@ func TestPerformDeadCodeElimination_EmptyForStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1491,7 +1824,7 @@ func TestPerformDeadCodeElimination_EmptySwitchStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1531,7 +1864,7 @@ func TestPerformDeadCodeElimination_ReachedSwitchStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1560,7 +1893,7 @@ func TestPerformDeadCodeElimination_UnreachedSwitchStatement(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 func TestPerformDeadCodeElimination_UnreachedSwitchStatement_InFor(t *testing.T) {
@@ -1591,7 +1924,7 @@ func TestPerformDeadCodeElimination_UnreachedSwitchStatement_InFor(t *testing.T)
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1628,7 +1961,7 @@ func TestPerformDeadCodeElimination_UnreachedFunction(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1676,7 +2009,7 @@ func TestPerformDeadCodeElimination_ReachedFunction(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1710,7 +2043,7 @@ func TestPerformDeadCodeElimination_ReachedFunction_Empty(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1794,7 +2127,7 @@ func TestPerformDeadCodeElimination_Complex(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1874,7 +2207,7 @@ func TestPerformDeadCodeElimination_Complex_2(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
 	}
 }
 
@@ -1964,6 +2297,536 @@ func TestPerformDeadCodeElimination_Complex_3(t *testing.T) {
 		t.Errorf("Error: %v", err)
 	}
 	if optmised_code != expected_result {
-		t.Errorf("Optimisation failed : \n %v \n%v", optmised_code, expected_result)
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
+	}
+}
+
+// Tests for Loop Unrolling
+
+func TestPerformLoopUnrolling_BasicForLoop(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 0; i < 3; i++ {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(0)\n"
+	expected_result += "\tfmt.Printf(1)\n"
+	expected_result += "\tfmt.Printf(2)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_NonStandardLoop1(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\ti := 1\n"
+	code += "\tfor i < 13 {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t\ti++\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	_, err := services.OptimiseGoCode(code, false, false, true)
+	if err == nil {
+		t.Errorf("Expected error for invalid loop structure")
+	}
+}
+
+func TestPerformLoopUnrolling_NonStandardLoop2(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\ti := 1\n"
+	code += "\tfor {\n"
+	code += "\t\ti++\n"
+	code += "\t\tif i==13 {\n"
+	code += "\t\t\tbreak\n"
+	code += "\t\t}\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	_, err := services.OptimiseGoCode(code, false, false, true)
+	if err == nil {
+		t.Errorf("Expected error for invalid loop structure")
+	}
+}
+
+func TestPerformLoopUnrolling_NonStandardLoop3(t *testing.T) {
+    invalid_loops := []string{
+		"for ; i < 2; i++ {}", 
+        "for i := 1; ; i++ {}",
+        "for i := 1; i < 2; {}",
+    }
+
+    for _, loop := range invalid_loops {
+        _, err := services.OptimiseGoCode(loop, false, false, true)
+		if err == nil {
+			t.Errorf("Expected error for invalid loop structure")
+		}
+    }
+}
+
+
+func TestPerformLoopUnrolling_Increment(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 12; i < 22; i++ {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(12)\n"
+	expected_result += "\tfmt.Printf(13)\n"
+	expected_result += "\tfmt.Printf(14)\n"
+	expected_result += "\tfmt.Printf(15)\n"
+	expected_result += "\tfmt.Printf(16)\n"
+	expected_result += "\tfmt.Printf(17)\n"
+	expected_result += "\tfmt.Printf(18)\n"
+	expected_result += "\tfmt.Printf(19)\n"
+	expected_result += "\tfmt.Printf(20)\n"
+	expected_result += "\tfmt.Printf(21)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_IncrementEqual(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 12; i <= 22; i++ {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(12)\n"
+	expected_result += "\tfmt.Printf(13)\n"
+	expected_result += "\tfmt.Printf(14)\n"
+	expected_result += "\tfmt.Printf(15)\n"
+	expected_result += "\tfmt.Printf(16)\n"
+	expected_result += "\tfmt.Printf(17)\n"
+	expected_result += "\tfmt.Printf(18)\n"
+	expected_result += "\tfmt.Printf(19)\n"
+	expected_result += "\tfmt.Printf(20)\n"
+	expected_result += "\tfmt.Printf(21)\n"
+	expected_result += "\tfmt.Printf(22)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_Decrement(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 22; i > 12; i-- {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(22)\n"
+	expected_result += "\tfmt.Printf(21)\n"
+	expected_result += "\tfmt.Printf(20)\n"
+	expected_result += "\tfmt.Printf(19)\n"
+	expected_result += "\tfmt.Printf(18)\n"
+	expected_result += "\tfmt.Printf(17)\n"
+	expected_result += "\tfmt.Printf(16)\n"
+	expected_result += "\tfmt.Printf(15)\n"
+	expected_result += "\tfmt.Printf(14)\n"
+	expected_result += "\tfmt.Printf(13)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_DecrementEqual(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 22; i >= 12; i-- {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(22)\n"
+	expected_result += "\tfmt.Printf(21)\n"
+	expected_result += "\tfmt.Printf(20)\n"
+	expected_result += "\tfmt.Printf(19)\n"
+	expected_result += "\tfmt.Printf(18)\n"
+	expected_result += "\tfmt.Printf(17)\n"
+	expected_result += "\tfmt.Printf(16)\n"
+	expected_result += "\tfmt.Printf(15)\n"
+	expected_result += "\tfmt.Printf(14)\n"
+	expected_result += "\tfmt.Printf(13)\n"
+	expected_result += "\tfmt.Printf(12)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_WrongIncrementDirection(t *testing.T) {
+	code := "package main\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "for i := 1; i < 8; i-- {\n"
+	code += "fmt.Printf(\"%d \", i)\n"
+	code += "}\n"
+	code += "}"
+
+	_, err := services.OptimiseGoCode(code, false, false, true)
+	if err == nil {
+		t.Errorf("Expected error for wrong increment direction")
+	}
+}
+
+func TestPerformLoopUnrolling_WrongDecrementDirection(t *testing.T) {
+	code := "package main\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "for i := 8; i > 1; i++ {\n"
+	code += "fmt.Printf(\"%d \", i)\n"
+	code += "}\n"
+	code += "}"
+
+	_, err := services.OptimiseGoCode(code, false, false, true)
+	if err == nil {
+		t.Errorf("Expected error for wrong decrement direction")
+	}
+}
+
+func TestPerformLoopUnrolling_NegativeStartValue(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := -2; i <= 2; i++ {\n"
+	code += "\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(-2)\n"
+	expected_result += "\tfmt.Printf(-1)\n"
+	expected_result += "\tfmt.Printf(0)\n"
+	expected_result += "\tfmt.Printf(1)\n"
+	expected_result += "\tfmt.Printf(2)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_NegativeEndValue(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 2; i >= -2; i-- {\n"
+	code += "\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(2)\n"
+	expected_result += "\tfmt.Printf(1)\n"
+	expected_result += "\tfmt.Printf(0)\n"
+	expected_result += "\tfmt.Printf(-1)\n"
+	expected_result += "\tfmt.Printf(-2)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_MultipleAssignments(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tfor i := 0; i <= 2; i++ {\n"
+	code += "\t\tx, y := i, i+1\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tx, y := 0, 0+1\n"
+	expected_result += "\tx, y := 1, 1+1\n"
+	expected_result += "\tx, y := 2, 2+1\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_MultipleSubstitutions(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tarr := []int{1, 2, 3}\n"
+	code += "\tfor i := 0; i <= 2; i++ {\n"
+	code += "\t\tarr[i] = arr[i] * 2\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tarr := []int{1, 2, 3}\n"
+	expected_result += "\tarr[0] = arr[0] * 2\n"
+	expected_result += "\tarr[1] = arr[1] * 2\n"
+	expected_result += "\tarr[2] = arr[2] * 2\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_FunctionCalls(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func helper(x int) int {"
+	code += "\treturn x * 2\n"
+	code += "}\n"
+	code += "func main() {\n"
+	code += "\tfor i := 0; i <= 2; i++ {\n"
+	code += "\tfmt.Printf(helper(i))\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func helper(x int) int {\n"
+	expected_result += "\treturn x * 2\n"
+	expected_result += "}\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(helper(0))\n"
+	expected_result += "\tfmt.Printf(helper(1))\n"
+	expected_result += "\tfmt.Printf(helper(2))\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_IfStatement(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 0; i <= 2; i++ {\n"
+	code += "\t\tif i == 1 {\n"
+	code += "\t\t\tfmt.Printf(i)\n"
+	code += "\t\t}\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tif 0 == 1 {\n"
+	expected_result += "\t\tfmt.Printf(0)\n"
+	expected_result += "\t}\n"
+	expected_result += "\tif 1 == 1 {\n"
+	expected_result += "\t\tfmt.Printf(1)\n"
+	expected_result += "\t}\n"
+	expected_result += "\tif 2 == 1 {\n"
+	expected_result += "\t\tfmt.Printf(2)\n"
+	expected_result += "\t}\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_NestedLoops(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 0; i <= 2; i++ {\n"
+	code += "\t\tfor j := 0; j <= 2; j++ {\n"
+	code += "\t\t\tfmt.Printf(\"Outer: %d Inner: %d\", i, j)\n"
+	code += "\t\t}\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 0, 0)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 0, 1)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 0, 2)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 1, 0)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 1, 1)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 1, 2)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 2, 0)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 2, 1)\n"
+	expected_result += "\tfmt.Printf(\"Outer: %d Inner: %d\", 2, 2)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_ZeroIterations(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 1; i < 1; i++ {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "\tfmt.Println(\"Execution Complete!\")\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Println(\"Execution Complete!\")\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_SingleIteration(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 1; i < 2; i++ {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "\tfmt.Println(\"Execution Complete!\")\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(1)\n"
+	expected_result += "\tfmt.Println(\"Execution Complete!\")\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_MultipleIterations(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 1; i < 5; i++ {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "\tfmt.Println(\"Execution Complete!\")\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(1)\n"
+	expected_result += "\tfmt.Printf(2)\n"
+	expected_result += "\tfmt.Printf(3)\n"
+	expected_result += "\tfmt.Printf(4)\n"
+	expected_result += "\tfmt.Println(\"Execution Complete!\")\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
 	}
 }

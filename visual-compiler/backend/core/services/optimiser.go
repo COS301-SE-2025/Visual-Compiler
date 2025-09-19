@@ -250,9 +250,11 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 						return false
 					}
 
-					if unrolled != nil {
+					if unrolled != nil && len(unrolled) > 0 {
 						changed = true
 						new_stmts = append(new_stmts, unrolled...)
+					} else if unrolled == nil {
+						
 					} else {
 						new_stmts = append(new_stmts, statement)
 					}
@@ -407,14 +409,11 @@ func (constant_folder *Folder) EvaluateExpression(expr ast.Expr) (float64, bool,
 	switch e := expr.(type) {
 
 	case *ast.BasicLit:
-
 		switch e.Kind {
-
 		case token.INT:
 			if val, err := strconv.Atoi(e.Value); err == nil {
 				return float64(val), true, nil
 			}
-
 		case token.FLOAT:
 			if val, err := strconv.ParseFloat(e.Value, 64); err == nil {
 				return val, true, nil
@@ -422,41 +421,46 @@ func (constant_folder *Folder) EvaluateExpression(expr ast.Expr) (float64, bool,
 		}
 
 	case *ast.Ident:
-		if val, yes := constant_folder.constants[e.Name]; yes {
+		if val, valid := constant_folder.constants[e.Name]; valid {
 			return val, true, nil
 		}
 
-	case *ast.BinaryExpr:
+	case *ast.UnaryExpr:
+		val, valid, err := constant_folder.EvaluateExpression(e.X)
+		if err != nil {
+			return 0, false, err
+		}
+		if valid {
+			switch e.Op {
+			case token.ADD:
+				return val, true, nil
+			case token.SUB:
+				return -val, true, nil
+			}
+		}
 
+	case *ast.BinaryExpr:
 		lhs, lok, lerr := constant_folder.EvaluateExpression(e.X)
 		if lerr != nil {
 			return 0, false, lerr
 		}
-
 		rhs, rok, rerr := constant_folder.EvaluateExpression(e.Y)
 		if rerr != nil {
 			return 0, false, rerr
 		}
-
 		if lok && rok {
-
 			switch e.Op {
-
 			case token.ADD:
 				return lhs + rhs, true, nil
-
 			case token.SUB:
 				return lhs - rhs, true, nil
-
 			case token.MUL:
 				return lhs * rhs, true, nil
-
 			case token.QUO:
 				if rhs == 0 {
 					return 0, false, fmt.Errorf("illegal operation: division by zero")
 				}
 				return lhs / rhs, true, nil
-
 			case token.REM:
 				if rhs == 0 {
 					return 0, false, fmt.Errorf("illegal operation: modulo by zero")
@@ -1090,7 +1094,7 @@ func UnrollForLoop(for_statement *ast.ForStmt) ([]ast.Stmt, error) {
 	loop_info, err := AnalyseForLoop(for_statement)
 
 	if err != nil || loop_info == nil {
-		return nil, fmt.Errorf("loop is not a standard for loop with a constant boundary")
+		return nil, fmt.Errorf("for loop must use standard structure with a constant boundary and guaranteed termination")
 	}
 
 	unrolled_statements := GenerateStatements(loop_info)
@@ -1240,6 +1244,16 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 // Generates the body statements for the unrolled loop
 func GenerateStatements(info *LoopInfo) []ast.Stmt {
 
+	if info.Direction {
+		if info.Operator == token.LSS && info.Start == info.Stop {
+			return nil
+		}
+	} else {
+		if info.Operator == token.GTR && info.Start == info.Stop {
+			return nil
+		}
+	}
+
 	var unrolled_statements []ast.Stmt
 
 	if info.Direction {
@@ -1269,7 +1283,7 @@ func GenerateStatements(info *LoopInfo) []ast.Stmt {
 			}
 		}
 		if info.Operator == token.GEQ {
-			for i := info.Start; i >= info.Stop; i++ {
+			for i := info.Start; i >= info.Stop; i-- {
 				for _, statement := range info.Body.List {
 					new_stmt := UnrollStatements(statement, info.VarName, i)
 					unrolled_statements = append(unrolled_statements, new_stmt)
@@ -1438,6 +1452,12 @@ func UnrollExpressions(expr ast.Expr, var_name string, value int) ast.Expr {
 		return &ast.BasicLit{
 			Kind:  e.Kind,
 			Value: e.Value,
+		}
+
+	case *ast.IndexExpr:
+		return &ast.IndexExpr{
+			X:     UnrollExpressions(e.X, var_name, value),
+			Index: UnrollExpressions(e.Index, var_name, value),
 		}
 
 	default:
