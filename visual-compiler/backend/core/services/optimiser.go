@@ -143,13 +143,14 @@ func PerformConstantFolding(ast_file *ast.File, file_set *token.FileSet) error {
 
 	constant_folder := &Folder{
 		constants: make(map[string]float64),
+		loop_vars: make(map[string]struct{}),
 	}
 
 	err := constant_folder.FoldConstants(ast_file)
 	return err
 }
 
-type AstData struct {
+type ASTData struct {
 	ast_info        *types.Info
 	ast_file        *ast.File
 	file_set        *token.FileSet
@@ -198,7 +199,7 @@ func PerformDeadCodeElimination(ast_file *ast.File, file_set *token.FileSet) err
 		return true
 	})
 
-	ast_data := AstData{ast_info, ast_file, file_set, variable_values}
+	ast_data := ASTData{ast_info, ast_file, file_set, variable_values}
 
 	err := RemoveUnusedFunctions(ast_data)
 	if err != nil {
@@ -277,6 +278,7 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 // Struct for tracking constant values by variable name
 type Folder struct {
 	constants map[string]float64
+	loop_vars map[string]struct{}
 }
 
 // Name: FoldConstants (for Folder)
@@ -302,33 +304,21 @@ func (constant_folder *Folder) FoldConstants(node ast.Node) error {
 
 		case *ast.CallExpr:
 			err = constant_folder.HandleFunctionCall(node)
+
+		case *ast.ForStmt:
+			if assign, ok := node.Init.(*ast.AssignStmt); ok {
+				for _, lhs := range assign.Lhs {
+					if identifier, ok := lhs.(*ast.Ident); ok {
+						constant_folder.loop_vars[identifier.Name] = struct{}{}
+					}
+				}
+			}
 		}
 
 		return err == nil
 	})
 
 	return err
-}
-
-// Name: Visit (for Folder)
-//
-// Parameters: ast.Node
-//
-// Return: ast.Visitor
-//
-// Implements the ast visitor interface for the constant folder
-func (constant_folder *Folder) Visit(node ast.Node) ast.Visitor {
-
-	switch n := node.(type) {
-
-	case *ast.AssignStmt:
-		constant_folder.HandleAssignment(n)
-
-	case *ast.CallExpr:
-		constant_folder.HandleFunctionCall(n)
-	}
-
-	return constant_folder
 }
 
 // Name: HandleAssignment (for Folder)
@@ -421,6 +411,9 @@ func (constant_folder *Folder) EvaluateExpression(expr ast.Expr) (float64, bool,
 		}
 
 	case *ast.Ident:
+		if _, loop := constant_folder.loop_vars[e.Name]; loop {
+			return 0, false, nil
+		}
 		if val, valid := constant_folder.constants[e.Name]; valid {
 			return val, true, nil
 		}
@@ -510,7 +503,7 @@ func StructureConstant(value float64) *ast.BasicLit {
 // Return: error
 //
 // Determines if the statement contains any unused functions and removes them from the AST
-func RemoveUnusedFunctions(ast_data AstData) error {
+func RemoveUnusedFunctions(ast_data ASTData) error {
 	optimised_functions := []ast.Decl{}
 	used_functions := make(map[string]bool)
 	used_functions["main"] = true
@@ -562,7 +555,7 @@ func RemoveUnusedFunctions(ast_data AstData) error {
 // Return: error
 //
 // Performs dead code elimination on an individual function
-func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_data AstData) error {
+func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_data ASTData) error {
 	if function.Body == nil {
 		return fmt.Errorf("function %v has no body", function.Name)
 	}
@@ -592,7 +585,7 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_data AstData) error {
 // Return:
 //
 // Determines if the statement contains any unused assigned variables and removes them from the AST
-func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, ast_data AstData, optimised_statements *[]ast.Stmt) {
+func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, ast_data ASTData, optimised_statements *[]ast.Stmt) {
 	if statement.Tok == token.DEFINE {
 		new_lhs := []ast.Expr{}
 		new_rhs := []ast.Expr{}
@@ -641,7 +634,7 @@ func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, ast_data AstData, 
 // Return:
 //
 // Determines if the statement contains any unused assigned variables and removes them from the AST
-func RemoveUnusedDeclaredVariables(statement *ast.DeclStmt, ast_data AstData, optimised_statements *[]ast.Stmt) {
+func RemoveUnusedDeclaredVariables(statement *ast.DeclStmt, ast_data ASTData, optimised_statements *[]ast.Stmt) {
 	declaration_info, valid_declaration := statement.Decl.(*ast.GenDecl)
 	if valid_declaration && declaration_info.Tok == token.VAR {
 		new_spec := []ast.Spec{}
@@ -689,12 +682,12 @@ func RemoveUnusedDeclaredVariables(statement *ast.DeclStmt, ast_data AstData, op
 
 // Name:RemoveUnusedIfStatement
 //
-// Parameters:   *ast.FuncDecl, *[]ast.Stmt, AstData
+// Parameters:   *ast.FuncDecl, *[]ast.Stmt, ASTData
 //
 // Return:
 //
 // Determines if the statement contains any unused if statements and removes them from the AST
-func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
+func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl) {
 	if_statement, valid_ifstatement := function_statements.(*ast.IfStmt)
 	unreachable := false
 	var optimised_if_body []ast.Stmt
@@ -902,12 +895,12 @@ func ConvertToConstant(lit *ast.BasicLit) (constant.Value, error) {
 
 // Name:RemoveUnusedForStatement
 //
-// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, AstData
+// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, ASTData
 //
 // Return:
 //
 // Determines if the statement contains any unused for statements and removes them from the AST
-func RemoveUnusedForStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
+func RemoveUnusedForStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl) {
 	for_statement, valid_forstatement := function_statements.(*ast.ForStmt)
 	unreachable := false
 	var optimised_for_body []ast.Stmt
@@ -975,12 +968,12 @@ func RemoveUnusedForStatement(function_statements ast.Stmt, optimised_statements
 
 // Name:RemoveUnusedSwitchStatement
 //
-// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, AstData
+// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, ASTData
 //
 // Return:
 //
 // Determines if the statement contains any unused switch statements and removes them from the AST
-func RemoveUnusedSwitchStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
+func RemoveUnusedSwitchStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl) {
 	switch_statement, valid_switchstatement := function_statements.(*ast.SwitchStmt)
 	unreachable := false
 	var optimised_body []ast.Stmt
@@ -1011,12 +1004,12 @@ func RemoveUnusedSwitchStatement(function_statements ast.Stmt, optimised_stateme
 
 // Name:RemoveUnusedSwitchCase
 //
-// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, AstData
+// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, ASTData
 //
 // Return:
 //
 // Determines if the statement contains any unused switch case statements and removes them from the AST
-func RemoveUnusedSwitchCase(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
+func RemoveUnusedSwitchCase(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl) {
 	switch_statement, valid_switchstatement := function_statements.(*ast.CaseClause)
 	unreachable := false
 	var optimised_body []ast.Stmt
@@ -1035,19 +1028,17 @@ func RemoveUnusedSwitchCase(function_statements ast.Stmt, optimised_statements *
 		}
 		switch_statement.Body = optimised_body
 		*optimised_statements = append(*optimised_statements, switch_statement)
-
 	}
-
 }
 
 // Name:SearchStructureBody
 //
-// Parameters:   ast.Stmt, *[]ast.Stmt, AstData, *ast.FuncDecl,*bool
+// Parameters:   ast.Stmt, *[]ast.Stmt, ASTData, *ast.FuncDecl,*bool
 //
 // Return:
 //
 // Determines type of statement and performs the necessary dead code elimination
-func SearchStructureBody(body_statement ast.Stmt, optimised_body *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl, unreachable *bool) {
+func SearchStructureBody(body_statement ast.Stmt, optimised_body *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl, unreachable *bool) {
 	switch statement := body_statement.(type) {
 	case *ast.AssignStmt: // search for unused assigned variables
 		RemoveUnusedAssignedVariables(statement, ast_data, optimised_body)
@@ -1114,46 +1105,30 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 		return nil, fmt.Errorf("")
 	}
 
-	assign_statement, is_valid := for_statement.Init.(*ast.AssignStmt)
-	if !is_valid || len(assign_statement.Lhs) != 1 || len(assign_statement.Rhs) != 1 {
+	assign_statement, _ := for_statement.Init.(*ast.AssignStmt)
+	if len(assign_statement.Lhs) != 1 || len(assign_statement.Rhs) != 1 {
 		return nil, fmt.Errorf("")
 	}
 
-	identifier, is_valid := assign_statement.Lhs[0].(*ast.Ident)
-	if !is_valid {
-		return nil, fmt.Errorf("")
-	}
+	identifier, _ := assign_statement.Lhs[0].(*ast.Ident)
 	var_name := identifier.Name
 
 	var start_value int
 	switch rhs := assign_statement.Rhs[0].(type) {
 
 	case *ast.BasicLit:
-		if rhs.Kind != token.INT {
-			return nil, fmt.Errorf("")
+		if rhs.Kind == token.INT {
+			val, _ := strconv.Atoi(rhs.Value)
+			start_value = val
 		}
-		val, err := strconv.Atoi(rhs.Value)
-		if err != nil {
-			return nil, fmt.Errorf("")
-		}
-		start_value = val
 
 	case *ast.UnaryExpr:
 		if basic, exists := rhs.X.(*ast.BasicLit); exists && rhs.Op == token.SUB && basic.Kind == token.INT {
-			val, err := strconv.Atoi(basic.Value)
-			if err != nil {
-				return nil, fmt.Errorf("")
-			}
+			val, _ := strconv.Atoi(basic.Value)
 			start_value = -val
-		} else {
-			return nil, fmt.Errorf("")
 		}
 
 	default:
-		return nil, fmt.Errorf("")
-	}
-
-	if for_statement.Cond == nil {
 		return nil, fmt.Errorf("")
 	}
 
@@ -1180,21 +1155,13 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 	switch y := binary_expression.Y.(type) {
 
 	case *ast.BasicLit:
-		val, err := strconv.Atoi(y.Value)
-		if err != nil {
-			return nil, fmt.Errorf("")
-		}
+		val, _ := strconv.Atoi(y.Value)
 		stop_value = val
 
 	case *ast.UnaryExpr:
 		if basic, exists := y.X.(*ast.BasicLit); exists && y.Op == token.SUB && basic.Kind == token.INT {
-			val, err := strconv.Atoi(basic.Value)
-			if err != nil {
-				return nil, fmt.Errorf("")
-			}
+			val, _ := strconv.Atoi(basic.Value)
 			stop_value = -val
-		} else {
-			return nil, fmt.Errorf("")
 		}
 
 	default:
@@ -1207,7 +1174,7 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 
 	inc_statement, is_valid := for_statement.Post.(*ast.IncDecStmt)
 	if !is_valid {
-		return nil, nil
+		return nil, fmt.Errorf("")
 	}
 
 	var step int
@@ -1216,11 +1183,6 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 	} else if inc_statement.Tok == token.DEC && !step_direction {
 		step = -1
 	} else {
-		return nil, fmt.Errorf("")
-	}
-
-	post_identifier, is_valid := inc_statement.X.(*ast.Ident)
-	if !is_valid || post_identifier.Name != var_name {
 		return nil, fmt.Errorf("")
 	}
 
