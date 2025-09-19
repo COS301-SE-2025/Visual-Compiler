@@ -301,6 +301,28 @@ func TestPerformConstantFolding_FloatToIntegerConversion(t *testing.T) {
 	}
 }
 
+func TestPerformConstantFolding_Reassignment(t *testing.T) {
+	code := "package main\n\n"
+	code += "func main() {\n"
+	code += "\tblue := 20\n"
+	code += "\tblue = blue + 2\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tblue := 20\n"
+	expected_result += "\tblue = 22\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
 func TestPerformConstantFolding_ChainedVariables(t *testing.T) {
 	code := "package main\n\n"
 	code += "func main() {\n"
@@ -355,7 +377,7 @@ func TestPerformConstantFolding_NothingFolded(t *testing.T) {
 	code += "func main() {\n"
 	code += "\tfor i := 1; i < 13; i++ {\n"
 	code += "\t\tif i%2 != 1 {\n"
-	code += "\t\t\tfmt.Printf(i)\n"
+	code += "\t\t\tfmt.Printf(random + i)\n"
 	code += "\t\t}\n"
 	code += "\t}\n"
 	code += "}\n"
@@ -365,7 +387,7 @@ func TestPerformConstantFolding_NothingFolded(t *testing.T) {
 	expected_result += "func main() {\n"
 	expected_result += "\tfor i := 1; i < 13; i++ {\n"
 	expected_result += "\t\tif i%2 != 1 {\n"
-	expected_result += "\t\t\tfmt.Printf(1)\n"
+	expected_result += "\t\t\tfmt.Printf(random + i)\n"
 	expected_result += "\t\t}\n"
 	expected_result += "\t}\n"
 	expected_result += "}\n"
