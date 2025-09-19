@@ -250,9 +250,11 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 						return false
 					}
 
-					if unrolled != nil {
+					if unrolled != nil && len(unrolled) > 0 {
 						changed = true
 						new_stmts = append(new_stmts, unrolled...)
+					} else if unrolled == nil {
+						
 					} else {
 						new_stmts = append(new_stmts, statement)
 					}
@@ -1241,6 +1243,16 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 //
 // Generates the body statements for the unrolled loop
 func GenerateStatements(info *LoopInfo) []ast.Stmt {
+
+	if info.Direction {
+		if info.Operator == token.LSS && info.Start == info.Stop {
+			return nil
+		}
+	} else {
+		if info.Operator == token.GTR && info.Start == info.Stop {
+			return nil
+		}
+	}
 
 	var unrolled_statements []ast.Stmt
 
