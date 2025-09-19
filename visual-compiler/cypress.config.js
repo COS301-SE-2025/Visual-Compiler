@@ -15,6 +15,6 @@ module.exports = defineConfig({
             backend_url: 'http://localhost:8080',
         },
         viewportWidth: 1290,
-        viewportHeight: 729,
+        viewportHeight: 1290,
     },
 });

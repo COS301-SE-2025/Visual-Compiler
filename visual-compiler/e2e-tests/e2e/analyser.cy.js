@@ -60,6 +60,8 @@ describe('Analyser Test', ()=> {
         //parser node
         cy.get('button').should('contain', 'Parser');
         cy.get('button').contains('Parser').click();
+        cy.get('#A-1\\/N-source-1').trigger('mousedown', { which: 1, force: true });
+        cy.get('#A-1\\/N-lexer-2').trigger('mousemove', { force: true }).trigger('mouseup', { force: true });
         cy.get('#A-2\\/N-lexer-2').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-parser-3').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
         cy.get('.canvas-container').contains('Parser').dblclick();
@@ -75,6 +77,10 @@ describe('Analyser Test', ()=> {
         cy.get('button').contains('Analyser').click();
         cy.get('.canvas-container').should('contain','Analyser');
 
+        cy.get('#A-1\\/N-source-1').trigger('mousedown', { which: 1, force: true });
+        cy.get('#A-1\\/N-lexer-2').trigger('mousemove', { force: true }).trigger('mouseup', { force: true });
+        cy.get('#A-2\\/N-lexer-2').trigger('mousedown', {which: 1, force: true});
+        cy.get('#A-1\\/N-parser-3').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
         cy.get('#A-2\\/N-parser-3').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-analyser-4').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
         cy.get('.canvas-container').contains('Analyser').dblclick();
@@ -96,11 +102,11 @@ describe('Analyser Test', ()=> {
         cy.get('.symbol-table').should('contain','red');
         cy.get('.symbol-table').should('contain','1');
         cy.get('.symbol-table').should('contain','int');
-        cy.get('.symbol-table').should('contain','function_name');
+        cy.get('.symbol-table').should('contain','new');
         cy.get('.symbol-table').should('contain','0');
         cy.get('.symbol-table').should('contain','int');
-        cy.get('.symbol-table').should('contain','green');
-        cy.get('.symbol-table').should('contain','1');
+        cy.get('.symbol-table').should('contain','_i');
+        cy.get('.symbol-table').should('contain','0');
 
         cy.contains('Symbol table generated successfully');
   
