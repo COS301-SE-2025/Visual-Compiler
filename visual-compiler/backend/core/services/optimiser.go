@@ -1269,7 +1269,7 @@ func GenerateStatements(info *LoopInfo) []ast.Stmt {
 			}
 		}
 		if info.Operator == token.GEQ {
-			for i := info.Start; i >= info.Stop; i++ {
+			for i := info.Start; i >= info.Stop; i-- {
 				for _, statement := range info.Body.List {
 					new_stmt := UnrollStatements(statement, info.VarName, i)
 					unrolled_statements = append(unrolled_statements, new_stmt)
