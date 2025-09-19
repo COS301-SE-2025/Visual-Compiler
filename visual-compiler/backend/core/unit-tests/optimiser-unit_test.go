@@ -201,6 +201,54 @@ func TestPerformConstantFolding_BasicFloatArithmetic(t *testing.T) {
 	}
 }
 
+func TestPerformConstantFolding_DivisionByZero(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "\tresult := 10 / 0\n"
+	code += "\treturn\n"
+	code += "}"
+
+	_, err := services.OptimiseGoCode(code, true, false, false)
+	if err == nil {
+		t.Errorf("Expected error for division by zero")
+	}
+}
+
+func TestPerformConstantFolding_ModuloByZero(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "\tresult := 10 % 0\n"
+	code += "\treturn\n"
+	code += "}"
+
+	_, err := services.OptimiseGoCode(code, true, false, false)
+	if err == nil {
+		t.Errorf("Expected error for modulo by zero")
+	}
+}
+
+func TestPerformConstantFolding_FloatToIntegerConversion(t *testing.T) {
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "\tresult := 2.0 + 8.0\n"
+	code += "\treturn\n"
+	code += "}"
+
+	expected_result := "package main\n\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tresult := 10\n"
+	expected_result += "\treturn\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, false, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Constant Folding Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
 // Tests for Dead Code Elimination
 
 func TestPerformDeadCodeElimination_Simple(t *testing.T) {
