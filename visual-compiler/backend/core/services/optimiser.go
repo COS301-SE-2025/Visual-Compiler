@@ -1442,6 +1442,12 @@ func UnrollExpressions(expr ast.Expr, var_name string, value int) ast.Expr {
 			Value: e.Value,
 		}
 
+	case *ast.IndexExpr:
+		return &ast.IndexExpr{
+			X:     UnrollExpressions(e.X, var_name, value),
+			Index: UnrollExpressions(e.Index, var_name, value),
+		}
+
 	default:
 		return expr
 	}
