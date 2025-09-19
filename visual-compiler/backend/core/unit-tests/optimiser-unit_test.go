@@ -2364,3 +2364,167 @@ func TestPerformLoopUnrolling_NonStandardLoop2(t *testing.T) {
 		t.Errorf("Expected error for invalid loop structure")
 	}
 }
+
+func TestPerformLoopUnrolling_Increment(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 12; i < 22; i++ {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(12)\n"
+	expected_result += "\tfmt.Printf(13)\n"
+	expected_result += "\tfmt.Printf(14)\n"
+	expected_result += "\tfmt.Printf(15)\n"
+	expected_result += "\tfmt.Printf(16)\n"
+	expected_result += "\tfmt.Printf(17)\n"
+	expected_result += "\tfmt.Printf(18)\n"
+	expected_result += "\tfmt.Printf(19)\n"
+	expected_result += "\tfmt.Printf(20)\n"
+	expected_result += "\tfmt.Printf(21)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_IncrementEqual(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 12; i <= 22; i++ {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(12)\n"
+	expected_result += "\tfmt.Printf(13)\n"
+	expected_result += "\tfmt.Printf(14)\n"
+	expected_result += "\tfmt.Printf(15)\n"
+	expected_result += "\tfmt.Printf(16)\n"
+	expected_result += "\tfmt.Printf(17)\n"
+	expected_result += "\tfmt.Printf(18)\n"
+	expected_result += "\tfmt.Printf(19)\n"
+	expected_result += "\tfmt.Printf(20)\n"
+	expected_result += "\tfmt.Printf(21)\n"
+	expected_result += "\tfmt.Printf(22)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_Decrement(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 22; i > 12; i-- {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(22)\n"
+	expected_result += "\tfmt.Printf(21)\n"
+	expected_result += "\tfmt.Printf(20)\n"
+	expected_result += "\tfmt.Printf(19)\n"
+	expected_result += "\tfmt.Printf(18)\n"
+	expected_result += "\tfmt.Printf(17)\n"
+	expected_result += "\tfmt.Printf(16)\n"
+	expected_result += "\tfmt.Printf(15)\n"
+	expected_result += "\tfmt.Printf(14)\n"
+	expected_result += "\tfmt.Printf(13)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_DecrementEqual(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 22; i >= 12; i-- {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(22)\n"
+	expected_result += "\tfmt.Printf(21)\n"
+	expected_result += "\tfmt.Printf(20)\n"
+	expected_result += "\tfmt.Printf(19)\n"
+	expected_result += "\tfmt.Printf(18)\n"
+	expected_result += "\tfmt.Printf(17)\n"
+	expected_result += "\tfmt.Printf(16)\n"
+	expected_result += "\tfmt.Printf(15)\n"
+	expected_result += "\tfmt.Printf(14)\n"
+	expected_result += "\tfmt.Printf(13)\n"
+	expected_result += "\tfmt.Printf(12)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_WrongIncrementDirection(t *testing.T) {
+	code := "package main\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "for i := 1; i < 8; i-- {\n"
+	code += "fmt.Printf(\"%d \", i)\n"
+	code += "}\n"
+	code += "}"
+
+	_, err := services.OptimiseGoCode(code, false, false, true)
+	if err == nil {
+		t.Errorf("Expected error for wrong increment direction")
+	}
+}
+
+func TestPerformLoopUnrolling_WrongDecrementDirection(t *testing.T) {
+	code := "package main\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "for i := 8; i > 1; i++ {\n"
+	code += "fmt.Printf(\"%d \", i)\n"
+	code += "}\n"
+	code += "}"
+
+	_, err := services.OptimiseGoCode(code, false, false, true)
+	if err == nil {
+		t.Errorf("Expected error for wrong decrement direction")
+	}
+}
