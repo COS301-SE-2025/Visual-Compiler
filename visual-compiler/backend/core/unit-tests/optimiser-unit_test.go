@@ -2303,3 +2303,64 @@ func TestPerformDeadCodeElimination_Complex_3(t *testing.T) {
 
 // Tests for Loop Unrolling
 
+func TestPerformLoopUnrolling_BasicForLoop(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 0; i < 3; i++ {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(0)\n"
+	expected_result += "\tfmt.Printf(1)\n"
+	expected_result += "\tfmt.Printf(2)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_NonStandardLoop1(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\ti := 1\n"
+	code += "\tfor i < 13 {\n"
+	code += "\t\tfmt.Printf(i)\n"
+	code += "\t\ti++\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	_, err := services.OptimiseGoCode(code, false, false, true)
+	if err == nil {
+		t.Errorf("Expected error for invalid loop structure")
+	}
+}
+
+func TestPerformLoopUnrolling_NonStandardLoop2(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\ti := 1\n"
+	code += "\tfor {\n"
+	code += "\t\ti++\n"
+	code += "\t\tif i==13 {\n"
+	code += "\t\t\tbreak\n"
+	code += "\t\t}\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	_, err := services.OptimiseGoCode(code, false, false, true)
+	if err == nil {
+		t.Errorf("Expected error for invalid loop structure")
+	}
+}
