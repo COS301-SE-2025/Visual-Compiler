@@ -2529,6 +2529,62 @@ func TestPerformLoopUnrolling_WrongDecrementDirection(t *testing.T) {
 	}
 }
 
+func TestPerformLoopUnrolling_NegativeStartValue(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := -2; i <= 2; i++ {\n"
+	code += "\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(-2)\n"
+	expected_result += "\tfmt.Printf(-1)\n"
+	expected_result += "\tfmt.Printf(0)\n"
+	expected_result += "\tfmt.Printf(1)\n"
+	expected_result += "\tfmt.Printf(2)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_NegativeEndValue(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func main() {\n"
+	code += "\tfor i := 2; i >= -2; i-- {\n"
+	code += "\tfmt.Printf(i)\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(2)\n"
+	expected_result += "\tfmt.Printf(1)\n"
+	expected_result += "\tfmt.Printf(0)\n"
+	expected_result += "\tfmt.Printf(-1)\n"
+	expected_result += "\tfmt.Printf(-2)\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
 func TestPerformLoopUnrolling_MultipleAssignments(t *testing.T) {
 	code := "package main\n\n"
 	code += "func main() {\n"
@@ -2568,6 +2624,38 @@ func TestPerformLoopUnrolling_MultipleSubstitutions(t *testing.T) {
 	expected_result += "\tarr[0] = arr[0] * 2\n"
 	expected_result += "\tarr[1] = arr[1] * 2\n"
 	expected_result += "\tarr[2] = arr[2] * 2\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Loop Unrolling Failed: \n%v \n%v", optimised_code, expected_result)
+	}
+}
+
+func TestPerformLoopUnrolling_FunctionCalls(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n"
+	code += "func helper(x int) int {"
+	code += "\treturn x * 2\n"
+	code += "}\n"
+	code += "func main() {\n"
+	code += "\tfor i := 0; i <= 2; i++ {\n"
+	code += "\tfmt.Printf(helper(i))\n"
+	code += "\t}\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func helper(x int) int {\n"
+	expected_result += "\treturn x * 2\n"
+	expected_result += "}\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Printf(helper(0))\n"
+	expected_result += "\tfmt.Printf(helper(1))\n"
+	expected_result += "\tfmt.Printf(helper(2))\n"
 	expected_result += "}\n"
 
 	optimised_code, err := services.OptimiseGoCode(code, false, false, true)
