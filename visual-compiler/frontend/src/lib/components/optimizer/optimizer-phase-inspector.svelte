@@ -246,7 +246,7 @@ func nothing() (int) {
         <div class="instructions-content">
             <h4 class="instructions-header">Instructions</h4>
             <p class="instructions-text">
-                Select a language and one or more optimization techniques, then enter your code in the input area below. Click <b>Optimise Code</b> to apply the selected optimizations. Results will be shown in the artifact viewer.
+                Select one or more optimisation techniques and enter your Go source code.
             </p>
         </div>
     </div>
@@ -255,7 +255,7 @@ func nothing() (int) {
 
     <div class="technique-section">
         <div class="technique-header">
-            <h3 class="section-heading">Technique</h3>
+            <h3 class="section-heading">Optimising Techniques</h3>
             <div class="default-section">
                 {#if !showDefault}
                     <button
@@ -294,7 +294,7 @@ func nothing() (int) {
     </div>
 
     <div class="input-section">
-        <h3 class="section-heading">Input</h3>
+        <h3 class="section-heading">Source Code Input (Go)</h3>
         <div class="input-area">
             <textarea 
                 bind:value={inputCode}
@@ -312,10 +312,10 @@ func nothing() (int) {
         >
             {#if $optimizerState.isOptimizing}
                
-                Optimizing...
+                Optimising...
             {:else}
                 
-                Optimize Code
+                Optimise Code
             {/if}
         </button>
     </div>

@@ -81,7 +81,7 @@
                         <line x1="12" y1="16" x2="12.01" y2="16" />
                     </svg>
                 </div>
-                <h4>Optimization Failed</h4>
+                <h4>Optimisation Failed</h4>
                 <p class="error-message">
                     {#if optimizationError.message?.includes('source code is not valid go')}
                         The provided code contains syntax errors. Please check your Go code syntax and try again.
@@ -95,7 +95,7 @@
             </div>
         {:else if optimizedCode && optimizedCode.optimized && optimizedCode.optimized.length > 0}
             <div class="artifact-subheader">
-                <h3>Optimized Code ({optimizedCode.language})</h3>
+                <h3>Optimised Code</h3>
             </div>
             <div class="code-wrapper">
                 <div class="line-numbers">
@@ -120,7 +120,7 @@
                 >
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
-                <p>Optimized code will appear here...</p>
+                <p>Optimised code will appear here...</p>
             </div>
         {/if}
     </div>
