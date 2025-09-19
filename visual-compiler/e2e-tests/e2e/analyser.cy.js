@@ -66,7 +66,7 @@ describe('Analyser Test', ()=> {
         cy.get('#A-2\\/N-lexer-2').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-parser-3').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
         cy.get('.canvas-container').contains('Parser').dblclick();
-        cy.wait(500);
+        cy.wait(1000);
         cy.get('.phase-inspector').should('contain','PARSING');
         cy.get('.grammar-header').should('contain','Context-Free Grammar');
         cy.get('.default-toggle-btn').click();
