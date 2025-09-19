@@ -1092,7 +1092,7 @@ func UnrollForLoop(for_statement *ast.ForStmt) ([]ast.Stmt, error) {
 	loop_info, err := AnalyseForLoop(for_statement)
 
 	if err != nil || loop_info == nil {
-		return nil, fmt.Errorf("loop is not a standard for loop with a constant boundary")
+		return nil, fmt.Errorf("for loop must use standard structure with a constant boundary and guaranteed termination")
 	}
 
 	unrolled_statements := GenerateStatements(loop_info)
