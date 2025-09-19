@@ -1764,17 +1764,9 @@ func TestPerformDeadCodeElimination_ReachedForStatement_Other(t *testing.T) {
 	code += "}\n"
 	code += "}"
 
-	expected_result := "package main\n\n"
-	expected_result += "import \"fmt\"\n"
-	expected_result += "func main() {\n"
-	expected_result += "}\n"
-
-	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	if optmised_code != expected_result {
-		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
+	_, err := services.OptimiseGoCode(code, false, true, false)
+	if err == nil {
+		t.Errorf("Error expected")
 	}
 }
 
@@ -2301,6 +2293,398 @@ func TestPerformDeadCodeElimination_Complex_3(t *testing.T) {
 	}
 }
 
+func TestPerformDeadCodeElimination_ForLoopInForLoop(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		red := 5
+		for blue:=1; blue<red; blue++ {
+			fmt.Printf("%v", blue)
+		
+		}
+	}`
+
+	expected_result := `package main
+
+import "fmt"
+func main() {
+	red := 5
+	for blue := 1; blue < red; blue++ {
+		fmt.Printf("%v", blue)
+	}
+}
+`
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ForLoop_IdentCondition_TrueVariable(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		red := true
+		for blue:=1; red; blue++ {
+			fmt.Printf("%v", blue)
+		
+		}
+	}`
+
+	expected_result := `package main
+
+import "fmt"
+func main() {
+	red := true
+	for blue := 1; red; blue++ {
+		fmt.Printf("%v", blue)
+	}
+}
+`
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ForLoop_IdentCondition_True(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		red := true
+		for blue:=1; true; blue++ {
+			fmt.Printf("%v", blue)
+		
+		}
+	}`
+
+	expected_result := `package main
+
+import "fmt"
+func main() {
+	for blue := 1; true; blue++ {
+		fmt.Printf("%v", blue)
+	}
+}
+`
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ForLoop_IdentCondition_FalseVariable(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		red := false
+		for blue:=1; red; blue++ {
+			fmt.Printf("%v", blue)
+		
+		}
+	}`
+
+	expected_result := `package main
+
+import "fmt"
+func main() {
+}
+`
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ForLoop_IdentCondition_False(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		red := false
+		for blue:=1; false; blue++ {
+			fmt.Printf("%v", blue)
+		
+		}
+	}`
+
+	expected_result := `package main
+
+import "fmt"
+func main() {
+}
+`
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ForLoop_IdentCondition_Error(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		red := 5
+		for blue:=1; red; blue++ {
+			fmt.Printf("%v", blue)
+		
+		}
+	}`
+
+	_, err := services.OptimiseGoCode(code, false, true, false)
+	if err == nil {
+		t.Errorf("Error expected")
+	}
+}
+
+func TestPerformDeadCodeElimination_ForLoop_UnaryCondition_TrueVariable(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		red := false
+		for blue:=1; !red; blue++ {
+			fmt.Printf("%v", blue)
+		
+		}
+	}`
+
+	expected_result := `package main
+
+import "fmt"
+func main() {
+	red := false
+	for blue := 1; !red; blue++ {
+		fmt.Printf("%v", blue)
+	}
+}
+`
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ForLoop_UnaryCondition_True(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		red := true
+		for blue:=1; !false; blue++ {
+			fmt.Printf("%v", blue)
+		
+		}
+	}`
+
+	expected_result := `package main
+
+import "fmt"
+func main() {
+	for blue := 1; !false; blue++ {
+		fmt.Printf("%v", blue)
+	}
+}
+`
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ForLoop_UnaryCondition_FalseVariable(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		red := true
+		for blue:=1; !red; blue++ {
+			fmt.Printf("%v", blue)
+		
+		}
+	}`
+
+	expected_result := `package main
+
+import "fmt"
+func main() {
+}
+`
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ForLoop_UnaryCondition_False(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		red := false
+		for blue:=1; !true; blue++ {
+			fmt.Printf("%v", blue)
+		
+		}
+	}`
+
+	expected_result := `package main
+
+import "fmt"
+func main() {
+}
+`
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ForLoop_UnaryCondition_Error(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		red := 5
+		for blue:=1; !5; blue++ {
+			fmt.Printf("%v", blue)
+		
+		}
+	}`
+
+	_, err := services.OptimiseGoCode(code, false, true, false)
+	if err == nil {
+		t.Errorf("Error expected")
+	}
+}
+
+func TestPerformDeadCodeElimination_ForLoop_UnaryCondition_Error2(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		red := true
+		for blue:=1; /red; blue++ {
+			fmt.Printf("%v", blue)
+		
+		}
+	}`
+
+	_, err := services.OptimiseGoCode(code, false, true, false)
+	if err == nil {
+		t.Errorf("Error expected")
+	}
+}
+
+func TestPerformDeadCodeElimination_ForLoopInForLoop2(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		for blue:=1; blue<5; blue++ {
+			fmt.Printf("blue")
+			for red:=1; red<=blue; red++ {
+				fmt.Printf("red")
+				if blue==red {
+					fmt.Printf("BlueRed")
+				}
+			}
+		}
+	}`
+
+	expected_result := `package main
+
+import "fmt"
+func main() {
+	for blue := 1; blue < 5; blue++ {
+		fmt.Printf("blue")
+		for red := 1; red <= blue; red++ {
+			fmt.Printf("red")
+			if blue == red {
+				fmt.Printf("BlueRed")
+			}
+		}
+	}
+}
+`
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
+	}
+}
+
+func TestPerformDeadCodeElimination_ForLoopInForLoop3(t *testing.T) {
+	code := `package main
+	import "fmt"
+	func main() {
+		for blue:=1; 5>blue; blue++ {
+			fmt.Printf("blue")
+			for red:=1; red<=blue; red++ {
+				fmt.Printf("red")
+				if blue==red {
+					fmt.Printf("BlueRed")
+				}
+			}
+		}
+	}`
+
+	expected_result := `package main
+
+import "fmt"
+func main() {
+	for blue := 1; 5 > blue; blue++ {
+		fmt.Printf("blue")
+		for red := 1; red <= blue; red++ {
+			fmt.Printf("red")
+			if blue == red {
+				fmt.Printf("BlueRed")
+			}
+		}
+	}
+}
+`
+
+	optmised_code, err := services.OptimiseGoCode(code, false, true, false)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optmised_code != expected_result {
+		t.Errorf("Dead Code Elimination Failed: \n%v \n%v", optmised_code, expected_result)
+	}
+}
+
 // Tests for Loop Unrolling
 
 func TestPerformLoopUnrolling_BasicForLoop(t *testing.T) {
@@ -2367,19 +2751,26 @@ func TestPerformLoopUnrolling_NonStandardLoop2(t *testing.T) {
 
 func TestPerformLoopUnrolling_NonStandardLoop3(t *testing.T) {
     invalid_loops := []string{
-		"for ; i < 2; i++ {}", 
+        "for ; i < 2; i++ {}", 
+        "for x,y := 1; i < 2; x++ {}",
+        "for i := 'x'; i < 100; x++ {}",
+        "for i := 1; i < 1+1; i++ {}",
+        "for i := 1; i < 2; x++ {}",
         "for i := 1; ; i++ {}",
+        "for i := 1; i % 2; i++ {}",
+		"for i := 1; i < 'a'; x++ {}",
+        "for i := 1; i < 2; i = i+1 {}",
         "for i := 1; i < 2; {}",
     }
 
     for _, loop := range invalid_loops {
         _, err := services.OptimiseGoCode(loop, false, false, true)
+
 		if err == nil {
 			t.Errorf("Expected error for invalid loop structure")
 		}
-    }
+	}
 }
-
 
 func TestPerformLoopUnrolling_Increment(t *testing.T) {
 	code := "package main\n\n"
@@ -2804,21 +3195,21 @@ func TestPerformLoopUnrolling_SingleIteration(t *testing.T) {
 
 func TestPerformLoopUnrolling_MultipleIterations(t *testing.T) {
 	code := "package main\n\n"
-	code += "import \"fmt\"\n"
 	code += "func main() {\n"
+	code += "\ttester := 1\n"
 	code += "\tfor i := 1; i < 5; i++ {\n"
-	code += "\t\tfmt.Printf(i)\n"
+	code += "\t\ttester++\n"
 	code += "\t}\n"
 	code += "\tfmt.Println(\"Execution Complete!\")\n"
 	code += "}\n"
 
 	expected_result := "package main\n\n"
-	expected_result += "import \"fmt\"\n"
 	expected_result += "func main() {\n"
-	expected_result += "\tfmt.Printf(1)\n"
-	expected_result += "\tfmt.Printf(2)\n"
-	expected_result += "\tfmt.Printf(3)\n"
-	expected_result += "\tfmt.Printf(4)\n"
+	expected_result += "\ttester := 1\n"
+	expected_result += "\ttester++\n"
+	expected_result += "\ttester++\n"
+	expected_result += "\ttester++\n"
+	expected_result += "\ttester++\n"
 	expected_result += "\tfmt.Println(\"Execution Complete!\")\n"
 	expected_result += "}\n"
 
