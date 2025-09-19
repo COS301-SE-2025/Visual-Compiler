@@ -120,14 +120,73 @@ func TestConvertToConstant_Error(t *testing.T) {
 	}
 }
 
-// Tests for Combined Optimisation
+// Tests for Optimisation
 
-func TestOptimiseGo_NoInputCode(t *testing.T) {
+func TestOptimiseGoCode_NoInputCode(t *testing.T) {
 	code := ""
 
 	_, err := services.OptimiseGoCode(code, true, true, true)
 	if err == nil {
 		t.Errorf("Error expected")
+	}
+}
+
+func TestOptimiseGoCode_AllThreeCombined(t *testing.T) {
+	code := "package main\n\n"
+	code += "import \"fmt\"\n\n"
+	code += "func main() {\n"
+	code += "\tfor blue := 1; blue < 5; blue++ {\n"
+	code += "\t\tfmt.Println(\"[Block \" + fmt.Sprint(blue) + \"]\")\n"
+	code += "\t\tfor red := 1; red <= blue; red++ {\n"
+	code += "\t\t\tfmt.Println(\"\\t-> \" + fmt.Sprint(red))\n"
+	code += "\t\t\tif blue == red {\n"
+	code += "\t\t\t\tfmt.Println(blue + red)\n"
+	code += "\t\t\t}\n"
+	code += "\t\t}\n"
+	code += "\t}\n"
+	code += "}\n\n"
+	code += "func nothing() int {\n"
+	code += "\tvar random int = 13\n"
+	code += "\treturn random\n"
+	code += "}\n"
+
+	expected_result := "package main\n\n"
+	expected_result += "import \"fmt\"\n"
+	expected_result += "func main() {\n"
+	expected_result += "\tfmt.Println(\"[Block \" + fmt.Sprint(1) + \"]\")\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(1))\n"
+	expected_result += "\tif 1 == 1 {\n"
+	expected_result += "\t\tfmt.Println(2)\n"
+	expected_result += "\t}\n"
+	expected_result += "\tfmt.Println(\"[Block \" + fmt.Sprint(2) + \"]\")\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(1))\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(2))\n"
+	expected_result += "\tif 2 == 2 {\n"
+	expected_result += "\t\tfmt.Println(4)\n"
+	expected_result += "\t}\n"
+	expected_result += "\tfmt.Println(\"[Block \" + fmt.Sprint(3) + \"]\")\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(1))\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(2))\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(3))\n"
+	expected_result += "\tif 3 == 3 {\n"
+	expected_result += "\t\tfmt.Println(6)\n"
+	expected_result += "\t}\n"
+	expected_result += "\tfmt.Println(\"[Block \" + fmt.Sprint(4) + \"]\")\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(1))\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(2))\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(3))\n"
+	expected_result += "\tfmt.Println(\"\\t-> \" + fmt.Sprint(4))\n"
+	expected_result += "\tif 4 == 4 {\n"
+	expected_result += "\t\tfmt.Println(8)\n"
+	expected_result += "\t}\n"
+	expected_result += "}\n"
+
+	optimised_code, err := services.OptimiseGoCode(code, true, true, true)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	if optimised_code != expected_result {
+		t.Errorf("Optimisation Failed: \n%v \n%v", optimised_code, expected_result)
 	}
 }
 
@@ -2243,3 +2302,4 @@ func TestPerformDeadCodeElimination_Complex_3(t *testing.T) {
 }
 
 // Tests for Loop Unrolling
+
