@@ -407,14 +407,11 @@ func (constant_folder *Folder) EvaluateExpression(expr ast.Expr) (float64, bool,
 	switch e := expr.(type) {
 
 	case *ast.BasicLit:
-
 		switch e.Kind {
-
 		case token.INT:
 			if val, err := strconv.Atoi(e.Value); err == nil {
 				return float64(val), true, nil
 			}
-
 		case token.FLOAT:
 			if val, err := strconv.ParseFloat(e.Value, 64); err == nil {
 				return val, true, nil
@@ -422,41 +419,46 @@ func (constant_folder *Folder) EvaluateExpression(expr ast.Expr) (float64, bool,
 		}
 
 	case *ast.Ident:
-		if val, yes := constant_folder.constants[e.Name]; yes {
+		if val, valid := constant_folder.constants[e.Name]; valid {
 			return val, true, nil
 		}
 
-	case *ast.BinaryExpr:
+	case *ast.UnaryExpr:
+		val, valid, err := constant_folder.EvaluateExpression(e.X)
+		if err != nil {
+			return 0, false, err
+		}
+		if valid {
+			switch e.Op {
+			case token.ADD:
+				return val, true, nil
+			case token.SUB:
+				return -val, true, nil
+			}
+		}
 
+	case *ast.BinaryExpr:
 		lhs, lok, lerr := constant_folder.EvaluateExpression(e.X)
 		if lerr != nil {
 			return 0, false, lerr
 		}
-
 		rhs, rok, rerr := constant_folder.EvaluateExpression(e.Y)
 		if rerr != nil {
 			return 0, false, rerr
 		}
-
 		if lok && rok {
-
 			switch e.Op {
-
 			case token.ADD:
 				return lhs + rhs, true, nil
-
 			case token.SUB:
 				return lhs - rhs, true, nil
-
 			case token.MUL:
 				return lhs * rhs, true, nil
-
 			case token.QUO:
 				if rhs == 0 {
 					return 0, false, fmt.Errorf("illegal operation: division by zero")
 				}
 				return lhs / rhs, true, nil
-
 			case token.REM:
 				if rhs == 0 {
 					return 0, false, fmt.Errorf("illegal operation: modulo by zero")
