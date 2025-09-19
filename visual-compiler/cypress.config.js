@@ -13,6 +13,8 @@ module.exports = defineConfig({
         env: {
             frontend_url: 'http://localhost:5173',
             backend_url: 'http://localhost:8080',
-        }
+        },
+        viewportWidth: 1290,
+        viewportHeight: 729,
     },
 });
