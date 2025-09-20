@@ -138,6 +138,12 @@
 				localStorage.setItem('users_id', data.id); // Also store as users_id for optimizer compatibility
 				localStorage.setItem('is_admin', data.is_admin ? 'true' : 'false');
 				
+				// Store the Auth0 access token in sessionStorage (as requested)
+				if (data.auth_token) {
+					sessionStorage.setItem('access_token', data.auth_token);
+					sessionStorage.setItem('authToken', data.auth_token); // Alternative key for compatibility
+				}
+				
 				// Store projects if available
 				if (data.projects) {
 					localStorage.setItem('user_projects', JSON.stringify(data.projects));
@@ -146,7 +152,8 @@
 				console.log('Login successful:', {
 					user_id: data.id,
 					is_admin: data.is_admin,
-					projects: data.projects
+					projects: data.projects,
+					has_auth_token: !!data.auth_token
 				});
 
 				// Extract username from the welcome message or use the login input
