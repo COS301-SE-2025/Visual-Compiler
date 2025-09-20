@@ -98,6 +98,7 @@ describe('Translator Test', ()=> {
         cy.wait(500);
         cy.get('#A-2\\/N-parser-3').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-analyser-4').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
+        cy.wait(500);
         cy.get('.canvas-container').contains('Analyser').dblclick();
         cy.wait(500);
         cy.get('.analyser-heading').should('contain','ANALYSING');
