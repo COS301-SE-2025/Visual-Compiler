@@ -92,10 +92,13 @@ describe('Analyser Test', ()=> {
 
         cy.get('#A-1\\/N-source-1').trigger('mousedown', { which: 1, force: true });
         cy.get('#A-1\\/N-lexer-2').trigger('mousemove', { force: true }).trigger('mouseup', { force: true });
+        cy.wait(500);
         cy.get('#A-2\\/N-lexer-2').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-parser-3').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
+        cy.wait(500);
         cy.get('#A-2\\/N-parser-3').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-analyser-4').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
+        cy.wait(500);
         cy.get('.canvas-container').contains('Analyser').dblclick();
         cy.wait(500);
 
@@ -123,6 +126,9 @@ describe('Analyser Test', ()=> {
         cy.get('.symbol-table').should('contain','0');
 
         cy.contains('Symbol table generated successfully');
+
+        //logout
+        cy.get('button[aria-label="Logout"]').click();
   
     })
 
