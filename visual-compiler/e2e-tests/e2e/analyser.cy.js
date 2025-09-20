@@ -73,6 +73,7 @@ describe('Analyser Test', ()=> {
         cy.get('button').contains('Parser').click();
         cy.get('#A-1\\/N-source-1').trigger('mousedown', { which: 1, force: true });
         cy.get('#A-1\\/N-lexer-2').trigger('mousemove', { force: true }).trigger('mouseup', { force: true });
+        cy.wait(500);
         cy.get('#A-2\\/N-lexer-2').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-parser-3').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
         cy.get('.canvas-container').contains('Parser').dblclick();
