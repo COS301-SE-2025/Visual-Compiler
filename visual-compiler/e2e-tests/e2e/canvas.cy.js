@@ -1,14 +1,24 @@
 describe('Canvas Test', ()=> {
-    beforeEach('Login user',()=>{
-        const test_username = "e2e_tester";
+   beforeEach('Login user',()=>{
+       const test_username = "e2e_tester";
         const test_password = "password1234";
 
         cy.visit('http://localhost:5173/auth-page');
 
+        cy.get('.tab-nav').should('be.visible');
+        cy.get('.tab-nav button').contains("Register").should('be.visible');
+        cy.contains('button', 'Login').should('have.class', 'active');
+        cy.contains('button', 'Register').should('not.have.class', 'active');
+
+        cy.get('body').should('contain', 'Username');
+
+        cy.get('#loginUsername', { timeout: 10000 }).should('be.visible');
         cy.get('#loginUsername').type(test_username);
 		cy.get('#loginPassword').type(test_password);
 
         cy.get('.icon-submit-btn').click();
+
+        cy.contains('Welcome');
     })
 
     it('Add and connect Nodes', () => {
@@ -77,9 +87,6 @@ describe('Canvas Test', ()=> {
         cy.get('button').should('contain', 'Optimiser');
         cy.get('button').contains('Optimiser').click();
         cy.get('.canvas-container').should('contain','Optimiser');
-
-        //logout
-        cy.get('button[aria-label="Logout"]').click();
 
     })
 
