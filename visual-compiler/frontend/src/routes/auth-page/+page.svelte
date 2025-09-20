@@ -377,6 +377,23 @@
 
 		<main class="main-content">
 			<div class="feature-quote">
+				<h1 class="app-title">Visual Compiler</h1>
+			</div>
+		</main>
+	</div>
+</div>
+
+<style>
+	:global(body) {
+		margin: 0;
+		font-family:
+			'Inter',
+			-apple-system,
+			BlinkMacSystemFont,
+			sans-serif;
+		color: #111827;
+	}
+
 	.video-background {
 		position: relative;
 		width: 100%;
