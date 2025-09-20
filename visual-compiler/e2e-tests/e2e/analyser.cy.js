@@ -42,18 +42,19 @@ describe('Analyser Test', ()=> {
         cy.get('#confirm-project-name').click();
         cy.wait(500);
 
-        //source code node
+         //source code node
         cy.get('button').should('contain', 'Source Code');
         cy.get('button').contains('Source Code').click();
         cy.get('.canvas-container').should('contain','Source Code');
         cy.get('.canvas-container').contains('Source Code').dblclick();
+        cy.wait(500);
         cy.get('.code-input-container').should('contain', 'Source Code Input');
         cy.get('.code-input-header-row button').click();
         cy.get('.confirm-btn').contains('Confirm Code');
         cy.get('.confirm-btn').click();
         cy.contains('Source code saved');
 
-        //lexer node
+         //lexer node
         cy.get('button').should('contain', 'Lexer');
         cy.get('button').contains('Lexer').click();
         cy.get('.canvas-container').should('contain','Lexer');
@@ -77,7 +78,7 @@ describe('Analyser Test', ()=> {
         cy.get('#A-2\\/N-lexer-2').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-parser-3').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
         cy.get('.canvas-container').contains('Parser').dblclick();
-        cy.wait(1000);
+        cy.wait(500);
         cy.get('.phase-inspector').should('contain','PARSING');
         cy.get('.grammar-header').should('contain','Context-Free Grammar');
         cy.get('.default-toggle-btn').click();
@@ -126,10 +127,6 @@ describe('Analyser Test', ()=> {
         cy.get('.symbol-table').should('contain','0');
 
         cy.contains('Symbol table generated successfully');
-
-        //logout
-        cy.get('button[aria-label="Logout"]').click();
-  
     })
 
 });

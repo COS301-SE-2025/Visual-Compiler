@@ -1,4 +1,4 @@
-describe('Translator Test', ()=> {
+describe('Optimiser Test', ()=> {
     beforeEach('Login user',()=>{
        const test_username = "e2e_tester";
         const test_password = "password1234";
