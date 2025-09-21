@@ -13,7 +13,7 @@ func TestStoreSourceCode_Valid(t *testing.T) {
 	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	get_id(t)
+	getID(t)
 	re_data := map[string]interface{}{
 		"source_code":  "int x = 2 ;",
 		"users_id":     test_user_id,
@@ -105,7 +105,7 @@ func TestCreateRulesFromCode_Valid(t *testing.T) {
 	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	get_id(t)
+	getID(t)
 	data := map[string]interface{}{
 		"users_id":     test_user_id,
 		"project_name": project_name,
@@ -335,7 +335,7 @@ func TestLexing_Valid(t *testing.T) {
 	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	get_id(t)
+	getID(t)
 	reg_expr_data := map[string]interface{}{
 		"users_id":     test_user_id,
 		"project_name": project_name,
@@ -523,7 +523,7 @@ func TestReadDFAFromUser_Valid(t *testing.T) {
 	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	get_id(t)
+	getID(t)
 	data := map[string]interface{}{
 		"project_name": project_name,
 		"states": []string{
@@ -697,7 +697,7 @@ func TestTokensFromDFA_Valid(t *testing.T) {
 	defer closeServerCore(t, server)
 
 	//loginUser(t)
-	get_id(t)
+	getID(t)
 
 	data := map[string]interface{}{
 		"users_id":     test_user_id,
@@ -833,7 +833,7 @@ func TestConvertDFAToRG_Valid(t *testing.T) {
 	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	get_id(t)
+	getID(t)
 	data := map[string]interface{}{
 		"users_id":     test_user_id,
 		"project_name": project_name,
@@ -979,7 +979,7 @@ func TestConvertRGToNFA_Valid(t *testing.T) {
 	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	get_id(t)
+	getID(t)
 	data := map[string]interface{}{
 		"users_id":     test_user_id,
 		"project_name": project_name,
@@ -1127,7 +1127,7 @@ func TestConvertRGToDFA_Valid(t *testing.T) {
 	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	get_id(t)
+	getID(t)
 	data := map[string]interface{}{
 		"users_id":     test_user_id,
 		"project_name": project_name,
@@ -1275,7 +1275,7 @@ func TestConvertNFAToDFA_Valid(t *testing.T) {
 	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	get_id(t)
+	getID(t)
 	data := map[string]interface{}{
 		"users_id":     test_user_id,
 		"project_name": project_name,

@@ -93,7 +93,7 @@ func closeServerCore(t *testing.T, server *http.Server) {
 	server.Shutdown(cont)
 }
 
-func get_id(t *testing.T) {
+func getID(t *testing.T) {
 	user_data := map[string]string{
 		"login":    "tiaharripersad",
 		"password": "tia1234$$",
