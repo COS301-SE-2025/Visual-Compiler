@@ -43,6 +43,13 @@ definitions:
     - scope_rules
     - type_rules
     type: object
+  handlers.AnswerQuestion:
+    properties:
+      question:
+        type: string
+    required:
+    - question
+    type: object
   handlers.DeleteRequest:
     properties:
       users_id:
@@ -62,6 +69,16 @@ definitions:
     required:
     - project_name
     - users_id
+    type: object
+  handlers.InputGenerate:
+    properties:
+      artefact:
+        type: string
+      phase:
+        type: string
+    required:
+    - artefact
+    - phase
     type: object
   handlers.LoginReq:
     properties:
@@ -324,6 +341,92 @@ info:
   title: Visual Compiler API
   version: "1.0"
 paths:
+  /ai/answer:
+    post:
+      consumes:
+      - application/json
+      description: The user sends a question to the AI assistance about the compilation
+        process
+      parameters:
+      - description: Answer user's question
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AnswerQuestion'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: AI response received
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Response failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: AI assistant answers user's question
+      tags:
+      - AI
+  /ai/generate:
+    post:
+      consumes:
+      - application/json
+      description: The AI generates input (upon request) based on the current process
+        the user is on in the compilation process
+      parameters:
+      - description: Generate input
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.InputGenerate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: AI response received
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Response failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: AI assistant generates input
+      tags:
+      - AI
   /analysing/analyse:
     post:
       consumes:
@@ -349,6 +452,12 @@ paths:
             type: object
         "400":
           description: Invalid input or artefacts failed to insert
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
           schema:
             additionalProperties:
               type: string
@@ -397,6 +506,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal server error
           schema:
@@ -435,6 +550,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal server error
           schema:
@@ -469,6 +590,12 @@ paths:
             type: object
         "400":
           description: Invalid input/Conversion failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
           schema:
             additionalProperties:
               type: string
@@ -518,6 +645,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: DFA/source code not found
           schema:
@@ -531,6 +664,129 @@ paths:
               type: string
             type: object
       summary: Creates tokens from a stored DFA and source code
+      tags:
+      - Lexing
+  /lexing/getCode:
+    get:
+      consumes:
+      - application/json
+      description: Searches the database for the user's source code
+      parameters:
+      - description: Project Name
+        in: query
+        name: project_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Source code retrieved
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Response failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get user's code
+      tags:
+      - Lexing
+  /lexing/getTokens:
+    get:
+      consumes:
+      - application/json
+      description: Searches the database for the user's tokens
+      parameters:
+      - description: Project Name
+        in: query
+        name: project_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Tokens retrieved
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Response failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get user's tokens
+      tags:
+      - Lexing
+  /lexing/getTree:
+    get:
+      consumes:
+      - application/json
+      description: Searches the database for the user's syntax tree
+      parameters:
+      - description: Project Name
+        in: query
+        name: project_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Syntax Tree retrieved
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Response failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get user's syntax tree
       tags:
       - Lexing
   /lexing/lexer:
@@ -559,6 +815,12 @@ paths:
             type: object
         "400":
           description: Invalid input/Lexing failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
           schema:
             additionalProperties:
               type: string
@@ -607,6 +869,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: Rules not found
           schema:
@@ -651,6 +919,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: Rules not found
           schema:
@@ -691,6 +965,12 @@ paths:
             type: object
         "400":
           description: Invalid input/Conversion failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
           schema:
             additionalProperties:
               type: string
@@ -740,6 +1020,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "404":
           description: Source code not found
           schema:
@@ -782,6 +1068,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal server error
           schema:
@@ -814,6 +1106,12 @@ paths:
             type: object
         "400":
           description: Invalid input
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
           schema:
             additionalProperties:
               type: string
@@ -966,6 +1264,12 @@ paths:
             additionalProperties:
               type: string
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "500":
           description: Internal server error
           schema:
@@ -1001,6 +1305,12 @@ paths:
             type: object
         "400":
           description: Invalid input/Conversion failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
           schema:
             additionalProperties:
               type: string
