@@ -166,9 +166,24 @@ Format your output strictly as a JSON array, without any additional text whatsoe
 
 	case "optimiser":
 
-		prompt = ``
+		prompt = `You are an educational assistant.
 
-		request = "\n\n" + artefact
+Generate a simple, complete Go program that contains examples suitable for the following optimisation: 
+1. Constant folding for basic operators
+2. Dead code elimination for variables, functions, conditions and loops
+3. Loop unrolling for for loops in canonical format
+
+Format your output strictly as a single string of raw Go code, for example, 
+
+package main
+
+import "fmt"
+
+func main() {
+	for i := 0; i <= 2; i++ {
+		fmt.Println(i)
+	}
+}`
 
 	default:
 		return "", fmt.Errorf("invalid phase keyword")
