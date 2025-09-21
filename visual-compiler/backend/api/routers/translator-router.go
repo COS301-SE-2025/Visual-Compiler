@@ -13,9 +13,7 @@ import (
 // Return: Endpoints
 //
 // Creates the endpoints for translation. Links the endpoints to the respective function
-func SetupTranslatorRouter() *gin.Engine {
-	r := gin.New()
-
+func SetupTranslatorRouter(r *gin.RouterGroup) *gin.RouterGroup {
 	r.POST("/readRules", handlers.ReadRules)
 	r.POST("/translate", handlers.TranslateCode)
 
