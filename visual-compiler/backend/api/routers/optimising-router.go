@@ -5,9 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupOptimisingRouter() *gin.Engine {
-	r := gin.New()
-
+func SetupOptimisingRouter(r *gin.RouterGroup) *gin.RouterGroup {
 	r.POST("/source_code", handlers.StoreOptimisingCode)
 	r.POST("/optimise", handlers.OptimiseCode)
 

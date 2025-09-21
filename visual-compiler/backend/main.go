@@ -33,7 +33,7 @@ func main() {
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "https://visual-compiler.co.za"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
@@ -46,11 +46,6 @@ func main() {
 
 	// Attach your routes
 	api_user_routes := routers.SetupUserRouter()
-	api_lexing_routes := routers.SetupLexingRouter()
-	api_parsing_routes := routers.SetupParsingRouter()
-	api_analysing_routes := routers.SetupAnalysingRouter()
-	api_translating_routes := routers.SetupTranslatorRouter()
-	api_optimising_routes := routers.SetupOptimisingRouter()
 
 	router.Any("/api/users/*any", func(c *gin.Context) {
 		c.Request.URL.Path = c.Param("any")
@@ -77,10 +72,10 @@ func main() {
 		api_translating_routes.HandleContext(c)
 	})
 
-	router.Any("/api/optimising/*any", func(c *gin.Context) {
-		c.Request.URL.Path = c.Param("any")
-		api_optimising_routes.HandleContext(c)
-	})
+	protected_optimising_routes := protected_routes.Group("/optimising")
+	{
+		routers.SetupOptimisingRouter(protected_optimising_routes)
+	}
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
