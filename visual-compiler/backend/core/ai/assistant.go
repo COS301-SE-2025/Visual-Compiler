@@ -22,7 +22,7 @@ func ConnectAI(api_key string) *openai.Client {
 	return ai_client
 }
 
-func QuestionAnswer(ctx context.Context, question string) string {
+func QuestionAnswer(question string, ctx context.Context) string {
 
 	prompt := "You are an educational assistant. Answer any question relevant to compiler construction clearly, concisely, friendly and at a student level of complexity. Otherwise, inform the user that you only explain the topics within the phases of compilation. Provide simple examples where necessary and format using only standard text. If the user seeks system-specific guidance, such as navigation, suggest the canvas tutorial and FAQ tab."
 
@@ -62,7 +62,7 @@ func GenerateInput(phase string, artefact string, ctx context.Context) (string, 
 
 		prompt = `You are an educational assistant.
 
-Generate a list of token definitions in order of priority for a lexer that will perfectly lex the user's source code.
+Generate a list of token definitions in order of priority for a lexer that will perfectly lex the user's source code. Ignore whitespaces except if they are syntactically significant.
 
 The token definitions should follow this structure: 
 1. "type": string for token type
