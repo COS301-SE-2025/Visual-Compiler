@@ -327,6 +327,7 @@
                                         <li>Parser Grammar</li>
                                         <li>Analyzer Config</li>
                                         <li>Translator</li>
+                                        <li>Optimiser</li>
                                     </ul>
                                 </div>
                             </div>
@@ -343,7 +344,7 @@
         position: fixed;
         bottom: 2rem;
         right: 2rem;
-        z-index: 1000;
+        z-index: 2100;
         font-family: Arial, sans-serif;
     }
 
@@ -647,6 +648,14 @@
         overflow-y: auto;
     }
 
+    /* Adjust container when no active phase to prevent scrolling */
+    .generate-container:has(.no-phase-message) {
+        padding: 1rem;
+        gap: 1rem;
+        overflow-y: hidden;
+        justify-content: center;
+    }
+
     .generate-welcome {
         text-align: center;
         color: #6B7280;
@@ -857,14 +866,15 @@
     /* No Phase Message Styles */
     .no-phase-message {
         text-align: center;
-        padding: 2rem;
+        padding: 1.5rem;
         color: #6B7280;
+        max-height: fit-content;
     }
 
     .no-phase-icon {
-        margin: 0 auto 1.5rem;
-        width: 60px;
-        height: 60px;
+        margin: 0 auto 1rem;
+        width: 50px;
+        height: 50px;
         background: #F3F4F6;
         border-radius: 50%;
         display: flex;
@@ -876,40 +886,40 @@
     .no-phase-message h4 {
         margin: 0 0 0.5rem 0;
         color: #374151;
-        font-size: 1.1rem;
+        font-size: 1rem;
         font-weight: 600;
     }
 
     .no-phase-message p {
-        margin: 0 0 1.5rem 0;
-        font-size: 0.9rem;
-        line-height: 1.5;
+        margin: 0 0 1rem 0;
+        font-size: 0.85rem;
+        line-height: 1.4;
     }
 
     .available-phases-info {
         background: #F9FAFB;
-        border-radius: 8px;
-        padding: 1rem;
+        border-radius: 6px;
+        padding: 0.75rem;
         text-align: left;
-        margin-top: 1rem;
+        margin-top: 0.5rem;
     }
 
     .available-phases-info h6 {
-        margin: 0 0 0.5rem 0;
+        margin: 0 0 0.3rem 0;
         color: #374151;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         font-weight: 600;
     }
 
     .available-phases-info ul {
         margin: 0;
-        padding-left: 1.25rem;
+        padding-left: 1rem;
         color: #6B7280;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
     }
 
     .available-phases-info li {
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.1rem;
     }
 
     /* Removed test buttons CSS - no longer needed */
