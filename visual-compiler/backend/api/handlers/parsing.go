@@ -280,6 +280,17 @@ func TreeToString(c *gin.Context) {
 	})
 }
 
+// @Summary Get user's syntax tree
+// @Description Searches the database for the user's syntax tree
+// @Tags Lexing
+// @Accept json
+// @Produce json
+// @Param project_name query string true "Project Name"
+// @Success 200 {object} map[string]string "Syntax Tree retrieved"
+// @Failure 400 {object} map[string]string "Invalid input/Response failed"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /lexing/getTree [get]
 func GetTree(c *gin.Context) {
 	authID, is_existing := c.Get("auth0_id")
 	if !is_existing {
@@ -313,7 +324,7 @@ func GetTree(c *gin.Context) {
 	}
 
 	var res struct {
-		Tree services.Automata `bson:"tree"`
+		Tree services.SyntaxTree `bson:"tree"`
 	}
 
 	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": project_name}).Decode(&res)
