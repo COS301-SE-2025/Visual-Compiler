@@ -89,9 +89,10 @@
 			return;
 		}
 
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName);
-		if (!user_id) {
+		
+		if (!accessToken) {
 			AddToast('Authentication required: Please log in to save lexical rules', 'error');
 			return;
 		}
@@ -102,7 +103,6 @@
 
 		if (selectedType === 'REGEX') {
 			const requestData = {
-				users_id: user_id,
 				project_name: project,
 				pairs: nonEmptyRows.map((row) => ({
 					Type: row.type.toUpperCase(),
@@ -112,7 +112,10 @@
 			try {
 				const res = await fetch('http://localhost:8080/api/lexing/rules', {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: { 
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${accessToken}`
+					},
 					body: JSON.stringify(requestData)
 				});
 				if (!res.ok) {
@@ -127,65 +130,35 @@
 			return;
 		}
 
-		const requestData = {
-			users_id: user_id,
-			project_name: project,
-			source_code: showDefault ? DEFAULT_SOURCE_CODE : userSourceCode,
-			pairs: nonEmptyRows.map((row) => ({
-				Type: row.type.toUpperCase(),
-				Regex: row.regex
-			}))
-		};
-
-		try {
-			const storeResponse = await fetch('http://localhost:8080/api/lexing/code', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(requestData)
-			});
-			if (!storeResponse.ok) {
-				const errorText = await storeResponse.text();
-				throw new Error(`Server error (${storeResponse.status}): ${errorText}`);
-			}
-			submissionStatus = { show: true, success: true, message: 'Code stored successfully!' };
-			showGenerateButton = true;
-		} catch (error) {
-			console.error('Store error:', error);
-			AddToast('Connection error: Cannot reach server. Please ensure the backend is running and try again', 'error');
-		}
-
-		// Show regex action buttons after successful submit in REGEX mode
-		if (selectedType === 'REGEX' && !hasErrors) {
-			showRegexActionButtons = true;
-		}
+		// For AUTOMATA type, we don't need to store source code here since it's already stored from code-input
+		submissionStatus = { show: true, success: true, message: 'Ready for tokenization!' };
+		showGenerateButton = true;
 	}
 
 	async function generateTokens() {
 		try {
-			const user_id = localStorage.getItem('user_id');
+			const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 			const project = get(projectName);
-			if (!user_id) {
+			
+			if (!accessToken) {
 				AddToast('Authentication required: Please log in to generate tokens', 'error');
 				return;
 			}
 			if (!project) {
-                AddToast('No project selected: Please select or create a project first', 'error');
-                return;
-            }
+				AddToast('No project selected: Please select or create a project first', 'error');
+				return;
+			}
 
 			const requestData = {
-				users_id: user_id,
-				source_code: source_code,
-				project_name: project,
-				pairs: (showDefault ? editableDefaultRows : userInputRows).map((row) => ({
-					Type: row.type.toUpperCase(),
-					Regex: row.regex
-				}))
+				project_name: project
 			};
 
 			const response = await fetch('http://localhost:8080/api/lexing/lexer', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
 				body: JSON.stringify(requestData)
 			});
 
@@ -217,10 +190,10 @@
 
 	// Helper: Save DFA to backend
 	async function saveDfaToBackend() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
+		if (!accessToken) {
 			AddToast('Authentication required: Please log in to save automata data', 'error');
 			return;
 		}
@@ -238,7 +211,6 @@
 			transitions: [],
 			start_state: startState.trim(),
 			accepting_states: parseAcceptedStates(acceptedStates),
-			users_id: user_id,
 			project_name: project
 		};
 
@@ -261,7 +233,10 @@
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/dfa', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
 				body: JSON.stringify(dfa)
 			});
 			if (!response.ok) {
@@ -280,10 +255,10 @@
 		const saved = await saveDfaToBackend();
 		if (!saved) return;
 
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
+		if (!accessToken) {
 			AddToast('Authentication required: Please log in to perform tokenization', 'error');
 			return;
 		}
@@ -293,13 +268,15 @@
 			return;
 		}
 
-		// Only need to send users_id, backend loads DFA from DB
-		const body = { users_id: user_id, project_name: project };
+		const body = { project_name: project };
 
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/dfaToTokens', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
 				body: JSON.stringify(body)
 			});
 			if (!response.ok) {
@@ -448,29 +425,31 @@
 	}
 
 	async function showNfaDiagram() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+		if (!accessToken) {
+			AddToast('Authentication required: Please log in to generate NFA', 'error');
 			return;
 		}
 
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
-		// 1. Save DFA to backend (if not already saved)
 		const saved = await saveDfaToBackend();
 		if (!saved) return;
 
 		try {
-			// 2. Convert DFA to Regex
+			// Convert DFA to Regex
 			const dfaToRegexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!dfaToRegexRes.ok) {
 				const errorText = await dfaToRegexRes.text();
@@ -478,11 +457,14 @@
 				return;
 			}
 
-			// 3. Convert Regex to NFA
+			// Convert Regex to NFA
 			const regexToNfaRes = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!regexToNfaRes.ok) {
 				const errorText = await regexToNfaRes.text();
@@ -491,7 +473,7 @@
 			}
 			const nfaData = await regexToNfaRes.json();
 			regexNfa = adaptAutomatonForVis(nfaData.nfa);
-			currentAutomatonForModal = { data: regexNfa, isDfa: false }; // Store for modal
+			currentAutomatonForModal = { data: regexNfa, isDfa: false };
 			showNfaVis = true;
 			showDfaVis = false;
 			automataDisplay = 'NFA';
@@ -623,29 +605,31 @@
 
 	// Show DFA button handler
 	async function handleShowDfa() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+		if (!accessToken) {
+			AddToast('Authentication required: Please log in to generate DFA', 'error');
 			return;
 		}
 
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
-		// 1. Save DFA to backend (if not already saved)
 		const saved = await saveDfaToBackend();
 		if (!saved) return;
 
 		try {
-			// 2. Convert DFA to Regex
+			// Convert DFA to Regex
 			const regexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!regexRes.ok) {
 				const errorText = await regexRes.text();
@@ -653,11 +637,14 @@
 				return;
 			}
 
-			// 3. Convert Regex to DFA
+			// Convert Regex to DFA
 			const dfaRes = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!dfaRes.ok) {
 				const errorText = await dfaRes.text();
@@ -684,24 +671,27 @@
 		const saved = await saveDfaToBackend();
 		if (!saved) return;
 
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+		if (!accessToken) {
+			AddToast('Authentication required: Please log in to convert DFA', 'error');
 			return;
 		}
 
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -725,23 +715,26 @@
 	let regexDfaContainer: HTMLElement;
 
 	async function handleRegexToNFA() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+		if (!accessToken) {
+			AddToast('Authentication required: Please log in to convert Regex', 'error');
 			return;
 		}
 
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -762,23 +755,26 @@
 	}
 
 	async function handleRegexToDFA() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+		if (!accessToken) {
+			AddToast('Authentication required: Please log in to convert Regex', 'error');
 			return;
 		}
 
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 		try {
 			const response = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
