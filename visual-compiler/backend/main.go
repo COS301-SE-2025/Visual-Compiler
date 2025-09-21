@@ -44,7 +44,12 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
+	// Attach your routes
 	api_user_routes := routers.SetupUserRouter()
+	api_lexing_routes := routers.SetupLexingRouter()
+	api_parsing_routes := routers.SetupParsingRouter()
+	api_analysing_routes := routers.SetupAnalysingRouter()
+	api_translating_routes := routers.SetupTranslatorRouter()
 	api_optimising_routes := routers.SetupOptimisingRouter()
 
 	router.Any("/api/users/*any", func(c *gin.Context) {
@@ -52,27 +57,25 @@ func main() {
 		api_user_routes.HandleContext(c)
 	})
 
-	protected_routes := router.Group("/api", routers.Auth0MiddleWare())
+	router.Any("/api/lexing/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		api_lexing_routes.HandleContext(c)
+	})
 
-	protected_lexing_routes := protected_routes.Group("/lexing")
-	{
-		routers.SetupLexingRouter(protected_lexing_routes)
-	}
+	router.Any("/api/parsing/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		api_parsing_routes.HandleContext(c)
+	})
 
-	protected_parsing_routes := protected_routes.Group("/parsing")
-	{
-		routers.SetupParsingRouter(protected_parsing_routes)
-	}
+	router.Any("/api/analysing/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		api_analysing_routes.HandleContext(c)
+	})
 
-	protected_analysing_routes := protected_routes.Group("/analysing")
-	{
-		routers.SetupAnalysingRouter(protected_analysing_routes)
-	}
-
-	protected_translating_routes := protected_routes.Group("/translating")
-	{
-		routers.SetupTranslatorRouter(protected_translating_routes)
-	}
+	router.Any("/api/translating/*any", func(c *gin.Context) {
+		c.Request.URL.Path = c.Param("any")
+		api_translating_routes.HandleContext(c)
+	})
 
 	router.Any("/api/optimising/*any", func(c *gin.Context) {
 		c.Request.URL.Path = c.Param("any")

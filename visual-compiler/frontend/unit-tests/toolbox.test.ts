@@ -251,7 +251,7 @@ describe('Toolbox Component', () => {
 
 		// Check tooltips are rendered (they have the custom-tooltip class)
 		const tooltips = document.querySelectorAll('.custom-tooltip');
-		expect(tooltips).toHaveLength(5); // One for each node type
+		expect(tooltips).toHaveLength(6); // One for each node type
 		
 		// Check specific tooltip content
 		expect(screen.getByText('Source tooltip')).toBeInTheDocument();

@@ -14,6 +14,8 @@ import (
 )
 
 type ReadGrammerFromUser struct {
+	// User's ID for storing purposes
+	UsersID bson.ObjectID `json:"users_id" binding:"required" example:"685df259c1294de5546b045f"`
 	// User's defined variables
 	Vars []string `json:"variables" binding:"required" example:"S, Decl"`
 	// User's defined terminal variables
@@ -37,12 +39,6 @@ type ReadGrammerFromUser struct {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /parsing/grammar [post]
 func ReadGrammar(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
 	var req ReadGrammerFromUser
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -51,22 +47,10 @@ func ReadGrammar(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("parsing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
 
 	users_grammer_rules := services.Grammar{
 		Variables: req.Vars,
@@ -85,14 +69,14 @@ func ReadGrammar(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Grammar creation failed", "details": err.Error()})
 	}
 
-	filters := bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	var userexisting bson.M
 
 	err = collection.FindOne(ctx, filters).Decode(&userexisting)
 
 	if err == mongo.ErrNoDocuments {
 		_, err = collection.InsertOne(ctx, bson.M{
-			"users_id":     dbUser.UsersID,
+			"users_id":     req.UsersID,
 			"grammar":      grammar,
 			"project_name": req.Project_Name,
 		})
@@ -134,13 +118,7 @@ func ReadGrammar(c *gin.Context) {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /parsing/tree [post]
 func CreateSyntaxTree(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	var req ProjectNameRequest
+	var req IDRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
@@ -148,23 +126,11 @@ func CreateSyntaxTree(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	lexing_collection := mongo_cli.Database("visual-compiler").Collection("lexing")
 	parsing_collection := mongo_cli.Database("visual-compiler").Collection("parsing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
 
 	var lexing_res struct {
 		Tokens []services.TypeValue `bson:"tokens"`
@@ -174,13 +140,13 @@ func CreateSyntaxTree(c *gin.Context) {
 		Grammar services.Grammar `bson:"grammar"`
 	}
 
-	err = lexing_collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}).Decode(&lexing_res)
+	err := lexing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&lexing_res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tokens code not found. Please go back to lexing"})
 		return
 	}
 
-	err = parsing_collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}).Decode(&parsing_res)
+	err = parsing_collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&parsing_res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Grammar code not found. Please create one"})
 		return
@@ -192,7 +158,7 @@ func CreateSyntaxTree(c *gin.Context) {
 		return
 	}
 
-	filters := bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	update_users_tree := bson.M{"$set": bson.M{
 		"tree": tree,
 	}}
@@ -220,13 +186,7 @@ func CreateSyntaxTree(c *gin.Context) {
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /parsing/treeString [post]
 func TreeToString(c *gin.Context) {
-	authID, is_existing := c.Get("auth0_id")
-	if !is_existing {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
-	}
-
-	var req ProjectNameRequest
+	var req IDRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid", "details": err.Error()})
@@ -234,28 +194,16 @@ func TreeToString(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
-	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("parsing")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	var dbUser struct {
-		UsersID bson.ObjectID `bson:"_id"`
-		Auth0ID string        `bson:"auth0_id"`
-	}
-
-	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
-
 	var res struct {
 		Tree services.SyntaxTree `bson:"tree"`
 	}
 
-	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}).Decode(&res)
+	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Syntax tree not found. Please create one"})
 		return
@@ -263,7 +211,7 @@ func TreeToString(c *gin.Context) {
 
 	tree_as_string := services.ConvertTreeToString(res.Tree.Root, "", true)
 
-	filters := bson.M{"users_id": dbUser.UsersID, "project_name": req.Project_Name}
+	filters := bson.M{"users_id": req.UsersID, "project_name": req.Project_Name}
 	update_users_tree_string := bson.M{"$set": bson.M{
 		"tree_string": tree_as_string,
 	}}
