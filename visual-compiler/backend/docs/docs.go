@@ -1671,8 +1671,7 @@ const docTemplate = `{
                 "grammar_rules",
                 "project_name",
                 "scope_rules",
-                "type_rules",
-                "users_id"
+                "type_rules"
             ],
             "properties": {
                 "grammar_rules": {
@@ -1700,11 +1699,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/services.TypeRule"
                     }
-                },
-                "users_id": {
-                    "description": "User's ID for storing purposes",
-                    "type": "string",
-                    "example": "685df259c1294de5546b045f"
                 }
             }
         },
@@ -1757,8 +1751,7 @@ const docTemplate = `{
         "handlers.OptimiseCodeRequest": {
             "type": "object",
             "required": [
-                "project_name",
-                "users_id"
+                "project_name"
             ],
             "properties": {
                 "constant_folding": {
@@ -1775,10 +1768,6 @@ const docTemplate = `{
                 },
                 "project_name": {
                     "description": "User's project name",
-                    "type": "string"
-                },
-                "users_id": {
-                    "description": "Represents the User's ID from frontend",
                     "type": "string"
                 }
             }
@@ -1813,7 +1802,6 @@ const docTemplate = `{
                 "rules",
                 "start",
                 "terminals",
-                "users_id",
                 "variables"
             ],
             "properties": {
@@ -1846,11 +1834,6 @@ const docTemplate = `{
                         " NUMBER",
                         " PUNCTUATION"
                     ]
-                },
-                "users_id": {
-                    "description": "User's ID for storing purposes",
-                    "type": "string",
-                    "example": "685df259c1294de5546b045f"
                 },
                 "variables": {
                     "description": "User's defined variables",
@@ -1893,8 +1876,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "pairs",
-                "project_name",
-                "users_id"
+                "project_name"
             ],
             "properties": {
                 "pairs": {
@@ -1907,10 +1889,6 @@ const docTemplate = `{
                 "project_name": {
                     "description": "User's project name",
                     "type": "string"
-                },
-                "users_id": {
-                    "description": "Represents the User's ID from frontend",
-                    "type": "string"
                 }
             }
         },
@@ -1918,8 +1896,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "project_name",
-                "source_code",
-                "users_id"
+                "source_code"
             ],
             "properties": {
                 "project_name": {
@@ -1929,10 +1906,6 @@ const docTemplate = `{
                 "source_code": {
                     "description": "Represents the User's source code",
                     "type": "string"
-                },
-                "users_id": {
-                    "description": "Represents the User's ID from frontend",
-                    "type": "string"
                 }
             }
         },
@@ -1940,8 +1913,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "project_name",
-                "translation_rules",
-                "users_id"
+                "translation_rules"
             ],
             "properties": {
                 "project_name": {
@@ -1954,19 +1926,13 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/services.TranslationRule"
                     }
-                },
-                "users_id": {
-                    "description": "User's ID for searching and storing purposes",
-                    "type": "string",
-                    "example": "685df259c1294de5546b045f"
                 }
             }
         },
         "handlers.readDFARequest": {
             "type": "object",
             "required": [
-                "project_name",
-                "users_id"
+                "project_name"
             ],
             "properties": {
                 "accepting_states": {
@@ -1997,10 +1963,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/services.Transition"
                     }
-                },
-                "users_id": {
-                    "description": "Represents the User's ID from frontend",
-                    "type": "string"
                 }
             }
         },

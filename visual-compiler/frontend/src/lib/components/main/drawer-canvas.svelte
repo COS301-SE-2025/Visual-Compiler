@@ -175,13 +175,13 @@
 					id={`N-${node.id}`}
 					position={node.position}
 					drop="center"
-					bgColor={$theme === 'dark' ? '#001A6E' : '#BED2E6'}
-					textColor={$theme === 'dark' ? '#ffffff' : '#000000'}
-					borderColor={$theme === 'dark' ? '#374151' : '#FFFFFF'}
+					bgColor={node.type === 'optimizer' ? ($theme === 'dark' ? '#8451C7' : '#AFA2D7') : ($theme === 'dark' ? '#001A6E' : '#BED2E6')}
+					textColor={node.type === 'optimizer' ? ($theme === 'dark' ? '#fff' : '#000') : ($theme === 'dark' ? '#ffffff' : '#000000')}
+					borderColor={node.type === 'optimizer' ? ($theme === 'dark' ? '#374151' : '#FFFFFF') : ($theme === 'dark' ? '#374151' : '#FFFFFF')}
 					label={node.label}
 					editable={false}
-					inputs={node.type !== 'source' ? 1 : 0}
-					outputs={node.type !== 'translator' ? 1 : 0}
+					inputs={node.type !== 'source' && node.type !== 'optimizer' ? 1 : 0}
+					outputs={node.type !== 'translator' && node.type !== 'optimizer' ? 1 : 0}
 					on:nodeClicked={() => onNodeClick(node.type)}
 				/>
 			{/each}
