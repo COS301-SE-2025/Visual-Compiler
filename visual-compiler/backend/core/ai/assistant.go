@@ -68,7 +68,7 @@ The token definitions should follow this structure:
 1. "type": string for token type
 2. "regex": string for regular expression in JavaScript style with proper escaping
 
-Format your output strictly as a JSON array, without any additional text whatsoever, for example, 
+Format your response strictly as a JSON array, without any additional text whatsoever, for example, 
 
 [
     { "type": "KEYWORD", "regex": "string|integer|boolean" },
@@ -91,7 +91,7 @@ The grammar should follow this structure:
     4.1. "input": string for LHS of rule
     4.2. "output": array of strings for variables or terminals for RHS of rule
 
-Format your output strictly as a JSON object, without any additional text whatsoever, for example,
+Format your response strictly as a JSON object, without any additional text whatsoever, for example,
 
 {
 	"variables": "PROGRAM, STATEMENT, FUNCTION",
@@ -112,7 +112,7 @@ Format your output strictly as a JSON object, without any additional text whatso
 
 Generate the scope and type rules for an analyser that will perfectly analyse the user's syntax tree.
 
-Format your output strictly as a JSON object with this structure, without any additional text whatsoever, for example,
+Format your response strictly as a JSON object with this structure, without any additional text whatsoever, for example,
 
 {
     "scope_rules":
@@ -121,9 +121,8 @@ Format your output strictly as a JSON object with this structure, without any ad
     ],
     "type_rules":
     [
-        { "result": "int", "assignment": "=", "lhs": "INTEGER", "operator": [], "rhs": "" },
+        { "result": "int", "assignment": "=", "lhs": "INTEGER", "operator": ["+"], "rhs": "INTEGER" },
         { "result": "int", "assignment": "=", "lhs": "int", "operator": [], "rhs": "" },
-        { "result": "int", "assignment": "=", "lhs": "int", "operator": ["+"], "rhs": "INTEGER" }
     ],
     "grammar_rules":
     {
@@ -149,7 +148,7 @@ The translation rules should follow this structure:
 1. "sequence": string of comma-separated token types
 2. "translation": array of strings for target code where token placeholders appear inside braces
 
-Format your output strictly as a JSON array, without any additional text whatsoever, for example,
+Format your response strictly as a JSON array, without any additional text whatsoever, for example,
 
 [
     {
@@ -173,7 +172,7 @@ Generate a simple, complete Go program without comments that contains examples f
 2. Dead code elimination for variables, functions, conditions and loops
 3. Loop unrolling for for loops in canonical format
 
-Format your output strictly as raw Go code starting with "package main", without any additional text or markdown whatsoever, for example, 
+Format your response strictly as raw Go code starting with "package main", without any additional text or markdown whatsoever, for example,
 
 package main
 
