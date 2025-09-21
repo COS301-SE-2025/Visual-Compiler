@@ -5,7 +5,7 @@
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
 	import { projectName } from '$lib/stores/project';
-	import { pipelineStore } from '$lib/stores/pipeline';
+	import { pipelineStore, setActivePhase } from '$lib/stores/pipeline';
 	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import NavBar from '$lib/components/main/nav-bar.svelte';
 	import Toolbox from '$lib/components/main/Toolbox.svelte';
@@ -587,14 +587,20 @@
 		translationError = null;
 		if (type === 'source') {
 			show_code_input = true;
+			// Update active phase for AI assistant
+			setActivePhase('source');
 		} else {
 			selected_phase = type;
+			// Update active phase for AI assistant
+			setActivePhase(type);
 			// Only check for source code on non-optimizer phases
 			if (type !== 'optimizer') {
 				const confirmedCode = get(confirmedSourceCode);
 				if (!confirmedCode.trim()) {
 					AddToast('Source code required: Please add source code to begin the compilation process', 'error');
 					selected_phase = null;
+					// Clear active phase for AI assistant when phase selection fails
+					setActivePhase(null);
 					return;
 				}
 			}
@@ -647,6 +653,8 @@
 	function returnToCanvas() {
 		selected_phase = null;
 		show_code_input = false;
+		// Clear active phase for AI assistant
+		setActivePhase(null);
 	}
 
 	function handleCodeSubmit(code: string) {

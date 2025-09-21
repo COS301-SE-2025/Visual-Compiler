@@ -1,8 +1,53 @@
 <script lang="ts">
+    import { activePhase, setActivePhase, type PhaseType } from '../../stores/pipeline';
+    
     let isOpen = false;
     let activeTab: 'questions' | 'generate' = 'questions';
     let messageInput = '';
     let messages: Array<{id: number, text: string, isUser: boolean, timestamp: Date}> = [];
+    
+    // Subscribe to the active phase
+    $: currentPhase = $activePhase;
+    
+    // Phase configuration for generate input
+    const phaseConfig = {
+        source: {
+            name: 'Source Code',
+            icon: 'M14 2H6A2 2 0 0 0 4 4V20A2 2 0 0 0 6 22H18A2 2 0 0 0 20 20V8L14 2Z',
+            iconExtra: 'M14 2V8H20',
+            description: 'Generate sample source code for compilation'
+        },
+        lexer: {
+            name: 'Lexer Rules',
+            icon: 'M4 7V4A2 2 0 0 1 6 2H18A2 2 0 0 1 20 4V7',
+            iconExtra: 'M20 7H4L2 19H22L20 7ZM8 12V16M16 12V16',
+            description: 'Generate lexical analysis rules and tokens'
+        },
+        parser: {
+            name: 'Parser Grammar',
+            icon: 'M22 12H18L15 21L9 3L6 12H2',
+            iconExtra: '',
+            description: 'Generate parsing grammar and syntax rules'
+        },
+        analyser: {
+            name: 'Analyzer Config',
+            icon: 'M9 11H15M9 15H15M17 21H7A2 2 0 0 1 5 19V5A2 2 0 0 1 7 3H14L19 8V19A2 2 0 0 1 17 21Z',
+            iconExtra: '',
+            description: 'Generate semantic analysis configuration'
+        },
+        translator: {
+            name: 'Translator',
+            icon: 'M14.5 2H6A2 2 0 0 0 4 4V20A2 2 0 0 0 6 22H18A2 2 0 0 0 20 20V7.5L14.5 2Z',
+            iconExtra: 'M14 2V8H20M9 15H15M9 11H12',
+            description: 'Generate code translation templates'
+        },
+        optimizer: {
+            name: 'Optimizer',
+            icon: 'M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z',
+            iconExtra: 'M9 12L11 14L15 10',
+            description: 'Generate optimization rules and configurations'
+        }
+    };
 
     function toggleChatbot() {
         isOpen = !isOpen;
@@ -41,6 +86,31 @@
             event.preventDefault();
             handleSendMessage();
         }
+    }
+    
+    function generatePhaseInput(phase: PhaseType) {
+        if (!phase) return;
+        
+        // Add placeholder functionality for generating input
+        messages = [...messages, {
+            id: Date.now(),
+            text: `Generate input for ${phaseConfig[phase].name}`,
+            isUser: true,
+            timestamp: new Date()
+        }];
+        
+        // Switch to questions tab to show the generated content
+        activeTab = 'questions';
+        
+        // Placeholder AI response for input generation
+        setTimeout(() => {
+            messages = [...messages, {
+                id: Date.now() + 1,
+                text: `Here's a sample input for the ${phaseConfig[phase].name} phase. (This will be replaced with actual AI-generated content)`,
+                isUser: false,
+                timestamp: new Date()
+            }];
+        }, 1000);
     }
 </script>
 
@@ -188,66 +258,79 @@
                 {:else}
                     <!-- Generate Input Tab Content -->
                     <div class="generate-container">
-                        <div class="generate-welcome">
-                            <div class="generate-icon">
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
+                        {#if currentPhase}
+                            <!-- Show current active phase -->
+                            <div class="generate-welcome">
+                                <div class="generate-icon">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d={phaseConfig[currentPhase].icon} stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        {#if phaseConfig[currentPhase].iconExtra}
+                                            <path d={phaseConfig[currentPhase].iconExtra} stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        {/if}
+                                    </svg>
+                                </div>
+                                <h4>{phaseConfig[currentPhase].name}</h4>
+                                <p class="phase-description">{phaseConfig[currentPhase].description}</p>
                             </div>
-                            <h4>Generate Phase Input</h4>
-                            <p>Let me help you create sample input for your compiler phases.</p>
-                        </div>
-                        
-                        <div class="phase-selection">
-                            <h5>Available Phases:</h5>
-                            <div class="phase-buttons">
-                                <button class="phase-btn" disabled>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M14 2H6A2 2 0 0 0 4 4V20A2 2 0 0 0 6 22H18A2 2 0 0 0 20 20V8L14 2Z" stroke="currentColor" stroke-width="2"/>
-                                        <path d="M14 2V8H20" stroke="currentColor" stroke-width="2"/>
-                                    </svg>
-                                    Source Code
+                            
+                            <div class="generate-action-section">
+                                <div class="action-header">
+                                    <h5>Ready to Generate Input</h5>
+                                    <p>Click the button below to generate sample input for this phase</p>
+                                </div>
+                                
+                                <button 
+                                    class="generate-main-btn"
+                                    on:click={() => generatePhaseInput(currentPhase)}
+                                >
+                                    <div class="btn-icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z" fill="currentColor"/>
+                                        </svg>
+                                    </div>
+                                    <div class="btn-content">
+                                        <span class="btn-title">Generate {phaseConfig[currentPhase].name} Input</span>
+                                        <span class="btn-subtitle">Create sample content for this phase</span>
+                                    </div>
+                                    <div class="btn-arrow">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </div>
                                 </button>
-                                <button class="phase-btn" disabled>
+                                
+                                <div class="help-text">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M4 7V4A2 2 0 0 1 6 2H18A2 2 0 0 1 20 4V7" stroke="currentColor" stroke-width="2"/>
-                                        <path d="M20 7H4L2 19H22L20 7Z" stroke="currentColor" stroke-width="2"/>
-                                        <path d="M8 12V16" stroke="currentColor" stroke-width="2"/>
-                                        <path d="M16 12V16" stroke="currentColor" stroke-width="2"/>
+                                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M9.09 9A3 3 0 0 1 12 6C13.66 6 15 7.34 15 9C15 10.66 13.66 12 12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        <circle cx="12" cy="16" r="1" fill="currentColor"/>
                                     </svg>
-                                    Lexer Rules
-                                </button>
-                                <button class="phase-btn" disabled>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M22 12H18L15 21L9 3L6 12H2" stroke="currentColor" stroke-width="2"/>
-                                    </svg>
-                                    Parser Grammar
-                                </button>
-                                <button class="phase-btn" disabled>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M9 11H15M9 15H15M17 21H7A2 2 0 0 1 5 19V5A2 2 0 0 1 7 3H14L19 8V19A2 2 0 0 1 17 21Z" stroke="currentColor" stroke-width="2"/>
-                                    </svg>
-                                    Analyzer Config
-                                </button>
-                                <button class="phase-btn" disabled>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M14.5 2H6A2 2 0 0 0 4 4V20A2 2 0 0 0 6 22H18A2 2 0 0 0 20 20V7.5L14.5 2Z" stroke="currentColor" stroke-width="2"/>
-                                        <path d="M14 2V8H20" stroke="currentColor" stroke-width="2"/>
-                                        <path d="M9 15H15" stroke="currentColor" stroke-width="2"/>
-                                        <path d="M9 11H12" stroke="currentColor" stroke-width="2"/>
-                                    </svg>
-                                    Translator
-                                </button>
-                                <button class="phase-btn" disabled>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M13 2L3 14H12L11 22L21 10H12L13 2Z" stroke="currentColor" stroke-width="2"/>
-                                    </svg>
-                                    Optimizer
-                                </button>
+                                    <span>The AI will generate appropriate sample input based on your current phase requirements</span>
+                                </div>
                             </div>
-                        </div>
-
-                       
+                        {:else}
+                            <!-- No active phase message -->
+                            <div class="no-phase-message">
+                                <div class="no-phase-icon">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M8 12L16 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                    </svg>
+                                </div>
+                                <h4>No Active Phase</h4>
+                                <p>Please navigate to a compiler phase in the main workspace to generate input for that specific phase.</p>
+                                <div class="available-phases-info">
+                                    <h6>Available phases:</h6>
+                                    <ul>
+                                        <li>Source Code</li>
+                                        <li>Lexer Rules</li>
+                                        <li>Parser Grammar</li>
+                                        <li>Analyzer Config</li>
+                                        <li>Translator</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        {/if}
                     </div>
                 {/if}
             </div>
@@ -567,31 +650,163 @@
     .generate-welcome {
         text-align: center;
         color: #6B7280;
+        padding: 2rem 1rem;
+        border-bottom: 1px solid #E5E7EB;
+        background: linear-gradient(135deg, #F8FAFC, #F3F4F6);
+        border-radius: 8px 8px 0 0;
+        margin: -1.5rem -1.5rem 2rem -1.5rem;
     }
 
     .generate-icon {
-        margin: 0 auto 1rem;
-        width: 60px;
-        height: 60px;
-        background: #F3E8FF;
+        margin: 0 auto 1.5rem;
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #F3E8FF, #E0E7FF);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         color: #8451C7;
+        box-shadow: 0 4px 12px rgba(132, 81, 199, 0.15);
     }
 
     .generate-welcome h4 {
+        margin: 0 0 1rem 0;
+        color: #374151;
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+    }
+
+    .phase-description {
+        margin: 0;
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #6B7280;
+        max-width: 280px;
+        margin: 0 auto;
+    }
+
+    /* Generate Action Section */
+    .generate-action-section {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .action-header {
+        text-align: center;
+    }
+
+    .action-header h5 {
         margin: 0 0 0.5rem 0;
         color: #374151;
-        font-size: 1.1rem;
+        font-size: 1.25rem;
         font-weight: 600;
     }
 
-    .generate-welcome p {
+    .action-header p {
         margin: 0;
+        color: #6B7280;
+        font-size: 0.95rem;
+        line-height: 1.5;
+    }
+
+    .generate-main-btn {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #8451C7, #AFA2D7);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(132, 81, 199, 0.25);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .generate-main-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .generate-main-btn:hover::before {
+        left: 100%;
+    }
+
+    .generate-main-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(132, 81, 199, 0.35);
+    }
+
+    .btn-icon {
+        width: 48px;
+        height: 48px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .btn-content {
+        flex: 1;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .btn-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .btn-subtitle {
+        font-size: 0.9rem;
+        opacity: 0.9;
+        font-weight: 400;
+        line-height: 1.3;
+    }
+
+    .btn-arrow {
+        flex-shrink: 0;
+        transition: transform 0.3s ease;
+    }
+
+    .generate-main-btn:hover .btn-arrow {
+        transform: translateX(4px);
+    }
+
+    .help-text {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        background: #F8FAFC;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        padding: 1rem;
+        color: #6B7280;
         font-size: 0.9rem;
         line-height: 1.5;
+    }
+
+    .help-text svg {
+        flex-shrink: 0;
+        margin-top: 0.1rem;
+        color: #8451C7;
     }
 
     .phase-selection h5 {
@@ -636,6 +851,68 @@
         cursor: not-allowed;
         background: #F9FAFB;
     }
+
+    /* Current Phase Section Styles - REMOVED (no longer used) */
+
+    /* No Phase Message Styles */
+    .no-phase-message {
+        text-align: center;
+        padding: 2rem;
+        color: #6B7280;
+    }
+
+    .no-phase-icon {
+        margin: 0 auto 1.5rem;
+        width: 60px;
+        height: 60px;
+        background: #F3F4F6;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #9CA3AF;
+    }
+
+    .no-phase-message h4 {
+        margin: 0 0 0.5rem 0;
+        color: #374151;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .no-phase-message p {
+        margin: 0 0 1.5rem 0;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .available-phases-info {
+        background: #F9FAFB;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: left;
+        margin-top: 1rem;
+    }
+
+    .available-phases-info h6 {
+        margin: 0 0 0.5rem 0;
+        color: #374151;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .available-phases-info ul {
+        margin: 0;
+        padding-left: 1.25rem;
+        color: #6B7280;
+        font-size: 0.85rem;
+    }
+
+    .available-phases-info li {
+        margin-bottom: 0.25rem;
+    }
+
+    /* Removed test buttons CSS - no longer needed */
 
 
 
@@ -704,6 +981,8 @@
 
     :global(html.dark-mode) .generate-welcome {
         color: #9CA3AF;
+        background: linear-gradient(135deg, #2d3748, #1a202c);
+        border-bottom-color: #4A5568;
     }
 
     :global(html.dark-mode) .generate-welcome h4 {
@@ -711,7 +990,29 @@
     }
 
     :global(html.dark-mode) .generate-icon {
-        background: #2D1B69;
+        background: linear-gradient(135deg, #2D1B69, #1a1b3a);
+    }
+
+    :global(html.dark-mode) .phase-description {
+        color: #A0AEC0;
+    }
+
+    :global(html.dark-mode) .action-header h5 {
+        color: #E5E7EB;
+    }
+
+    :global(html.dark-mode) .action-header p {
+        color: #A0AEC0;
+    }
+
+    :global(html.dark-mode) .help-text {
+        background: #2d3748;
+        border-color: #4A5568;
+        color: #A0AEC0;
+    }
+
+    :global(html.dark-mode) .help-text svg {
+        color: #C4B5FD;
     }
 
     :global(html.dark-mode) .phase-selection h5 {
@@ -740,6 +1041,37 @@
         border-color: rgba(132, 81, 199, 0.3);
         color: #C4B5FD;
     }
+
+    /* Dark mode - Current Phase Section - REMOVED (no longer used) */
+
+    /* Dark mode - No Phase Message */
+    :global(html.dark-mode) .no-phase-message {
+        color: #9CA3AF;
+    }
+
+    :global(html.dark-mode) .no-phase-message h4 {
+        color: #E5E7EB;
+    }
+
+    :global(html.dark-mode) .no-phase-icon {
+        background: #2d3748;
+        color: #6B7280;
+    }
+
+    :global(html.dark-mode) .available-phases-info {
+        background: #2d3748;
+        border-color: #4A5568;
+    }
+
+    :global(html.dark-mode) .available-phases-info h6 {
+        color: #E5E7EB;
+    }
+
+    :global(html.dark-mode) .available-phases-info ul {
+        color: #A0AEC0;
+    }
+
+    /* Removed dark mode test buttons CSS - no longer needed */
 
     /* Responsive design */
     @media (max-width: 480px) {
