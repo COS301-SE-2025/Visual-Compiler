@@ -108,9 +108,36 @@ Format your output strictly as a JSON object, without any additional text whatso
 
 	case "analyser":
 
-		prompt = ``
+		prompt = `You are an educational assistant.
 
-		request = "\n\n" + artefact
+Generate the scope and type rules for an analyser that will perfectly analyse the user's syntax tree.
+
+Format your output strictly as a JSON object with this structure, without any additional text whatsoever, for example,
+
+{
+    "scope_rules":
+    [
+        { "start": "{", "end": "}" }
+    ],
+    "type_rules":
+    [
+        { "result": "int", "assignment": "=", "lhs": "INTEGER", "operator": [], "rhs": "" },
+        { "result": "int", "assignment": "=", "lhs": "int", "operator": [], "rhs": "" },
+        { "result": "int", "assignment": "=", "lhs": "int", "operator": ["+"], "rhs": "INTEGER" }
+    ],
+    "grammar_rules":
+    {
+        "variable_rule": "VARIABLE",
+        "type_rule": "TYPE",
+        "function_rule": "FUNCTION",
+        "parameter_rule": "PARAMETER",
+        "assignment_rule": "ASSIGNMENT",
+        "operator_rule": "OPERATOR",
+        "term_rule": "TERM"
+    }
+}`
+
+		request = "The syntax tree is...\n\n" + artefact
 
 	case "translator":
 
