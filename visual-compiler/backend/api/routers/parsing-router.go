@@ -17,6 +17,7 @@ func SetupParsingRouter(r *gin.RouterGroup) *gin.RouterGroup {
 	r.POST("/grammar", handlers.ReadGrammar)
 	r.POST("/tree", handlers.CreateSyntaxTree)
 	r.POST("/treeString", handlers.TreeToString)
+	r.GET("/getTree", handlers.GetTree)
 
 	return r
 }

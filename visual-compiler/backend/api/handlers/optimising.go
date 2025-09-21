@@ -20,6 +20,7 @@ import (
 // @Param request body SourceCodeOnlyRequest true "Read optimising code from User"
 // @Success 200 {object} map[string]string "Optimising code successfully and stored"
 // @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /optimising/source_code [post]
 func StoreOptimisingCode(c *gin.Context) {
@@ -113,6 +114,7 @@ type OptimiseCodeRequest struct {
 // @Param request body OptimiseCodeRequest true "Optimise code"
 // @Success 200 {object} map[string]string "Code successfully optimised and stored"
 // @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /optimising/optimise [post]
 func OptimiseCode(c *gin.Context) {
