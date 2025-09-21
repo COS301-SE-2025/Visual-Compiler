@@ -60,13 +60,46 @@ func GenerateInput(phase string, artefact string, ctx context.Context) (string, 
 
 	case "lexer":
 
+		prompt = `You are an educational assistant.
+
+Generate a list of token definitions in order of priority for a lexer that will perfectly lex the user's source code.
+
+The token definitions should follow this structure: 
+1. "type": string for token type
+2. "regex": string for regular expression in JavaScript style with proper escaping
+
+Format your output strictly as a JSON array, without any additional text whatsoever, for example, 
+
+[
+    { "type": "KEYWORD", "regex": "string|integer|boolean" },
+    { "type": "IDENTIFIER", "regex": "[a-zA-Z_]+" }
+]`
+
+		request = "The source code is...\n\n" + artefact
+
 	case "parser":
+
+		prompt = ``
+
+		request = "\n\n" + artefact
 
 	case "analyser":
 
+		prompt = ``
+
+		request = "\n\n" + artefact
+
 	case "translator":
 
+		prompt = ``
+
+		request = "\n\n" + artefact
+
 	case "optimiser":
+
+		prompt = ``
+
+		request = "\n\n" + artefact
 
 	default:
 		return "", fmt.Errorf("invalid phase keyword")
