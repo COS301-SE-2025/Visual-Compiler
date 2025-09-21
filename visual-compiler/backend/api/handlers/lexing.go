@@ -808,3 +808,99 @@ func ConvertNFAToDFA(c *gin.Context) {
 		"dfa":     dfa,
 	})
 }
+
+func GetCode(c *gin.Context) {
+	authID, is_existing := c.Get("auth0_id")
+	if !is_existing {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	project_name := c.Query("project_name")
+
+	if project_name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid: Missing query parameters."})
+		return
+	}
+
+	mongo_cli := db.ConnectClient()
+	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
+	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var dbUser struct {
+		UsersID bson.ObjectID `bson:"_id"`
+		Auth0ID string        `bson:"auth0_id"`
+	}
+
+	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	var res struct {
+		Code services.Automata `bson:"code"`
+	}
+
+	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": project_name}).Decode(&res)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Source code not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Source code retrieved",
+		"code":    res.Code,
+	})
+}
+
+func GetTokens(c *gin.Context) {
+	authID, is_existing := c.Get("auth0_id")
+	if !is_existing {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	project_name := c.Query("project_name")
+
+	if project_name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid: Missing query parameters."})
+		return
+	}
+
+	mongo_cli := db.ConnectClient()
+	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
+	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var dbUser struct {
+		UsersID bson.ObjectID `bson:"_id"`
+		Auth0ID string        `bson:"auth0_id"`
+	}
+
+	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	var res struct {
+		Tokens services.Automata `bson:"tokens"`
+	}
+
+	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": project_name}).Decode(&res)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Source code not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Tokens retrieved",
+		"tokens":  res.Tokens,
+	})
+}
