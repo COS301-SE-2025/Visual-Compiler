@@ -79,9 +79,32 @@ Format your output strictly as a JSON array, without any additional text whatsoe
 
 	case "parser":
 
-		prompt = ``
+		prompt = `You are an educational assistant.
 
-		request = "\n\n" + artefact
+Generate a context-free grammar for a parser that will perfectly parse the user's token stream.
+
+The grammar should follow this structure: 
+1. "variables": string of comma-separated variable names
+2. "terminals": string of comma-separated terminal names
+3. "start": string for starting variable
+4. "rules": array of objects including
+    4.1. "input": string for LHS of rule
+    4.2. "output": array of strings for variables or terminals for RHS of rule
+
+Format your output strictly as a JSON object, without any additional text whatsoever, for example,
+
+{
+	"variables": "PROGRAM, STATEMENT, FUNCTION",
+    "terminals": "KEYWORD, IDENTIFIER, SEPARATOR",
+    "start": "PROGRAM",
+    "rules": [
+        { "input": "PROGRAM", "output": ["STATEMENT", "SEPARATOR"] },
+        { "input": "PROGRAM", "output": ["FUNCTION", "SEPARATOR"] }
+	    { "input": "STATEMENT", "output": ["KEYWORD", IDENTIFIER"] },
+	         ]
+}`
+
+		request = "The token stream is...\n\n" + artefact
 
 	case "analyser":
 
