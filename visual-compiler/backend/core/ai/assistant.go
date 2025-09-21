@@ -141,9 +141,28 @@ Format your output strictly as a JSON object with this structure, without any ad
 
 	case "translator":
 
-		prompt = ``
+		prompt = `You are an educational assistant.
 
-		request = "\n\n" + artefact
+Generate a list of translation rules for a translator that will perfectly translate the user's syntax tree.
+
+The translation rules should follow this structure: 
+1. "sequence": string of comma-separated token types
+2. "translation": array of strings for target code where token placeholders appear inside braces
+
+Format your output strictly as a JSON array, without any additional text whatsoever, for example,
+
+[
+    {
+		"sequence": "KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, SEPARATOR",
+		"translation": ["add     rax, {INTEGER}", "mov     [{IDENTIFIER}], rax"]
+	},
+	{
+		"sequence": "OPEN_BRACKET, INTEGER, OPERATOR, INTEGER, CLOSE_BRACKET",
+		"translation": ["mov     rax, {INTEGER}", "add     rax, {INTEGER}"]
+	}
+]`
+
+		request = "The syntax tree is...\n\n" + artefact
 
 	case "optimiser":
 
