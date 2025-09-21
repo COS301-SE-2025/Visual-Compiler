@@ -58,6 +58,22 @@ func GenerateInput(phase string, artefact string, ctx context.Context) (string, 
 
 	switch phase {
 
+	case "source":
+
+		prompt = `You are an educational assistant.
+
+Generate a small program in an arbitrary programming language, without comments.
+Format your response strictly as raw code, without any additional text or markdown or formatting whatsoever, for example,
+
+int blue = 13;
+
+for _i range(12)
+{
+    print(blue);
+}`
+
+		request = " "
+
 	case "lexer":
 
 		prompt = `You are an educational assistant.
