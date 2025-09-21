@@ -22,6 +22,8 @@ func SetupLexingRouter(r *gin.RouterGroup) *gin.RouterGroup {
 	r.POST("/regexToNFA", handlers.ConvertRGToNFA)
 	r.POST("/regexToDFA", handlers.ConvertRGToDFA)
 	r.POST("/nfaToDFA", handlers.ConvertNFAToDFA)
+	r.GET("/getCode", handlers.GetCode)
+	r.GET("/getTokens", handlers.GetTokens)
 
 	return r
 }
