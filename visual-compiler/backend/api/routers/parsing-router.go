@@ -13,9 +13,7 @@ import (
 // Return: Endpoints
 //
 // Creates the endpoints for parsing. Links the endpoints to the respective function
-func SetupParsingRouter() *gin.Engine {
-	r := gin.New()
-
+func SetupParsingRouter(r *gin.RouterGroup) *gin.RouterGroup {
 	r.POST("/grammar", handlers.ReadGrammar)
 	r.POST("/tree", handlers.CreateSyntaxTree)
 	r.POST("/treeString", handlers.TreeToString)
