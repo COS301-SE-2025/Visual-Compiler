@@ -51,3 +51,49 @@ func QuestionAnswer(ctx context.Context, question string) string {
 
 	return answer.Choices[0].Message.Content
 }
+
+func GenerateInput(phase string, artefact string, ctx context.Context) (string, error) {
+
+	prompt, request := "", ""
+
+	switch phase {
+
+	case "lexer":
+
+	case "parser":
+
+	case "analyser":
+
+	case "translator":
+
+	case "optimiser":
+
+	default:
+		return "", fmt.Errorf("invalid phase keyword")
+	}
+
+	messages := []openai.ChatCompletionMessage{
+		{
+			Role:    openai.ChatMessageRoleSystem,
+			Content: prompt,
+		},
+		{
+			Role:    openai.ChatMessageRoleUser,
+			Content: request,
+		},
+	}
+
+	response, err := ai_client.CreateChatCompletion(
+		ctx,
+		openai.ChatCompletionRequest{
+			Model:    "gpt-4o-mini",
+			Messages: messages,
+		},
+	)
+
+	if err != nil || len(response.Choices) == 0 {
+		return "", fmt.Errorf("assistant currently unavailable")
+	}
+
+	return response.Choices[0].Message.Content, nil
+}
