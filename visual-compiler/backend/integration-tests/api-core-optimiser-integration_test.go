@@ -1,0 +1,198 @@
+package tests
+
+import (
+	"bytes"
+	"encoding/json"
+	"io"
+	"net/http"
+	"testing"
+)
+
+func TestStoreOptimisingCode_NoInput(t *testing.T) {
+	server := startServerCore(t)
+	defer closeServerCore(t, server)
+
+	getNoInputUserId(t)
+	optimising_data := map[string]interface{}{
+		"source_code":  "",
+		"users_id":     test_user_id,
+		"project_name": project_name,
+	}
+
+	req, err := json.Marshal(optimising_data)
+
+	if err != nil {
+		t.Errorf("converting data to json failed")
+	}
+
+	res, err := http.Post(
+		"http://localhost:8080/api/optimising/source_code", "application/json",
+		bytes.NewBuffer(req),
+	)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	defer res.Body.Close()
+
+	if err != nil {
+		t.Errorf("Optimiser integration error: %v", err)
+	}
+
+	if res.StatusCode != http.StatusBadRequest {
+		body_bytes, _ := io.ReadAll(res.Body)
+		t.Errorf("Optimiser not working: %s", string(body_bytes))
+	}
+}
+
+func TestStoreOptimisingCode_NewOptimiser(t *testing.T) {
+	server := startServerCore(t)
+	defer closeServerCore(t, server)
+
+	getID(t)
+	optimising_data := map[string]interface{}{
+		"source_code":  "package main func main()",
+		"users_id":     test_user_id,
+		"project_name": project_name,
+	}
+
+	req, err := json.Marshal(optimising_data)
+
+	if err != nil {
+		t.Errorf("converting data to json failed")
+	}
+
+	res, err := http.Post(
+		"http://localhost:8080/api/optimising/source_code", "application/json",
+		bytes.NewBuffer(req),
+	)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	defer res.Body.Close()
+
+	if err != nil {
+		t.Errorf("Optimiser integration error: %v", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		body_bytes, _ := io.ReadAll(res.Body)
+		t.Errorf("Optimiser not working: %s", string(body_bytes))
+	}
+}
+
+func TestOptimiseCode_NoCode(t *testing.T) {
+	server := startServerCore(t)
+	defer closeServerCore(t, server)
+
+	getID(t)
+	optimising_data := map[string]interface{}{
+		"users_id":         test_user_id,
+		"project_name":     project_name,
+		"constant_folding": true,
+		"dead_code":        true,
+		"loop_unrolling":   true,
+	}
+
+	req, err := json.Marshal(optimising_data)
+
+	if err != nil {
+		t.Errorf("converting data to json failed")
+	}
+
+	res, err := http.Post(
+		"http://localhost:8080/api/optimising/optimise", "application/json",
+		bytes.NewBuffer(req),
+	)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	defer res.Body.Close()
+
+	if err != nil {
+		t.Errorf("Optimiser integration error: %v", err)
+	}
+
+	if res.StatusCode != http.StatusInternalServerError {
+		body_bytes, _ := io.ReadAll(res.Body)
+		t.Errorf("Optimiser not working: %s", string(body_bytes))
+	}
+}
+
+func TestStoreOptimisingCode_UsedOptimiser(t *testing.T) {
+	server := startServerCore(t)
+	defer closeServerCore(t, server)
+
+	code := "package main\n"
+	code += "func main() {\n"
+	code += "return\n"
+	code += "}"
+
+	getID(t)
+	optimising_data := map[string]interface{}{
+		"source_code":  code,
+		"users_id":     test_user_id,
+		"project_name": project_name,
+	}
+
+	req, err := json.Marshal(optimising_data)
+
+	if err != nil {
+		t.Errorf("converting data to json failed")
+	}
+
+	res, err := http.Post(
+		"http://localhost:8080/api/optimising/source_code", "application/json",
+		bytes.NewBuffer(req),
+	)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	defer res.Body.Close()
+
+	if err != nil {
+		t.Errorf("Optimiser integration error: %v", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		body_bytes, _ := io.ReadAll(res.Body)
+		t.Errorf("Optimiser not working: %s", string(body_bytes))
+	}
+}
+
+func TestOptimiseCode_Success(t *testing.T) {
+	server := startServerCore(t)
+	defer closeServerCore(t, server)
+
+	getID(t)
+	optimising_data := map[string]interface{}{
+		"users_id":         test_user_id,
+		"project_name":     project_name,
+		"constant_folding": true,
+		"dead_code":        true,
+		"loop_unrolling":   true,
+	}
+
+	req, err := json.Marshal(optimising_data)
+
+	if err != nil {
+		t.Errorf("converting data to json failed")
+	}
+
+	res, err := http.Post(
+		"http://localhost:8080/api/optimising/optimise", "application/json",
+		bytes.NewBuffer(req),
+	)
+	if err != nil {
+		t.Errorf("Error: %v", err)
+	}
+	defer res.Body.Close()
+
+	if err != nil {
+		t.Errorf("Optimiser integration error: %v", err)
+	}
+
+	if res.StatusCode != http.StatusOK {
+		body_bytes, _ := io.ReadAll(res.Body)
+		t.Errorf("Optimiser not working: %s", string(body_bytes))
+	}
+}
