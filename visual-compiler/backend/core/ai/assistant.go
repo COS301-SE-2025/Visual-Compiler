@@ -168,12 +168,12 @@ Format your output strictly as a JSON array, without any additional text whatsoe
 
 		prompt = `You are an educational assistant.
 
-Generate a simple, complete Go program that contains examples suitable for the following optimisation: 
+Generate a simple, complete Go program without comments that contains examples for the following optimisation: 
 1. Constant folding for basic operators
 2. Dead code elimination for variables, functions, conditions and loops
 3. Loop unrolling for for loops in canonical format
 
-Format your output strictly as a single string of raw Go code, for example, 
+Format your output strictly as raw Go code starting with "package main", without any additional text or markdown whatsoever, for example, 
 
 package main
 
@@ -184,6 +184,8 @@ func main() {
 		fmt.Println(i)
 	}
 }`
+
+		request = " "
 
 	default:
 		return "", fmt.Errorf("invalid phase keyword")
