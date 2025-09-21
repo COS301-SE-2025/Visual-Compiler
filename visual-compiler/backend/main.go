@@ -7,9 +7,11 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/routers"
+	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/ai"
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/db"
 	_ "github.com/COS301-SE-2025/Visual-Compiler/backend/docs"
 	"github.com/gin-contrib/cors"
@@ -77,6 +79,14 @@ func main() {
 	{
 		routers.SetupOptimisingRouter(protected_optimising_routes)
 	}
+
+	protected_ai_routes := protected_routes.Group("/ai")
+	{
+		routers.SetupAIRouter(protected_ai_routes)
+	}
+
+	ai.ConnectAI(os.Getenv("OPENAI_API_KEY"))
+	log.Println("AI assistant up and running")
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

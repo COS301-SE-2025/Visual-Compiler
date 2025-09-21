@@ -28,6 +28,7 @@ type TranslatorRules struct {
 // @Param request body TranslatorRules true "Read Translation Rules From User"
 // @Success 200 {object} map[string]string "Translation Rules successfully stored"
 // @Failure 400 {object} map[string]string "Invalid input/Translation rules failed to insert"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /translating/rules [post]
 func ReadRules(c *gin.Context) {
@@ -117,6 +118,7 @@ func ReadRules(c *gin.Context) {
 // @Param request body IDRequest true "Create Code from Syntax Tree and Translation Rules"
 // @Success 200 {object} map[string]string "Code successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 404 {object} map[string]string "Tree not found/Rules not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /translating/translate [post]

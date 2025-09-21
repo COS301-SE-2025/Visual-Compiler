@@ -31,6 +31,7 @@ type AnalyseUserInputs struct {
 // @Param request body AnalyseUserInputs true "Read Analysing Inputs From User"
 // @Success 200 {object} map[string]string "Artefacts Successfully stored"
 // @Failure 400 {object} map[string]string "Invalid input or artefacts failed to insert"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 404 {object} map[string]string "Syntax Tree not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /analysing/analyse [post]

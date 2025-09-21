@@ -50,6 +50,7 @@ type IDRequest struct {
 // @Param request body SourceCodeOnlyRequest true "Read Source Code From User"
 // @Success 200 {object} map[string]string "Source code successfully stored"
 // @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/code [post]
 func StoreSourceCode(c *gin.Context) {
@@ -136,6 +137,7 @@ func StoreSourceCode(c *gin.Context) {
 // @Param request body RulesRequest true "Read Pairs and From User to Create Rules"
 // @Success 200 {object} map[string]string "Rules successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Regex rules creation failed"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 404 {object} map[string]string "Source code not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/rules [post]
@@ -220,6 +222,7 @@ func CreateRulesFromCode(c *gin.Context) {
 // @Param request body IDRequest true "Create Tokens from Stored Code and Rules"
 // @Success 200 {object} map[string]string "Tokens successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Lexing failed"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 404 {object} map[string]string "Source code and/or rules not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/lexer [post]
@@ -314,6 +317,7 @@ type readDFARequest struct {
 // @Param request body readDFARequest true "Read DFA from User"
 // @Success 200 {object} map[string]string "DFA successfully and stored"
 // @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/dfa [post]
 func ReadDFAFromUser(c *gin.Context) {
@@ -415,6 +419,7 @@ func ReadDFAFromUser(c *gin.Context) {
 // @Param request body IDRequest true "Create Tokens from Stored DFA"
 // @Success 200 {object} map[string]string "Tokens successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Tokenization failed"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 404 {object} map[string]string "DFA/source code not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/dfaToTokens [post]
@@ -500,6 +505,7 @@ func TokensFromDFA(c *gin.Context) {
 // @Param request body IDRequest true "Create Regex from Stored DFA"
 // @Success 200 {object} map[string]string "Rules successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 404 {object} map[string]string "DFA not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/dfaToRegex [post]
@@ -579,6 +585,7 @@ func ConvertDFAToRG(c *gin.Context) {
 // @Param request body IDRequest true "Create NFA from Stored Rules"
 // @Success 200 {object} map[string]string "NFA successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 404 {object} map[string]string "Rules not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/regexToNFA [post]
@@ -660,6 +667,7 @@ func ConvertRGToNFA(c *gin.Context) {
 // @Param request body IDRequest true "Create DFA from Stored Rules"
 // @Success 200 {object} map[string]string "DFA successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 404 {object} map[string]string "Rules not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/regexToDFA [post]
@@ -741,6 +749,7 @@ func ConvertRGToDFA(c *gin.Context) {
 // @Param request body IDRequest true "Create DFA from NFA"
 // @Success 200 {object} map[string]string "DFA successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 404 {object} map[string]string "Rules not found"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /lexing/nfaToDFA [post]
@@ -806,5 +815,123 @@ func ConvertNFAToDFA(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Successfully converted NFA to DFA",
 		"dfa":     dfa,
+	})
+}
+
+// @Summary Get user's code
+// @Description Searches the database for the user's source code
+// @Tags Lexing
+// @Accept json
+// @Produce json
+// @Param project_name query string true "Project Name"
+// @Success 200 {object} map[string]string "Source code retrieved"
+// @Failure 400 {object} map[string]string "Invalid input/Response failed"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /lexing/getCode [get]
+func GetCode(c *gin.Context) {
+	authID, is_existing := c.Get("auth0_id")
+	if !is_existing {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	project_name := c.Query("project_name")
+
+	if project_name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid: Missing query parameters."})
+		return
+	}
+
+	mongo_cli := db.ConnectClient()
+	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
+	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var dbUser struct {
+		UsersID bson.ObjectID `bson:"_id"`
+		Auth0ID string        `bson:"auth0_id"`
+	}
+
+	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	var res struct {
+		Code string `bson:"code"`
+	}
+
+	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": project_name}).Decode(&res)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Source code not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Source code retrieved",
+		"code":    res.Code,
+	})
+}
+
+// @Summary Get user's tokens
+// @Description Searches the database for the user's tokens
+// @Tags Lexing
+// @Accept json
+// @Produce json
+// @Param project_name query string true "Project Name"
+// @Success 200 {object} map[string]string "Tokens retrieved"
+// @Failure 400 {object} map[string]string "Invalid input/Response failed"
+// @Failure 401 {object} map[string]string "Unauthorized"
+// @Failure 500 {object} map[string]string "Internal server error"
+// @Router /lexing/getTokens [get]
+func GetTokens(c *gin.Context) {
+	authID, is_existing := c.Get("auth0_id")
+	if !is_existing {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	project_name := c.Query("project_name")
+
+	if project_name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Input is invalid: Missing query parameters."})
+		return
+	}
+
+	mongo_cli := db.ConnectClient()
+	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
+	collection := mongo_cli.Database("visual-compiler").Collection("lexing")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var dbUser struct {
+		UsersID bson.ObjectID `bson:"_id"`
+		Auth0ID string        `bson:"auth0_id"`
+	}
+
+	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	var res struct {
+		Tokens []services.TypeValue `bson:"tokens"`
+	}
+
+	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID, "project_name": project_name}).Decode(&res)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Source code not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Tokens retrieved",
+		"tokens":  res.Tokens,
 	})
 }
