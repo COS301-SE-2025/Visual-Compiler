@@ -29,7 +29,7 @@
         setTimeout(() => {
             messages = [...messages, {
                 id: Date.now() + 1,
-                text: "This is a placeholder AI response. The actual AI functionality will be implemented soon!",
+                text: "This is a placeholder AI response",
                 isUser: false,
                 timestamp: new Date()
             }];
@@ -48,33 +48,31 @@
 <div class="chatbot-container">
     {#if !isOpen}
         <button class="chatbot-toggle" on:click={toggleChatbot} aria-label="Open AI Chatbot">
-            <!-- Simple Robot Icon -->
+            <!-- Robot Icon based on your image -->
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Robot head -->
-                <rect x="6" y="5" width="12" height="10" rx="2" fill="currentColor"/>
-                
                 <!-- Robot antenna -->
-                <circle cx="12" cy="3" r="1" fill="currentColor"/>
-                <line x1="12" y1="4" x2="12" y2="5" stroke="currentColor" stroke-width="1.5"/>
+                <circle cx="12" cy="2.5" r="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                <circle cx="12" cy="2.5" r="0.5" fill="currentColor"/>
+                <line x1="12" y1="4" x2="12" y2="6" stroke="currentColor" stroke-width="2"/>
+                
+                <!-- Robot head -->
+                <rect x="5" y="6" width="14" height="10" rx="3" stroke="currentColor" stroke-width="2" fill="none"/>
                 
                 <!-- Robot eyes -->
-                <circle cx="9" cy="8" r="1.5" fill="white"/>
-                <circle cx="15" cy="8" r="1.5" fill="white"/>
-                <circle cx="9" cy="8" r="0.7" fill="currentColor"/>
-                <circle cx="15" cy="8" r="0.7" fill="currentColor"/>
+                <circle cx="9" cy="10" r="1.5" fill="currentColor"/>
+                <circle cx="9" cy="10" r="0.5" fill="white"/>
+                <circle cx="15" cy="10" r="1.5" fill="currentColor"/>
+                <circle cx="15" cy="10" r="0.5" fill="white"/>
                 
                 <!-- Robot mouth -->
-                <rect x="10" y="11" width="4" height="1.5" rx="0.75" fill="white"/>
+                <path d="M10 13 Q12 15 14 13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>
+                
+                <!-- Robot arms/handles -->
+                <rect x="2" y="11" width="3" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
+                <rect x="19" y="11" width="3" height="4" rx="1.5" stroke="currentColor" stroke-width="2" fill="none"/>
                 
                 <!-- Robot body -->
-                <rect x="8" y="15" width="8" height="6" rx="1" fill="currentColor" opacity="0.8"/>
-                
-                <!-- Robot arms -->
-                <rect x="4" y="16" width="3" height="1.5" rx="0.75" fill="currentColor"/>
-                <rect x="17" y="16" width="3" height="1.5" rx="0.75" fill="currentColor"/>
-                
-                <!-- Robot chest panel -->
-                <rect x="10" y="17" width="4" height="2" rx="0.5" fill="white" opacity="0.7"/>
+                <rect x="6" y="16" width="12" height="6" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
             </svg>
         </button>
     {/if}
@@ -87,15 +85,16 @@
                 <div class="chat-title">
                     <div class="ai-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Simple Robot Icon -->
-                            <rect x="6" y="5" width="12" height="10" rx="2" fill="currentColor"/>
-                            <circle cx="12" cy="3" r="1" fill="currentColor"/>
-                            <line x1="12" y1="4" x2="12" y2="5" stroke="currentColor" stroke-width="1.5"/>
-                            <circle cx="9" cy="8" r="1.5" fill="white"/>
-                            <circle cx="15" cy="8" r="1.5" fill="white"/>
-                            <circle cx="9" cy="8" r="0.7" fill="currentColor"/>
-                            <circle cx="15" cy="8" r="0.7" fill="currentColor"/>
-                            <rect x="10" y="11" width="4" height="1.5" rx="0.75" fill="white"/>
+                            <!-- Robot Icon matching your image -->
+                            <circle cx="12" cy="2.5" r="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                            <circle cx="12" cy="2.5" r="0.3" fill="currentColor"/>
+                            <line x1="12" y1="4" x2="12" y2="6" stroke="currentColor" stroke-width="1.5"/>
+                            <rect x="5" y="6" width="14" height="10" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                            <circle cx="9" cy="10" r="1" fill="currentColor"/>
+                            <circle cx="9" cy="10" r="0.3" fill="white"/>
+                            <circle cx="15" cy="10" r="1" fill="currentColor"/>
+                            <circle cx="15" cy="10" r="0.3" fill="white"/>
+                            <path d="M10 13 Q12 14.5 14 13" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
                         </svg>
                     </div>
                     <div>
@@ -136,16 +135,13 @@
                         {#if messages.length === 0}
                             <div class="welcome-message">
                                 <div class="welcome-icon">
-                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <!-- Phoenix body -->
-                                        <path d="M12 3C12 3 8 5 8 9C8 11 9 12 10 13C9 14 8 15 8 17C8 21 12 23 12 23C12 23 16 21 16 17C16 15 15 14 14 13C15 12 16 11 16 9C16 5 12 3 12 3Z" fill="currentColor"/>
-                                        <!-- Phoenix wings -->
-                                        <path d="M6 7C4 9 3 11 4 13C5 12 6 11 8 10C7 9 6 8 6 7Z" fill="currentColor" opacity="0.8"/>
-                                        <path d="M18 7C20 9 21 11 20 13C19 12 18 11 16 10C17 9 18 8 18 7Z" fill="currentColor" opacity="0.8"/>
-                                        <!-- Phoenix tail feathers -->
-                                        <path d="M12 23C11 21 10 19 11 17C12 18 12 19 12 20C12 19 12 18 13 17C14 19 13 21 12 23Z" fill="currentColor" opacity="0.7"/>
-                                        <!-- Phoenix head crest -->
-                                        <path d="M12 3C11 4 12 5 12 6C12 5 13 4 12 3Z" fill="currentColor"/>
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <!-- Question mark circle background -->
+                                        <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.1"/>
+                                        <!-- Question mark shape -->
+                                        <path d="M9.5 9C9.5 7.5 10.5 6.5 12 6.5C13.5 6.5 14.5 7.5 14.5 9C14.5 10.5 12 11 12 13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                        <!-- Question mark dot -->
+                                        <circle cx="12" cy="16" r="1" fill="currentColor"/>
                                     </svg>
                                 </div>
                                 <h4>Ask me anything!</h4>
@@ -170,7 +166,7 @@
                         <div class="input-container">
                             <textarea
                                 bind:value={messageInput}
-                                placeholder="Ask me about compilers, syntax, or any coding help..."
+                                placeholder="Ask me about compilers"
                                 rows="1"
                                 on:keypress={handleKeyPress}
                             ></textarea>
