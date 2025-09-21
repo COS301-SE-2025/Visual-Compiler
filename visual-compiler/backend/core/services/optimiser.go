@@ -143,13 +143,14 @@ func PerformConstantFolding(ast_file *ast.File, file_set *token.FileSet) error {
 
 	constant_folder := &Folder{
 		constants: make(map[string]float64),
+		loop_vars: make(map[string]struct{}),
 	}
 
 	err := constant_folder.FoldConstants(ast_file)
 	return err
 }
 
-type AstData struct {
+type ASTData struct {
 	ast_info        *types.Info
 	ast_file        *ast.File
 	file_set        *token.FileSet
@@ -198,7 +199,7 @@ func PerformDeadCodeElimination(ast_file *ast.File, file_set *token.FileSet) err
 		return true
 	})
 
-	ast_data := AstData{ast_info, ast_file, file_set, variable_values}
+	ast_data := ASTData{ast_info, ast_file, file_set, variable_values}
 
 	err := RemoveUnusedFunctions(ast_data)
 	if err != nil {
@@ -250,9 +251,11 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 						return false
 					}
 
-					if unrolled != nil {
+					if unrolled != nil && len(unrolled) > 0 {
 						changed = true
 						new_stmts = append(new_stmts, unrolled...)
+					} else if unrolled == nil {
+
 					} else {
 						new_stmts = append(new_stmts, statement)
 					}
@@ -275,6 +278,7 @@ func PerformLoopUnrolling(ast_file *ast.File, file_set *token.FileSet) error {
 // Struct for tracking constant values by variable name
 type Folder struct {
 	constants map[string]float64
+	loop_vars map[string]struct{}
 }
 
 // Name: FoldConstants (for Folder)
@@ -300,33 +304,21 @@ func (constant_folder *Folder) FoldConstants(node ast.Node) error {
 
 		case *ast.CallExpr:
 			err = constant_folder.HandleFunctionCall(node)
+
+		case *ast.ForStmt:
+			if assign, ok := node.Init.(*ast.AssignStmt); ok {
+				for _, lhs := range assign.Lhs {
+					if identifier, ok := lhs.(*ast.Ident); ok {
+						constant_folder.loop_vars[identifier.Name] = struct{}{}
+					}
+				}
+			}
 		}
 
 		return err == nil
 	})
 
 	return err
-}
-
-// Name: Visit (for Folder)
-//
-// Parameters: ast.Node
-//
-// Return: ast.Visitor
-//
-// Implements the ast visitor interface for the constant folder
-func (constant_folder *Folder) Visit(node ast.Node) ast.Visitor {
-
-	switch n := node.(type) {
-
-	case *ast.AssignStmt:
-		constant_folder.HandleAssignment(n)
-
-	case *ast.CallExpr:
-		constant_folder.HandleFunctionCall(n)
-	}
-
-	return constant_folder
 }
 
 // Name: HandleAssignment (for Folder)
@@ -407,14 +399,11 @@ func (constant_folder *Folder) EvaluateExpression(expr ast.Expr) (float64, bool,
 	switch e := expr.(type) {
 
 	case *ast.BasicLit:
-
 		switch e.Kind {
-
 		case token.INT:
 			if val, err := strconv.Atoi(e.Value); err == nil {
 				return float64(val), true, nil
 			}
-
 		case token.FLOAT:
 			if val, err := strconv.ParseFloat(e.Value, 64); err == nil {
 				return val, true, nil
@@ -422,41 +411,49 @@ func (constant_folder *Folder) EvaluateExpression(expr ast.Expr) (float64, bool,
 		}
 
 	case *ast.Ident:
-		if val, yes := constant_folder.constants[e.Name]; yes {
+		if _, loop := constant_folder.loop_vars[e.Name]; loop {
+			return 0, false, nil
+		}
+		if val, valid := constant_folder.constants[e.Name]; valid {
 			return val, true, nil
 		}
 
-	case *ast.BinaryExpr:
+	case *ast.UnaryExpr:
+		val, valid, err := constant_folder.EvaluateExpression(e.X)
+		if err != nil {
+			return 0, false, err
+		}
+		if valid {
+			switch e.Op {
+			case token.ADD:
+				return val, true, nil
+			case token.SUB:
+				return -val, true, nil
+			}
+		}
 
+	case *ast.BinaryExpr:
 		lhs, lok, lerr := constant_folder.EvaluateExpression(e.X)
 		if lerr != nil {
 			return 0, false, lerr
 		}
-
 		rhs, rok, rerr := constant_folder.EvaluateExpression(e.Y)
 		if rerr != nil {
 			return 0, false, rerr
 		}
-
 		if lok && rok {
-
 			switch e.Op {
-
 			case token.ADD:
 				return lhs + rhs, true, nil
-
 			case token.SUB:
 				return lhs - rhs, true, nil
-
 			case token.MUL:
 				return lhs * rhs, true, nil
-
 			case token.QUO:
 				if rhs == 0 {
 					return 0, false, fmt.Errorf("illegal operation: division by zero")
 				}
 				return lhs / rhs, true, nil
-
 			case token.REM:
 				if rhs == 0 {
 					return 0, false, fmt.Errorf("illegal operation: modulo by zero")
@@ -506,7 +503,7 @@ func StructureConstant(value float64) *ast.BasicLit {
 // Return: error
 //
 // Determines if the statement contains any unused functions and removes them from the AST
-func RemoveUnusedFunctions(ast_data AstData) error {
+func RemoveUnusedFunctions(ast_data ASTData) error {
 	optimised_functions := []ast.Decl{}
 	used_functions := make(map[string]bool)
 	used_functions["main"] = true
@@ -558,7 +555,7 @@ func RemoveUnusedFunctions(ast_data AstData) error {
 // Return: error
 //
 // Performs dead code elimination on an individual function
-func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_data AstData) error {
+func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_data ASTData) error {
 	if function.Body == nil {
 		return fmt.Errorf("function %v has no body", function.Name)
 	}
@@ -572,7 +569,10 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_data AstData) error {
 			continue
 		}
 
-		SearchStructureBody(function_statements, &optimised_statements, ast_data, function, &unreachable)
+		err := SearchStructureBody(function_statements, &optimised_statements, ast_data, function, &unreachable)
+		if err != nil {
+			return err
+		}
 
 	}
 
@@ -588,7 +588,7 @@ func EliminateFunctionDeadCode(function *ast.FuncDecl, ast_data AstData) error {
 // Return:
 //
 // Determines if the statement contains any unused assigned variables and removes them from the AST
-func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, ast_data AstData, optimised_statements *[]ast.Stmt) {
+func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, ast_data ASTData, optimised_statements *[]ast.Stmt) {
 	if statement.Tok == token.DEFINE {
 		new_lhs := []ast.Expr{}
 		new_rhs := []ast.Expr{}
@@ -637,7 +637,7 @@ func RemoveUnusedAssignedVariables(statement *ast.AssignStmt, ast_data AstData, 
 // Return:
 //
 // Determines if the statement contains any unused assigned variables and removes them from the AST
-func RemoveUnusedDeclaredVariables(statement *ast.DeclStmt, ast_data AstData, optimised_statements *[]ast.Stmt) {
+func RemoveUnusedDeclaredVariables(statement *ast.DeclStmt, ast_data ASTData, optimised_statements *[]ast.Stmt) {
 	declaration_info, valid_declaration := statement.Decl.(*ast.GenDecl)
 	if valid_declaration && declaration_info.Tok == token.VAR {
 		new_spec := []ast.Spec{}
@@ -685,18 +685,18 @@ func RemoveUnusedDeclaredVariables(statement *ast.DeclStmt, ast_data AstData, op
 
 // Name:RemoveUnusedIfStatement
 //
-// Parameters:   *ast.FuncDecl, *[]ast.Stmt, AstData
+// Parameters:   *ast.FuncDecl, *[]ast.Stmt, ASTData
 //
 // Return:
 //
 // Determines if the statement contains any unused if statements and removes them from the AST
-func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
+func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl) error {
 	if_statement, valid_ifstatement := function_statements.(*ast.IfStmt)
 	unreachable := false
 	var optimised_if_body []ast.Stmt
 
 	if if_statement.Body.List == nil {
-		return
+		return nil
 	}
 	if valid_ifstatement {
 		switch condition_variable := if_statement.Cond.(type) {
@@ -715,7 +715,10 @@ func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements 
 									continue
 								}
 
-								SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
+								err := SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
+								if err != nil {
+									return err
+								}
 							}
 							if_statement.Body.List = optimised_if_body
 							*optimised_statements = append(*optimised_statements, if_statement)
@@ -727,7 +730,10 @@ func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements 
 									continue
 								}
 
-								SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
+								err := SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
+								if err != nil {
+									return err
+								}
 							}
 							if_statement.Body.List = optimised_if_body
 							*optimised_statements = append(*optimised_statements, if_statement)
@@ -759,7 +765,7 @@ func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements 
 			case *ast.BasicLit:
 				lhs_constant, err := ConvertToConstant(lhs)
 				if err != nil {
-					return
+					return err
 				}
 				lhs_value = lhs_constant
 				valid_lhs = true
@@ -780,7 +786,7 @@ func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements 
 			case *ast.BasicLit:
 				rhs_constant, err := ConvertToConstant(rhs)
 				if err != nil {
-					return
+					return nil
 				}
 				rhs_value = rhs_constant
 				valid_rhs = true
@@ -791,32 +797,32 @@ func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements 
 				switch operator {
 				case "==":
 					if constant.Compare(lhs_value, token.NEQ, rhs_value) {
-						return
+						return nil
 					}
 
 				case "!=":
 					if constant.Compare(lhs_value, token.EQL, rhs_value) {
-						return
+						return nil
 					}
 
 				case ">=":
 					if constant.Compare(lhs_value, token.LSS, rhs_value) {
-						return
+						return nil
 					}
 
 				case "<=":
 					if constant.Compare(lhs_value, token.GTR, rhs_value) {
-						return
+						return nil
 					}
 
 				case ">":
 					if constant.Compare(lhs_value, token.LEQ, rhs_value) {
-						return
+						return nil
 					}
 
 				case "<":
 					if constant.Compare(lhs_value, token.GEQ, rhs_value) {
-						return
+						return nil
 					}
 
 				}
@@ -827,7 +833,10 @@ func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements 
 					continue
 				}
 
-				SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
+				err := SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
+				if err != nil {
+					return err
+				}
 			}
 			if_statement.Body.List = optimised_if_body
 			*optimised_statements = append(*optimised_statements, if_statement)
@@ -852,7 +861,10 @@ func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements 
 										continue
 									}
 
-									SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
+									err := SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
+									if err != nil {
+										return err
+									}
 								}
 								if_statement.Body.List = optimised_if_body
 								*optimised_statements = append(*optimised_statements, if_statement)
@@ -866,7 +878,10 @@ func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements 
 									continue
 								}
 
-								SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
+								err := SearchStructureBody(body_statement, &optimised_if_body, ast_data, function, &unreachable)
+								if err != nil {
+									return err
+								}
 							}
 							if_statement.Body.List = optimised_if_body
 							*optimised_statements = append(*optimised_statements, if_statement)
@@ -879,6 +894,7 @@ func RemoveUnusedIfStatement(function_statements ast.Stmt, optimised_statements 
 			*optimised_statements = append(*optimised_statements, function_statements)
 		}
 	}
+	return nil
 }
 
 func ConvertToConstant(lit *ast.BasicLit) (constant.Value, error) {
@@ -898,92 +914,245 @@ func ConvertToConstant(lit *ast.BasicLit) (constant.Value, error) {
 
 // Name:RemoveUnusedForStatement
 //
-// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, AstData
+// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, ASTData
 //
-// Return:
+// Return:error
 //
 // Determines if the statement contains any unused for statements and removes them from the AST
-func RemoveUnusedForStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
+
+func RemoveUnusedForStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl) error {
 	for_statement, valid_forstatement := function_statements.(*ast.ForStmt)
 	unreachable := false
 	var optimised_for_body []ast.Stmt
 
 	if valid_forstatement {
+		switch condition_variable := for_statement.Cond.(type) {
 
-		switch condition_type := for_statement.Cond.(type) {
-		case *ast.BinaryExpr:
-			_, valid_expr := condition_type.X.(*ast.Ident)
-			control_restriction, valid_restriction := condition_type.Y.(*ast.BasicLit)
-			control_operator := condition_type.Op.String()
-			if valid_expr && valid_restriction {
-				for_restriction := control_restriction.Value
-				assignment_statement, valid_assignment := for_statement.Init.(*ast.AssignStmt)
-				if valid_assignment {
-					assign, valid_assign := assignment_statement.Rhs[0].(*ast.BasicLit)
-					if valid_assign {
-
-						switch control_operator {
-						case ">":
-							if assign.Value <= for_restriction {
-								return
-							}
-						case ">=":
-							if assign.Value < for_restriction {
-								return
-							}
-						case "<":
-							if assign.Value >= for_restriction {
-								return
-							}
-						case "<=":
-							if assign.Value > for_restriction {
-								return
-							}
-						case "!=":
-							if assign.Value == for_restriction {
-								return
-							}
-						case "==":
-							if assign.Value != for_restriction {
-								return
-							}
-						default:
-							return
+		case *ast.Ident:
+			cond_variable, valid_cond := for_statement.Cond.(*ast.Ident)
+			if valid_cond {
+				_, exists := ast_data.ast_info.Uses[cond_variable]
+				if exists {
+					variable_value, def_exists := ast_data.variable_values[cond_variable.Name]
+					if def_exists {
+						bool_value, is_bool := variable_value.(constant.Value)
+						if bool_value.Kind() != constant.Bool {
+							return fmt.Errorf("non-boolean condition in for statement")
 						}
-						for _, body_statement := range for_statement.Body.List {
-							if unreachable {
-								continue
-							}
+						if is_bool && bool_value.Kind() == constant.Bool && constant.BoolVal(bool_value) {
+							for _, body_statement := range for_statement.Body.List {
+								if unreachable {
+									continue
+								}
 
-							SearchStructureBody(body_statement, &optimised_for_body, ast_data, function, &unreachable)
+								err := SearchStructureBody(body_statement, &optimised_for_body, ast_data, function, &unreachable)
+								if err != nil {
+									return err
+								}
+							}
+							for_statement.Body.List = optimised_for_body
+							*optimised_statements = append(*optimised_statements, for_statement)
 						}
-						for_statement.Body.List = optimised_for_body
-						*optimised_statements = append(*optimised_statements, for_statement)
+					} else {
+						if cond_variable.Name == "true" {
+							for _, body_statement := range for_statement.Body.List {
+								if unreachable {
+									continue
+								}
+
+								err := SearchStructureBody(body_statement, &optimised_for_body, ast_data, function, &unreachable)
+								if err != nil {
+									return err
+								}
+							}
+							for_statement.Body.List = optimised_for_body
+							*optimised_statements = append(*optimised_statements, for_statement)
+						}
 					}
 				}
+			}
+
+		case *ast.BinaryExpr:
+			valid_rhs := false
+			valid_lhs := false
+			var rhs_value constant.Value
+			var lhs_value constant.Value
+
+			switch lhs := condition_variable.X.(type) {
+			case *ast.Ident:
+				_, exists := ast_data.ast_info.Uses[lhs]
+				if exists {
+					lhs_val, def_exists := ast_data.variable_values[lhs.Name]
+					if def_exists {
+						lhs_constant, is_constant := lhs_val.(constant.Value)
+						if is_constant {
+							valid_lhs = true
+							lhs_value = lhs_constant
+						}
+
+					}
+				}
+			case *ast.BasicLit:
+				lhs_constant, err := ConvertToConstant(lhs)
+				if err != nil {
+					return err
+				}
+				lhs_value = lhs_constant
+				valid_lhs = true
+			}
+			switch rhs := condition_variable.Y.(type) {
+			case *ast.Ident:
+				_, exists := ast_data.ast_info.Uses[rhs]
+				if exists {
+					rhs_val, def_exists := ast_data.variable_values[rhs.Name]
+					if def_exists {
+						rhs_constant, is_constant := rhs_val.(constant.Value)
+						if is_constant {
+							valid_rhs = true
+							rhs_value = rhs_constant
+						}
+					}
+				}
+			case *ast.BasicLit:
+				rhs_constant, err := ConvertToConstant(rhs)
+				if err != nil {
+					return err
+				}
+				rhs_value = rhs_constant
+				valid_rhs = true
+			}
+
+			if valid_lhs && valid_rhs {
+				operator := condition_variable.Op.String()
+				switch operator {
+				case "==":
+					if constant.Compare(lhs_value, token.NEQ, rhs_value) {
+						return nil
+					}
+
+				case "!=":
+					if constant.Compare(lhs_value, token.EQL, rhs_value) {
+						return nil
+					}
+
+				case ">=":
+					if constant.Compare(lhs_value, token.LSS, rhs_value) {
+						return nil
+					}
+
+				case "<=":
+					if constant.Compare(lhs_value, token.GTR, rhs_value) {
+						return nil
+					}
+
+				case ">":
+					if constant.Compare(lhs_value, token.LEQ, rhs_value) {
+						return nil
+					}
+
+				case "<":
+					if constant.Compare(lhs_value, token.GEQ, rhs_value) {
+						return nil
+					}
+
+				default:
+					return fmt.Errorf("non-boolean condition in for statement")
+				}
+
+			}
+
+			for _, body_statement := range for_statement.Body.List {
+				if unreachable {
+					continue
+				}
+
+				err := SearchStructureBody(body_statement, &optimised_for_body, ast_data, function, &unreachable)
+				if err != nil {
+					return err
+				}
+			}
+			for_statement.Body.List = optimised_for_body
+			*optimised_statements = append(*optimised_statements, for_statement)
+
+		case *ast.UnaryExpr:
+			operator := condition_variable.Op.String()
+			cond_variable, valid_cond := condition_variable.X.(*ast.Ident)
+			if valid_cond {
+				_, exists := ast_data.ast_info.Uses[cond_variable]
+				if exists {
+					variable_value, def_exists := ast_data.variable_values[cond_variable.Name]
+					if def_exists {
+						bool_value, is_bool := variable_value.(constant.Value)
+						if bool_value.Kind() != constant.Bool {
+							return fmt.Errorf("non-boolean condition in for statement")
+						}
+						switch operator {
+						case "!":
+							bool_value := constant.BoolVal(bool_value)
+							bool_value = !bool_value
+							if is_bool && bool_value {
+
+								for _, body_statement := range for_statement.Body.List {
+									if unreachable {
+										continue
+									}
+
+									err := SearchStructureBody(body_statement, &optimised_for_body, ast_data, function, &unreachable)
+									if err != nil {
+										return err
+									}
+								}
+								for_statement.Body.List = optimised_for_body
+								*optimised_statements = append(*optimised_statements, for_statement)
+							}
+						default:
+							return fmt.Errorf("non-boolean condition in for statement")
+						}
+
+					} else {
+						if cond_variable.Name == "false" {
+							for _, body_statement := range for_statement.Body.List {
+								if unreachable {
+									continue
+								}
+
+								err := SearchStructureBody(body_statement, &optimised_for_body, ast_data, function, &unreachable)
+								if err != nil {
+									return err
+								}
+							}
+							for_statement.Body.List = optimised_for_body
+							*optimised_statements = append(*optimised_statements, for_statement)
+						}
+					}
+				}
+			} else {
+				return fmt.Errorf("non-boolean condition in for statement")
 			}
 
 		default:
 			*optimised_statements = append(*optimised_statements, function_statements)
 		}
 	}
+
+	return nil
 }
 
 // Name:RemoveUnusedSwitchStatement
 //
-// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, AstData
+// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, ASTData
 //
 // Return:
 //
 // Determines if the statement contains any unused switch statements and removes them from the AST
-func RemoveUnusedSwitchStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
+func RemoveUnusedSwitchStatement(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl) error {
 	switch_statement, valid_switchstatement := function_statements.(*ast.SwitchStmt)
 	unreachable := false
 	var optimised_body []ast.Stmt
 
 	if valid_switchstatement {
 		if switch_statement.Body.List == nil {
-			return
+			return nil
 		}
 
 		for _, body_statement := range switch_statement.Body.List {
@@ -993,7 +1162,10 @@ func RemoveUnusedSwitchStatement(function_statements ast.Stmt, optimised_stateme
 
 			switch statement := body_statement.(type) {
 			case *ast.CaseClause:
-				RemoveUnusedSwitchCase(statement, &optimised_body, ast_data, function)
+				err := RemoveUnusedSwitchCase(statement, &optimised_body, ast_data, function)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		if optimised_body != nil {
@@ -1003,23 +1175,25 @@ func RemoveUnusedSwitchStatement(function_statements ast.Stmt, optimised_stateme
 
 	}
 
+	return nil
+
 }
 
 // Name:RemoveUnusedSwitchCase
 //
-// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, AstData
+// Parameters:  map[string]string, *ast.FuncDecl, *[]ast.Stmt, ASTData
 //
 // Return:
 //
 // Determines if the statement contains any unused switch case statements and removes them from the AST
-func RemoveUnusedSwitchCase(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl) {
+func RemoveUnusedSwitchCase(function_statements ast.Stmt, optimised_statements *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl) error {
 	switch_statement, valid_switchstatement := function_statements.(*ast.CaseClause)
 	unreachable := false
 	var optimised_body []ast.Stmt
 
 	if valid_switchstatement {
 		if switch_statement.Body == nil {
-			return
+			return nil
 		}
 
 		for _, body_statement := range switch_statement.Body {
@@ -1027,34 +1201,48 @@ func RemoveUnusedSwitchCase(function_statements ast.Stmt, optimised_statements *
 				continue
 			}
 
-			SearchStructureBody(body_statement, &optimised_body, ast_data, function, &unreachable)
+			err := SearchStructureBody(body_statement, &optimised_body, ast_data, function, &unreachable)
+			if err != nil {
+				return err
+			}
 		}
 		switch_statement.Body = optimised_body
 		*optimised_statements = append(*optimised_statements, switch_statement)
-
 	}
+
+	return nil
 
 }
 
 // Name:SearchStructureBody
 //
-// Parameters:   ast.Stmt, *[]ast.Stmt, AstData, *ast.FuncDecl,*bool
+// Parameters:   ast.Stmt, *[]ast.Stmt, ASTData, *ast.FuncDecl,*bool
 //
 // Return:
 //
 // Determines type of statement and performs the necessary dead code elimination
-func SearchStructureBody(body_statement ast.Stmt, optimised_body *[]ast.Stmt, ast_data AstData, function *ast.FuncDecl, unreachable *bool) {
+
+func SearchStructureBody(body_statement ast.Stmt, optimised_body *[]ast.Stmt, ast_data ASTData, function *ast.FuncDecl, unreachable *bool) error {
 	switch statement := body_statement.(type) {
 	case *ast.AssignStmt: // search for unused assigned variables
 		RemoveUnusedAssignedVariables(statement, ast_data, optimised_body)
 	case *ast.DeclStmt: //search for unused declared variables
 		RemoveUnusedDeclaredVariables(statement, ast_data, optimised_body)
 	case *ast.IfStmt:
-		RemoveUnusedIfStatement(statement, optimised_body, ast_data, function)
+		err := RemoveUnusedIfStatement(statement, optimised_body, ast_data, function)
+		if err != nil {
+			return err
+		}
 	case *ast.ForStmt:
-		RemoveUnusedForStatement(statement, optimised_body, ast_data, function)
+		err := RemoveUnusedForStatement(statement, optimised_body, ast_data, function)
+		if err != nil {
+			return err
+		}
 	case *ast.SwitchStmt:
-		RemoveUnusedSwitchStatement(statement, optimised_body, ast_data, function)
+		err := RemoveUnusedSwitchStatement(statement, optimised_body, ast_data, function)
+		if err != nil {
+			return err
+		}
 
 	case *ast.ReturnStmt, *ast.BranchStmt, *ast.GoStmt, *ast.DeferStmt:
 		*optimised_body = append(*optimised_body, statement)
@@ -1063,6 +1251,7 @@ func SearchStructureBody(body_statement ast.Stmt, optimised_body *[]ast.Stmt, as
 	default:
 		*optimised_body = append(*optimised_body, statement)
 	}
+	return nil
 }
 
 /* PerformLoopUnrolling Helper Functions */
@@ -1090,7 +1279,7 @@ func UnrollForLoop(for_statement *ast.ForStmt) ([]ast.Stmt, error) {
 	loop_info, err := AnalyseForLoop(for_statement)
 
 	if err != nil || loop_info == nil {
-		return nil, fmt.Errorf("loop is not a standard for loop with a constant boundary")
+		return nil, fmt.Errorf("for loop must use standard structure with a constant boundary and guaranteed termination")
 	}
 
 	unrolled_statements := GenerateStatements(loop_info)
@@ -1110,46 +1299,30 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 		return nil, fmt.Errorf("")
 	}
 
-	assign_statement, is_valid := for_statement.Init.(*ast.AssignStmt)
-	if !is_valid || len(assign_statement.Lhs) != 1 || len(assign_statement.Rhs) != 1 {
+	assign_statement, _ := for_statement.Init.(*ast.AssignStmt)
+	if len(assign_statement.Lhs) != 1 || len(assign_statement.Rhs) != 1 {
 		return nil, fmt.Errorf("")
 	}
 
-	identifier, is_valid := assign_statement.Lhs[0].(*ast.Ident)
-	if !is_valid {
-		return nil, fmt.Errorf("")
-	}
+	identifier, _ := assign_statement.Lhs[0].(*ast.Ident)
 	var_name := identifier.Name
 
 	var start_value int
 	switch rhs := assign_statement.Rhs[0].(type) {
 
 	case *ast.BasicLit:
-		if rhs.Kind != token.INT {
-			return nil, fmt.Errorf("")
+		if rhs.Kind == token.INT {
+			val, _ := strconv.Atoi(rhs.Value)
+			start_value = val
 		}
-		val, err := strconv.Atoi(rhs.Value)
-		if err != nil {
-			return nil, fmt.Errorf("")
-		}
-		start_value = val
 
 	case *ast.UnaryExpr:
 		if basic, exists := rhs.X.(*ast.BasicLit); exists && rhs.Op == token.SUB && basic.Kind == token.INT {
-			val, err := strconv.Atoi(basic.Value)
-			if err != nil {
-				return nil, fmt.Errorf("")
-			}
+			val, _ := strconv.Atoi(basic.Value)
 			start_value = -val
-		} else {
-			return nil, fmt.Errorf("")
 		}
 
 	default:
-		return nil, fmt.Errorf("")
-	}
-
-	if for_statement.Cond == nil {
 		return nil, fmt.Errorf("")
 	}
 
@@ -1176,21 +1349,13 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 	switch y := binary_expression.Y.(type) {
 
 	case *ast.BasicLit:
-		val, err := strconv.Atoi(y.Value)
-		if err != nil {
-			return nil, fmt.Errorf("")
-		}
+		val, _ := strconv.Atoi(y.Value)
 		stop_value = val
 
 	case *ast.UnaryExpr:
 		if basic, exists := y.X.(*ast.BasicLit); exists && y.Op == token.SUB && basic.Kind == token.INT {
-			val, err := strconv.Atoi(basic.Value)
-			if err != nil {
-				return nil, fmt.Errorf("")
-			}
+			val, _ := strconv.Atoi(basic.Value)
 			stop_value = -val
-		} else {
-			return nil, fmt.Errorf("")
 		}
 
 	default:
@@ -1203,7 +1368,7 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 
 	inc_statement, is_valid := for_statement.Post.(*ast.IncDecStmt)
 	if !is_valid {
-		return nil, nil
+		return nil, fmt.Errorf("")
 	}
 
 	var step int
@@ -1212,11 +1377,6 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 	} else if inc_statement.Tok == token.DEC && !step_direction {
 		step = -1
 	} else {
-		return nil, fmt.Errorf("")
-	}
-
-	post_identifier, is_valid := inc_statement.X.(*ast.Ident)
-	if !is_valid || post_identifier.Name != var_name {
 		return nil, fmt.Errorf("")
 	}
 
@@ -1239,6 +1399,16 @@ func AnalyseForLoop(for_statement *ast.ForStmt) (*LoopInfo, error) {
 //
 // Generates the body statements for the unrolled loop
 func GenerateStatements(info *LoopInfo) []ast.Stmt {
+
+	if info.Direction {
+		if info.Operator == token.LSS && info.Start == info.Stop {
+			return nil
+		}
+	} else {
+		if info.Operator == token.GTR && info.Start == info.Stop {
+			return nil
+		}
+	}
 
 	var unrolled_statements []ast.Stmt
 
@@ -1269,7 +1439,7 @@ func GenerateStatements(info *LoopInfo) []ast.Stmt {
 			}
 		}
 		if info.Operator == token.GEQ {
-			for i := info.Start; i >= info.Stop; i++ {
+			for i := info.Start; i >= info.Stop; i-- {
 				for _, statement := range info.Body.List {
 					new_stmt := UnrollStatements(statement, info.VarName, i)
 					unrolled_statements = append(unrolled_statements, new_stmt)
@@ -1438,6 +1608,12 @@ func UnrollExpressions(expr ast.Expr, var_name string, value int) ast.Expr {
 		return &ast.BasicLit{
 			Kind:  e.Kind,
 			Value: e.Value,
+		}
+
+	case *ast.IndexExpr:
+		return &ast.IndexExpr{
+			X:     UnrollExpressions(e.X, var_name, value),
+			Index: UnrollExpressions(e.Index, var_name, value),
 		}
 
 	default:
