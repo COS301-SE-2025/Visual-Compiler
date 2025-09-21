@@ -60,13 +60,130 @@ func GenerateInput(phase string, artefact string, ctx context.Context) (string, 
 
 	case "lexer":
 
+		prompt = `You are an educational assistant.
+
+Generate a list of token definitions in order of priority for a lexer that will perfectly lex the user's source code.
+
+The token definitions should follow this structure: 
+1. "type": string for token type
+2. "regex": string for regular expression in JavaScript style with proper escaping
+
+Format your output strictly as a JSON array, without any additional text whatsoever, for example, 
+
+[
+    { "type": "KEYWORD", "regex": "string|integer|boolean" },
+    { "type": "IDENTIFIER", "regex": "[a-zA-Z_]+" }
+]`
+
+		request = "The source code is...\n\n" + artefact
+
 	case "parser":
+
+		prompt = `You are an educational assistant.
+
+Generate a context-free grammar for a parser that will perfectly parse the user's token stream.
+
+The grammar should follow this structure: 
+1. "variables": string of comma-separated variable names
+2. "terminals": string of comma-separated terminal names
+3. "start": string for starting variable
+4. "rules": array of objects including
+    4.1. "input": string for LHS of rule
+    4.2. "output": array of strings for variables or terminals for RHS of rule
+
+Format your output strictly as a JSON object, without any additional text whatsoever, for example,
+
+{
+	"variables": "PROGRAM, STATEMENT, FUNCTION",
+    "terminals": "KEYWORD, IDENTIFIER, SEPARATOR",
+    "start": "PROGRAM",
+    "rules": [
+        { "input": "PROGRAM", "output": ["STATEMENT", "SEPARATOR"] },
+        { "input": "PROGRAM", "output": ["FUNCTION", "SEPARATOR"] }
+	    { "input": "STATEMENT", "output": ["KEYWORD", IDENTIFIER"] },
+	         ]
+}`
+
+		request = "The token stream is...\n\n" + artefact
 
 	case "analyser":
 
+		prompt = `You are an educational assistant.
+
+Generate the scope and type rules for an analyser that will perfectly analyse the user's syntax tree.
+
+Format your output strictly as a JSON object with this structure, without any additional text whatsoever, for example,
+
+{
+    "scope_rules":
+    [
+        { "start": "{", "end": "}" }
+    ],
+    "type_rules":
+    [
+        { "result": "int", "assignment": "=", "lhs": "INTEGER", "operator": [], "rhs": "" },
+        { "result": "int", "assignment": "=", "lhs": "int", "operator": [], "rhs": "" },
+        { "result": "int", "assignment": "=", "lhs": "int", "operator": ["+"], "rhs": "INTEGER" }
+    ],
+    "grammar_rules":
+    {
+        "variable_rule": "VARIABLE",
+        "type_rule": "TYPE",
+        "function_rule": "FUNCTION",
+        "parameter_rule": "PARAMETER",
+        "assignment_rule": "ASSIGNMENT",
+        "operator_rule": "OPERATOR",
+        "term_rule": "TERM"
+    }
+}`
+
+		request = "The syntax tree is...\n\n" + artefact
+
 	case "translator":
 
+		prompt = `You are an educational assistant.
+
+Generate a list of translation rules for a translator that will perfectly translate the user's syntax tree.
+
+The translation rules should follow this structure: 
+1. "sequence": string of comma-separated token types
+2. "translation": array of strings for target code where token placeholders appear inside braces
+
+Format your output strictly as a JSON array, without any additional text whatsoever, for example,
+
+[
+    {
+		"sequence": "KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, SEPARATOR",
+		"translation": ["add     rax, {INTEGER}", "mov     [{IDENTIFIER}], rax"]
+	},
+	{
+		"sequence": "OPEN_BRACKET, INTEGER, OPERATOR, INTEGER, CLOSE_BRACKET",
+		"translation": ["mov     rax, {INTEGER}", "add     rax, {INTEGER}"]
+	}
+]`
+
+		request = "The syntax tree is...\n\n" + artefact
+
 	case "optimiser":
+
+		prompt = `You are an educational assistant.
+
+Generate a simple, complete Go program that contains examples suitable for the following optimisation: 
+1. Constant folding for basic operators
+2. Dead code elimination for variables, functions, conditions and loops
+3. Loop unrolling for for loops in canonical format
+
+Format your output strictly as a single string of raw Go code, for example, 
+
+package main
+
+import "fmt"
+
+func main() {
+	for i := 0; i <= 2; i++ {
+		fmt.Println(i)
+	}
+}`
 
 	default:
 		return "", fmt.Errorf("invalid phase keyword")
