@@ -12,9 +12,7 @@ import (
 // Return: Endpoints
 //
 // Creates the endpoints for lexing. Links the endpoints to the respective function
-func SetupLexingRouter() *gin.Engine {
-	r := gin.New()
-
+func SetupLexingRouter(r *gin.RouterGroup) *gin.RouterGroup {
 	r.POST("/code", handlers.StoreSourceCode)
 	r.POST("/rules", handlers.CreateRulesFromCode)
 	r.POST("/lexer", handlers.Lexing)

@@ -1,4 +1,4 @@
-describe('Canvas Test', ()=> {
+describe('Parser Test', ()=> {
    beforeEach('Login user',()=>{
        const test_username = "e2e_tester";
         const test_password = "password1234";
@@ -21,7 +21,7 @@ describe('Canvas Test', ()=> {
         cy.contains('Welcome');
     })
 
-    it('Add and connect Nodes', () => {
+    it('Parser phase', () => {
 
         cy.visit('http://localhost:5173/main-workspace');
 
@@ -35,6 +35,7 @@ describe('Canvas Test', ()=> {
         cy.wait(500);
 
         //select project
+        cy.get('.section-heading').should('contain', 'Start a new project');
         cy.get('.project-button').contains('New Blank').click();
         cy.wait(500);
         cy.get('#project-name-input').type(project_name);
@@ -46,48 +47,49 @@ describe('Canvas Test', ()=> {
         cy.get('button').contains('Source Code').click();
         cy.get('.canvas-container').should('contain','Source Code');
         cy.get('.canvas-container').contains('Source Code').dblclick();
+        cy.wait(500);
         cy.get('.code-input-container').should('contain', 'Source Code Input');
         cy.get('.code-input-header-row button').click();
         cy.get('.confirm-btn').contains('Confirm Code');
         cy.get('.confirm-btn').click();
-        cy.contains('Source code saved');;
+        cy.contains('Source code saved');
 
         //lexer node
         cy.get('button').should('contain', 'Lexer');
         cy.get('button').contains('Lexer').click();
         cy.get('.canvas-container').should('contain','Lexer');
-        cy.get('#A-1\\/N-source-1').trigger('mousedown', {which: 1, force: true});
-        cy.get('#A-1\\/N-lexer-2').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
+        cy.get('#A-1\\/N-source-1').trigger('mousedown', { which: 1, force: true });
+        cy.get('#A-1\\/N-lexer-2').trigger('mousemove', { force: true }).trigger('mouseup', { force: true });
+        cy.get('.canvas-container').contains('Lexer').dblclick();
         cy.wait(500);
-        
+        cy.get('.phase-inspector').should('contain','LEXING');
+        cy.get('.automaton-btn').contains('Regular Expression').click();
+        cy.get('.default-toggle-btn').click();
+        cy.get('.submit-button').contains('Submit').click();
+        cy.get('.generate-button').contains('Generate Tokens').click();
+        cy.get('button').contains('Return to Canvas').click();
+
         //parser node
         cy.get('button').should('contain', 'Parser');
         cy.get('button').contains('Parser').click();
-        cy.get('.canvas-container').should('contain','Parser');
+        cy.get('#A-1\\/N-source-1').trigger('mousedown', { which: 1, force: true });
+        cy.get('#A-1\\/N-lexer-2').trigger('mousemove', { force: true }).trigger('mouseup', { force: true });
+        cy.wait(500);
         cy.get('#A-2\\/N-lexer-2').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-parser-3').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
+        cy.get('.canvas-container').contains('Parser').dblclick();
         cy.wait(500);
+        cy.get('.phase-inspector').should('contain','PARSING');
+        cy.get('.grammar-header').should('contain','Context-Free Grammar');
+        cy.get('.default-toggle-btn').click();
 
-        //analyser node
-        cy.get('button').should('contain', 'Analyser');
-        cy.get('button').contains('Analyser').click();
-        cy.get('.canvas-container').should('contain','Analyser');
-        cy.get('#A-2\\/N-parser-3').trigger('mousedown', {which: 1, force: true});
-        cy.get('#A-1\\/N-analyser-4').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
-        cy.wait(500);
+        cy.get('.submit-button').contains('Submit Grammar').click();
+        cy.get('.submit-button').contains('Generate Syntax Tree').click();
 
-        //translator node
-        cy.get('button').should('contain', 'Translator');
-        cy.get('button').contains('Translator').click();
-        cy.get('.canvas-container').should('contain','Translator');
-        cy.get('#A-2\\/N-analyser-4').trigger('mousedown', {which: 1, force: true});
-        cy.get('#A-1\\/N-translator-5').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
-
-        //optimiser node
-        cy.get('button').should('contain', 'Optimiser');
-        cy.get('button').contains('Optimiser').click();
-        cy.get('.canvas-container').should('contain','Optimiser');
-
+        cy.get('.artifact-viewer').should('contain','Syntax Tree');
+        cy.get('.artifact-viewer').should('not.have.class','empty-state');
+  
+        cy.contains('Parse tree generated successfully');
     })
 
-})
+});

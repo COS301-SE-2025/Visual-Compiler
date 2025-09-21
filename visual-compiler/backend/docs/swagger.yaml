@@ -37,16 +37,11 @@ definitions:
         items:
           $ref: '#/definitions/services.TypeRule'
         type: array
-      users_id:
-        description: User's ID for storing purposes
-        example: 685df259c1294de5546b045f
-        type: string
     required:
     - grammar_rules
     - project_name
     - scope_rules
     - type_rules
-    - users_id
     type: object
   handlers.DeleteRequest:
     properties:
@@ -94,12 +89,8 @@ definitions:
       project_name:
         description: User's project name
         type: string
-      users_id:
-        description: Represents the User's ID from frontend
-        type: string
     required:
     - project_name
-    - users_id
     type: object
   handlers.ProjectRequest:
     properties:
@@ -143,10 +134,6 @@ definitions:
         items:
           type: string
         type: array
-      users_id:
-        description: User's ID for storing purposes
-        example: 685df259c1294de5546b045f
-        type: string
       variables:
         description: User's defined variables
         example:
@@ -160,7 +147,6 @@ definitions:
     - rules
     - start
     - terminals
-    - users_id
     - variables
     type: object
   handlers.Request:
@@ -191,13 +177,9 @@ definitions:
       project_name:
         description: User's project name
         type: string
-      users_id:
-        description: Represents the User's ID from frontend
-        type: string
     required:
     - pairs
     - project_name
-    - users_id
     type: object
   handlers.SourceCodeOnlyRequest:
     properties:
@@ -207,13 +189,9 @@ definitions:
       source_code:
         description: Represents the User's source code
         type: string
-      users_id:
-        description: Represents the User's ID from frontend
-        type: string
     required:
     - project_name
     - source_code
-    - users_id
     type: object
   handlers.TranslatorRules:
     properties:
@@ -225,14 +203,9 @@ definitions:
         items:
           $ref: '#/definitions/services.TranslationRule'
         type: array
-      users_id:
-        description: User's ID for searching and storing purposes
-        example: 685df259c1294de5546b045f
-        type: string
     required:
     - project_name
     - translation_rules
-    - users_id
     type: object
   handlers.readDFARequest:
     properties:
@@ -257,12 +230,8 @@ definitions:
         items:
           $ref: '#/definitions/services.Transition'
         type: array
-      users_id:
-        description: Represents the User's ID from frontend
-        type: string
     required:
     - project_name
-    - users_id
     type: object
   services.AcceptingState:
     properties:
