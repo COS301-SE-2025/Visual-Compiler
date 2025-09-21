@@ -57,7 +57,7 @@ func AnswerUsersQuestion(c *gin.Context) {
 		return
 	}
 
-	answer := ai.QuestionAnswer(ctx, req.Question)
+	answer := ai.QuestionAnswer(req.Question, ctx)
 
 	if answer == "The AI Assistant is currently unavailable. Please try again later!" {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error.", "details": answer})
