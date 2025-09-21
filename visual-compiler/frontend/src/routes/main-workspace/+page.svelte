@@ -13,6 +13,7 @@
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 	import WelcomeOverlay from '$lib/components/project-hub/project-hub.svelte';
 	import ClearCanvasConfirmation from '$lib/components/main/clear-canvas-confirmation.svelte';
+	import AiAssistant from '$lib/components/main/ai-assistant.svelte';
 	import { phase_completion_status } from '$lib/stores/pipeline';
 
 	// --- CANVAS STATE ---
@@ -860,6 +861,9 @@
 	on:confirm={handleClearCanvasConfirm}
 	on:cancel={handleClearCanvasCancel}
 />
+
+<!-- AI Assistant Component -->
+<AiAssistant />
 
 <style>
 	:global(html, body) {
