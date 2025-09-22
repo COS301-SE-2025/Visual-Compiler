@@ -124,7 +124,7 @@
         }
     }
 
-    // Function to get syntax tree for analyser phase
+    // Function to get syntax tree for analyser/translator phase
     async function getSyntaxTreeForAnalyser() {
         const project = get(projectName);
         const accessToken = sessionStorage.getItem('access_token') || 
@@ -299,6 +299,46 @@
         }
     }
 
+    // Function to validate translator response format
+    function validateTranslatorResponse(response: string): { isValid: boolean, data?: any } {
+        try {
+            const parsed = JSON.parse(response);
+            
+            // Check if it's an array
+            if (!Array.isArray(parsed)) {
+                return { isValid: false };
+            }
+            
+            // Check each translation rule has the required structure
+            for (const rule of parsed) {
+                if (!rule.sequence || !rule.translation) {
+                    return { isValid: false };
+                }
+                
+                // sequence should be a string
+                if (typeof rule.sequence !== 'string') {
+                    return { isValid: false };
+                }
+                
+                // translation should be an array of strings
+                if (!Array.isArray(rule.translation)) {
+                    return { isValid: false };
+                }
+                
+                // Check that all translation items are strings
+                for (const translationItem of rule.translation) {
+                    if (typeof translationItem !== 'string') {
+                        return { isValid: false };
+                    }
+                }
+            }
+            
+            return { isValid: true, data: parsed };
+        } catch (error) {
+            return { isValid: false };
+        }
+    }
+
     // Function to automatically submit generated source code
     async function autoSubmitSourceCode(code: string) {
         const project = get(projectName);
@@ -433,10 +473,10 @@
                 } catch (error) {
                     throw new Error(`Failed to get tokens: ${error.message}`);
                 }
-            } else if (phase === 'analyser') {
+            } else if (phase === 'analyser' || phase === 'translator') {
                 try {
                     artifact = await getSyntaxTreeForAnalyser();
-                    console.log('Retrieved syntax tree for analyser:', artifact);
+                    console.log(`Retrieved syntax tree for ${phase}:`, artifact);
                 } catch (error) {
                     throw new Error(`Failed to get syntax tree: ${error.message}`);
                 }
@@ -621,6 +661,39 @@
                         }];
                         
                         AddToast('Analyser configuration generated but in unexpected format. Check the chat for details.', 'warning');
+                    }
+                } else if (phase === 'translator') {
+                    // Handle translator-specific response
+                    const validationResult = validateTranslatorResponse(data.response);
+                    
+                    if (validationResult.isValid && validationResult.data) {
+                        console.log('Valid translator response, dispatching event with data:', validationResult.data);
+                        
+                        // Dispatch event to populate translator rules
+                        window.dispatchEvent(new CustomEvent('ai-translator-generated', {
+                            detail: { rules: validationResult.data }
+                        }));
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `✅ Translator rules generated successfully! ${validationResult.data.length} translation rules have been automatically inserted into the translator editor. You can review and modify them as needed.`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('AI translator rules generated and inserted successfully!', 'success');
+                    } else {
+                        // Invalid format, just show the response in chat
+                        console.log('Invalid translator response format, showing in chat');
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('Translator rules generated but in unexpected format. Check the chat for details.', 'warning');
                     }
                 } else {
                     // For other phases (to be implemented later)
