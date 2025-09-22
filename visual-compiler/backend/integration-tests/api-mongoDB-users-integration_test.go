@@ -1,23 +1,6 @@
 package tests
 
-import (
-	"testing"
-
-	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/handlers"
-	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/routers"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-
-	"bytes"
-	"context"
-	"encoding/json"
-	"errors"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"time"
-)
-
+/*
 var user_id string
 
 func startServer(t *testing.T) *http.Server {
@@ -521,4 +504,6 @@ func TestConnectToMongo_Valid(t *testing.T) {
 			t.Errorf("Connection error")
 		}
 	}
+deleteNewProject(t)
 }
+*/

@@ -9,10 +9,9 @@ import (
 )
 
 func TestStoreOptimisingCode_NoInput(t *testing.T) {
-	server := startServerCore(t)
-	defer closeServerCore(t, server)
+	server = startServerCore(t)
+	loginTestUser(t)
 
-	getNoInputUserId(t)
 	optimising_data := map[string]interface{}{
 		"source_code":  "",
 		"users_id":     test_user_id,
@@ -45,10 +44,6 @@ func TestStoreOptimisingCode_NoInput(t *testing.T) {
 }
 
 func TestStoreOptimisingCode_NewOptimiser(t *testing.T) {
-	server := startServerCore(t)
-	defer closeServerCore(t, server)
-
-	getID(t)
 	optimising_data := map[string]interface{}{
 		"source_code":  "package main func main()",
 		"users_id":     test_user_id,
@@ -81,10 +76,6 @@ func TestStoreOptimisingCode_NewOptimiser(t *testing.T) {
 }
 
 func TestOptimiseCode_NoCode(t *testing.T) {
-	server := startServerCore(t)
-	defer closeServerCore(t, server)
-
-	getID(t)
 	optimising_data := map[string]interface{}{
 		"users_id":         test_user_id,
 		"project_name":     project_name,
@@ -119,15 +110,11 @@ func TestOptimiseCode_NoCode(t *testing.T) {
 }
 
 func TestStoreOptimisingCode_UsedOptimiser(t *testing.T) {
-	server := startServerCore(t)
-	defer closeServerCore(t, server)
-
 	code := "package main\n"
 	code += "func main() {\n"
 	code += "return\n"
 	code += "}"
 
-	getID(t)
 	optimising_data := map[string]interface{}{
 		"source_code":  code,
 		"users_id":     test_user_id,
@@ -160,10 +147,9 @@ func TestStoreOptimisingCode_UsedOptimiser(t *testing.T) {
 }
 
 func TestOptimiseCode_Success(t *testing.T) {
-	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	getID(t)
+	loginTestUser(t)
 	optimising_data := map[string]interface{}{
 		"users_id":         test_user_id,
 		"project_name":     project_name,

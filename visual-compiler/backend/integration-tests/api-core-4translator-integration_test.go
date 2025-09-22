@@ -9,10 +9,8 @@ import (
 )
 
 func TestReadRules_Failed(t *testing.T) {
-	server := startServerCore(t)
-	defer closeServerCore(t, server)
-
-	loginUser(t)
+	server = startServerCore(t)
+	loginTestUser(t)
 
 	data := map[string]interface{}{
 		"users_id":     test_user_id,
@@ -53,11 +51,6 @@ func TestReadRules_Failed(t *testing.T) {
 }
 
 func TestReadRules_RegexFailed(t *testing.T) {
-	server := startServerCore(t)
-	defer closeServerCore(t, server)
-
-	loginUser(t)
-
 	data := map[string]interface{}{
 		"users_id":     test_user_id,
 		"project_name": project_name,
@@ -108,10 +101,6 @@ func TestReadRules_RegexFailed(t *testing.T) {
 }
 
 func TestReadRules_Success(t *testing.T) {
-	server := startServerCore(t)
-	defer closeServerCore(t, server)
-
-	loginUser(t)
 
 	data := map[string]interface{}{
 		"users_id":     test_user_id,
@@ -163,11 +152,6 @@ func TestReadRules_Success(t *testing.T) {
 }
 
 func TestTranslate_Success(t *testing.T) {
-	server := startServerCore(t)
-	defer closeServerCore(t, server)
-
-	loginUser(t)
-
 	data := map[string]string{
 		"users_id":     test_user_id,
 		"project_name": project_name,
@@ -195,14 +179,9 @@ func TestTranslate_Success(t *testing.T) {
 }
 
 func TestTranslate_NoRules(t *testing.T) {
-	server := startServerCore(t)
-	defer closeServerCore(t, server)
-
-	getNoInputUserId(t)
-
 	data := map[string]string{
-		"users_id":     no_input_user,
-		"project_name": project_name,
+		"users_id":     test_user_id,
+		"project_name": no_input_project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -236,17 +215,11 @@ func TestTranslate_NoRules(t *testing.T) {
 }
 
 func TestTranslate_NoTree(t *testing.T) {
-	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	getNoInputUserId(t)
-	deleteNoInputUser(t)
-	registerNoInputUser(t)
-	getNoInputUserId(t)
-
 	data := map[string]string{
-		"users_id":     no_input_user,
-		"project_name": project_name,
+		"users_id":     test_user_id,
+		"project_name": no_input_project_name,
 	}
 
 	req, err := json.Marshal(data)
@@ -277,4 +250,7 @@ func TestTranslate_NoTree(t *testing.T) {
 			t.Errorf("Analyser not working: %s", string(body_bytes))
 		}
 	}
+
+	deleteNewProject(t)
+	deleteProject(t)
 }

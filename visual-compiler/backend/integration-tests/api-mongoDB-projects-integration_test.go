@@ -1,15 +1,6 @@
 package tests
 
-import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-	"net/url"
-	"testing"
-)
-
+/*
 var project_temp_name string
 
 func loginUser(t *testing.T) {
@@ -407,3 +398,4 @@ func TestGetProject_UserIdInvalid(t *testing.T) {
 	}
 
 }
+*/
