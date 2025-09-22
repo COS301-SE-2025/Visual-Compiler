@@ -109,6 +109,14 @@ definitions:
     required:
     - project_name
     type: object
+  handlers.ProjectNameRequest:
+    properties:
+      project_name:
+        description: User's project name
+        type: string
+    required:
+    - project_name
+    type: object
   handlers.ProjectRequest:
     properties:
       pipeline:
@@ -578,7 +586,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.IDRequest'
+          $ref: '#/definitions/handlers.ProjectNameRequest'
       produces:
       - application/json
       responses:
@@ -629,7 +637,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.IDRequest'
+          $ref: '#/definitions/handlers.ProjectNameRequest'
       produces:
       - application/json
       responses:
@@ -748,47 +756,6 @@ paths:
       summary: Get user's tokens
       tags:
       - Lexing
-  /lexing/getTree:
-    get:
-      consumes:
-      - application/json
-      description: Searches the database for the user's syntax tree
-      parameters:
-      - description: Project Name
-        in: query
-        name: project_name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Syntax Tree retrieved
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Invalid input/Response failed
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "401":
-          description: Unauthorized
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal server error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Get user's syntax tree
-      tags:
-      - Lexing
   /lexing/lexer:
     post:
       consumes:
@@ -803,7 +770,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.IDRequest'
+          $ref: '#/definitions/handlers.ProjectNameRequest'
       produces:
       - application/json
       responses:
@@ -853,7 +820,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.IDRequest'
+          $ref: '#/definitions/handlers.ProjectNameRequest'
       produces:
       - application/json
       responses:
@@ -903,7 +870,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.IDRequest'
+          $ref: '#/definitions/handlers.ProjectNameRequest'
       produces:
       - application/json
       responses:
@@ -953,7 +920,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.IDRequest'
+          $ref: '#/definitions/handlers.ProjectNameRequest'
       produces:
       - application/json
       responses:
@@ -1125,6 +1092,47 @@ paths:
       summary: Reads new code for optimising
       tags:
       - Optimising
+  /parsing/getTree:
+    get:
+      consumes:
+      - application/json
+      description: Searches the database for the user's syntax tree
+      parameters:
+      - description: Project Name
+        in: query
+        name: project_name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Syntax Tree retrieved
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid input/Response failed
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get user's syntax tree
+      tags:
+      - Parsing
   /parsing/grammar:
     post:
       consumes:
@@ -1169,6 +1177,13 @@ paths:
       - application/json
       description: Searches database for Grammar and Tokens. If found, and creates
         and stores the tree.
+      parameters:
+      - description: Create syntax tree
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ProjectNameRequest'
       produces:
       - application/json
       responses:
@@ -1205,6 +1220,13 @@ paths:
       - application/json
       description: Searches database for an existing syntax tree. If found, and creates
         and stores the tree as a string.
+      parameters:
+      - description: Convert tree to string
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ProjectNameRequest'
       produces:
       - application/json
       responses:
@@ -1293,7 +1315,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.IDRequest'
+          $ref: '#/definitions/handlers.ProjectNameRequest'
       produces:
       - application/json
       responses:

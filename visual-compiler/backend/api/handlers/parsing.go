@@ -128,6 +128,7 @@ func ReadGrammar(c *gin.Context) {
 // @Tags Parsing
 // @Accept json
 // @Produce json
+// @Param request body ProjectNameRequest true "Create syntax tree"
 // @Success 200 {object} map[string]string "Syntax tree successfully created and stored/updated"
 // @Failure 400 {object} map[string]string "Invalid input or Syntax Tree failed to insert"
 // @Failure 404 {object} map[string]string "Tokens or Grammer not found"
@@ -214,6 +215,7 @@ func CreateSyntaxTree(c *gin.Context) {
 // @Tags Parsing
 // @Accept json
 // @Produce json
+// @Param request body ProjectNameRequest true "Convert tree to string"
 // @Success 200 {object} map[string]string "Syntax tree String successfully created and stored/updated"
 // @Failure 400 {object} map[string]string "Invalid input or Syntax Tree String failed to insert"
 // @Failure 404 {object} map[string]string "Syntax Tree not found"
@@ -282,7 +284,7 @@ func TreeToString(c *gin.Context) {
 
 // @Summary Get user's syntax tree
 // @Description Searches the database for the user's syntax tree
-// @Tags Lexing
+// @Tags Parsing
 // @Accept json
 // @Produce json
 // @Param project_name query string true "Project Name"
@@ -290,7 +292,7 @@ func TreeToString(c *gin.Context) {
 // @Failure 400 {object} map[string]string "Invalid input/Response failed"
 // @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
-// @Router /lexing/getTree [get]
+// @Router /parsing/getTree [get]
 func GetTree(c *gin.Context) {
 	authID, is_existing := c.Get("auth0_id")
 	if !is_existing {
