@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func TestAnalyse_InvalidInput(t *testing.T) {
+func TestAnalyse_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createPhaseTestContext(t)
 
@@ -22,10 +22,10 @@ func TestAnalyse_InvalidInput(t *testing.T) {
 	res.Header.Set("Content-Type", "application/json")
 	contxt.Request = res
 
-	handlers.StoreSourceCode(contxt)
+	handlers.Analyse(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("BadRequest status code expected")
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
 	} else {
 		body_bytes, err := io.ReadAll(rec.Body)
 		if err != nil {
@@ -36,7 +36,7 @@ func TestAnalyse_InvalidInput(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error: %v", err)
 		}
-		if body_array["error"] != "Input is invalid" {
+		if body_array["error"] != "Unauthorized" {
 			t.Errorf("Incorrect error")
 		}
 	}

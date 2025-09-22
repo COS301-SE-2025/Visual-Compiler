@@ -2,9 +2,10 @@ package unit_tests
 
 import (
 	"bytes"
+	"encoding/json"
+	"io"
 
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -12,18 +13,7 @@ import (
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/handlers"
 )
 
-// create mock requests
-func createPhaseTestContext(t *testing.T) (*gin.Context, *httptest.ResponseRecorder) {
-	gin.SetMode(gin.TestMode)
-	rec := httptest.NewRecorder()
-	contxt, eng := gin.CreateTestContext(rec)
-	if eng == nil {
-		t.Errorf("context not created")
-	}
-	return contxt, rec
-}
-
-func TestStoreSourceCode_Error(t *testing.T) {
+func TestStoreSourceCode_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createPhaseTestContext(t)
 
@@ -36,13 +26,25 @@ func TestStoreSourceCode_Error(t *testing.T) {
 
 	handlers.StoreSourceCode(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		var mess map[string]string
-		t.Errorf(mess["error"])
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
+	} else {
+		body_bytes, err := io.ReadAll(rec.Body)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		var body_array map[string]string
+		err = json.Unmarshal(body_bytes, &body_array)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if body_array["error"] != "Unauthorized" {
+			t.Errorf("Incorrect error")
+		}
 	}
 }
 
-func TestLexing_Error(t *testing.T) {
+func TestLexing_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createPhaseTestContext(t)
 
@@ -55,13 +57,25 @@ func TestLexing_Error(t *testing.T) {
 
 	handlers.Lexing(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		var mess map[string]string
-		t.Errorf(mess["error"])
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
+	} else {
+		body_bytes, err := io.ReadAll(rec.Body)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		var body_array map[string]string
+		err = json.Unmarshal(body_bytes, &body_array)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if body_array["error"] != "Unauthorized" {
+			t.Errorf("Incorrect error")
+		}
 	}
 }
 
-func TestCreateRulesFromCode_InvalidInput(t *testing.T) {
+func TestCreateRulesFromCode_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createPhaseTestContext(t)
 
@@ -72,15 +86,27 @@ func TestCreateRulesFromCode_InvalidInput(t *testing.T) {
 	res.Header.Set("Content-Type", "application/json")
 	contxt.Request = res
 
-	handlers.Lexing(contxt)
+	handlers.CreateRulesFromCode(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		var mess map[string]string
-		t.Errorf(mess["error"])
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
+	} else {
+		body_bytes, err := io.ReadAll(rec.Body)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		var body_array map[string]string
+		err = json.Unmarshal(body_bytes, &body_array)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if body_array["error"] != "Unauthorized" {
+			t.Errorf("Incorrect error")
+		}
 	}
 }
 
-func TestReadDFAFromUser_Error(t *testing.T) {
+func TestReadDFAFromUser_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createPhaseTestContext(t)
 
@@ -93,13 +119,25 @@ func TestReadDFAFromUser_Error(t *testing.T) {
 
 	handlers.ReadDFAFromUser(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		var mess map[string]string
-		t.Errorf(mess["error"])
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
+	} else {
+		body_bytes, err := io.ReadAll(rec.Body)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		var body_array map[string]string
+		err = json.Unmarshal(body_bytes, &body_array)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if body_array["error"] != "Unauthorized" {
+			t.Errorf("Incorrect error")
+		}
 	}
 }
 
-func TestTokensFromDFA_Error(t *testing.T) {
+func TestTokensFromDFA_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createPhaseTestContext(t)
 
@@ -112,13 +150,25 @@ func TestTokensFromDFA_Error(t *testing.T) {
 
 	handlers.TokensFromDFA(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		var mess map[string]string
-		t.Errorf(mess["error"])
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
+	} else {
+		body_bytes, err := io.ReadAll(rec.Body)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		var body_array map[string]string
+		err = json.Unmarshal(body_bytes, &body_array)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if body_array["error"] != "Unauthorized" {
+			t.Errorf("Incorrect error")
+		}
 	}
 }
 
-func TestConvertDFAToRG_Error(t *testing.T) {
+func TestConvertDFAToRG_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createPhaseTestContext(t)
 
@@ -131,13 +181,25 @@ func TestConvertDFAToRG_Error(t *testing.T) {
 
 	handlers.ConvertDFAToRG(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		var mess map[string]string
-		t.Errorf(mess["error"])
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
+	} else {
+		body_bytes, err := io.ReadAll(rec.Body)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		var body_array map[string]string
+		err = json.Unmarshal(body_bytes, &body_array)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if body_array["error"] != "Unauthorized" {
+			t.Errorf("Incorrect error")
+		}
 	}
 }
 
-func TestConvertRGToNFA_Error(t *testing.T) {
+func TestConvertRGToNFA_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createPhaseTestContext(t)
 
@@ -150,13 +212,25 @@ func TestConvertRGToNFA_Error(t *testing.T) {
 
 	handlers.ConvertRGToNFA(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		var mess map[string]string
-		t.Errorf(mess["error"])
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
+	} else {
+		body_bytes, err := io.ReadAll(rec.Body)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		var body_array map[string]string
+		err = json.Unmarshal(body_bytes, &body_array)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if body_array["error"] != "Unauthorized" {
+			t.Errorf("Incorrect error")
+		}
 	}
 }
 
-func TestConvertRGToDFA_Error(t *testing.T) {
+func TestConvertRGToDFA_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createPhaseTestContext(t)
 
@@ -169,13 +243,25 @@ func TestConvertRGToDFA_Error(t *testing.T) {
 
 	handlers.ConvertRGToDFA(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		var mess map[string]string
-		t.Errorf(mess["error"])
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
+	} else {
+		body_bytes, err := io.ReadAll(rec.Body)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		var body_array map[string]string
+		err = json.Unmarshal(body_bytes, &body_array)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if body_array["error"] != "Unauthorized" {
+			t.Errorf("Incorrect error")
+		}
 	}
 }
 
-func TestConvertNFAToDFA_Error(t *testing.T) {
+func TestConvertNFAToDFA_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createPhaseTestContext(t)
 
@@ -188,8 +274,20 @@ func TestConvertNFAToDFA_Error(t *testing.T) {
 
 	handlers.ConvertNFAToDFA(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		var mess map[string]string
-		t.Errorf(mess["error"])
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
+	} else {
+		body_bytes, err := io.ReadAll(rec.Body)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		var body_array map[string]string
+		err = json.Unmarshal(body_bytes, &body_array)
+		if err != nil {
+			t.Errorf("Error: %v", err)
+		}
+		if body_array["error"] != "Unauthorized" {
+			t.Errorf("Incorrect error")
+		}
 	}
 }
