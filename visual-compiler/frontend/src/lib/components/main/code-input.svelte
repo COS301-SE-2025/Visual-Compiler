@@ -5,6 +5,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store';  
+	import { activePhase, setActivePhase } from '$lib/stores/pipeline'; 
 
 	let code_text = '';
 	
@@ -71,13 +72,35 @@
 		isConfirmed = !!value;
 	});
 
-	onDestroy(() => {
-		unsubscribe(); // clean up store subscription
+	
+	// Add event listener for AI-generated source code
+	let aiEventListener: (event: CustomEvent) => void;
+
+	onMount(() => {
+		// Listen for AI-generated source code
+		aiEventListener = (event: CustomEvent) => {
+			if (event.detail && event.detail.code) {
+				// Store the previous code before replacing
+				previous_code_text = code_text;
+				// Replace the textarea content with AI-generated code
+				code_text = event.detail.code;
+				// Reset the default input flag since this is AI-generated
+				isDefaultInput = false;
+			}
+		};
+
+		window.addEventListener('ai-source-generated', aiEventListener);
 	});
 
-	// Load projects when component mounts
-	onMount(() => {
-		fetchProjects();
+	onDestroy(() => {
+		setActivePhase(null);
+
+		unsubscribe();
+
+		if (aiEventListener) {
+			window.removeEventListener('ai-source-generated', aiEventListener);
+					
+		}
 	});
 
 	function handleDefaultInput() {
@@ -235,6 +258,7 @@
 	// Reset confirmation flag if user changes the text
 	$: isConfirmed = code_text === confirmed_code && !!code_text;
 	$: displayed_text = isConfirmed ? `Current source code: ${code_text}` : code_text;
+
 </script>
 
 <div class="code-input-container">
