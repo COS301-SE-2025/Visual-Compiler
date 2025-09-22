@@ -72,34 +72,65 @@
                 
                 const grammar = event.detail.grammar;
                 
-                // Populate variables and terminals
-                variables_string = grammar.variables || '';
-                terminals_string = grammar.terminals || '';
-                
-                // Clear existing rules and populate with AI-generated rules
+                // Clear existing rules first
                 grammar_rules = [];
                 rule_id_counter = 0;
                 translation_id_counter = 0;
                 
+                // Populate variables and terminals
+                variables_string = grammar.variables || '';
+                terminals_string = grammar.terminals || '';
+                
+                // Handle rules
                 if (grammar.rules && Array.isArray(grammar.rules)) {
                     grammar_rules = grammar.rules.map((rule, index) => {
-                        rule_id_counter = index + 1;
+                        rule_id_counter++;
+                        
+                        // Each rule should have exactly one translation per output array
+                        const translations = [];
+                        if (Array.isArray(rule.output) && rule.output.length > 0) {
+                            // Join the output array into a single string for the translation
+                            translation_id_counter++;
+                            translations.push({
+                                id: translation_id_counter,
+                                value: rule.output.join(' ')
+                            });
+                        } else {
+                            // Fallback: empty translation
+                            translation_id_counter++;
+                            translations.push({
+                                id: translation_id_counter,
+                                value: ''
+                            });
+                        }
+                        
                         return {
                             id: rule_id_counter,
                             nonTerminal: rule.input || '',
-                            translations: Array.isArray(rule.output) ? rule.output.map((output, tIndex) => ({
-                                id: ++translation_id_counter,
-                                value: output
-                            })) : [{ id: ++translation_id_counter, value: '' }]
+                            translations: translations
                         };
                     });
+                }
+                
+                // If no rules were generated, add a blank one
+                if (grammar_rules.length === 0) {
+                    addNewRule();
                 }
                 
                 // Reset states
                 show_default_grammar = false;
                 is_grammar_submitted = false;
                 
+                // Force reactivity update
+                grammar_rules = grammar_rules;
+                variables_string = variables_string;
+                terminals_string = terminals_string;
+                
                 AddToast('AI parser grammar inserted into grammar editor!', 'success');
+                
+                console.log('Final grammar_rules:', grammar_rules);
+                console.log('Final variables_string:', variables_string);
+                console.log('Final terminals_string:', terminals_string);
             }
         };
 
