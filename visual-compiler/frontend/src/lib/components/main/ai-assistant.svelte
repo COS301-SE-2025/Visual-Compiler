@@ -124,6 +124,44 @@
         }
     }
 
+    // Function to get syntax tree for analyser phase
+    async function getSyntaxTreeForAnalyser() {
+        const project = get(projectName);
+        const accessToken = sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           localStorage.getItem('access_token') || 
+                           localStorage.getItem('authToken') || 
+                           localStorage.getItem('token');
+        
+        if (!accessToken || !project) {
+            throw new Error('Missing authentication or project');
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/parsing/getTree?project_name=${encodeURIComponent(project)}`, {
+                method: 'GET',
+                headers: { 
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get syntax tree');
+            }
+            
+            const data = await response.json();
+            // Convert syntax tree to string format for AI
+            if (data.tree || data.syntax_tree) {
+                return JSON.stringify(data.tree || data.syntax_tree, null, 2);
+            }
+            return '';
+        } catch (error) {
+            console.error('Error getting syntax tree:', error);
+            throw error;
+        }
+    }
+
     // Function to validate lexer response format
     function validateLexerResponse(response: string): { isValid: boolean, data?: any } {
         try {
@@ -180,6 +218,78 @@
                     if (typeof outputItem !== 'string') {
                         return { isValid: false };
                     }
+                }
+            }
+            
+            return { isValid: true, data: parsed };
+        } catch (error) {
+            return { isValid: false };
+        }
+    }
+
+    // Function to validate analyser response format
+    function validateAnalyserResponse(response: string): { isValid: boolean, data?: any } {
+        try {
+            const parsed = JSON.parse(response);
+            
+            // Check if it has the required structure
+            if (!parsed.scope_rules || !parsed.type_rules || !parsed.grammar_rules) {
+                return { isValid: false };
+            }
+            
+            // Check if scope_rules is an array
+            if (!Array.isArray(parsed.scope_rules)) {
+                return { isValid: false };
+            }
+            
+            // Check each scope rule has start and end
+            for (const rule of parsed.scope_rules) {
+                if (!rule.start || !rule.end || 
+                    typeof rule.start !== 'string' || 
+                    typeof rule.end !== 'string') {
+                    return { isValid: false };
+                }
+            }
+            
+            // Check if type_rules is an array
+            if (!Array.isArray(parsed.type_rules)) {
+                return { isValid: false };
+            }
+            
+            // Check each type rule has required fields
+            for (const rule of parsed.type_rules) {
+                if (!rule.result || !rule.assignment || !rule.lhs ||
+                    typeof rule.result !== 'string' || 
+                    typeof rule.assignment !== 'string' || 
+                    typeof rule.lhs !== 'string') {
+                    return { isValid: false };
+                }
+                
+                // operator should be an array (can be empty)
+                if (!Array.isArray(rule.operator)) {
+                    return { isValid: false };
+                }
+                
+                // rhs should be a string (can be empty)
+                if (typeof rule.rhs !== 'string') {
+                    return { isValid: false };
+                }
+            }
+            
+            // Check if grammar_rules is an object with required fields
+            const grammarRules = parsed.grammar_rules;
+            if (!grammarRules.variable_rule || !grammarRules.type_rule || 
+                !grammarRules.function_rule || !grammarRules.parameter_rule ||
+                !grammarRules.assignment_rule || !grammarRules.operator_rule ||
+                !grammarRules.term_rule) {
+                return { isValid: false };
+            }
+            
+            // Check that all grammar rule values are strings
+            const grammarValues = Object.values(grammarRules);
+            for (const value of grammarValues) {
+                if (typeof value !== 'string') {
+                    return { isValid: false };
                 }
             }
             
@@ -322,6 +432,13 @@
                     console.log('Retrieved tokens for parser:', artifact);
                 } catch (error) {
                     throw new Error(`Failed to get tokens: ${error.message}`);
+                }
+            } else if (phase === 'analyser') {
+                try {
+                    artifact = await getSyntaxTreeForAnalyser();
+                    console.log('Retrieved syntax tree for analyser:', artifact);
+                } catch (error) {
+                    throw new Error(`Failed to get syntax tree: ${error.message}`);
                 }
             }
 
@@ -468,6 +585,42 @@
                         }];
                         
                         AddToast('Parser grammar generated but in unexpected format. Check the chat for details.', 'warning');
+                    }
+                } else if (phase === 'analyser') {
+                    // Handle analyser-specific response
+                    const validationResult = validateAnalyserResponse(data.response);
+                    
+                    if (validationResult.isValid && validationResult.data) {
+                        console.log('Valid analyser response, dispatching event with data:', validationResult.data);
+                        
+                        // Dispatch event to populate analyser configuration
+                        window.dispatchEvent(new CustomEvent('ai-analyser-generated', {
+                            detail: { config: validationResult.data }
+                        }));
+                        
+                        const scopeCount = validationResult.data.scope_rules.length;
+                        const typeCount = validationResult.data.type_rules.length;
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `✅ Analyser configuration generated successfully! ${scopeCount} scope rules, ${typeCount} type rules, and grammar linking rules have been automatically inserted into the analyser editor. You can review and modify them as needed.`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('AI analyser configuration generated and inserted successfully!', 'success');
+                    } else {
+                        // Invalid format, just show the response in chat
+                        console.log('Invalid analyser response format, showing in chat');
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('Analyser configuration generated but in unexpected format. Check the chat for details.', 'warning');
                     }
                 } else {
                     // For other phases (to be implemented later)
