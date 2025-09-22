@@ -1,61 +1,26 @@
 package tests
 
-/*
-var project_temp_name string
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"testing"
+)
 
-func loginUser(t *testing.T) {
-	//server := startServer(t)
-	//defer closeServer(server)
-
-	user_data := map[string]string{
-		"login":    "integration_tester",
-		"password": "Password1234$",
-	}
-
-	req, err := json.Marshal(user_data)
-	if err != nil {
-		t.Errorf("converting data to json failed")
-	}
-
-	res, err := http.Post(
-		"http://localhost:8080/api/users/login", "application/json",
-		bytes.NewBuffer(req),
-	)
-	if err != nil {
-		t.Errorf("Login failed: %v", err)
-	}
-
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		body_bytes, _ := io.ReadAll(res.Body)
-		t.Errorf("Login failed: %s", string(body_bytes))
-	} else {
-
-		body_bytes, err := io.ReadAll(res.Body)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-		var body_array map[string]string
-		_ = json.Unmarshal(body_bytes, &body_array)
-
-		t.Logf("Login working: %s", body_array["message"])
-
-		test_user_id = body_array["id"]
-		project_name = "project1"
-		project_temp_name = "project_temp"
-	}
-}
+var test_project string
 
 func TestSaveProjectName_Success(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
+	server = startServerCore(t)
 
-	loginUser(t)
+	loginTestUser(t)
 
+	test_project = "test_project"
 	user_data := map[string]string{
 		"users_id":     test_user_id,
-		"project_name": project_temp_name,
+		"project_name": test_project,
 	}
 
 	req, err := json.Marshal(user_data)
@@ -91,8 +56,6 @@ func TestSaveProjectName_Success(t *testing.T) {
 }
 
 func TestSaveProjectName_ExistingProject(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
 
 	user_data := map[string]string{
 		"users_id":     test_user_id,
@@ -135,14 +98,10 @@ func TestSaveProjectName_ExistingProject(t *testing.T) {
 }
 
 func TestSaveProjectPipeline_Success(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
-
-	loginUser(t)
 
 	user_data := map[string]any{
 		"users_id":     test_user_id,
-		"project_name": project_temp_name,
+		"project_name": test_project,
 		"pipeline": map[string]any{
 			"node-1": "source_code",
 			"node-2": "lexer",
@@ -180,14 +139,9 @@ func TestSaveProjectPipeline_Success(t *testing.T) {
 }
 
 func TestDeleteProject_Success(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
-
-	loginUser(t)
-
 	user_data := map[string]string{
 		"users_id":     test_user_id,
-		"project_name": project_temp_name,
+		"project_name": test_project,
 	}
 
 	req, err := json.Marshal(user_data)
@@ -230,14 +184,10 @@ func TestDeleteProject_Success(t *testing.T) {
 }
 
 func TestSaveProjectPipeline_UserNotFound(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
-
-	loginUser(t)
 
 	user_data := map[string]any{
-		"users_id":     test_user_id,
-		"project_name": project_temp_name,
+		"users_id":     "123e45df6f7b89f50014505a",
+		"project_name": test_project,
 		"pipeline": map[string]any{
 			"node-1": "source_code",
 			"node-2": "lexer",
@@ -270,14 +220,10 @@ func TestSaveProjectPipeline_UserNotFound(t *testing.T) {
 }
 
 func TestDeleteProject_UserNotFound(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
-
-	loginUser(t)
 
 	user_data := map[string]string{
 		"users_id":     "123e45df6f7b89f50014505a",
-		"project_name": project_temp_name,
+		"project_name": test_project,
 	}
 
 	req, err := json.Marshal(user_data)
@@ -310,10 +256,7 @@ func TestDeleteProject_UserNotFound(t *testing.T) {
 }
 
 func TestGetAllProjects_Success(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
 
-	loginUser(t)
 	user_url := fmt.Sprintf("http://localhost:8080/api/users/getProjects?users_id=%s", test_user_id)
 
 	res, err := http.Get(user_url)
@@ -332,10 +275,6 @@ func TestGetAllProjects_Success(t *testing.T) {
 }
 
 func TestGetAllProjects_UserNotFound(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
-
-	loginUser(t)
 
 	res, err := http.Get("http://localhost:8080/api/users/getProjects?users_id=123e45df6f7b89f50014505a")
 
@@ -353,14 +292,10 @@ func TestGetAllProjects_UserNotFound(t *testing.T) {
 }
 
 func TestGetProject_Success(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
-
-	loginUser(t)
 	project_url := "http://localhost:8080/api/users/getProject"
 	url_param := url.Values{}
 	url_param.Add("users_id", test_user_id)
-	url_param.Add("project_name", "test_project")
+	url_param.Add("project_name", test_project)
 	user_url := fmt.Sprintf("%s?%s", project_url, url_param.Encode())
 
 	res, err := http.Get(user_url)
@@ -379,10 +314,7 @@ func TestGetProject_Success(t *testing.T) {
 }
 
 func TestGetProject_UserIdInvalid(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
-
-	loginUser(t)
+	defer closeServerCore(t, server)
 
 	res, err := http.Get("http://localhost:8080/api/users/getProject?users_id=123e45df6f7b4505a&project_name=12")
 
@@ -398,4 +330,3 @@ func TestGetProject_UserIdInvalid(t *testing.T) {
 	}
 
 }
-*/
