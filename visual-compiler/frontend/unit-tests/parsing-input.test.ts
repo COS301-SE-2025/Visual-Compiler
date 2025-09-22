@@ -36,10 +36,22 @@ const localStorageMock = (() => {
 
 Object.defineProperty(window, 'localStorage', { value: localStorageMock });
 
+// Mock sessionStorage
+const sessionStorageMock = (() => {
+	let store: { [key: string]: string } = {};
+	return {
+		getItem: (key: string) => store[key] || null,
+		setItem: (key: string, value: string) => (store[key] = value.toString()),
+		clear: () => (store = {})
+	};
+})();
+
+Object.defineProperty(window, 'sessionStorage', { value: sessionStorageMock });
+
 describe('ParsingInput Component', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		window.localStorage.setItem('user_id', 'test-user-parser-123'); // Simulate logged-in user
+		window.sessionStorage.setItem('access_token', 'test-token-123'); // Simulate logged-in user
 		
 		// Set up default mock for fetch (for fetchTokens call in onMount)
 		mockFetch.mockResolvedValue({

@@ -20,8 +20,8 @@ vi.mock('$lib/stores/project', () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-// Mock localStorage
-const localStorageMock = (() => {
+// Mock sessionStorage
+const sessionStorageMock = (() => {
 	let store: { [key: string]: string } = {};
 	return {
 		getItem: (key: string) => store[key] || null,
@@ -31,12 +31,12 @@ const localStorageMock = (() => {
 	};
 })();
 
-Object.defineProperty(window, 'localStorage', { value: localStorageMock });
+Object.defineProperty(window, 'sessionStorage', { value: sessionStorageMock });
 
 describe('ParsingInput Enhanced Coverage Tests', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		window.localStorage.setItem('user_id', 'test-user-parser-123');
+		window.sessionStorage.setItem('access_token', 'test-token-123');
 		
 		// Default mock for fetchTokens
 		mockFetch.mockResolvedValue({
@@ -281,8 +281,8 @@ describe('ParsingInput Enhanced Coverage Tests', () => {
 	});
 
 	it('TestUserIdValidation_Failure: Tests missing user ID validation', async () => {
-		// Remove user_id from localStorage
-		window.localStorage.removeItem('user_id');
+		// Remove access_token from sessionStorage
+		window.sessionStorage.removeItem('access_token');
 
 		render(ParsingInput, { source_code: 'int x = 5;' });
 
