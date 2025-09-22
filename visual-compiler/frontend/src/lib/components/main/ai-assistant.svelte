@@ -52,6 +52,45 @@
         }
     };
 
+    // Function to automatically submit generated source code
+    async function autoSubmitSourceCode(code: string) {
+        const project = get(projectName);
+        const accessToken = sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           localStorage.getItem('access_token') || 
+                           localStorage.getItem('authToken') || 
+                           localStorage.getItem('token');
+        
+        if (!accessToken || !project) {
+            AddToast('Unable to auto-submit: Missing authentication or project', 'error');
+            return false;
+        }
+
+        try {
+            const response = await fetch('http://localhost:8080/api/lexing/code', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    project_name: project,
+                    source_code: code
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to submit code');
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Auto-submit failed:', error);
+            return false;
+        }
+    }
+
     function toggleChatbot() {
         isOpen = !isOpen;
     }
@@ -90,8 +129,7 @@
             handleSendMessage();
         }
     }
-    
-    // Replace the generatePhaseInput function with this implementation:
+
     async function generatePhaseInput(phase: PhaseType) {
         if (!phase) return;
         
@@ -171,30 +209,46 @@
                 throw new Error(data.error || data.details || `HTTP ${response.status} error`);
             }
             
-            // Remove loading message and add success message
             messages = messages.filter(msg => msg.id !== loadingMessageId);
             
             if (data.response) {
                 console.log('AI generated response:', data.response);
                 
-                // For source code phase, trigger the code input update
                 if (phase === 'source') {
                     console.log('Dispatching ai-source-generated event');
-                    // Dispatch a custom event that the code-input component can listen to
                     window.dispatchEvent(new CustomEvent('ai-source-generated', {
                         detail: { code: data.response }
                     }));
+
+                    setTimeout(async () => {
+                        const submitSuccess = await autoSubmitSourceCode(data.response);
+                        
+                        if (submitSuccess) {
+                            window.dispatchEvent(new CustomEvent('ai-source-submitted', {
+                                detail: { code: data.response }
+                            }));
+                            
+                            messages = [...messages, {
+                                id: Date.now() + 3,
+                                text: `✅ Source code generated and submitted successfully! Your code has been automatically saved to your project and is ready for lexical analysis.`,
+                                isUser: false,
+                                timestamp: new Date()
+                            }];
+                            
+                            AddToast('AI source code generated and submitted successfully!', 'success');
+                        } else {
+                            messages = [...messages, {
+                                id: Date.now() + 3,
+                                text: `✅ Source code generated successfully! The code has been inserted into your source code input area. Please review and click "Confirm Code" to submit it.`,
+                                isUser: false,
+                                timestamp: new Date()
+                            }];
+                            
+                            AddToast('AI source code generated! Please review and confirm to submit.', 'warning');
+                        }
+                    }, 500); 
                     
-                    messages = [...messages, {
-                        id: Date.now() + 2,
-                        text: `✅ Source code generated successfully! The code has been automatically inserted into your source code input area. You can review and modify it as needed.`,
-                        isUser: false,
-                        timestamp: new Date()
-                    }];
-                    
-                    AddToast('AI source code generated and inserted successfully!', 'success');
                 } else {
-                    // For other phases (to be implemented later)
                     messages = [...messages, {
                         id: Date.now() + 2,
                         text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
@@ -214,7 +268,6 @@
             console.error('Error message:', error.message);
             console.error('Error stack:', error.stack);
             
-            // Remove loading message if it exists
             messages = messages.filter(msg => !msg.text.includes('Generating'));
             
             messages = [...messages, {
