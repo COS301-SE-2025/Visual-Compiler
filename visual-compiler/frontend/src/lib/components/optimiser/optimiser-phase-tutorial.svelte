@@ -23,7 +23,7 @@
                     <div class="tutorial-step">
                         <h3>1. What is optimisation?</h3>
                         <p>
-                            Optimisations are performed on an <b>Intermediate Representation (IR)</b> of the code, such as an Abstract Syntax Tree (AST), which is a structured, tree-like model that the compiler can easily analyze and manipulate. The code you provided performs source-to-source transformation, meaning it takes Go code, optimizes its AST, and outputs new, improved Go code.
+                            Optimisations are performed on an <b>Intermediate Representation (IR)</b> of the code, such as an Abstract Syntax Tree (AST), which is a structured, tree-like model that the compiler can easily analyze and manipulate. The code you provided performs source-to-source transformation, meaning it takes Go code, optimises its AST, and outputs new, improved Go code.
                         </p>
                         <div class="opt-benefits">
                             <b>Think of it like a master editor reviewing a draft of a document:</b>
