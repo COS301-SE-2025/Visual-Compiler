@@ -1,5 +1,8 @@
 <script lang="ts">
     import { activePhase, setActivePhase, type PhaseType } from '../../stores/pipeline';
+    import { AddToast } from '$lib/stores/toast';
+    import { get } from 'svelte/store';
+    import { projectName } from '$lib/stores/project';
     
     let isOpen = false;
     let activeTab: 'questions' | 'generate' = 'questions';
@@ -88,7 +91,144 @@
         }
     }
     
-    function generatePhaseInput(phase: PhaseType) {
+    // Replace the generatePhaseInput function with this implementation:
+    async function generatePhaseInput(phase: PhaseType) {
+        if (!phase) return;
+        
+        const accessToken = sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           localStorage.getItem('access_token') || 
+                           localStorage.getItem('authToken') || 
+                           localStorage.getItem('token');
+        
+        console.log('=== AI Generation Debug Info ===');
+        console.log('Phase:', phase);
+        console.log('Access Token exists:', !!accessToken);
+        console.log('Access Token (first 20 chars):', accessToken ? accessToken.substring(0, 20) + '...' : 'null');
+        
+        if (!accessToken) {
+            AddToast('Authentication required: Please log in to use AI generation', 'error');
+            return;
+        }
+
+        // Add user message to show generation started
+        messages = [...messages, {
+            id: Date.now(),
+            text: `Generate ${phaseConfig[phase].name} input`,
+            isUser: true,
+            timestamp: new Date()
+        }];
+        
+        // Switch to questions tab to show the interaction
+        activeTab = 'questions';
+
+        try {
+            // Show loading message
+            const loadingMessageId = Date.now() + 1;
+            messages = [...messages, {
+                id: loadingMessageId,
+                text: `Generating ${phaseConfig[phase].name} input...`,
+                isUser: false,
+                timestamp: new Date()
+            }];
+
+            // Prepare request body
+            const requestBody = {
+                phase: phase,
+                artefact: " " 
+            };
+            
+            console.log('Request body:', JSON.stringify(requestBody, null, 2));
+            console.log('Request URL:', 'http://localhost:8080/api/ai/generate');
+
+            const response = await fetch('http://localhost:8080/api/ai/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+            const responseText = await response.text();
+            console.log('Raw response text:', responseText);
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+                console.log('Parsed response data:', data);
+            } catch (parseError) {
+                console.error('JSON parse error:', parseError);
+                throw new Error(`Invalid JSON response: ${responseText}`);
+            }
+
+            if (!response.ok) {
+                console.error('Error response data:', data);
+                throw new Error(data.error || data.details || `HTTP ${response.status} error`);
+            }
+            
+            // Remove loading message and add success message
+            messages = messages.filter(msg => msg.id !== loadingMessageId);
+            
+            if (data.response) {
+                console.log('AI generated response:', data.response);
+                
+                // For source code phase, trigger the code input update
+                if (phase === 'source') {
+                    console.log('Dispatching ai-source-generated event');
+                    // Dispatch a custom event that the code-input component can listen to
+                    window.dispatchEvent(new CustomEvent('ai-source-generated', {
+                        detail: { code: data.response }
+                    }));
+                    
+                    messages = [...messages, {
+                        id: Date.now() + 2,
+                        text: `✅ Source code generated successfully! The code has been automatically inserted into your source code input area. You can review and modify it as needed.`,
+                        isUser: false,
+                        timestamp: new Date()
+                    }];
+                    
+                    AddToast('AI source code generated and inserted successfully!', 'success');
+                } else {
+                    // For other phases (to be implemented later)
+                    messages = [...messages, {
+                        id: Date.now() + 2,
+                        text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
+                        isUser: false,
+                        timestamp: new Date()
+                    }];
+                    
+                    AddToast(`${phaseConfig[phase].name} input generated successfully!`, 'success');
+                }
+            } else {
+                throw new Error('No content generated in response');
+            }
+            
+        } catch (error) {
+            console.error('=== AI Generation Error ===');
+            console.error('Error object:', error);
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+            
+            // Remove loading message if it exists
+            messages = messages.filter(msg => !msg.text.includes('Generating'));
+            
+            messages = [...messages, {
+                id: Date.now() + 3,
+                text: `❌ Failed to generate ${phaseConfig[phase].name} input: ${error.message}. Please try again.`,
+                isUser: false,
+                timestamp: new Date()
+            }];
+            
+            AddToast(`AI generation failed: ${error.message}`, 'error');
+        }
+    }
+
+    function generatePhaseInputOld(phase: PhaseType) {
         if (!phase) return;
         
         // Add placeholder functionality for generating input
