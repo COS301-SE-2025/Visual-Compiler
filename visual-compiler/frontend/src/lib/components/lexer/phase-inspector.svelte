@@ -1018,7 +1018,7 @@
 	            }
 	        );
 
-	        if (!response.ok) return;
+	        if (!response || !response.ok) return;
 
 	        const data = await response.json();
 	        
