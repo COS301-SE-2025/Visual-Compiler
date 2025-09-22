@@ -33,7 +33,7 @@
 		{ id: 'parser', label: 'Parser' },
 		{ id: 'analyser', label: 'Analyser' },
 		{ id: 'translator', label: 'Translator' },
-		{ id: 'optimizer', label: 'Optimiser' }
+		{ id: 'optimiser', label: 'Optimiser' }
 	];
 
 	// createNode
@@ -94,8 +94,8 @@
 	{#each node_types as n, i}
 		<!-- Wrapper div to capture clicks even when the button is disabled -->
 		<div on:click={() => handleClick(n.id)}>
-			<button class="phase-btn" class:optimizer-btn={n.id === 'optimizer'} disabled={createdNodeTypes.has(n.id)}>
-				{#if n.id !== 'optimizer'}
+			<button class="phase-btn" class:optimiser-btn={n.id === 'optimiser'} disabled={createdNodeTypes.has(n.id)}>
+				{#if n.id !== 'optimiser'}
 					<span class="button-number-corner">{i + 1}</span>
 				{/if}
 				{n.label}
@@ -203,13 +203,13 @@
 		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 	}
 
-	/* Special styling for optimizer button */
-	.optimizer-btn {
-		background-color: #AFA2D7; /* New light mode optimizer */
+	/* Special styling for optimiser button */
+	.optimiser-btn {
+		background-color: #AFA2D7; /* New light mode optimiser */
 		color: #000; /* Black text for better readability */
 	}
 
-	.optimizer-btn:hover {
+	.optimiser-btn:hover {
 		background-color: #8C7AB8; /* Slightly darker for hover */
 		color: #000; /* Keep black text on hover */
 		transform: translateY(-2px);
@@ -233,7 +233,7 @@
 		pointer-events: none;
 	}
 
-	.optimizer-btn:disabled {
+	.optimiser-btn:disabled {
 		background-color: #e6e6e6;
 		color: #666666;
 		cursor: not-allowed;
@@ -346,19 +346,19 @@
 		background-color: #2d3748;
 	}
 
-	/* Dark mode styles for optimizer button */
-	:global(html.dark-mode) .optimizer-btn {
-		background-color: #8451C7; /* New dark mode optimizer */
+	/* Dark mode styles for optimiser button */
+	:global(html.dark-mode) .optimiser-btn {
+		background-color: #8451C7; /* New dark mode optimiser */
 		color: #fff; /* White text for dark mode */
 		border: 1px solid #8451C7;
 	}
 
-	:global(html.dark-mode) .optimizer-btn:hover {
+	:global(html.dark-mode) .optimiser-btn:hover {
 		background-color: #6B3BAA; /* Darker for hover */
 		color: #fff; /* Keep white text in dark mode */
 	}
 
-	:global(html.dark-mode) .optimizer-btn:disabled {
+	:global(html.dark-mode) .optimiser-btn:disabled {
 		background-color: #2d3748;
 		color: #a0aec0;
 		border-color: #4a5568;

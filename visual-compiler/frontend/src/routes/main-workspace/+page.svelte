@@ -42,9 +42,9 @@
 	let TranslatorPhaseTutorial: any;
 	let TranslatorPhaseInspector: any;
 	let TranslatorArtifactViewer: any;
-	let OptimizerPhaseTutorial: any;
-	let OptimizerPhaseInspector: any;
-	let OptimizerArtifactViewer: any;
+	let OptimiserPhaseTutorial: any;
+	let OptimiserPhaseInspector: any;
+	let OptimiserArtifactViewer: any;
 
 	let showWelcomeOverlay = false;
 	let workspace_el: HTMLElement;
@@ -139,14 +139,14 @@
 		TranslatorArtifactViewer = (
 			await import('$lib/components/translator/translator-artifact-viewer.svelte')
 		).default;
-		OptimizerPhaseTutorial = (
-			await import('$lib/components/optimizer/optimizer-phase-tutorial.svelte')
+		OptimiserPhaseTutorial = (
+			await import('$lib/components/optimiser/optimiser-phase-tutorial.svelte')
 		).default;
-		OptimizerPhaseInspector = (
-			await import('$lib/components/optimizer/optimizer-phase-inspector.svelte')
+		OptimiserPhaseInspector = (
+			await import('$lib/components/optimiser/optimiser-phase-inspector.svelte')
 		).default;
-		OptimizerArtifactViewer = (
-			await import('$lib/components/optimizer/optimizer-artifact-viewer.svelte')
+		OptimiserArtifactViewer = (
+			await import('$lib/components/optimiser/optimiser-artifact-viewer.svelte')
 		).default;
 
 		// Setup theme and UI state
@@ -535,7 +535,7 @@
 		parser: 'Analyzes the token stream to build a syntax tree.',
 		analyser: 'Performs semantic analysis on the syntax tree.',
 		translator: 'Translates the syntax tree into target code.',
-		optimizer: 'Advanced optimisation techniques for code enhancement.'
+		optimiser: 'Advanced optimisation techniques for code enhancement.'
 	};
 
 	const node_labels: Record<NodeType, string> = {
@@ -544,7 +544,7 @@
 		parser: 'Parser',
 		analyser: 'Analyser',
 		translator: 'Translator',
-		optimizer: 'Optimiser'
+		optimiser: 'Optimiser'
 	};
 
 	function handleCreateNode(type: NodeType) {
@@ -578,7 +578,7 @@
 
 	function handlePhaseSelect(type: NodeType) {
 		// Validate node access before proceeding
-		if (type !== 'optimizer' && !validateNodeAccess(type)) {
+		if (type !== 'optimiser' && !validateNodeAccess(type)) {
 			return; // Toast message already shown by validateNodeAccess
 		}
 
@@ -593,8 +593,8 @@
 			selected_phase = type;
 			// Update active phase for AI assistant
 			setActivePhase(type);
-			// Only check for source code on non-optimizer phases
-			if (type !== 'optimizer') {
+			// Only check for source code on non-optimiser phases
+			if (type !== 'optimiser') {
 				const confirmedCode = get(confirmedSourceCode);
 				if (!confirmedCode.trim()) {
 					AddToast('Source code required: Please add source code to begin the compilation process', 'error');
@@ -842,10 +842,10 @@
 						/>
 					{/if}
 
-					{#if selected_phase === 'optimizer' && OptimizerPhaseTutorial}
-						<svelte:component this={OptimizerPhaseTutorial} />
-						<svelte:component this={OptimizerPhaseInspector} />
-						<svelte:component this={OptimizerArtifactViewer} />
+					{#if selected_phase === 'optimiser' && OptimiserPhaseTutorial}
+						<svelte:component this={OptimiserPhaseTutorial} />
+						<svelte:component this={OptimiserPhaseInspector} />
+						<svelte:component this={OptimiserArtifactViewer} />
 					{/if}
 				</div>
 				<button on:click={returnToCanvas} class="return-button" aria-label="Return to Canvas" title="Return to Canvas">

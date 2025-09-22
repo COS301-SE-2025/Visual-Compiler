@@ -135,7 +135,7 @@
 			if (response.status === 200 && data.message && data.id) {
 				// Store user data in localStorage
 				localStorage.setItem('user_id', data.id);
-				localStorage.setItem('users_id', data.id); // Also store as users_id for optimizer compatibility
+				localStorage.setItem('users_id', data.id); // Also store as users_id for optimiser compatibility
 				localStorage.setItem('is_admin', data.is_admin ? 'true' : 'false');
 				
 				// Store the Auth0 access token in sessionStorage (as requested)

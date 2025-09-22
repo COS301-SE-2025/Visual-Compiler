@@ -3,6 +3,7 @@
     import { AddToast } from '$lib/stores/toast';
     import { get } from 'svelte/store';
     import { projectName } from '$lib/stores/project';
+    import { onMount, onDestroy } from 'svelte';
     
     let isOpen = false;
     let activeTab: 'questions' | 'generate' = 'questions';
@@ -44,11 +45,11 @@
             iconExtra: 'M14 2V8H20M9 15H15M9 11H12',
             description: 'Generate code translation templates'
         },
-        optimizer: {
-            name: 'Optimizer',
+        optimiser: {
+            name: 'Optimiser',
             icon: 'M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z',
             iconExtra: 'M9 12L11 14L15 10',
-            description: 'Generate optimization rules and configurations'
+            description: 'Generate optimisation rules and configurations'
         }
     };
 
@@ -339,6 +340,31 @@
         }
     }
 
+    // Function to validate optimiser response format
+    function validateOptimiserResponse(response: string): { isValid: boolean, data?: string } {
+        // Check if response starts with "package main" and looks like Go code
+        const trimmedResponse = response.trim();
+        
+        // Must start with "package main"
+        if (!trimmedResponse.startsWith('package main')) {
+            return { isValid: false };
+        }
+        
+        // Should contain typical Go code patterns
+        const hasValidGoStructure = (
+            trimmedResponse.includes('package main') &&
+            (trimmedResponse.includes('func main()') || trimmedResponse.includes('func ')) &&
+            trimmedResponse.includes('{') &&
+            trimmedResponse.includes('}')
+        );
+        
+        if (!hasValidGoStructure) {
+            return { isValid: false };
+        }
+        
+        return { isValid: true, data: trimmedResponse };
+    }
+
     // Function to automatically submit generated source code
     async function autoSubmitSourceCode(code: string) {
         const project = get(projectName);
@@ -399,7 +425,6 @@
         
         messageInput = '';
         
-        // Placeholder for AI response (will be implemented later)
         setTimeout(() => {
             messages = [...messages, {
                 id: Date.now() + 1,
@@ -480,6 +505,10 @@
                 } catch (error) {
                     throw new Error(`Failed to get syntax tree: ${error.message}`);
                 }
+            } else if (phase === 'optimiser') {
+                // Optimiser uses empty artifact like source code
+                artifact = " ";
+                console.log('Using empty artifact for optimiser phase');
             }
 
             // Prepare request body
@@ -695,6 +724,39 @@
                         
                         AddToast('Translator rules generated but in unexpected format. Check the chat for details.', 'warning');
                     }
+                } else if (phase === 'optimiser') {
+                    // Handle optimiser-specific response
+                    const validationResult = validateOptimiserResponse(data.response);
+                    
+                    if (validationResult.isValid && validationResult.data) {
+                        console.log('Valid optimiser response, dispatching event with code:', validationResult.data);
+                        
+                        // Dispatch event to populate optimiser code input
+                        window.dispatchEvent(new CustomEvent('ai-optimiser-generated', {
+                            detail: { code: validationResult.data }
+                        }));
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `✅ Optimiser code generated successfully! The Go source code has been automatically inserted into the code input area. You can review and modify it as needed before selecting optimisation techniques.`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('AI optimiser code generated and inserted successfully!', 'success');
+                    } else {
+                        // Invalid format, just show the response in chat
+                        console.log('Invalid optimiser response format, showing in chat');
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('Optimiser code generated but in unexpected format. Check the chat for details.', 'warning');
+                    }
                 } else {
                     // For other phases (to be implemented later)
                     messages = [...messages, {
@@ -743,7 +805,6 @@
         // Switch to questions tab to show the generated content
         activeTab = 'questions';
         
-        // Placeholder AI response for input generation
         setTimeout(() => {
             messages = [...messages, {
                 id: Date.now() + 1,
@@ -753,6 +814,47 @@
             }];
         }, 1000);
     }
+
+    // Add event listener for AI-generated optimiser code
+    let aiOptimiserEventListener: (event: CustomEvent) => void;
+
+    // Initialize the store with default values on mount
+    onMount(() => {
+        updateStore();
+
+        // Listen for AI-generated optimiser code
+        aiOptimiserEventListener = (event: CustomEvent) => {
+            if (event.detail && event.detail.code) {
+                console.log('Received AI optimiser code:', event.detail.code);
+
+                // Save current user input if not showing default
+                if (!showDefault) {
+                    userInputCode = inputCode;
+                }
+                
+                // Insert AI-generated code into the textarea
+                inputCode = event.detail.code;
+                
+                // Reset default state since this is AI-generated
+                showDefault = false;
+                
+                // Update the store with the new code
+                updateStore();
+
+                AddToast('AI optimiser code inserted into code input area!', 'success');
+
+                console.log('Final optimiser input code:', inputCode);
+            }
+        };
+
+        window.addEventListener('ai-optimiser-generated', aiOptimiserEventListener);
+    });
+
+    onDestroy(() => {
+        if (aiOptimiserEventListener) {
+            window.removeEventListener('ai-optimiser-generated', aiOptimiserEventListener);
+        }
+    });
 </script>
 
 <!-- Floating chatbot button -->
