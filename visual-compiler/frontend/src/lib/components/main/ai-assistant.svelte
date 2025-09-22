@@ -52,6 +52,63 @@
         }
     };
 
+    // Function to get source code for lexer phase
+    async function getSourceCodeForLexer() {
+        const project = get(projectName);
+        const accessToken = sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           localStorage.getItem('access_token') || 
+                           localStorage.getItem('authToken') || 
+                           localStorage.getItem('token');
+        
+        if (!accessToken || !project) {
+            throw new Error('Missing authentication or project');
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/lexing/getCode?project_name=${encodeURIComponent(project)}`, {
+                method: 'GET',
+                headers: { 
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get source code');
+            }
+            
+            const data = await response.json();
+            return data.code || '';
+        } catch (error) {
+            console.error('Error getting source code:', error);
+            throw error;
+        }
+    }
+
+    // Function to validate lexer response format
+    function validateLexerResponse(response: string): { isValid: boolean, data?: any } {
+        try {
+            const parsed = JSON.parse(response);
+            
+            // Check if it's an array
+            if (!Array.isArray(parsed)) {
+                return { isValid: false };
+            }
+            
+            // Check if each item has the required structure
+            for (const item of parsed) {
+                if (!item.type || !item.regex || typeof item.type !== 'string' || typeof item.regex !== 'string') {
+                    return { isValid: false };
+                }
+            }
+            
+            return { isValid: true, data: parsed };
+        } catch (error) {
+            return { isValid: false };
+        }
+    }
+
     // Function to automatically submit generated source code
     async function autoSubmitSourceCode(code: string) {
         const project = get(projectName);
@@ -170,10 +227,21 @@
                 timestamp: new Date()
             }];
 
+            // Get artifact based on phase
+            let artifact = " ";
+            if (phase === 'lexer') {
+                try {
+                    artifact = await getSourceCodeForLexer();
+                    console.log('Retrieved source code for lexer:', artifact);
+                } catch (error) {
+                    throw new Error(`Failed to get source code: ${error.message}`);
+                }
+            }
+
             // Prepare request body
             const requestBody = {
                 phase: phase,
-                artefact: " " 
+                artefact: artifact
             };
             
             console.log('Request body:', JSON.stringify(requestBody, null, 2));
@@ -248,7 +316,41 @@
                         }
                     }, 500); 
                     
+                } else if (phase === 'lexer') {
+                    // Handle lexer-specific response
+                    const validationResult = validateLexerResponse(data.response);
+                    
+                    if (validationResult.isValid && validationResult.data) {
+                        console.log('Valid lexer response, dispatching event with data:', validationResult.data);
+                        
+                        // Dispatch event to populate lexer input rows
+                        window.dispatchEvent(new CustomEvent('ai-lexer-generated', {
+                            detail: { rules: validationResult.data }
+                        }));
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `✅ Lexer rules generated successfully! ${validationResult.data.length} token rules have been automatically inserted into the Regular Expression input rows. You can review and modify them as needed.`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('AI lexer rules generated and inserted successfully!', 'success');
+                    } else {
+                        // Invalid format, just show the response in chat
+                        console.log('Invalid lexer response format, showing in chat');
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('Lexer rules generated but in unexpected format. Check the chat for details.', 'warning');
+                    }
                 } else {
+                    // For other phases (to be implemented later)
                     messages = [...messages, {
                         id: Date.now() + 2,
                         text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
