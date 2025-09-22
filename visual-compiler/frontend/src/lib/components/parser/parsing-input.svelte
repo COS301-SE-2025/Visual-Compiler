@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { onMount, createEventDispatcher } from 'svelte';
     import { AddToast } from '$lib/stores/toast';
     import { projectName } from '$lib/stores/project';
     import { get } from 'svelte/store';
     import { lexerState } from '$lib/stores/lexer';
+    import { onMount, createEventDispatcher, onDestroy } from 'svelte';
 
     export let source_code = '';
 
@@ -59,10 +59,57 @@
         ]
     };
 
-    // onMount
+    let aiParserEventListener: (event: CustomEvent) => void;
+
     onMount(async () => {
         addNewRule();
-        await fetchTokens(); // Try to fetch existing tokens
+        await fetchTokens();
+
+        // Listen for AI-generated parser grammar
+        aiParserEventListener = (event: CustomEvent) => {
+            if (event.detail && event.detail.grammar) {
+                console.log('Received AI parser grammar:', event.detail.grammar);
+                
+                const grammar = event.detail.grammar;
+                
+                // Populate variables and terminals
+                variables_string = grammar.variables || '';
+                terminals_string = grammar.terminals || '';
+                
+                // Clear existing rules and populate with AI-generated rules
+                grammar_rules = [];
+                rule_id_counter = 0;
+                translation_id_counter = 0;
+                
+                if (grammar.rules && Array.isArray(grammar.rules)) {
+                    grammar_rules = grammar.rules.map((rule, index) => {
+                        rule_id_counter = index + 1;
+                        return {
+                            id: rule_id_counter,
+                            nonTerminal: rule.input || '',
+                            translations: Array.isArray(rule.output) ? rule.output.map((output, tIndex) => ({
+                                id: ++translation_id_counter,
+                                value: output
+                            })) : [{ id: ++translation_id_counter, value: '' }]
+                        };
+                    });
+                }
+                
+                // Reset states
+                show_default_grammar = false;
+                is_grammar_submitted = false;
+                
+                AddToast('AI parser grammar inserted into grammar editor!', 'success');
+            }
+        };
+
+        window.addEventListener('ai-parser-generated', aiParserEventListener);
+    });
+
+    onDestroy(() => {
+        if (aiParserEventListener) {
+            window.removeEventListener('ai-parser-generated', aiParserEventListener);
+        }
     });
 
     // handleGrammarChange

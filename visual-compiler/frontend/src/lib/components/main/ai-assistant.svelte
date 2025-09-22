@@ -86,6 +86,44 @@
         }
     }
 
+    // Function to get tokens for parser phase
+    async function getTokensForParser() {
+        const project = get(projectName);
+        const accessToken = sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           localStorage.getItem('access_token') || 
+                           localStorage.getItem('authToken') || 
+                           localStorage.getItem('token');
+        
+        if (!accessToken || !project) {
+            throw new Error('Missing authentication or project');
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/lexing/getTokens?project_name=${encodeURIComponent(project)}`, {
+                method: 'GET',
+                headers: { 
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get tokens');
+            }
+            
+            const data = await response.json();
+            // Convert tokens array to string format for AI
+            if (data.tokens && Array.isArray(data.tokens)) {
+                return JSON.stringify(data.tokens, null, 2);
+            }
+            return '';
+        } catch (error) {
+            console.error('Error getting tokens:', error);
+            throw error;
+        }
+    }
+
     // Function to validate lexer response format
     function validateLexerResponse(response: string): { isValid: boolean, data?: any } {
         try {
@@ -100,6 +138,48 @@
             for (const item of parsed) {
                 if (!item.type || !item.regex || typeof item.type !== 'string' || typeof item.regex !== 'string') {
                     return { isValid: false };
+                }
+            }
+            
+            return { isValid: true, data: parsed };
+        } catch (error) {
+            return { isValid: false };
+        }
+    }
+
+    // Function to validate parser response format
+    function validateParserResponse(response: string): { isValid: boolean, data?: any } {
+        try {
+            const parsed = JSON.parse(response);
+            
+            // Check if it has the required structure
+            if (!parsed.variables || !parsed.terminals || !parsed.start || !parsed.rules) {
+                return { isValid: false };
+            }
+            
+            // Check if variables and terminals are strings
+            if (typeof parsed.variables !== 'string' || typeof parsed.terminals !== 'string' || typeof parsed.start !== 'string') {
+                return { isValid: false };
+            }
+            
+            // Check if rules is an array
+            if (!Array.isArray(parsed.rules)) {
+                return { isValid: false };
+            }
+            
+            // Check each rule has input (string) and output (array of strings)
+            for (const rule of parsed.rules) {
+                if (!rule.input || !rule.output || 
+                    typeof rule.input !== 'string' || 
+                    !Array.isArray(rule.output)) {
+                    return { isValid: false };
+                }
+                
+                // Check that all output items are strings
+                for (const outputItem of rule.output) {
+                    if (typeof outputItem !== 'string') {
+                        return { isValid: false };
+                    }
                 }
             }
             
@@ -236,6 +316,13 @@
                 } catch (error) {
                     throw new Error(`Failed to get source code: ${error.message}`);
                 }
+            } else if (phase === 'parser') {
+                try {
+                    artifact = await getTokensForParser();
+                    console.log('Retrieved tokens for parser:', artifact);
+                } catch (error) {
+                    throw new Error(`Failed to get tokens: ${error.message}`);
+                }
             }
 
             // Prepare request body
@@ -348,6 +435,39 @@
                         }];
                         
                         AddToast('Lexer rules generated but in unexpected format. Check the chat for details.', 'warning');
+                    }
+                } else if (phase === 'parser') {
+                    // Handle parser-specific response
+                    const validationResult = validateParserResponse(data.response);
+                    
+                    if (validationResult.isValid && validationResult.data) {
+                        console.log('Valid parser response, dispatching event with data:', validationResult.data);
+                        
+                        // Dispatch event to populate parser grammar
+                        window.dispatchEvent(new CustomEvent('ai-parser-generated', {
+                            detail: { grammar: validationResult.data }
+                        }));
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `✅ Parser grammar generated successfully! The context-free grammar with ${validationResult.data.rules.length} rules has been automatically inserted into the grammar editor. You can review and modify it as needed.`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('AI parser grammar generated and inserted successfully!', 'success');
+                    } else {
+                        // Invalid format, just show the response in chat
+                        console.log('Invalid parser response format, showing in chat');
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('Parser grammar generated but in unexpected format. Check the chat for details.', 'warning');
                     }
                 } else {
                     // For other phases (to be implemented later)
