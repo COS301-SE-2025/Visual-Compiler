@@ -815,7 +815,7 @@
         }, 1000);
     }
 
-    // Add event listener for AI-generated optimiser code
+    // Event listener variables
     let aiOptimiserEventListener: (event: CustomEvent) => void;
 
     // Initialize the store with default values on mount
@@ -826,24 +826,12 @@
         aiOptimiserEventListener = (event: CustomEvent) => {
             if (event.detail && event.detail.code) {
                 console.log('Received AI optimiser code:', event.detail.code);
-
-                // Save current user input if not showing default
-                if (!showDefault) {
-                    userInputCode = inputCode;
-                }
                 
-                // Insert AI-generated code into the textarea
-                inputCode = event.detail.code;
+                // Dispatch the event to be handled by the actual optimizer component
+                // The AI assistant just receives and forwards the event
+                AddToast('AI optimiser code generated! Check the optimizer phase input area.', 'success');
                 
-                // Reset default state since this is AI-generated
-                showDefault = false;
-                
-                // Update the store with the new code
-                updateStore();
-
-                AddToast('AI optimiser code inserted into code input area!', 'success');
-
-                console.log('Final optimiser input code:', inputCode);
+                console.log('AI optimiser code forwarded to optimizer component');
             }
         };
 
