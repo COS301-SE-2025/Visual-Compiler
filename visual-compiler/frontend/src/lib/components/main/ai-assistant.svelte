@@ -412,33 +412,115 @@
         activeTab = tab;
     }
 
-    function handleSendMessage() {
-        if (!messageInput.trim()) return;
-        
-        // Add user message (placeholder for now)
-        messages = [...messages, {
-            id: Date.now(),
-            text: messageInput.trim(),
-            isUser: true,
-            timestamp: new Date()
-        }];
-        
-        messageInput = '';
-        
-        setTimeout(() => {
-            messages = [...messages, {
-                id: Date.now() + 1,
-                text: "This is a placeholder AI response",
-                isUser: false,
-                timestamp: new Date()
-            }];
-        }, 1000);
-    }
-
     function handleKeyPress(event: KeyboardEvent) {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
             handleSendMessage();
+        }
+    }
+
+    async function handleSendMessage() {
+        if (!messageInput.trim()) return;
+        
+        const accessToken = sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           localStorage.getItem('access_token') || 
+                           localStorage.getItem('authToken') || 
+                           localStorage.getItem('token');
+        
+        if (!accessToken) {
+            AddToast('Authentication required: Please log in to ask questions', 'error');
+            return;
+        }
+
+        const userQuestion = messageInput.trim();
+        
+        // Add user message
+        messages = [...messages, {
+            id: Date.now(),
+            text: userQuestion,
+            isUser: true,
+            timestamp: new Date()
+        }];
+        
+        // Clear input immediately
+        messageInput = '';
+        
+        try {
+            // Show loading message
+            const loadingMessageId = Date.now() + 1;
+            messages = [...messages, {
+                id: loadingMessageId,
+                text: 'Thinking...',
+                isUser: false,
+                timestamp: new Date()
+            }];
+
+            // Send question to backend
+            const response = await fetch('http://localhost:8080/api/ai/answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    question: userQuestion
+                })
+            });
+
+            console.log('Question API response status:', response.status);
+            console.log('Question API response ok:', response.ok);
+
+            const responseText = await response.text();
+            console.log('Question API raw response:', responseText);
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+                console.log('Question API parsed response:', data);
+            } catch (parseError) {
+                console.error('Question API JSON parse error:', parseError);
+                throw new Error('Invalid response format from server');
+            }
+
+            // Remove loading message
+            messages = messages.filter(msg => msg.id !== loadingMessageId);
+
+            if (!response.ok) {
+                console.error('Question API error response:', data);
+                throw new Error(data.error || data.details || `Server error: ${response.status}`);
+            }
+
+            // Fix: Check for both 'answer' and 'response' fields
+            const aiAnswer = data.answer || data.response;
+            if (aiAnswer) {
+                messages = [...messages, {
+                    id: Date.now() + 2,
+                    text: aiAnswer,
+                    isUser: false,
+                    timestamp: new Date()
+                }];
+            } else {
+                throw new Error('No answer received from AI');
+            }
+
+        } catch (error) {
+            console.error('=== Question API Error ===');
+            console.error('Error object:', error);
+            console.error('Error message:', error.message);
+            
+            // Remove any loading messages
+            messages = messages.filter(msg => !msg.text.includes('Thinking'));
+            
+            // Add error message
+            messages = [...messages, {
+                id: Date.now() + 3,
+                text: `❌ Sorry, I encountered an error: ${error.message}. Please try again.`,
+                isUser: false,
+                timestamp: new Date()
+            }];
+            
+            AddToast(`Failed to get AI response: ${error.message}`, 'error');
         }
     }
 
@@ -820,17 +902,11 @@
 
     // Initialize the store with default values on mount
     onMount(() => {
-        updateStore();
-
-        // Listen for AI-generated optimiser code
+        // Just set up the event listener without calling updateStore
         aiOptimiserEventListener = (event: CustomEvent) => {
             if (event.detail && event.detail.code) {
                 console.log('Received AI optimiser code:', event.detail.code);
-                
-                // Dispatch the event to be handled by the actual optimizer component
-                // The AI assistant just receives and forwards the event
                 AddToast('AI optimiser code generated! Check the optimizer phase input area.', 'success');
-                
                 console.log('AI optimiser code forwarded to optimizer component');
             }
         };
