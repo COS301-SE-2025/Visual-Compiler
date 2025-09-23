@@ -80,13 +80,6 @@ jobs:
           name: coverage-backend
           directory: ./visual-compiler/backend
           files: coverage.out
-          yml: |
-            coverage:
-              ignore:
-                - "**/docs.go"
-                - "**/middleware.go"
-                - "**/users.go"
-                - "**/delete-user.go"
 
       - name: Linting for Backend using Semgrep
         uses: returntocorp/semgrep-action@v1
