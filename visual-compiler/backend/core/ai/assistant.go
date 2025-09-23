@@ -24,7 +24,7 @@ func ConnectAI(api_key string) *openai.Client {
 
 func QuestionAnswer(question string, ctx context.Context) string {
 
-	prompt := "You are an educational assistant. Answer any question relevant to compiler construction clearly, concisely, and at a student level of complexity. Otherwise, politely inform the user that you only explain the topics within the phases of compilation. Provide simple examples where necessary and use plain text only, no markdown or special symbols. If the user seeks system-specific guidance, such as navigation, suggest the canvas tutorial and FAQ tab."
+	prompt := "You are an educational assistant. Answer any question relevant to compiler construction clearly, concisely, and at a student level of complexity. Otherwise, politely inform the user that you only explain the topics within the phases of compilation. Structure it like a chat message, therefore no headings, no newlines and no special formatting. If the user seeks system-specific guidance, such as navigation, suggest the canvas tutorial and FAQ tab."
 
 	messages := []openai.ChatCompletionMessage{
 		{
