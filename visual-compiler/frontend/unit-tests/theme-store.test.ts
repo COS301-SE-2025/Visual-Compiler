@@ -66,12 +66,15 @@ describe('Theme Store', () => {
             expect(currentTheme).toBe('light');
         });
 
-        it('should initialize with stored dark theme', () => {
+        it('should initialize with stored dark theme', async () => {
+            // Set up localStorage mock to return 'dark' before module import
             mockLocalStorage['vc-theme'] = 'dark';
             
-            // Using imported theme
+            // Re-import the module to test initialization with mocked localStorage
+            vi.resetModules();
+            const { theme: freshTheme } = await import('../src/lib/stores/theme.ts');
             
-            const currentTheme = get(theme);
+            const currentTheme = get(freshTheme);
             expect(currentTheme).toBe('dark');
         });
 
@@ -139,8 +142,11 @@ describe('Theme Store', () => {
         });
 
         it('should update DOM class correctly', () => {
-
-            // Using imported ToggleTheme
+            // Ensure we start with light theme
+            theme.set('light');
+            
+            // Clear any previous mock calls
+            mockDocument.documentElement.classList.toggle.mockClear();
             
             ToggleTheme(); // light -> dark
             expect(mockDocument.documentElement.classList.toggle).toHaveBeenCalledWith('dark-mode', true);
