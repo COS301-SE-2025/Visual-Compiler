@@ -23,7 +23,7 @@ func createOptmiseTestContext(t *testing.T) (*gin.Context, *httptest.ResponseRec
 	return contxt, rec
 }
 
-func TestStoreOptimisingCode_InvalidInput(t *testing.T) {
+func TestStoreOptimisingCode_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createOptmiseTestContext(t)
 
@@ -36,8 +36,8 @@ func TestStoreOptimisingCode_InvalidInput(t *testing.T) {
 
 	handlers.StoreOptimisingCode(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("BadRequest status code expected")
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
 	} else {
 		body_bytes, err := io.ReadAll(rec.Body)
 		if err != nil {
@@ -48,14 +48,14 @@ func TestStoreOptimisingCode_InvalidInput(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error: %v", err)
 		}
-		if body_array["error"] != "Input is invalid" {
+		if body_array["error"] != "Unauthorized" {
 			t.Errorf("Incorrect error")
 		}
 	}
 
 }
 
-func TestOptimiseCode_InvalidInput(t *testing.T) {
+func TestOptimiseCode_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createOptmiseTestContext(t)
 
@@ -68,8 +68,8 @@ func TestOptimiseCode_InvalidInput(t *testing.T) {
 
 	handlers.OptimiseCode(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("BadRequest status code expected")
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
 	} else {
 		body_bytes, err := io.ReadAll(rec.Body)
 		if err != nil {
@@ -80,7 +80,7 @@ func TestOptimiseCode_InvalidInput(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error: %v", err)
 		}
-		if body_array["error"] != "Input is invalid" {
+		if body_array["error"] != "Unauthorized" {
 			t.Errorf("Incorrect error")
 		}
 	}
