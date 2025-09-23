@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
+    import { onMount, onDestroy } from 'svelte';
     import { optimiserState } from '$lib/stores/optimiser';
     import { projectName } from '$lib/stores/project';
     import { AddToast } from '$lib/stores/toast';
@@ -10,7 +10,7 @@
     let inputCode = `package main
 
 func main() {
-	
+    
 }`;
 
     // Default button functionality variables
@@ -20,8 +20,10 @@ func main() {
     let userInputCode = `package main
 
 func main() {
-	
+    
 }`;
+
+    let aiOptimiserEventListener: (event: CustomEvent) => void;
 
     const languages = ['Java', 'Python', 'Go'];
     const techniques = ['Constant Folding', 'Dead Code Elimination', 'Loop Unrolling'];
@@ -34,24 +36,57 @@ func main() {
 import "fmt"
 
 func main() {
-	for blue := 1; blue < 5; blue++ {
-		fmt.Println("[Block " + blue + "]")
-		for red := 1; red <= blue; red++ {
-			fmt.Println("	-> " + red)
-			if blue == red {
-				fmt.Println(blue + red)
-			}
-		}
-	}
+    for blue := 1; blue < 5; blue++ {
+        fmt.Println("[Block " + blue + "]")
+        for red := 1; red <= blue; red++ {
+            fmt.Println("	-> " + red)
+            if blue == red {
+                fmt.Println(blue + red)
+            }
+        }
+    }
 }
-	
+    
 func nothing() (int) {
-	var random int = 13
+    var random int = 13
 }`;
 
     // Initialize the store with default values on mount
     onMount(() => {
         updateStore();
+
+        aiOptimiserEventListener = (event: CustomEvent) => {
+            if (event.detail && event.detail.code) {
+                console.log('Received AI optimiser code:', event.detail.code);
+
+                // Save current user input if not showing default
+                if (!showDefault) {
+                    userInputCode = inputCode;
+                }
+                
+                // Insert AI-generated code into the textarea
+                inputCode = event.detail.code;
+                
+                // Reset default state since this is AI-generated
+                showDefault = false;
+                
+                // Update the store with the new code
+                updateStore();
+                
+                AddToast('AI optimiser code inserted into code input area!', 'success');
+                
+                console.log('Final optimiser input code:', inputCode);
+            }
+        };
+
+        // Listen for the event with "z" spelling
+        window.addEventListener('ai-optimiser-generated', aiOptimiserEventListener);
+    });
+
+    onDestroy(() => {
+        if (aiOptimiserEventListener) {
+            window.removeEventListener('ai-optimiser-generated', aiOptimiserEventListener);
+        }
     });
 
     // Default button functions

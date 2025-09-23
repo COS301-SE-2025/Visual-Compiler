@@ -271,29 +271,31 @@
                     return { isValid: false };
                 }
                 
-                // rhs should be a string (can be empty)
-                if (typeof rule.rhs !== 'string') {
+                // rhs should be a string or array (can be empty)
+                if (typeof rule.rhs !== 'string' && !Array.isArray(rule.rhs)) {
                     return { isValid: false };
                 }
             }
             
-            // Check if grammar_rules is an object with required fields
+            // Check if grammar_rules is an object with minimum required fields
             const grammarRules = parsed.grammar_rules;
-            if (!grammarRules.variable_rule || !grammarRules.type_rule || 
-                !grammarRules.function_rule || !grammarRules.parameter_rule ||
-                !grammarRules.assignment_rule || !grammarRules.operator_rule ||
-                !grammarRules.term_rule) {
+            if (!grammarRules || typeof grammarRules !== 'object') {
                 return { isValid: false };
             }
             
-            // Check that all grammar rule values are strings
-            const grammarValues = Object.values(grammarRules);
-            for (const value of grammarValues) {
-                if (typeof value !== 'string') {
+            // Check that minimum required grammar rules exist
+            const requiredFields = [
+                'variable_rule', 'type_rule', 'function_rule', 
+                'parameter_rule', 'assignment_rule', 'operator_rule', 'term_rule'
+            ];
+            
+            for (const field of requiredFields) {
+                if (!grammarRules[field] || typeof grammarRules[field] !== 'string') {
                     return { isValid: false };
                 }
             }
             
+            // Additional fields are allowed and will be preserved
             return { isValid: true, data: parsed };
         } catch (error) {
             return { isValid: false };
@@ -906,8 +908,8 @@
         aiOptimiserEventListener = (event: CustomEvent) => {
             if (event.detail && event.detail.code) {
                 console.log('Received AI optimiser code:', event.detail.code);
-                AddToast('AI optimiser code generated! Check the optimizer phase input area.', 'success');
-                console.log('AI optimiser code forwarded to optimizer component');
+                AddToast('AI optimiser code generated! Check the optimiser phase input area.', 'success');
+                console.log('AI optimiser code forwarded to optimiser component');
             }
         };
 
