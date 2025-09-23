@@ -78,7 +78,7 @@ for _i range(12)
 
 		prompt = `You are an educational assistant for compiler construction.
 
-Generate a list of token definitions in order of priority for a lexer that will perfectly lex the user's source code. Ignore whitespaces except if they are syntactically significant.
+Generate a list of token definitions in order of priority for a lexer that will perfectly lex the user's source code. Include punctuation, but ignore whitespaces except if they are syntactically significant.
 
 The token definitions should follow this structure: 
 1. "type": string for token type
@@ -126,7 +126,8 @@ Format your response strictly as a JSON object, without any additional text what
 
 		prompt = `You are an educational assistant for compiler construction.
 
-Generate the scope and type rules for an analyser that will perfectly analyse the user's syntax tree.
+Generate the scope and type rules for an analyser that will appropriately analyse the user's syntax tree.
+The seven grammar rules are constant, do not add more, only change the token if necessary.
 
 Format your response strictly as a JSON object with this structure, without any additional text whatsoever, for example,
 
@@ -159,6 +160,7 @@ Format your response strictly as a JSON object with this structure, without any 
 		prompt = `You are an educational assistant for compiler construction.
 
 Generate a list of translation rules for a translator that will perfectly translate the user's syntax tree.
+Remember to include tokens for punctation and write out full recursions instead of using shorthands.
 
 The translation rules should follow this structure: 
 1. "sequence": string of comma-separated token types
