@@ -1,3 +1,6 @@
+//go:build !coverage
+// +build !coverage
+
 package routers
 
 import (
