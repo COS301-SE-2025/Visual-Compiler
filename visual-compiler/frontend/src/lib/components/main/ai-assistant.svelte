@@ -193,16 +193,19 @@
             
             // Check if it has the required structure
             if (!parsed.variables || !parsed.terminals || !parsed.start || !parsed.rules) {
+                console.log('Missing required parser fields');
                 return { isValid: false };
             }
             
             // Check if variables and terminals are strings
             if (typeof parsed.variables !== 'string' || typeof parsed.terminals !== 'string' || typeof parsed.start !== 'string') {
+                console.log('Variables/terminals/start not strings');
                 return { isValid: false };
             }
             
             // Check if rules is an array
             if (!Array.isArray(parsed.rules)) {
+                console.log('Rules not an array');
                 return { isValid: false };
             }
             
@@ -211,19 +214,31 @@
                 if (!rule.input || !rule.output || 
                     typeof rule.input !== 'string' || 
                     !Array.isArray(rule.output)) {
+                    console.log('Invalid rule structure:', rule);
                     return { isValid: false };
                 }
                 
-                // Check that all output items are strings
+                // Check that all output items are strings (allow empty strings for epsilon rules)
                 for (const outputItem of rule.output) {
                     if (typeof outputItem !== 'string') {
+                        console.log('Invalid output item:', outputItem);
                         return { isValid: false };
                     }
                 }
+                
+                // Filter out empty string outputs for epsilon rules
+                rule.output = rule.output.filter(item => item.trim() !== '');
+                
+                // If all outputs were empty, this is an epsilon rule
+                if (rule.output.length === 0) {
+                    rule.output = ['ε']; // Use epsilon symbol
+                }
             }
             
+            console.log('Parser validation successful');
             return { isValid: true, data: parsed };
         } catch (error) {
+            console.log('Parser validation JSON parse error:', error);
             return { isValid: false };
         }
     }
@@ -713,9 +728,28 @@
                     if (validationResult.isValid && validationResult.data) {
                         console.log('Valid parser response, dispatching event with data:', validationResult.data);
                         
+                        // Transform the data to match what the parsing component expects
+                        const transformedData = {
+                            variables: validationResult.data.variables,
+                            terminals: validationResult.data.terminals,
+                            start: validationResult.data.start,
+                            rules: validationResult.data.rules.map((rule, index) => ({
+                                id: index + 1,
+                                nonTerminal: rule.input,
+                                translations: [
+                                    {
+                                        id: 1,
+                                        rule: rule.output.join(' ')
+                                    }
+                                ]
+                            }))
+                        };
+                        
+                        console.log('Transformed parser data:', transformedData);
+                        
                         // Dispatch event to populate parser grammar
                         window.dispatchEvent(new CustomEvent('ai-parser-generated', {
-                            detail: { grammar: validationResult.data }
+                            detail: { grammar: transformedData }
                         }));
                         
                         messages = [...messages, {
