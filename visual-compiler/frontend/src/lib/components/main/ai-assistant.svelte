@@ -17,39 +17,27 @@
     const phaseConfig = {
         source: {
             name: 'Source Code',
-            icon: 'M14 2H6A2 2 0 0 0 4 4V20A2 2 0 0 0 6 22H18A2 2 0 0 0 20 20V8L14 2Z',
-            iconExtra: 'M14 2V8H20',
-            description: 'Generate sample source code for compilation'
+            icon: 'M14 2H6A2 2 0 0 0 4 4V20A2 2 0 0 0 6 22H18A2 2 0 0 0 20 20V8L14 2Z'
         },
         lexer: {
             name: 'Lexer Rules',
-            icon: 'M4 7V4A2 2 0 0 1 6 2H18A2 2 0 0 1 20 4V7',
-            iconExtra: 'M20 7H4L2 19H22L20 7ZM8 12V16M16 12V16',
-            description: 'Generate lexical analysis rules and tokens'
+            icon: 'M4 7V4A2 2 0 0 1 6 2H18A2 2 0 0 1 20 4V7'
         },
         parser: {
             name: 'Parser Grammar',
-            icon: 'M22 12H18L15 21L9 3L6 12H2',
-            iconExtra: '',
-            description: 'Generate parsing grammar and syntax rules'
+            icon: 'M22 12H18L15 21L9 3L6 12H2'
         },
         analyser: {
-            name: 'Analyzer Config',
-            icon: 'M9 11H15M9 15H15M17 21H7A2 2 0 0 1 5 19V5A2 2 0 0 1 7 3H14L19 8V19A2 2 0 0 1 17 21Z',
-            iconExtra: '',
-            description: 'Generate semantic analysis configuration'
+            name: 'Analyser Rules',
+            icon: 'M9 11H15M9 15H15M17 21H7A2 2 0 0 1 5 19V5A2 2 0 0 1 7 3H14L19 8V19A2 2 0 0 1 17 21Z'
         },
         translator: {
-            name: 'Translator',
-            icon: 'M14.5 2H6A2 2 0 0 0 4 4V20A2 2 0 0 0 6 22H18A2 2 0 0 0 20 20V7.5L14.5 2Z',
-            iconExtra: 'M14 2V8H20M9 15H15M9 11H12',
-            description: 'Generate code translation templates'
+            name: 'Translator Rules',
+            icon: 'M14.5 2H6A2 2 0 0 0 4 4V20A2 2 0 0 0 6 22H18A2 2 0 0 0 20 20V7.5L14.5 2Z'
         },
         optimiser: {
-            name: 'Optimiser',
-            icon: 'M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z',
-            iconExtra: 'M9 12L11 14L15 10',
-            description: 'Generate optimisation rules and configurations'
+            name: 'Optimiser Code',
+            icon: 'M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z'
         }
     };
 
@@ -563,7 +551,7 @@
         // Add user message to show generation started
         messages = [...messages, {
             id: Date.now(),
-            text: `Generate ${phaseConfig[phase].name} input`,
+            text: `${phaseConfig[phase].name} :)`,
             isUser: true,
             timestamp: new Date()
         }];
@@ -576,7 +564,7 @@
             const loadingMessageId = Date.now() + 1;
             messages = [...messages, {
                 id: loadingMessageId,
-                text: `Generating ${phaseConfig[phase].name} input...`,
+                text: `Generating input...`,
                 isUser: false,
                 timestamp: new Date()
             }];
@@ -1057,8 +1045,9 @@
                                         <circle cx="12" cy="16" r="1" fill="currentColor"/>
                                     </svg>
                                 </div>
-                                <h4>Ask me anything!</h4>
-                                <p>I'm here to help you understand compiler concepts, debug issues, or answer questions about your Visual Compiler project.</p>
+                                <h4>Ask me anything about</h4>
+                                <h4>Compiler Construction!</h4>
+                                <p>I'm here to help you understand concepts and get started with your Visual Compiler project.</p>
                             </div>
                         {:else}
                             {#each messages as message (message.id)}
@@ -1079,7 +1068,7 @@
                         <div class="input-container">
                             <textarea
                                 bind:value={messageInput}
-                                placeholder="Ask me about compilers"
+                                placeholder="Start messaging here..."
                                 rows="1"
                                 on:keypress={handleKeyPress}
                             ></textarea>
@@ -1103,23 +1092,10 @@
                     <div class="generate-container">
                         {#if currentPhase}
                             <!-- Show current active phase -->
-                            <div class="generate-welcome">
-                                <div class="generate-icon">
-                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d={phaseConfig[currentPhase].icon} stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        {#if phaseConfig[currentPhase].iconExtra}
-                                            <path d={phaseConfig[currentPhase].iconExtra} stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                        {/if}
-                                    </svg>
-                                </div>
-                                <h4>{phaseConfig[currentPhase].name}</h4>
-                                <p class="phase-description">{phaseConfig[currentPhase].description}</p>
-                            </div>
-                            
                             <div class="generate-action-section">
                                 <div class="action-header">
                                     <h5>Ready to Generate Input</h5>
-                                    <p>Click the button below to generate sample input for this phase</p>
+                                    <p>Click the button below to generate sample input for this phase based on your current configuration.</p>
                                 </div>
                                 
                                 <button 
@@ -1132,8 +1108,7 @@
                                         </svg>
                                     </div>
                                     <div class="btn-content">
-                                        <span class="btn-title">Generate {phaseConfig[currentPhase].name} Input</span>
-                                        <span class="btn-subtitle">Create sample content for this phase</span>
+                                        <span class="btn-title">Generate Input for {phaseConfig[currentPhase].name}</span>
                                     </div>
                                     <div class="btn-arrow">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1148,7 +1123,7 @@
                                         <path d="M9.09 9A3 3 0 0 1 12 6C13.66 6 15 7.34 15 9C15 10.66 13.66 12 12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                                         <circle cx="12" cy="16" r="1" fill="currentColor"/>
                                     </svg>
-                                    <span>The AI will generate appropriate sample input based on your current phase requirements</span>
+                                    <span>Please note that the AI Assistant is not perfect, but it is designed to guide your learning process.</span>
                                 </div>
                             </div>
                         {:else}
@@ -1161,16 +1136,16 @@
                                     </svg>
                                 </div>
                                 <h4>No Active Phase</h4>
-                                <p>Please navigate to a compiler phase in the main workspace to generate input for that specific phase.</p>
+                                <p>Please navigate to a compiler phase in the main workspace to generate input for that phase.</p>
                                 <div class="available-phases-info">
-                                    <h6>Available phases:</h6>
+                                    <h6>Available Input Generation:</h6>
                                     <ul>
                                         <li>Source Code</li>
                                         <li>Lexer Rules</li>
                                         <li>Parser Grammar</li>
-                                        <li>Analyzer Config</li>
-                                        <li>Translator</li>
-                                        <li>Optimiser</li>
+                                        <li>Analyser Rules</li>
+                                        <li>Translator Rules</li>
+                                        <li>(Optimiser Code)</li>
                                     </ul>
                                 </div>
                             </div>
