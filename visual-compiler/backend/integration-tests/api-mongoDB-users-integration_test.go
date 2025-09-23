@@ -60,8 +60,8 @@ func TestRegister_ExistingEmail(t *testing.T) {
 
 func TestRegister_NewUser(t *testing.T) {
 
-	username := fmt.Sprintf("user-%s", time.Now().Format("20060102-150405"))
-	email := fmt.Sprintf("%s@gmail.com", time.Now().Format("20060102-150405"))
+	username := fmt.Sprintf("user-%s", time.Now().Format("20060102-150405.000000000"))
+	email := fmt.Sprintf("%s@gmail.com", time.Now().Format("20060102-150405.000000000"))
 	user_data := map[string]string{
 		"username": username,
 		"email":    email,
