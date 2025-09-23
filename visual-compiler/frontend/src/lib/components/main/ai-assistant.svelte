@@ -1161,16 +1161,16 @@
                                     </svg>
                                 </div>
                                 <h4>No Active Phase</h4>
-                                <p>Please navigate to a compiler phase in the main workspace to generate input for that specific phase.</p>
+                                <p>Please navigate to a compiler phase in the main workspace to generate input for that phase.</p>
                                 <div class="available-phases-info">
-                                    <h6>Available phases:</h6>
+                                    <h6>Available Input Generation:</h6>
                                     <ul>
                                         <li>Source Code</li>
                                         <li>Lexer Rules</li>
                                         <li>Parser Grammar</li>
-                                        <li>Analyzer Config</li>
-                                        <li>Translator</li>
-                                        <li>Optimiser</li>
+                                        <li>Analyser Configuration</li>
+                                        <li>Translator Rules</li>
+                                        <li>(Optimiser Code)</li>
                                     </ul>
                                 </div>
                             </div>
