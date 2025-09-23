@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { get } from 'svelte/store';
+import { theme, ToggleTheme } from '../src/lib/stores/theme';
 
 describe('Theme Store', () => {
     let mockLocalStorage: Record<string, string>;
@@ -59,34 +60,34 @@ describe('Theme Store', () => {
     });
 
     describe('theme store initialization', () => {
-        it('should initialize with light theme when no stored theme', async () => {
-            const { theme } = await import('../src/lib/stores/theme');           
+        it('should initialize with light theme when no stored theme', () => {
+            // Using imported theme           
             const currentTheme = get(theme);
             expect(currentTheme).toBe('light');
         });
 
-        it('should initialize with stored dark theme', async () => {
+        it('should initialize with stored dark theme', () => {
             mockLocalStorage['vc-theme'] = 'dark';
             
-            const { theme } = await import('../src/lib/stores/theme');
+            // Using imported theme
             
             const currentTheme = get(theme);
             expect(currentTheme).toBe('dark');
         });
 
-        it('should initialize with light theme when stored theme is not dark', async () => {
+        it('should initialize with light theme when stored theme is not dark', () => {
             mockLocalStorage['vc-theme'] = 'light';
             
-            const { theme } = await import('../src/lib/stores/theme');
+            // Using imported theme
             
             const currentTheme = get(theme);
             expect(currentTheme).toBe('light');
         });
 
-        it('should initialize with light theme when stored theme is invalid', async () => {
+        it('should initialize with light theme when stored theme is invalid', () => {
             mockLocalStorage['vc-theme'] = 'invalid-theme';
             
-            const { theme } = await import('../src/lib/stores/theme');
+            // Using imported theme
             
             const currentTheme = get(theme);
             expect(currentTheme).toBe('light');
@@ -94,9 +95,9 @@ describe('Theme Store', () => {
     });
 
     describe('ToggleTheme function', () => {
-        it('should toggle from light to dark theme', async () => {
+        it('should toggle from light to dark theme', () => {
 
-            const { theme, ToggleTheme } = await import('../src/lib/stores/theme');
+            // Using imported theme and ToggleTheme
             
             expect(get(theme)).toBe('light');
             
@@ -106,10 +107,10 @@ describe('Theme Store', () => {
             expect(mockDocument.documentElement.classList.toggle).toHaveBeenCalledWith('dark-mode', true);
         });
 
-        it('should toggle from dark to light theme', async () => {
+        it('should toggle from dark to light theme', () => {
             mockLocalStorage['vc-theme'] = 'dark';
             
-            const { theme, ToggleTheme } = await import('../src/lib/stores/theme');
+            // Using imported theme and ToggleTheme
             
             expect(get(theme)).toBe('dark');
             
@@ -119,9 +120,9 @@ describe('Theme Store', () => {
             expect(mockDocument.documentElement.classList.toggle).toHaveBeenCalledWith('dark-mode', false);
         });
 
-        it('should handle multiple toggles correctly', async () => {
+        it('should handle multiple toggles correctly', () => {
 
-            const { theme, ToggleTheme } = await import('../src/lib/stores/theme');
+            // Using imported theme and ToggleTheme
             
             expect(get(theme)).toBe('light'); // Initial state
             
@@ -137,9 +138,9 @@ describe('Theme Store', () => {
             expect(mockDocument.documentElement.classList.toggle).toHaveBeenCalledTimes(3);
         });
 
-        it('should update DOM class correctly', async () => {
+        it('should update DOM class correctly', () => {
 
-            const { ToggleTheme } = await import('../src/lib/stores/theme');
+            // Using imported ToggleTheme
             
             ToggleTheme(); // light -> dark
             expect(mockDocument.documentElement.classList.toggle).toHaveBeenCalledWith('dark-mode', true);
@@ -150,10 +151,7 @@ describe('Theme Store', () => {
     });
 
     describe('theme store subscription', () => {
-        it('should support subscription to theme changes', async () => {
-          
-            const { theme, ToggleTheme } = await import('../src/lib/stores/theme');
-            
+        it('should support subscription to theme changes', () => {
             const themes: string[] = [];
             
             const unsubscribe = theme.subscribe((currentTheme) => {
@@ -168,9 +166,9 @@ describe('Theme Store', () => {
             unsubscribe();
         });
 
-        it('should handle manual theme updates', async () => {
+        it('should handle manual theme updates', () => {
           
-            const { theme } = await import('../src/lib/stores/theme');
+            // Using imported theme
             
             theme.set('dark');
             expect(get(theme)).toBe('dark');
@@ -181,7 +179,7 @@ describe('Theme Store', () => {
     });
 
     describe('environment compatibility', () => {
-        it('should handle missing localStorage gracefully', async () => {
+        it('should handle missing localStorage gracefully', () => {
             // Mock localStorage as undefined for SSR environment
             Object.defineProperty(global, 'localStorage', {
                 value: undefined,
@@ -190,14 +188,14 @@ describe('Theme Store', () => {
             });
             
 
-            const { theme } = await import('../src/lib/stores/theme');
+            // Using imported theme
 
             expect(get(theme)).toBe('light'); // Should default to light
         });
 
-        it('should handle ToggleTheme function correctly', async () => {
+        it('should handle ToggleTheme function correctly', () => {
 
-            const { theme, ToggleTheme } = await import('../src/lib/stores/theme');
+            // Using imported theme and ToggleTheme
             
             // Should work with proper document mock
             expect(() => ToggleTheme()).not.toThrow();

@@ -54,7 +54,6 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		
 		expect(screen.getByLabelText('Variables')).toBeInTheDocument();
 		expect(screen.getByLabelText('Terminals')).toBeInTheDocument();
-		expect(screen.getByLabelText('Start Symbol')).toBeInTheDocument();
 		expect(screen.getAllByPlaceholderText('LHS')).toHaveLength(1);
 		expect(screen.getAllByPlaceholderText('RHS')).toHaveLength(1);
 	});
@@ -64,16 +63,16 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		
 		const variablesInput = screen.getByLabelText('Variables');
 		const terminalsInput = screen.getByLabelText('Terminals');
-		const startSymbolInput = screen.getByLabelText('Start Symbol');
 		
 		expect(variablesInput).toBeInTheDocument();
 		expect(terminalsInput).toBeInTheDocument();
-		expect(startSymbolInput).toBeInTheDocument();
 		
 		// Check initial empty state
 		expect(variablesInput).toHaveValue('');
 		expect(terminalsInput).toHaveValue('');
-		expect(startSymbolInput).toHaveValue('');
+		
+		// Check that first rule is available (start symbol will be first rule's LHS)
+		expect(screen.getAllByPlaceholderText('LHS')).toHaveLength(1);
 	});
 
 	it('TestComponentRender_Success: Renders parsing input component correctly', async () => {
@@ -181,7 +180,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Check that form fields have been populated
 		const variablesInput = screen.getByLabelText('Variables');
 		const terminalsInput = screen.getByLabelText('Terminals');
-		const startSymbolInput = screen.getByLabelText('Start Symbol');
+		// Start symbol input not needed - using first rule LHS
 		
 		// Default grammar should populate these fields
 		expect(variablesInput.value).not.toBe('');
@@ -214,7 +213,10 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'A B' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a b' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'C' } }); // C not in variables
+		
+		// Set first rule LHS to 'C' which is not in variables (should cause error)
+		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
+		await fireEvent.input(lhsInput, { target: { value: 'C' } });
 		
 		const submitButton = screen.getByRole('button', { name: 'Submit Grammar' });
 		await fireEvent.click(submitButton);
@@ -244,12 +246,11 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Set up grammar with invalid symbols in rules
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S A' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a b' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'S' } });
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
 		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
 		
-		await fireEvent.input(lhsInput, { target: { value: 'S' } });
+		await fireEvent.input(lhsInput, { target: { value: 'S' } }); // S is the start symbol (first rule LHS)
 		await fireEvent.input(rhsInput, { target: { value: 'X y' } }); // X not in variables, y not in terminals
 		
 		const submitButton = screen.getByRole('button', { name: 'Submit Grammar' });
@@ -267,7 +268,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Set up basic info but leave RHS empty
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'S' } });
+		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
 		await fireEvent.input(lhsInput, { target: { value: 'S' } });
@@ -287,7 +288,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S A' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'S' } }); // S is in variables
+		// Start symbol will be set via first rule LHS // S is in variables
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
 		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
@@ -296,7 +297,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		await fireEvent.input(rhsInput, { target: { value: 'a' } });
 		
 		// Should pass validation
-		expect(screen.getByLabelText('Start Symbol')).toHaveValue('S');
+		expect(screen.getAllByPlaceholderText('LHS')[0] /* First rule LHS is start symbol */).toHaveValue('S');
 	});
 
 	it('TestGrammarValidation_Success: Validates complete grammar before submission', async () => {
@@ -305,7 +306,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Set up valid grammar
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'S' } });
+		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
 		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
@@ -316,7 +317,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Grammar should be valid
 		expect(screen.getByLabelText('Variables')).toHaveValue('S');
 		expect(screen.getByLabelText('Terminals')).toHaveValue('a');
-		expect(screen.getByLabelText('Start Symbol')).toHaveValue('S');
+		expect(screen.getAllByPlaceholderText('LHS')[0] /* First rule LHS is start symbol */).toHaveValue('S');
 	});
 
 	// ============= FORM INTERACTION TESTS =============
@@ -326,7 +327,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		
 		const variablesInput = screen.getByLabelText('Variables');
 		const terminalsInput = screen.getByLabelText('Terminals');
-		const startSymbolInput = screen.getByLabelText('Start Symbol');
+		// Start symbol input not needed - using first rule LHS
 		
 		await fireEvent.input(variablesInput, { target: { value: 'S A' } });
 		await fireEvent.input(terminalsInput, { target: { value: 'a b' } });
@@ -398,7 +399,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Set up complex grammar
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S A B C' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a b c d e' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'S' } });
+		// Start symbol will be set via first rule LHS
 		
 		// Add multiple rules for complex structure
 		const addButton = screen.getByRole('button', { name: 'Add new rule' });
@@ -434,7 +435,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Set up valid grammar
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'S' } });
+		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
 		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
@@ -467,7 +468,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Set up valid grammar
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S A' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a b' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'S' } });
+		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
 		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
@@ -501,7 +502,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Set up valid grammar
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'int id = num' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'S' } });
+		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
 		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
@@ -551,7 +552,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Set up valid grammar
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'int id = num' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'S' } });
+		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
 		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
@@ -577,7 +578,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Set up valid grammar
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'S' } });
+		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
 		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
@@ -604,7 +605,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Set up valid grammar
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S A' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a b' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'S' } });
+		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
 		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
@@ -635,7 +636,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Set up valid grammar
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S A' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a b' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'S' } });
+		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
 		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
@@ -692,7 +693,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Set up valid grammar
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a' } });
-		await fireEvent.input(screen.getByLabelText('Start Symbol'), { target: { value: 'S' } });
+		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
 		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
