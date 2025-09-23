@@ -128,7 +128,13 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 
 		r := rune(source[i])
 
-		if unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) || r == '-' {
+		if r == '(' || r == ')' || r == '{' || r == '}' || r == '[' || r == ']' || r == ';' || r == '"' {
+
+			builder.WriteRune(' ')
+			builder.WriteRune(r)
+			builder.WriteRune(' ')
+
+		} else if unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) || r == '-' {
 
 			builder.WriteRune(r)
 
@@ -142,7 +148,7 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 				i++
 				r = rune(source[i])
 
-				if !(unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsSpace(r) || r == ';' || r == '_' || r == '.' || r == '-' || r == ')') {
+				if !(unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) || r == '-') {
 
 					builder.WriteRune(r)
 
@@ -183,8 +189,8 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 				tokens_unidentified = append(tokens_unidentified[:other_token], tokens_unidentified[other_token+1:]...)
 				other_token--
 			}
-    }
-}
+		}
+	}
 
 	return tokens, tokens_unidentified, nil
 }
