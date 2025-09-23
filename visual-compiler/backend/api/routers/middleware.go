@@ -18,6 +18,13 @@ import (
 //
 // Authorizes middleware with the users auth token
 func Auth0MiddleWare() gin.HandlerFunc {
+	if os.Getenv("test_mode") == "true" {
+		return func(c *gin.Context) {
+			c.Set("auth0_id", "testuser")
+			c.Next()
+		}
+	}
+
 	auth_domain := os.Getenv("AUTH0_DOMAIN")
 
 	jwksURL := auth_domain + "/.well-known/jwks.json"

@@ -9,10 +9,8 @@ import (
 )
 
 func TestAnalyse_ArtefactCreationFailed(t *testing.T) {
-	server := startServerCore(t)
-	defer closeServerCore(t, server)
-
-	loginUser(t)
+	server = startServerCore(t)
+	loginTestUser(t)
 
 	data := map[string]interface{}{
 		"users_id":     test_user_id,
@@ -70,10 +68,6 @@ func TestAnalyse_ArtefactCreationFailed(t *testing.T) {
 }
 
 func TestAnalyse_Success(t *testing.T) {
-	server := startServerCore(t)
-	defer closeServerCore(t, server)
-
-	loginUser(t)
 
 	data := map[string]interface{}{
 		"users_id":     test_user_id,
@@ -133,14 +127,11 @@ func TestAnalyse_Success(t *testing.T) {
 }
 
 func TestAnalyse_NoTree(t *testing.T) {
-	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	getNoInputUserId(t)
-
 	data := map[string]interface{}{
-		"users_id":     no_input_user,
-		"project_name": project_name,
+		"users_id":     test_user_id,
+		"project_name": no_input_project_name,
 		"scope_rules": []map[string]string{
 			{
 				"Start": "{",
