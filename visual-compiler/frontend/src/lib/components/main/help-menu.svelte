@@ -23,14 +23,19 @@
 				'Click and hold on an output anchor (the grey circle on the right side of a node) and drag the line to an input anchor (the circle on the left side of another node).'
 		},
 		{
-			question: 'How do I delete a node or connection?',
+			question: 'How do I delete a node?',
 			answer:
 				'To delete a node, right-click on it to open its configuration modal, where you will find a delete option. To delete a connection, click and drag one of its connection points away from its anchor and release it onto the empty canvas.'
 		},
 		{
-			question: 'Why can’t I configure a Lexer or Parser node?',
+			question: 'How do I delete a connection?',
 			answer:
-				'You must first add and submit code using a "Source Code" node before you can configure the subsequent phases of the compiler.'
+				'To delete a connection, click and drag one of its connection points away from its anchor and release it onto the empty canvas.'
+		},
+		{
+			question: 'Why can’t I configure a node',
+			answer:
+				'You must first complete the previous phases of the compiler before you can configure the subsequent phases.'
 		}
 	];
 
