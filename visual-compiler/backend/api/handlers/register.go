@@ -1,8 +1,12 @@
 package handlers
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
+	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -77,7 +81,7 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	_, err = users_collection.InsertOne(ctx, bson.M{
+	inserted_result, err := users_collection.InsertOne(ctx, bson.M{
 		"email":    req.Email,
 		"password": string(hashed_password),
 		"username": normalised_username,
@@ -87,6 +91,85 @@ func Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error in registering user"})
 		return
 	}
+	user_id := inserted_result.InsertedID.(bson.ObjectID).String()
 
-	c.JSON(http.StatusCreated, gin.H{"message": "Successfully registered user"})
+	auth_domain := os.Getenv("AUTH0_DOMAIN")
+	client_id := os.Getenv("CLIENT_ID")
+	client_secret := os.Getenv("CLIENT_SECRET")
+	audience := auth_domain + "/api/v2/"
+
+	token_request_body := map[string]string{
+		"client_id":     client_id,
+		"client_secret": client_secret,
+		"audience":      audience,
+		"grant_type":    "client_credentials",
+	}
+	json_token, _ := json.Marshal(token_request_body)
+
+	res, err := http.Post(auth_domain+"/oauth/token", "application/json", bytes.NewBuffer(json_token))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token Auth0 request failed: " + err.Error()})
+		return
+	}
+	defer res.Body.Close()
+
+	body, _ := io.ReadAll(res.Body)
+	var res_token struct {
+		AccessToken string `json:"access_token"`
+	}
+	if err := json.Unmarshal(body, &res_token); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token parse failed (Auth0)"})
+		return
+	}
+
+	new_auth0_user := map[string]any{
+		"connection": "Username-Password-Authentication",
+		"email":      req.Email,
+		"password":   req.Password,
+		"app_metadata": map[string]string{
+			"mongo_id": user_id,
+		},
+	}
+	json_user, _ := json.Marshal(new_auth0_user)
+
+	auth_request, _ := http.NewRequest("POST", auth_domain+"/api/v2/users", bytes.NewBuffer(json_user))
+	auth_request.Header.Set("Authorization", "Bearer "+res_token.AccessToken)
+	auth_request.Header.Set("Content-Type", "application/json")
+
+	cli := &http.Client{}
+	auth_res, err := cli.Do(auth_request)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User creation failed (Auth0): " + err.Error()})
+		return
+	}
+
+	if auth_res.StatusCode >= 300 {
+		bytes_body_error, _ := io.ReadAll(auth_res.Body)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error":       "User creation failed (Auth0)",
+			"status_code": auth_res.StatusCode,
+			"body":        string(bytes_body_error),
+		})
+		return
+	}
+	defer auth_res.Body.Close()
+
+	var resp_auth0 struct {
+		UserID string `json:"user_id"`
+	}
+	json.NewDecoder(auth_res.Body).Decode(&resp_auth0)
+
+	_, err = users_collection.UpdateByID(ctx, inserted_result.InsertedID, bson.M{
+		"$set": bson.M{"auth0_id": resp_auth0.UserID},
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message":    "Successfully registered user",
+		"mongoDB_id": user_id,
+		"auth0_id":   resp_auth0.UserID,
+	})
 }

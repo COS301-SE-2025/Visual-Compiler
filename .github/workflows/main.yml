@@ -134,6 +134,13 @@ jobs:
         working-directory: ./visual-compiler
         run: npx cypress run
 
+      - name: Cypress screenshots upload
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: visual-compiler/e2e-tests/screenshots
+
       - name: Docker Compose Shut down
         if: always()
         run: docker compose down

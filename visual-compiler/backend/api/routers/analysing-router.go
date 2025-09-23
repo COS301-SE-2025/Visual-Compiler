@@ -13,9 +13,7 @@ import (
 // Return: Endpoints
 //
 // Creates the endpoints for lexing. Links the endpoints to the respective function
-func SetupAnalysingRouter() *gin.Engine {
-	r := gin.New()
-
+func SetupAnalysingRouter(r *gin.RouterGroup) *gin.RouterGroup {
 	r.POST("/analyse", handlers.Analyse)
 
 	return r

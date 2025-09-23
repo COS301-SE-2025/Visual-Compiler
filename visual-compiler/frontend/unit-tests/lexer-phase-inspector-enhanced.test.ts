@@ -78,8 +78,28 @@ const localStorageMock = (() => {
 	};
 })();
 
+// Mock sessionStorage
+const sessionStorageMock = (() => {
+	let store: { [key: string]: string } = {};
+	return {
+		getItem(key: string) {
+			return store[key] || null;
+		},
+		setItem(key: string, value: string) {
+			store[key] = value.toString();
+		},
+		clear() {
+			store = {};
+		}
+	};
+})();
+
 Object.defineProperty(window, 'localStorage', {
 	value: localStorageMock
+});
+
+Object.defineProperty(window, 'sessionStorage', {
+	value: sessionStorageMock
 });
 
 describe('Lexer PhaseInspector Enhanced Coverage Tests', () => {
@@ -88,7 +108,11 @@ describe('Lexer PhaseInspector Enhanced Coverage Tests', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		localStorageMock.clear();
+		sessionStorageMock.clear();
+		
 		localStorageMock.setItem('user_id', 'test-user');
+		sessionStorageMock.setItem('access_token', 'test-access-token');
+		
 		mockFetch.mockResolvedValue({
 			ok: true,
 			json: () => Promise.resolve({ success: true, message: 'Rules stored successfully!' })
@@ -265,6 +289,12 @@ describe('Lexer PhaseInspector Enhanced Coverage Tests', () => {
 	});
 
 	it('TestTokenGeneration_Success: Should handle token generation', async () => {
+		// Mock getProject call first (happens on mount)
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			json: () => Promise.resolve({ success: true })
+		});
+
 		// Mock successful rules submission
 		mockFetch.mockResolvedValueOnce({
 			ok: true,
@@ -312,11 +342,13 @@ describe('Lexer PhaseInspector Enhanced Coverage Tests', () => {
 			}
 		});
 
-		// Verify token generation was attempted
-		expect(mockFetch).toHaveBeenCalledWith(
-			expect.stringContaining('lexer'),
-			expect.any(Object)
-		);
+		// Verify token generation was attempted (should be the 3rd call after getProject and rules submission)
+		await waitFor(() => {
+			expect(mockFetch).toHaveBeenCalledWith(
+				expect.stringContaining('lexer'),
+				expect.any(Object)
+			);
+		});
 	});
 
 	it('TestAutomataVisualization_Success: Should handle automata visualization modes', async () => {

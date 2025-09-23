@@ -173,7 +173,7 @@ func TestReadGrammar_Valid(t *testing.T) {
 	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	get_id(t)
+	getID(t)
 
 	data := map[string]interface{}{
 		"users_id":     test_user_id,
@@ -549,7 +549,7 @@ func TestCreateSyntaxTree_CoreError(t *testing.T) {
 	server := startServerCore(t)
 	defer closeServerCore(t, server)
 
-	get_id(t)
+	getID(t)
 	data := map[string]interface{}{
 		"users_id":     test_user_id,
 		"project_name": project_name,

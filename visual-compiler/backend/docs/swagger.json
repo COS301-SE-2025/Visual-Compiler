@@ -9,6 +9,134 @@
     "host": "localhost:8080",
     "basePath": "/api",
     "paths": {
+        "/ai/answer": {
+            "post": {
+                "description": "The user sends a question to the AI assistance about the compilation process",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI"
+                ],
+                "summary": "AI assistant answers user's question",
+                "parameters": [
+                    {
+                        "description": "Answer user's question",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.AnswerQuestion"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "AI response received",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input/Response failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ai/generate": {
+            "post": {
+                "description": "The AI generates input (upon request) based on the current process the user is on in the compilation process",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI"
+                ],
+                "summary": "AI assistant generates input",
+                "parameters": [
+                    {
+                        "description": "Generate input",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.InputGenerate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "AI response received",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input/Response failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/analysing/analyse": {
             "post": {
                 "description": "Accepts scope rules, grammar rules and type rules from the user. Searches the database for the syntax tree created from the user. If it exists, the analysing process is performed and the artefacts are stored in the database",
@@ -45,6 +173,15 @@
                     },
                     "400": {
                         "description": "Invalid input or artefacts failed to insert",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -116,6 +253,15 @@
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -171,6 +317,15 @@
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -219,6 +374,15 @@
                     },
                     "400": {
                         "description": "Invalid input/Conversion failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -290,8 +454,203 @@
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "404": {
                         "description": "DFA/source code not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/lexing/getCode": {
+            "get": {
+                "description": "Searches the database for the user's source code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Lexing"
+                ],
+                "summary": "Get user's code",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project Name",
+                        "name": "project_name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Source code retrieved",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input/Response failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/lexing/getTokens": {
+            "get": {
+                "description": "Searches the database for the user's tokens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Lexing"
+                ],
+                "summary": "Get user's tokens",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project Name",
+                        "name": "project_name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tokens retrieved",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input/Response failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/lexing/getTree": {
+            "get": {
+                "description": "Searches the database for the user's syntax tree",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Lexing"
+                ],
+                "summary": "Get user's syntax tree",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project Name",
+                        "name": "project_name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Syntax Tree retrieved",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input/Response failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -347,6 +706,15 @@
                     },
                     "400": {
                         "description": "Invalid input/Lexing failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -418,6 +786,15 @@
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "404": {
                         "description": "Rules not found",
                         "schema": {
@@ -475,6 +852,15 @@
                     },
                     "400": {
                         "description": "Invalid input/Conversion failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -546,6 +932,15 @@
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "404": {
                         "description": "Rules not found",
                         "schema": {
@@ -610,8 +1005,145 @@
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "404": {
                         "description": "Source code not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/optimising/optimise": {
+            "post": {
+                "description": "Optimises the user's stored code with parameters for optimisation",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Optimising"
+                ],
+                "summary": "Optimises stored code",
+                "parameters": [
+                    {
+                        "description": "Optimise code",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.OptimiseCodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Code successfully optimised and stored",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/optimising/source_code": {
+            "post": {
+                "description": "Reads in new code from the user. Starts the optimising process",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Optimising"
+                ],
+                "summary": "Reads new code for optimising",
+                "parameters": [
+                    {
+                        "description": "Read optimising code from User",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.SourceCodeOnlyRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Optimising code successfully and stored",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -835,6 +1367,15 @@
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -883,6 +1424,15 @@
                     },
                     "400": {
                         "description": "Invalid input/Conversion failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1555,8 +2105,7 @@
                 "grammar_rules",
                 "project_name",
                 "scope_rules",
-                "type_rules",
-                "users_id"
+                "type_rules"
             ],
             "properties": {
                 "grammar_rules": {
@@ -1584,11 +2133,17 @@
                     "items": {
                         "$ref": "#/definitions/services.TypeRule"
                     }
-                },
-                "users_id": {
-                    "description": "User's ID for storing purposes",
-                    "type": "string",
-                    "example": "685df259c1294de5546b045f"
+                }
+            }
+        },
+        "handlers.AnswerQuestion": {
+            "type": "object",
+            "required": [
+                "question"
+            ],
+            "properties": {
+                "question": {
+                    "type": "string"
                 }
             }
         },
@@ -1621,6 +2176,21 @@
                 }
             }
         },
+        "handlers.InputGenerate": {
+            "type": "object",
+            "required": [
+                "artefact",
+                "phase"
+            ],
+            "properties": {
+                "artefact": {
+                    "type": "string"
+                },
+                "phase": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.LoginReq": {
             "type": "object",
             "required": [
@@ -1634,6 +2204,30 @@
                 },
                 "password": {
                     "description": "User's password",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.OptimiseCodeRequest": {
+            "type": "object",
+            "required": [
+                "project_name"
+            ],
+            "properties": {
+                "constant_folding": {
+                    "description": "Simplify any code before execution (3 + 4 becomes 7 before execution)",
+                    "type": "boolean"
+                },
+                "dead_code": {
+                    "description": "Remove any code that will never be executed",
+                    "type": "boolean"
+                },
+                "loop_unrolling": {
+                    "description": "Expand any loops",
+                    "type": "boolean"
+                },
+                "project_name": {
+                    "description": "User's project name",
                     "type": "string"
                 }
             }
@@ -1668,7 +2262,6 @@
                 "rules",
                 "start",
                 "terminals",
-                "users_id",
                 "variables"
             ],
             "properties": {
@@ -1701,11 +2294,6 @@
                         " NUMBER",
                         " PUNCTUATION"
                     ]
-                },
-                "users_id": {
-                    "description": "User's ID for storing purposes",
-                    "type": "string",
-                    "example": "685df259c1294de5546b045f"
                 },
                 "variables": {
                     "description": "User's defined variables",
@@ -1748,8 +2336,7 @@
             "type": "object",
             "required": [
                 "pairs",
-                "project_name",
-                "users_id"
+                "project_name"
             ],
             "properties": {
                 "pairs": {
@@ -1762,10 +2349,6 @@
                 "project_name": {
                     "description": "User's project name",
                     "type": "string"
-                },
-                "users_id": {
-                    "description": "Represents the User's ID from frontend",
-                    "type": "string"
                 }
             }
         },
@@ -1773,8 +2356,7 @@
             "type": "object",
             "required": [
                 "project_name",
-                "source_code",
-                "users_id"
+                "source_code"
             ],
             "properties": {
                 "project_name": {
@@ -1784,10 +2366,6 @@
                 "source_code": {
                     "description": "Represents the User's source code",
                     "type": "string"
-                },
-                "users_id": {
-                    "description": "Represents the User's ID from frontend",
-                    "type": "string"
                 }
             }
         },
@@ -1795,8 +2373,7 @@
             "type": "object",
             "required": [
                 "project_name",
-                "translation_rules",
-                "users_id"
+                "translation_rules"
             ],
             "properties": {
                 "project_name": {
@@ -1809,19 +2386,13 @@
                     "items": {
                         "$ref": "#/definitions/services.TranslationRule"
                     }
-                },
-                "users_id": {
-                    "description": "User's ID for searching and storing purposes",
-                    "type": "string",
-                    "example": "685df259c1294de5546b045f"
                 }
             }
         },
         "handlers.readDFARequest": {
             "type": "object",
             "required": [
-                "project_name",
-                "users_id"
+                "project_name"
             ],
             "properties": {
                 "accepting_states": {
@@ -1852,10 +2423,6 @@
                     "items": {
                         "$ref": "#/definitions/services.Transition"
                     }
-                },
-                "users_id": {
-                    "description": "Represents the User's ID from frontend",
-                    "type": "string"
                 }
             }
         },

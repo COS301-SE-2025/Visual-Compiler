@@ -478,3 +478,20 @@ func TestSubstituteTemplate_RepeatedPlaceholders(t *testing.T) {
 		t.Errorf("Expected '%s' but received '%s'", expected, result)
 	}
 }
+
+func TestSubstituteTemplate_UnavailableTokens(t *testing.T) {
+	template := "1 -> [{IDENTIFIER}]\n2 -> [{IDENTIFIER}]"
+	token_map := map[string][]*services.TokenTracker{
+		"IDENTIFIER": {
+			{Value: "1", Avail: true},
+			{Value: "2", Avail: false},
+		},
+	}
+
+	result := services.SubstituteTemplate(template, token_map)
+
+	expected := "1 -> [1]\n2 -> [{IDENTIFIER}]"
+	if result != expected {
+		t.Errorf("Expected '%s' but received '%s'", expected, result)
+	}
+}

@@ -24,8 +24,8 @@ vi.mock('$lib/stores/project', () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-// Mock localStorage
-const localStorageMock = (() => {
+// Mock localStorage and sessionStorage
+const createStorageMock = () => {
 	let store: { [key: string]: string } = {};
 	return {
 		getItem(key: string) {
@@ -34,30 +34,36 @@ const localStorageMock = (() => {
 		setItem(key: string, value: string) {
 			store[key] = value.toString();
 		},
+		removeItem(key: string) {
+			delete store[key];
+		},
 		clear() {
 			store = {};
 		}
 	};
-})();
+};
+
+const localStorageMock = createStorageMock();
+const sessionStorageMock = createStorageMock();
 
 Object.defineProperty(window, 'localStorage', {
 	value: localStorageMock
 });
 
+Object.defineProperty(window, 'sessionStorage', {
+	value: sessionStorageMock
+});
+
 describe('PhaseInspector Component', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		// Set up localStorage mocks for each test
-		const localStorageMock = {
-			getItem: vi.fn().mockReturnValue('test-user-123'),
-			setItem: vi.fn(),
-			removeItem: vi.fn(),
-			clear: vi.fn(),
-		};
-		Object.defineProperty(window, 'localStorage', {
-			value: localStorageMock,
-			writable: true
-		});
+		// Set up storage mocks for each test
+		sessionStorageMock.clear();
+		localStorageMock.clear();
+		
+		// Set default values for successful tests
+		sessionStorageMock.setItem('access_token', 'test-token-123');
+		localStorageMock.setItem('user_id', 'test-user-123');
 	});
 
 	const sourceCode = 'let x = 1;';
@@ -131,7 +137,16 @@ describe('PhaseInspector Component', () => {
 	});
 
 	it('TestHandleSubmit_Success: Calls fetch and shows generate button on valid submission', async () => {
-		mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ message: 'Success' }) });
+		// Mock getProject call first, then successful submission
+		mockFetch
+			.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({}) // Initial getProject call
+			})
+			.mockResolvedValueOnce({ 
+				ok: true, 
+				json: () => Promise.resolve({ message: 'Rules stored successfully!' }) 
+			});
 
 		render(PhaseInspector, { source_code: sourceCode });
 		await fireEvent.click(screen.getByRole('button', { name: 'Regular Expression' }));
@@ -157,11 +172,17 @@ describe('PhaseInspector Component', () => {
 	});
 
 	it('TestHandleSubmit_Failure_ServerError: Shows error toast on fetch failure', async () => {
-		mockFetch.mockResolvedValue({
-			ok: false,
-			status: 500,
-			text: () => Promise.resolve('Internal Server Error')
-		});
+		// Mock getProject call first, then the failing call
+		mockFetch
+			.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({}) // Initial getProject call
+			})
+			.mockResolvedValueOnce({
+				ok: false,
+				status: 500,
+				text: () => Promise.resolve('Internal Server Error')
+			});
 
 		render(PhaseInspector, { source_code: sourceCode });
 		await fireEvent.click(screen.getByRole('button', { name: 'Regular Expression' }));
@@ -330,17 +351,9 @@ describe('PhaseInspector Component', () => {
 	});
 
 	it('TestAuthenticationCheck_Success: Checks user authentication', async () => {
-		// Override localStorage to return null for user_id
-		const localStorageMock = {
-			getItem: vi.fn().mockReturnValue(null),
-			setItem: vi.fn(),
-			removeItem: vi.fn(),
-			clear: vi.fn(),
-		};
-		Object.defineProperty(window, 'localStorage', {
-			value: localStorageMock,
-			writable: true
-		});
+		// Clear authentication tokens to simulate unauthenticated state
+		sessionStorageMock.clear();
+		localStorageMock.clear();
 
 		render(PhaseInspector, { source_code: sourceCode });
 		
@@ -359,7 +372,16 @@ describe('PhaseInspector Component', () => {
 	});
 
 	it('TestMultipleRulesSubmission_Success: Handles multiple lexical rules', async () => {
-		mockFetch.mockResolvedValue({ ok: true, json: () => Promise.resolve({ message: 'Success' }) });
+		// Mock getProject call first, then successful submission
+		mockFetch
+			.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({}) // Initial getProject call
+			})
+			.mockResolvedValueOnce({ 
+				ok: true, 
+				json: () => Promise.resolve({ message: 'Rules stored successfully!' }) 
+			});
 
 		render(PhaseInspector, { source_code: sourceCode });
 		await fireEvent.click(screen.getByRole('button', { name: 'Regular Expression' }));
@@ -383,7 +405,8 @@ describe('PhaseInspector Component', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
 
 		await waitFor(() => {
-			expect(mockFetch).toHaveBeenCalledWith(
+			// Check the second call (first is getProject)
+			expect(mockFetch).toHaveBeenNthCalledWith(2,
 				'http://localhost:8080/api/lexing/rules',
 				expect.objectContaining({
 					method: 'POST',
@@ -485,7 +508,7 @@ describe('PhaseInspector Component', () => {
 
 		await waitFor(() => {
 			expect(AddToast).toHaveBeenCalledWith(
-				expect.stringContaining('Save failed'),
+				'Save failed: Unable to store lexical rules. Please check your connection and try again',
 				'error'
 			);
 		});
@@ -521,21 +544,16 @@ describe('PhaseInspector Component', () => {
 	});
 
 	it('TestProjectNameValidation_Success: Validates project name requirement', async () => {
-		// Mock localStorage with user but no project
-		const localStorageMock = {
-			getItem: vi.fn((key) => {
-				if (key === 'user_id') return 'test-user-123';
-				if (key === 'project_name') return null;
-				return null;
-			}),
-			setItem: vi.fn(),
-			removeItem: vi.fn(),
-			clear: vi.fn(),
-		};
-		Object.defineProperty(window, 'localStorage', {
-			value: localStorageMock,
-			writable: true
-		});
+		// Mock localStorage with user but clear session token to test auth failure
+		sessionStorageMock.clear();
+		localStorageMock.setItem('user_id', 'test-user-123');
+		
+		// Mock getProject call, then attempt submission without auth token
+		mockFetch
+			.mockResolvedValueOnce({
+				ok: true,
+				json: () => Promise.resolve({}) // Initial getProject call
+			});
 
 		render(PhaseInspector, { source_code: sourceCode });
 		
@@ -554,10 +572,9 @@ describe('PhaseInspector Component', () => {
 		await fireEvent.input(regexInput, { target: { value: 'test' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Submit' }));
 
-		// Since the localStorage mock shows no project_name, it should proceed with submission
-		// The test should verify the component handles the scenario appropriately
+		// Should show authentication error since no access token
 		await waitFor(() => {
-			expect(mockFetch).toHaveBeenCalled();
+			expect(AddToast).toHaveBeenCalledWith('Authentication required: Please log in to save lexical rules', 'error');
 		});
 	});
 

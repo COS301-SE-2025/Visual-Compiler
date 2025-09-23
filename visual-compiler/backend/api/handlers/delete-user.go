@@ -40,8 +40,8 @@ func DeleteUser(c *gin.Context) {
 	lexing_collection := client.Database("visual-compiler").Collection("lexing")
 	parsing_collection := client.Database("visual-compiler").Collection("parsing")
 	analysing_collection := client.Database("visual-compiler").Collection("analysing")
-	// optimising_collection := client.Database("visual-compiler").Collection("optimising")
 	translating_collection := client.Database("visual-compiler").Collection("translating")
+	optimising_collection := client.Database("visual-compiler").Collection("optimising")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -80,6 +80,11 @@ func DeleteUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user's related translating data: " + err.Error()})
 		return
 	}
+	optimising_res, err := optimising_collection.DeleteOne(ctx, bson.M{"users_id": req.ID})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete user's related optimising data: " + err.Error()})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"message":             "User deleted successfully",
@@ -88,5 +93,6 @@ func DeleteUser(c *gin.Context) {
 		"parsing_deleted":     parsing_res.DeletedCount,
 		"analysing_deleted":   analysing_res.DeletedCount,
 		"translating_deleted": translating_res.DeletedCount,
+		"optimising_deleted":  optimising_res.DeletedCount,
 	})
 }

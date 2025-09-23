@@ -239,38 +239,55 @@
 
     async function handleGenerate() {
     try {
-        const user_id = localStorage.getItem('user_id');
-		const project = get(projectName);
-		if (!user_id) {
-			AddToast('Authentication required: Please log in to generate symbol table', 'error');
-			return;
-		}
-		if (!project) {
+        const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
+        const project = get(projectName);
+        
+        if (!accessToken) {
+            AddToast('Authentication required: Please log in to generate symbol table', 'error');
+            return;
+        }
+        if (!project) {
             AddToast('No project selected: Please select or create a project first', 'error');
             return;
         }
+        
         is_loading = true;
         
         const requestData = {
-            users_id: user_id,
-            scope_rules: submitted_scope_rules,
-            grammar_rules: submitted_grammar_rules,
-            type_rules: submitted_type_rules,
+            scope_rules: submitted_scope_rules.map(rule => ({
+                start: rule.Start,
+                end: rule.End
+            })),
+            grammar_rules: {
+                variablerule: submitted_grammar_rules.VariableRule,
+                typerule: submitted_grammar_rules.TypeRule,
+                functionrule: submitted_grammar_rules.FunctionRule,
+                parameterrule: submitted_grammar_rules.ParameterRule,
+                assignmentrule: submitted_grammar_rules.AssignmentRule,
+                operatorrule: submitted_grammar_rules.OperatorRule,
+                termrule: submitted_grammar_rules.TermRule
+            },
+            type_rules: submitted_type_rules.map(rule => ({
+                resultdata: rule.ResultData,
+                assignment: rule.Assignment,
+                lhsdata: rule.LHSData,
+                operator: rule.Operator,
+                rhsdata: rule.RHSData
+            })),
             project_name: project
         };
-
 
         const response = await fetch('http://localhost:8080/api/analysing/analyse', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
             },
             body: JSON.stringify(requestData)
         });
         
         const result = await response.json();
         
-        // Transform the data with proper null checks
         const symbols = result.symbol_table?.SymbolScopes?.map((s: any) => ({
             name: s.Name || s.name || 'unknown',
             type: s.Type || s.type || 'unknown',
@@ -278,31 +295,30 @@
         })) || [];
 
         onGenerateSymbolTable({
-				symbol_table: symbols,
-                analyser_error: result.error,
-                analyser_error_details: result.details
-			});
+            symbol_table: symbols,
+            analyser_error: result.error,
+            analyser_error_details: result.details
+        });
 
-        
-        symbol_table =  symbols ;
+        symbol_table = symbols;
         show_symbol_table = true;
 
         if (result.error) {
             AddToast('Semantic error detected! Check the analysis results for details', 'error');
-            dispatch('generate',{
+            dispatch('generate', {
                 symbol_table: symbols,
                 analyser_error: true,
                 analyser_error_details: result.details
             });
-            console.log(result)
-        }else {
+            console.log(result);
+        } else {
             AddToast('Semantic analysis complete! Symbol table generated successfully', 'success');
-            dispatch('generate',{
+            dispatch('generate', {
                 symbol_table: symbols
             });
         }
     } catch (error) {
-         const err = error as { 
+        const err = error as { 
             response?: { 
                 data?: any; 
                 status?: number 
@@ -315,7 +331,7 @@
             status: err.response?.status
         });
         console.error('Error generating symbol table:', error);
-        AddToast('Analysis failed: ' + ('Unable to generate symbol table. Please check your connection'), 'error');
+        AddToast('Analysis failed: Unable to generate symbol table. Please check your connection', 'error');
     } finally {
         is_loading = false;
     }

@@ -32,7 +32,7 @@
 		event.preventDefault();
 
 		if (reg_password !== reg_confirm_password) {
-			AddToast('� Passwords don\'t match - please make sure both password fields are identical', 'error');
+			AddToast('🔒 Passwords don\'t match - please make sure both password fields are identical', 'error');
 			return;
 		}
 
@@ -52,25 +52,42 @@
 			const data = await response.json();
 
 			if (!response.ok) {
-				if ((data.error).includes("Password")) {
-					AddToast(`Registration error: Password must be atleast 8 characters`, 'error');
-				}else if ((data.error).includes("Username")) {
-					AddToast(`Registration error: Username must be atleast 6 characters`, 'error');
-				}else{
+				// Handle specific backend error messages
+				if (data.error.includes("Password")) {
+					AddToast(`Registration error: Password must be at least 8 characters`, 'error');
+				} else if (data.error.includes("Username")) {
+					AddToast(`Registration error: Username must be at least 6 characters`, 'error');
+				} else if (data.error.includes("Email already exists")) {
+					AddToast(`Registration error: This email is already registered. Please use a different email address`, 'error');
+				} else if (data.error.includes("Username is already taken")) {
+					AddToast(`Registration error: This username is already taken. Please choose a different username`, 'error');
+				} else if (data.error.includes("Input is invalid")) {
+					AddToast(`Registration error: Please check your input format and try again`, 'error');
+				} else if (data.error.includes("Database error")) {
+					AddToast(`Registration error: Database connection issue. Please try again later`, 'error');
+				} else if (data.error.includes("Error in hashing password")) {
+					AddToast(`Registration error: Server error processing password. Please try again`, 'error');
+				} else if (data.error.includes("Error in registering user")) {
+					AddToast(`Registration error: Could not complete registration. Please try again`, 'error');
+				} else {
 					AddToast(`Registration failed: ${data.error || 'Please check your information and try again'}`, 'error');
 				}
 				return;
 			}
 
-			AddToast('Account created successfully! Please log in with your new credentials', 'success');
+			// Success case - backend returns 201 with message "Successfully registered user"
+			if (response.status === 201 && data.message === "Successfully registered user") {
+				AddToast('🎉 Account created successfully! Please log in with your new credentials', 'success');
 
-			// Reset the form
-			reg_email = '';
-			reg_username = '';
-			reg_password = '';
-			reg_confirm_password = '';
+				// Reset the form
+				reg_email = '';
+				reg_username = '';
+				reg_password = '';
+				reg_confirm_password = '';
 
-			active_tab = 'login';
+				// Switch to login tab
+				active_tab = 'login';
+			}
 		} catch (error) {
 			AddToast(`Registration error: ${(error as Error).message}. Please check your connection and try again`, 'error');
 		}
@@ -99,23 +116,59 @@
 			const data = await response.json();
 
 			if (!response.ok) {
-				AddToast(`Login failed: ${data.error || 'Please check your username and password'}`, 'error');
+				// Handle specific backend error messages
+				if (data.error.includes("Input is invalid")) {
+					AddToast('Login error: Please check your input format and try again', 'error');
+				} else if (data.error.includes("Invalid credentials")) {
+					AddToast('Login failed: Invalid username/email or password. Please check your credentials', 'error');
+				} else if (data.error.includes("Password is incorrect")) {
+					AddToast('Login failed: Incorrect password. Please try again', 'error');
+				} else if (data.error.includes("Database error")) {
+					AddToast('Login error: Database connection issue. Please try again later', 'error');
+				} else {
+					AddToast(`Login failed: ${data.error || 'Please check your username and password'}`, 'error');
+				}
 				return;
 			}
 
-			if (data.id) {
-				console.log('user_id from backend:', data.id);
+			// Success case - backend returns 200 with message, id, is_admin, and projects
+			if (response.status === 200 && data.message && data.id) {
+				// Store user data in localStorage
 				localStorage.setItem('user_id', data.id);
+				localStorage.setItem('users_id', data.id); // Also store as users_id for optimizer compatibility
 				localStorage.setItem('is_admin', data.is_admin ? 'true' : 'false');
+				
+				// Store the Auth0 access token in sessionStorage (as requested)
+				if (data.auth_token) {
+					sessionStorage.setItem('access_token', data.auth_token);
+					sessionStorage.setItem('authToken', data.auth_token); // Alternative key for compatibility
+				}
+				
+				// Store projects if available
+				if (data.projects) {
+					localStorage.setItem('user_projects', JSON.stringify(data.projects));
+				}
+
+				console.log('Login successful:', {
+					user_id: data.id,
+					is_admin: data.is_admin,
+					projects: data.projects,
+					has_auth_token: !!data.auth_token
+				});
+
+				// Extract username from the welcome message or use the login input
+				const welcomeMessage = data.message.includes('Welcome') ? 
+					data.message : 
+					`Welcome back! Redirecting to your workspace...`;
+				
+				AddToast(welcomeMessage, 'success');
+
+				sessionStorage.setItem('showWelcomeOverlay', 'true');
+
+				await new Promise((res) => setTimeout(res, 2000));
+
+				await goto('/main-workspace');
 			}
-
-			AddToast('Welcome back! Redirecting to your workspace...', 'success');
-
-			sessionStorage.setItem('showWelcomeOverlay', 'true');
-
-			await new Promise((res) => setTimeout(res, 2000));
-
-			await goto('/main-workspace');
 		} catch (error) {
 			AddToast(`Login error: ${(error as Error).message}. Please check your connection and try again`, 'error');
 		}
