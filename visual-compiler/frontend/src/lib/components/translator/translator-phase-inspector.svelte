@@ -116,16 +116,17 @@
 	 * @returns {Promise<void>}
 	 */
 	async function handleSubmit() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName);
-		if (!user_id) {
+		
+		if (!accessToken) {
 			AddToast('Authentication required: Please log in to save translation rules', 'error');
 			return;
 		}
 		if (!project) {
-            AddToast('No project selected: Please select or create a project first', 'error');
-            return;
-        }
+			AddToast('No project selected: Please select or create a project first', 'error');
+			return;
+		}
 
 		const isValid = rules.every(
 			(rule) => rule.tokenSequence.trim() !== '' && rule.lines.every((line) => line.trim() !== '')
@@ -137,8 +138,7 @@
 		}
 
 		const apiPayload = {
-			users_id: user_id,
-			project_name: get(projectName),
+			project_name: project,
 			translation_rules: rules.map((rule) => ({
 				sequence: [rule.tokenSequence],
 				translation: rule.lines
@@ -155,7 +155,10 @@
 		try {
 			const response = await fetch('http://localhost:8080/api/translating/readRules', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
 				body: JSON.stringify(apiPayload)
 			});
 
@@ -180,24 +183,28 @@
 	 * @returns {Promise<void>}
 	 */
 	async function handleTranslate() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName);
-		if (!user_id) {
+		
+		if (!accessToken) {
 			AddToast('Authentication required: Please log in to perform translation', 'error');
 			return;
 		}
 		if (!project) {
-            AddToast('No project selected: Please select or create a project first', 'error');
-            return;
-        }
+			AddToast('No project selected: Please select or create a project first', 'error');
+			return;
+		}
 
 		console.log('Requesting final translation from backend...');
 
 		try {
 			const response = await fetch('http://localhost:8080/api/translating/translate', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project }) 
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 
 			if (!response.ok) {

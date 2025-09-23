@@ -1,7 +1,7 @@
 describe('Canvas Test', ()=> {
    beforeEach('Login user',()=>{
-       const test_username = "e2e_tester";
-        const test_password = "password1234";
+        const test_username = "e2e tester";
+        const test_password = "testUser13";
 
         cy.visit('http://localhost:5173/auth-page');
 
@@ -27,7 +27,7 @@ describe('Canvas Test', ()=> {
 
         cy.wait(1000);
 
-        const project_name = `canvas_project`;
+        const project_name = 'canvas_project';
         //delete project
         cy.get('.section-heading').should('contain', 'Start a new project');
         cy.get('.project-block').contains(project_name).get('.delete-button').click();
