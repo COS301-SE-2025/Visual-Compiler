@@ -153,13 +153,17 @@ func OptimiseCode(c *gin.Context) {
 		OptimisingSourceCode string `bson:"optimising_source_code"`
 	}
 
-	err = collection.FindOne(ctx, bson.M{"users_id": dbUser.UsersID}).Decode(&res)
+	filters := bson.M{
+		"users_id":     dbUser.UsersID,
+		"project_name": req.Project_Name,
+	}
+	err = collection.FindOne(ctx, filters).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Source code not found. Please enter a source code"})
 		return
 	}
 
-	filters := bson.M{
+	filters = bson.M{
 		"users_id":     dbUser.UsersID,
 		"project_name": req.Project_Name,
 	}
