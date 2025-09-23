@@ -248,6 +248,47 @@
 		isSubmitted = false;
 		show_default_rules = false;
 	}
+
+	// Add event listener for AI-generated translator rules
+	let aiTranslatorEventListener: (event: CustomEvent) => void;
+
+	// Add onMount and onDestroy imports if not already present
+	import { onMount, onDestroy } from 'svelte';
+
+	onMount(() => {
+		// Listen for AI-generated translator rules
+		aiTranslatorEventListener = (event: CustomEvent) => {
+			if (event.detail && event.detail.rules && Array.isArray(event.detail.rules)) {
+				console.log('Received AI translator rules:', event.detail.rules);
+				
+				// Clear existing rules and populate with AI-generated rules
+				rules = event.detail.rules.map(rule => ({
+					tokenSequence: rule.sequence || '',
+					lines: Array.isArray(rule.translation) ? rule.translation : ['']
+				}));
+				
+				// Reset submission states
+				isSubmitted = false;
+				translationSuccessful = false;
+				show_default_rules = false;
+				
+				// Force reactivity
+				rules = [...rules];
+				
+				AddToast('AI translator rules inserted into translation editor!', 'success');
+				
+				console.log('Final translator rules:', rules);
+			}
+		};
+
+		window.addEventListener('ai-translator-generated', aiTranslatorEventListener);
+	});
+
+	onDestroy(() => {
+		if (aiTranslatorEventListener) {
+			window.removeEventListener('ai-translator-generated', aiTranslatorEventListener);
+		}
+	});
 </script>
 
 <div class="inspector-container">

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { slide, fade } from 'svelte/transition';
     import { AddToast } from '$lib/stores/toast';
-    import { createEventDispatcher } from 'svelte';
+    import { createEventDispatcher, onDestroy, onMount } from 'svelte';
     import type { SymbolTable } from '$lib/types';
     import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
@@ -436,6 +436,107 @@
         next_type_id = 1;
         rules_submitted = false;
     }
+
+    // Add event listener for AI-generated analyser configuration
+    let aiAnalyserEventListener: (event: CustomEvent) => void;
+
+    onMount(async () => {
+        // Listen for AI-generated analyser configuration
+        aiAnalyserEventListener = (event: CustomEvent) => {
+            if (event.detail && event.detail.config) {
+                console.log('Received AI analyser config:', event.detail.config);
+                
+                const config = event.detail.config;
+                
+                // Clear existing rules first
+                scope_rules = [];
+                type_rules = [];
+                next_scope_id = 0;
+                next_type_id = 0;
+                
+                // Populate scope rules
+                if (config.scope_rules && Array.isArray(config.scope_rules)) {
+                    scope_rules = config.scope_rules.map((rule, index) => ({
+                        id: index,
+                        Start: rule.start || '',
+                        End: rule.end || ''
+                    }));
+                    next_scope_id = scope_rules.length;
+                }
+                
+                // Populate type rules
+                if (config.type_rules && Array.isArray(config.type_rules)) {
+                    type_rules = config.type_rules.map((rule, index) => ({
+                        id: index,
+                        ResultData: rule.result || '',
+                        Assignment: rule.assignment || '',
+                        LHSData: rule.lhs || '',
+                        Operator: Array.isArray(rule.operator) ? rule.operator : [''],
+                        RHSData: rule.rhs || ''
+                    }));
+                    next_type_id = type_rules.length;
+                }
+                
+                // Populate grammar rules
+                if (config.grammar_rules) {
+                    grammar_rules = {
+                        VariableRule: config.grammar_rules.variable_rule || '',
+                        TypeRule: config.grammar_rules.type_rule || '',
+                        FunctionRule: config.grammar_rules.function_rule || '',
+                        ParameterRule: config.grammar_rules.parameter_rule || '',
+                        AssignmentRule: config.grammar_rules.assignment_rule || '',
+                        OperatorRule: config.grammar_rules.operator_rule || '',
+                        TermRule: config.grammar_rules.term_rule || ''
+                    };
+                }
+                
+                // Ensure at least one rule exists for each category if none were generated
+                if (scope_rules.length === 0) {
+                    scope_rules = [{ id: 0, Start: '', End: '' }];
+                    next_scope_id = 1;
+                }
+                
+                if (type_rules.length === 0) {
+                    type_rules = [{ id: 0, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
+                    next_type_id = 1;
+                }
+                
+                // Reset submission states
+                submitted_scope_rules = [];
+                submitted_type_rules = [];
+                submitted_grammar_rules = {
+                    VariableRule: '',
+                    TypeRule: '',
+                    FunctionRule: '',
+                    ParameterRule: '',
+                    AssignmentRule: '',
+                    OperatorRule: '',
+                    TermRule: ''
+                };
+                rules_submitted = false;
+                show_default_rules = false;
+                
+                // Force reactivity
+                scope_rules = [...scope_rules];
+                type_rules = [...type_rules];
+                grammar_rules = { ...grammar_rules };
+                
+                AddToast('AI analyser configuration inserted into rules editor!', 'success');
+                
+                console.log('Final scope_rules:', scope_rules);
+                console.log('Final type_rules:', type_rules);
+                console.log('Final grammar_rules:', grammar_rules);
+            }
+        };
+
+        window.addEventListener('ai-analyser-generated', aiAnalyserEventListener);
+    });
+
+    onDestroy(() => {
+        if (aiAnalyserEventListener) {
+            window.removeEventListener('ai-analyser-generated', aiAnalyserEventListener);
+        }
+    });
 </script>
 
 <div class="panel-container">

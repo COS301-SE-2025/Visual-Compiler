@@ -1,5 +1,9 @@
 <script lang="ts">
     import { activePhase, setActivePhase, type PhaseType } from '../../stores/pipeline';
+    import { AddToast } from '$lib/stores/toast';
+    import { get } from 'svelte/store';
+    import { projectName } from '$lib/stores/project';
+    import { onMount, onDestroy } from 'svelte';
     
     let isOpen = false;
     let activeTab: 'questions' | 'generate' = 'questions';
@@ -41,13 +45,381 @@
             iconExtra: 'M14 2V8H20M9 15H15M9 11H12',
             description: 'Generate code translation templates'
         },
-        optimizer: {
-            name: 'Optimizer',
+        optimiser: {
+            name: 'Optimiser',
             icon: 'M12 2L2 7V10C2 16 6 20.5 12 22C18 20.5 22 16 22 10V7L12 2Z',
             iconExtra: 'M9 12L11 14L15 10',
-            description: 'Generate optimization rules and configurations'
+            description: 'Generate optimisation rules and configurations'
         }
     };
+
+    // Function to get source code for lexer phase
+    async function getSourceCodeForLexer() {
+        const project = get(projectName);
+        const accessToken = sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           localStorage.getItem('access_token') || 
+                           localStorage.getItem('authToken') || 
+                           localStorage.getItem('token');
+        
+        if (!accessToken || !project) {
+            throw new Error('Missing authentication or project');
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/lexing/getCode?project_name=${encodeURIComponent(project)}`, {
+                method: 'GET',
+                headers: { 
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get source code');
+            }
+            
+            const data = await response.json();
+            return data.code || '';
+        } catch (error) {
+            console.error('Error getting source code:', error);
+            throw error;
+        }
+    }
+
+    // Function to get tokens for parser phase
+    async function getTokensForParser() {
+        const project = get(projectName);
+        const accessToken = sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           localStorage.getItem('access_token') || 
+                           localStorage.getItem('authToken') || 
+                           localStorage.getItem('token');
+        
+        if (!accessToken || !project) {
+            throw new Error('Missing authentication or project');
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/lexing/getTokens?project_name=${encodeURIComponent(project)}`, {
+                method: 'GET',
+                headers: { 
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get tokens');
+            }
+            
+            const data = await response.json();
+            // Convert tokens array to string format for AI
+            if (data.tokens && Array.isArray(data.tokens)) {
+                return JSON.stringify(data.tokens, null, 2);
+            }
+            return '';
+        } catch (error) {
+            console.error('Error getting tokens:', error);
+            throw error;
+        }
+    }
+
+    // Function to get syntax tree for analyser/translator phase
+    async function getSyntaxTreeForAnalyser() {
+        const project = get(projectName);
+        const accessToken = sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           localStorage.getItem('access_token') || 
+                           localStorage.getItem('authToken') || 
+                           localStorage.getItem('token');
+        
+        if (!accessToken || !project) {
+            throw new Error('Missing authentication or project');
+        }
+
+        try {
+            const response = await fetch(`http://localhost:8080/api/parsing/getTree?project_name=${encodeURIComponent(project)}`, {
+                method: 'GET',
+                headers: { 
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to get syntax tree');
+            }
+            
+            const data = await response.json();
+            // Convert syntax tree to string format for AI
+            if (data.tree || data.syntax_tree) {
+                return JSON.stringify(data.tree || data.syntax_tree, null, 2);
+            }
+            return '';
+        } catch (error) {
+            console.error('Error getting syntax tree:', error);
+            throw error;
+        }
+    }
+
+    // Function to validate lexer response format
+    function validateLexerResponse(response: string): { isValid: boolean, data?: any } {
+        try {
+            const parsed = JSON.parse(response);
+            
+            // Check if it's an array
+            if (!Array.isArray(parsed)) {
+                return { isValid: false };
+            }
+            
+            // Check if each item has the required structure
+            for (const item of parsed) {
+                if (!item.type || !item.regex || typeof item.type !== 'string' || typeof item.regex !== 'string') {
+                    return { isValid: false };
+                }
+            }
+            
+            return { isValid: true, data: parsed };
+        } catch (error) {
+            return { isValid: false };
+        }
+    }
+
+    // Function to validate parser response format
+    function validateParserResponse(response: string): { isValid: boolean, data?: any } {
+        try {
+            const parsed = JSON.parse(response);
+            
+            // Check if it has the required structure
+            if (!parsed.variables || !parsed.terminals || !parsed.start || !parsed.rules) {
+                console.log('Missing required parser fields');
+                return { isValid: false };
+            }
+            
+            // Check if variables and terminals are strings
+            if (typeof parsed.variables !== 'string' || typeof parsed.terminals !== 'string' || typeof parsed.start !== 'string') {
+                console.log('Variables/terminals/start not strings');
+                return { isValid: false };
+            }
+            
+            // Check if rules is an array
+            if (!Array.isArray(parsed.rules)) {
+                console.log('Rules not an array');
+                return { isValid: false };
+            }
+            
+            // Check each rule has input (string) and output (array of strings)
+            for (const rule of parsed.rules) {
+                if (!rule.input || !rule.output || 
+                    typeof rule.input !== 'string' || 
+                    !Array.isArray(rule.output)) {
+                    console.log('Invalid rule structure:', rule);
+                    return { isValid: false };
+                }
+                
+                // Check that all output items are strings (allow empty strings for epsilon rules)
+                for (const outputItem of rule.output) {
+                    if (typeof outputItem !== 'string') {
+                        console.log('Invalid output item:', outputItem);
+                        return { isValid: false };
+                    }
+                }
+                
+                // Filter out empty string outputs for epsilon rules
+                rule.output = rule.output.filter(item => item.trim() !== '');
+                
+                // If all outputs were empty, this is an epsilon rule
+                if (rule.output.length === 0) {
+                    rule.output = ['ε']; // Use epsilon symbol
+                }
+            }
+            
+            console.log('Parser validation successful');
+            return { isValid: true, data: parsed };
+        } catch (error) {
+            console.log('Parser validation JSON parse error:', error);
+            return { isValid: false };
+        }
+    }
+
+    // Function to validate analyser response format
+    function validateAnalyserResponse(response: string): { isValid: boolean, data?: any } {
+        try {
+            const parsed = JSON.parse(response);
+            
+            // Check if it has the required structure
+            if (!parsed.scope_rules || !parsed.type_rules || !parsed.grammar_rules) {
+                return { isValid: false };
+            }
+            
+            // Check if scope_rules is an array
+            if (!Array.isArray(parsed.scope_rules)) {
+                return { isValid: false };
+            }
+            
+            // Check each scope rule has start and end
+            for (const rule of parsed.scope_rules) {
+                if (!rule.start || !rule.end || 
+                    typeof rule.start !== 'string' || 
+                    typeof rule.end !== 'string') {
+                    return { isValid: false };
+                }
+            }
+            
+            // Check if type_rules is an array
+            if (!Array.isArray(parsed.type_rules)) {
+                return { isValid: false };
+            }
+            
+            // Check each type rule has required fields
+            for (const rule of parsed.type_rules) {
+                if (!rule.result || !rule.assignment || !rule.lhs ||
+                    typeof rule.result !== 'string' || 
+                    typeof rule.assignment !== 'string' || 
+                    typeof rule.lhs !== 'string') {
+                    return { isValid: false };
+                }
+                
+                // operator should be an array (can be empty)
+                if (!Array.isArray(rule.operator)) {
+                    return { isValid: false };
+                }
+                
+                // rhs should be a string or array (can be empty)
+                if (typeof rule.rhs !== 'string' && !Array.isArray(rule.rhs)) {
+                    return { isValid: false };
+                }
+            }
+            
+            // Check if grammar_rules is an object with minimum required fields
+            const grammarRules = parsed.grammar_rules;
+            if (!grammarRules || typeof grammarRules !== 'object') {
+                return { isValid: false };
+            }
+            
+            // Check that minimum required grammar rules exist
+            const requiredFields = [
+                'variable_rule', 'type_rule', 'function_rule', 
+                'parameter_rule', 'assignment_rule', 'operator_rule', 'term_rule'
+            ];
+            
+            for (const field of requiredFields) {
+                if (!grammarRules[field] || typeof grammarRules[field] !== 'string') {
+                    return { isValid: false };
+                }
+            }
+            
+            // Additional fields are allowed and will be preserved
+            return { isValid: true, data: parsed };
+        } catch (error) {
+            return { isValid: false };
+        }
+    }
+
+    // Function to validate translator response format
+    function validateTranslatorResponse(response: string): { isValid: boolean, data?: any } {
+        try {
+            const parsed = JSON.parse(response);
+            
+            // Check if it's an array
+            if (!Array.isArray(parsed)) {
+                return { isValid: false };
+            }
+            
+            // Check each translation rule has the required structure
+            for (const rule of parsed) {
+                if (!rule.sequence || !rule.translation) {
+                    return { isValid: false };
+                }
+                
+                // sequence should be a string
+                if (typeof rule.sequence !== 'string') {
+                    return { isValid: false };
+                }
+                
+                // translation should be an array of strings
+                if (!Array.isArray(rule.translation)) {
+                    return { isValid: false };
+                }
+                
+                // Check that all translation items are strings
+                for (const translationItem of rule.translation) {
+                    if (typeof translationItem !== 'string') {
+                        return { isValid: false };
+                    }
+                }
+            }
+            
+            return { isValid: true, data: parsed };
+        } catch (error) {
+            return { isValid: false };
+        }
+    }
+
+    // Function to validate optimiser response format
+    function validateOptimiserResponse(response: string): { isValid: boolean, data?: string } {
+        // Check if response starts with "package main" and looks like Go code
+        const trimmedResponse = response.trim();
+        
+        // Must start with "package main"
+        if (!trimmedResponse.startsWith('package main')) {
+            return { isValid: false };
+        }
+        
+        // Should contain typical Go code patterns
+        const hasValidGoStructure = (
+            trimmedResponse.includes('package main') &&
+            (trimmedResponse.includes('func main()') || trimmedResponse.includes('func ')) &&
+            trimmedResponse.includes('{') &&
+            trimmedResponse.includes('}')
+        );
+        
+        if (!hasValidGoStructure) {
+            return { isValid: false };
+        }
+        
+        return { isValid: true, data: trimmedResponse };
+    }
+
+    // Function to automatically submit generated source code
+    async function autoSubmitSourceCode(code: string) {
+        const project = get(projectName);
+        const accessToken = sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           localStorage.getItem('access_token') || 
+                           localStorage.getItem('authToken') || 
+                           localStorage.getItem('token');
+        
+        if (!accessToken || !project) {
+            AddToast('Unable to auto-submit: Missing authentication or project', 'error');
+            return false;
+        }
+
+        try {
+            const response = await fetch('http://localhost:8080/api/lexing/code', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    project_name: project,
+                    source_code: code
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to submit code');
+            }
+            
+            return true;
+        } catch (error) {
+            console.error('Auto-submit failed:', error);
+            return false;
+        }
+    }
 
     function toggleChatbot() {
         isOpen = !isOpen;
@@ -57,38 +429,487 @@
         activeTab = tab;
     }
 
-    function handleSendMessage() {
-        if (!messageInput.trim()) return;
-        
-        // Add user message (placeholder for now)
-        messages = [...messages, {
-            id: Date.now(),
-            text: messageInput.trim(),
-            isUser: true,
-            timestamp: new Date()
-        }];
-        
-        messageInput = '';
-        
-        // Placeholder for AI response (will be implemented later)
-        setTimeout(() => {
-            messages = [...messages, {
-                id: Date.now() + 1,
-                text: "This is a placeholder AI response",
-                isUser: false,
-                timestamp: new Date()
-            }];
-        }, 1000);
-    }
-
     function handleKeyPress(event: KeyboardEvent) {
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
             handleSendMessage();
         }
     }
-    
-    function generatePhaseInput(phase: PhaseType) {
+
+    async function handleSendMessage() {
+        if (!messageInput.trim()) return;
+        
+        const accessToken = sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           localStorage.getItem('access_token') || 
+                           localStorage.getItem('authToken') || 
+                           localStorage.getItem('token');
+        
+        if (!accessToken) {
+            AddToast('Authentication required: Please log in to ask questions', 'error');
+            return;
+        }
+
+        const userQuestion = messageInput.trim();
+        
+        // Add user message
+        messages = [...messages, {
+            id: Date.now(),
+            text: userQuestion,
+            isUser: true,
+            timestamp: new Date()
+        }];
+        
+        // Clear input immediately
+        messageInput = '';
+        
+        try {
+            // Show loading message
+            const loadingMessageId = Date.now() + 1;
+            messages = [...messages, {
+                id: loadingMessageId,
+                text: 'Thinking...',
+                isUser: false,
+                timestamp: new Date()
+            }];
+
+            // Send question to backend
+            const response = await fetch('http://localhost:8080/api/ai/answer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    question: userQuestion
+                })
+            });
+
+            console.log('Question API response status:', response.status);
+            console.log('Question API response ok:', response.ok);
+
+            const responseText = await response.text();
+            console.log('Question API raw response:', responseText);
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+                console.log('Question API parsed response:', data);
+            } catch (parseError) {
+                console.error('Question API JSON parse error:', parseError);
+                throw new Error('Invalid response format from server');
+            }
+
+            // Remove loading message
+            messages = messages.filter(msg => msg.id !== loadingMessageId);
+
+            if (!response.ok) {
+                console.error('Question API error response:', data);
+                throw new Error(data.error || data.details || `Server error: ${response.status}`);
+            }
+
+            // Fix: Check for both 'answer' and 'response' fields
+            const aiAnswer = data.answer || data.response;
+            if (aiAnswer) {
+                messages = [...messages, {
+                    id: Date.now() + 2,
+                    text: aiAnswer,
+                    isUser: false,
+                    timestamp: new Date()
+                }];
+            } else {
+                throw new Error('No answer received from AI');
+            }
+
+        } catch (error) {
+            console.error('=== Question API Error ===');
+            console.error('Error object:', error);
+            console.error('Error message:', error.message);
+            
+            // Remove any loading messages
+            messages = messages.filter(msg => !msg.text.includes('Thinking'));
+            
+            // Add error message
+            messages = [...messages, {
+                id: Date.now() + 3,
+                text: `❌ Sorry, I encountered an error: ${error.message}. Please try again.`,
+                isUser: false,
+                timestamp: new Date()
+            }];
+            
+            AddToast(`Failed to get AI response: ${error.message}`, 'error');
+        }
+    }
+
+    async function generatePhaseInput(phase: PhaseType) {
+        if (!phase) return;
+        
+        const accessToken = sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           localStorage.getItem('access_token') || 
+                           localStorage.getItem('authToken') || 
+                           localStorage.getItem('token');
+        
+        console.log('=== AI Generation Debug Info ===');
+        console.log('Phase:', phase);
+        console.log('Access Token exists:', !!accessToken);
+        console.log('Access Token (first 20 chars):', accessToken ? accessToken.substring(0, 20) + '...' : 'null');
+        
+        if (!accessToken) {
+            AddToast('Authentication required: Please log in to use AI generation', 'error');
+            return;
+        }
+
+        // Add user message to show generation started
+        messages = [...messages, {
+            id: Date.now(),
+            text: `Generate ${phaseConfig[phase].name} input`,
+            isUser: true,
+            timestamp: new Date()
+        }];
+        
+        // Switch to questions tab to show the interaction
+        activeTab = 'questions';
+
+        try {
+            // Show loading message
+            const loadingMessageId = Date.now() + 1;
+            messages = [...messages, {
+                id: loadingMessageId,
+                text: `Generating ${phaseConfig[phase].name} input...`,
+                isUser: false,
+                timestamp: new Date()
+            }];
+
+            // Get artifact based on phase
+            let artifact = " ";
+            if (phase === 'lexer') {
+                try {
+                    artifact = await getSourceCodeForLexer();
+                    console.log('Retrieved source code for lexer:', artifact);
+                } catch (error) {
+                    throw new Error(`Failed to get source code: ${error.message}`);
+                }
+            } else if (phase === 'parser') {
+                try {
+                    artifact = await getTokensForParser();
+                    console.log('Retrieved tokens for parser:', artifact);
+                } catch (error) {
+                    throw new Error(`Failed to get tokens: ${error.message}`);
+                }
+            } else if (phase === 'analyser' || phase === 'translator') {
+                try {
+                    artifact = await getSyntaxTreeForAnalyser();
+                    console.log(`Retrieved syntax tree for ${phase}:`, artifact);
+                } catch (error) {
+                    throw new Error(`Failed to get syntax tree: ${error.message}`);
+                }
+            } else if (phase === 'optimiser') {
+                // Optimiser uses empty artifact like source code
+                artifact = " ";
+                console.log('Using empty artifact for optimiser phase');
+            }
+
+            // Prepare request body
+            const requestBody = {
+                phase: phase,
+                artefact: artifact
+            };
+            
+            console.log('Request body:', JSON.stringify(requestBody, null, 2));
+            console.log('Request URL:', 'http://localhost:8080/api/ai/generate');
+
+            const response = await fetch('http://localhost:8080/api/ai/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+            console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+            const responseText = await response.text();
+            console.log('Raw response text:', responseText);
+
+            let data;
+            try {
+                data = JSON.parse(responseText);
+                console.log('Parsed response data:', data);
+            } catch (parseError) {
+                console.error('JSON parse error:', parseError);
+                throw new Error(`Invalid JSON response: ${responseText}`);
+            }
+
+            if (!response.ok) {
+                console.error('Error response data:', data);
+                throw new Error(data.error || data.details || `HTTP ${response.status} error`);
+            }
+            
+            messages = messages.filter(msg => msg.id !== loadingMessageId);
+            
+            if (data.response) {
+                console.log('AI generated response:', data.response);
+                
+                if (phase === 'source') {
+                    console.log('Dispatching ai-source-generated event');
+                    window.dispatchEvent(new CustomEvent('ai-source-generated', {
+                        detail: { code: data.response }
+                    }));
+
+                    setTimeout(async () => {
+                        const submitSuccess = await autoSubmitSourceCode(data.response);
+                        
+                        if (submitSuccess) {
+                            window.dispatchEvent(new CustomEvent('ai-source-submitted', {
+                                detail: { code: data.response }
+                            }));
+                            
+                            messages = [...messages, {
+                                id: Date.now() + 3,
+                                text: `✅ Source code generated and submitted successfully! Your code has been automatically saved to your project and is ready for lexical analysis.`,
+                                isUser: false,
+                                timestamp: new Date()
+                            }];
+                            
+                            AddToast('AI source code generated and submitted successfully!', 'success');
+                        } else {
+                            messages = [...messages, {
+                                id: Date.now() + 3,
+                                text: `✅ Source code generated successfully! The code has been inserted into your source code input area. Please review and click "Confirm Code" to submit it.`,
+                                isUser: false,
+                                timestamp: new Date()
+                            }];
+                            
+                            AddToast('AI source code generated! Please review and confirm to submit.', 'warning');
+                        }
+                    }, 500); 
+                    
+                } else if (phase === 'lexer') {
+                    // Handle lexer-specific response
+                    const validationResult = validateLexerResponse(data.response);
+                    
+                    if (validationResult.isValid && validationResult.data) {
+                        console.log('Valid lexer response, dispatching event with data:', validationResult.data);
+                        
+                        // Dispatch event to populate lexer input rows
+                        window.dispatchEvent(new CustomEvent('ai-lexer-generated', {
+                            detail: { rules: validationResult.data }
+                        }));
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `✅ Lexer rules generated successfully! ${validationResult.data.length} token rules have been automatically inserted into the Regular Expression input rows. You can review and modify them as needed.`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('AI lexer rules generated and inserted successfully!', 'success');
+                    } else {
+                        // Invalid format, just show the response in chat
+                        console.log('Invalid lexer response format, showing in chat');
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('Lexer rules generated but in unexpected format. Check the chat for details.', 'warning');
+                    }
+                } else if (phase === 'parser') {
+                    // Handle parser-specific response
+                    const validationResult = validateParserResponse(data.response);
+                    
+                    if (validationResult.isValid && validationResult.data) {
+                        console.log('Valid parser response, dispatching event with data:', validationResult.data);
+                        
+                        // Transform the data to match what the parsing component expects
+                        const transformedData = {
+                            variables: validationResult.data.variables,
+                            terminals: validationResult.data.terminals,
+                            start: validationResult.data.start,
+                            rules: validationResult.data.rules.map((rule, index) => ({
+                                id: index + 1,
+                                nonTerminal: rule.input,
+                                translations: [
+                                    {
+                                        id: 1,
+                                        rule: rule.output.join(' ')
+                                    }
+                                ]
+                            }))
+                        };
+                        
+                        console.log('Transformed parser data:', transformedData);
+                        
+                        // Dispatch event to populate parser grammar
+                        window.dispatchEvent(new CustomEvent('ai-parser-generated', {
+                            detail: { grammar: transformedData }
+                        }));
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `✅ Parser grammar generated successfully! The context-free grammar with ${validationResult.data.rules.length} rules has been automatically inserted into the grammar editor. You can review and modify it as needed.`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('AI parser grammar generated and inserted successfully!', 'success');
+                    } else {
+                        // Invalid format, just show the response in chat
+                        console.log('Invalid parser response format, showing in chat');
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('Parser grammar generated but in unexpected format. Check the chat for details.', 'warning');
+                    }
+                } else if (phase === 'analyser') {
+                    // Handle analyser-specific response
+                    const validationResult = validateAnalyserResponse(data.response);
+                    
+                    if (validationResult.isValid && validationResult.data) {
+                        console.log('Valid analyser response, dispatching event with data:', validationResult.data);
+                        
+                        // Dispatch event to populate analyser configuration
+                        window.dispatchEvent(new CustomEvent('ai-analyser-generated', {
+                            detail: { config: validationResult.data }
+                        }));
+                        
+                        const scopeCount = validationResult.data.scope_rules.length;
+                        const typeCount = validationResult.data.type_rules.length;
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `✅ Analyser configuration generated successfully! ${scopeCount} scope rules, ${typeCount} type rules, and grammar linking rules have been automatically inserted into the analyser editor. You can review and modify them as needed.`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('AI analyser configuration generated and inserted successfully!', 'success');
+                    } else {
+                        // Invalid format, just show the response in chat
+                        console.log('Invalid analyser response format, showing in chat');
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('Analyser configuration generated but in unexpected format. Check the chat for details.', 'warning');
+                    }
+                } else if (phase === 'translator') {
+                    // Handle translator-specific response
+                    const validationResult = validateTranslatorResponse(data.response);
+                    
+                    if (validationResult.isValid && validationResult.data) {
+                        console.log('Valid translator response, dispatching event with data:', validationResult.data);
+                        
+                        // Dispatch event to populate translator rules
+                        window.dispatchEvent(new CustomEvent('ai-translator-generated', {
+                            detail: { rules: validationResult.data }
+                        }));
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `✅ Translator rules generated successfully! ${validationResult.data.length} translation rules have been automatically inserted into the translator editor. You can review and modify them as needed.`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('AI translator rules generated and inserted successfully!', 'success');
+                    } else {
+                        // Invalid format, just show the response in chat
+                        console.log('Invalid translator response format, showing in chat');
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('Translator rules generated but in unexpected format. Check the chat for details.', 'warning');
+                    }
+                } else if (phase === 'optimiser') {
+                    // Handle optimiser-specific response
+                    const validationResult = validateOptimiserResponse(data.response);
+                    
+                    if (validationResult.isValid && validationResult.data) {
+                        console.log('Valid optimiser response, dispatching event with code:', validationResult.data);
+                        
+                        // Dispatch event to populate optimiser code input
+                        window.dispatchEvent(new CustomEvent('ai-optimiser-generated', {
+                            detail: { code: validationResult.data }
+                        }));
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `✅ Optimiser code generated successfully! The Go source code has been automatically inserted into the code input area. You can review and modify it as needed before selecting optimisation techniques.`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('AI optimiser code generated and inserted successfully!', 'success');
+                    } else {
+                        // Invalid format, just show the response in chat
+                        console.log('Invalid optimiser response format, showing in chat');
+                        
+                        messages = [...messages, {
+                            id: Date.now() + 2,
+                            text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
+                            isUser: false,
+                            timestamp: new Date()
+                        }];
+                        
+                        AddToast('Optimiser code generated but in unexpected format. Check the chat for details.', 'warning');
+                    }
+                } else {
+                    // For other phases (to be implemented later)
+                    messages = [...messages, {
+                        id: Date.now() + 2,
+                        text: `Here's the generated ${phaseConfig[phase].name} input:\n\n${data.response}`,
+                        isUser: false,
+                        timestamp: new Date()
+                    }];
+                    
+                    AddToast(`${phaseConfig[phase].name} input generated successfully!`, 'success');
+                }
+            } else {
+                throw new Error('No content generated in response');
+            }
+            
+        } catch (error) {
+            console.error('=== AI Generation Error ===');
+            console.error('Error object:', error);
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+            
+            messages = messages.filter(msg => !msg.text.includes('Generating'));
+            
+            messages = [...messages, {
+                id: Date.now() + 3,
+                text: `❌ Failed to generate ${phaseConfig[phase].name} input: ${error.message}. Please try again.`,
+                isUser: false,
+                timestamp: new Date()
+            }];
+            
+            AddToast(`AI generation failed: ${error.message}`, 'error');
+        }
+    }
+
+    function generatePhaseInputOld(phase: PhaseType) {
         if (!phase) return;
         
         // Add placeholder functionality for generating input
@@ -102,7 +923,6 @@
         // Switch to questions tab to show the generated content
         activeTab = 'questions';
         
-        // Placeholder AI response for input generation
         setTimeout(() => {
             messages = [...messages, {
                 id: Date.now() + 1,
@@ -112,6 +932,29 @@
             }];
         }, 1000);
     }
+
+    // Event listener variables
+    let aiOptimiserEventListener: (event: CustomEvent) => void;
+
+    // Initialize the store with default values on mount
+    onMount(() => {
+        // Just set up the event listener without calling updateStore
+        aiOptimiserEventListener = (event: CustomEvent) => {
+            if (event.detail && event.detail.code) {
+                console.log('Received AI optimiser code:', event.detail.code);
+                AddToast('AI optimiser code generated! Check the optimiser phase input area.', 'success');
+                console.log('AI optimiser code forwarded to optimiser component');
+            }
+        };
+
+        window.addEventListener('ai-optimiser-generated', aiOptimiserEventListener);
+    });
+
+    onDestroy(() => {
+        if (aiOptimiserEventListener) {
+            window.removeEventListener('ai-optimiser-generated', aiOptimiserEventListener);
+        }
+    });
 </script>
 
 <!-- Floating chatbot button -->

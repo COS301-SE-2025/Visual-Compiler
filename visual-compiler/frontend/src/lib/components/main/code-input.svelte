@@ -5,6 +5,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store';  
+	import { activePhase, setActivePhase } from '$lib/stores/pipeline'; 
 
 	let code_text = '';
 	
@@ -13,6 +14,9 @@
 	let isConfirmed = false;
 	let textareaEl: HTMLTextAreaElement;
 	export let onCodeSubmitted: (code: string) => void = () => {};
+	
+	// Add flag to control window closing behavior
+	let shouldCloseWindow = true;
 
 	// --- REAL PROJECTS DATA ---
 	let projects: Array<{ name: string; code: string }> = [
@@ -71,13 +75,52 @@
 		isConfirmed = !!value;
 	});
 
-	onDestroy(() => {
-		unsubscribe(); // clean up store subscription
-	});
+	
+	// Add event listener for AI-generated source code
+	let aiEventListener: (event: CustomEvent) => void;
 
-	// Load projects when component mounts
+	// Add another event listener for AI-submitted source code
+	let aiSubmittedEventListener: (event: CustomEvent) => void;
+
 	onMount(() => {
 		fetchProjects();
+		
+		// Listen for AI-generated source code
+		aiEventListener = (event: CustomEvent) => {
+			if (event.detail && event.detail.code) {
+				// Store the previous code before replacing
+				previous_code_text = code_text;
+				// Replace the textarea content with AI-generated code
+				code_text = event.detail.code;
+				// Reset the default input flag since this is AI-generated
+				isDefaultInput = false;
+			}
+		};
+
+		// Listen for AI-submitted source code
+		aiSubmittedEventListener = (event: CustomEvent) => {
+			if (event.detail && event.detail.code) {
+				// Update the confirmed source code store
+				confirmedSourceCode.set(event.detail.code);
+				isConfirmed = true;
+				console.log('AI code submitted and confirmed, window staying open');
+			}
+		};
+
+		window.addEventListener('ai-source-generated', aiEventListener);
+		window.addEventListener('ai-source-submitted', aiSubmittedEventListener);
+	});
+
+	onDestroy(() => {
+		setActivePhase(null);
+		unsubscribe();
+		
+		if (aiEventListener) {
+			window.removeEventListener('ai-source-generated', aiEventListener);
+		}
+		if (aiSubmittedEventListener) {
+			window.removeEventListener('ai-source-submitted', aiSubmittedEventListener);
+		}
 	});
 
 	function handleDefaultInput() {
@@ -176,7 +219,12 @@
         AddToast('Source code saved successfully! Ready to begin lexical analysis', 'success');
         confirmedSourceCode.set(code_text);
         isConfirmed = true;
-        onCodeSubmitted(code_text);
+        
+        // Only call onCodeSubmitted if we should close the window (manual submission)
+        if (shouldCloseWindow) {
+            onCodeSubmitted(code_text);
+        }
+        
         await tick();
     } catch (error) {
         console.error('Request failed:', error); // Debug log
@@ -235,6 +283,7 @@
 	// Reset confirmation flag if user changes the text
 	$: isConfirmed = code_text === confirmed_code && !!code_text;
 	$: displayed_text = isConfirmed ? `Current source code: ${code_text}` : code_text;
+
 </script>
 
 <div class="code-input-container">
