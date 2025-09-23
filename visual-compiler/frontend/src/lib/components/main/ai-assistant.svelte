@@ -1119,7 +1119,7 @@
                             <div class="generate-action-section">
                                 <div class="action-header">
                                     <h5>Ready to Generate Input</h5>
-                                    <p>Click the button below to generate sample input for this phase</p>
+                                    <p>Click the button below to generate sample input for this phase.</p>
                                 </div>
                                 
                                 <button 
@@ -1133,7 +1133,6 @@
                                     </div>
                                     <div class="btn-content">
                                         <span class="btn-title">Generate {phaseConfig[currentPhase].name} Input</span>
-                                        <span class="btn-subtitle">Create sample content for this phase</span>
                                     </div>
                                     <div class="btn-arrow">
                                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1148,7 +1147,7 @@
                                         <path d="M9.09 9A3 3 0 0 1 12 6C13.66 6 15 7.34 15 9C15 10.66 13.66 12 12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                                         <circle cx="12" cy="16" r="1" fill="currentColor"/>
                                     </svg>
-                                    <span>The AI will generate appropriate sample input based on your current phase requirements</span>
+                                    <span>The AI Assistant will generate sample input based on your current phase requirements. Please note that the AI Assistant is not perfect, but it is designed guide your learning process.</span>
                                 </div>
                             </div>
                         {:else}
