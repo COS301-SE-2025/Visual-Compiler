@@ -1,4 +1,4 @@
-export type NodeType = 'source' | 'lexer' | 'parser' | 'analyser' | 'translator' | 'optimizer' ;
+export type NodeType = 'source' | 'lexer' | 'parser' | 'analyser' | 'translator' | 'optimiser' ;
 
 export interface Token {
 	type: string;

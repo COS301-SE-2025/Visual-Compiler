@@ -5,7 +5,7 @@
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
 	import { projectName } from '$lib/stores/project';
-	import { pipelineStore } from '$lib/stores/pipeline';
+	import { pipelineStore, setActivePhase } from '$lib/stores/pipeline';
 	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import NavBar from '$lib/components/main/nav-bar.svelte';
 	import Toolbox from '$lib/components/main/Toolbox.svelte';
@@ -13,7 +13,10 @@
 	import DrawerCanvas from '$lib/components/main/drawer-canvas.svelte';
 	import WelcomeOverlay from '$lib/components/project-hub/project-hub.svelte';
 	import ClearCanvasConfirmation from '$lib/components/main/clear-canvas-confirmation.svelte';
+	import AiAssistant from '$lib/components/main/ai-assistant.svelte';
+	import CanvasTutorial from '$lib/components/main/canvas-tutorial.svelte';
 	import { phase_completion_status } from '$lib/stores/pipeline';
+	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial } from '$lib/stores/tutorial';
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -41,14 +44,22 @@
 	let TranslatorPhaseTutorial: any;
 	let TranslatorPhaseInspector: any;
 	let TranslatorArtifactViewer: any;
-	let OptimizerPhaseTutorial: any;
-	let OptimizerPhaseInspector: any;
-	let OptimizerArtifactViewer: any;
+	let OptimiserPhaseTutorial: any;
+	let OptimiserPhaseInspector: any;
+	let OptimiserArtifactViewer: any;
 
 	let showWelcomeOverlay = false;
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
 	let showClearCanvasModal = false;
+
+	// --- TUTORIAL STATE ---
+	let showCanvasTutorial = false;
+
+	// Subscribe to tutorial store
+	tutorialStore.subscribe(state => {
+		showCanvasTutorial = state.showCanvasTutorial;
+	});
 
 	// --- UNSAVED CHANGES TRACKING ---
 	let lastSavedState: string | null = null;
@@ -138,14 +149,14 @@
 		TranslatorArtifactViewer = (
 			await import('$lib/components/translator/translator-artifact-viewer.svelte')
 		).default;
-		OptimizerPhaseTutorial = (
-			await import('$lib/components/optimizer/optimizer-phase-tutorial.svelte')
+		OptimiserPhaseTutorial = (
+			await import('$lib/components/optimiser/optimiser-phase-tutorial.svelte')
 		).default;
-		OptimizerPhaseInspector = (
-			await import('$lib/components/optimizer/optimizer-phase-inspector.svelte')
+		OptimiserPhaseInspector = (
+			await import('$lib/components/optimiser/optimiser-phase-inspector.svelte')
 		).default;
-		OptimizerArtifactViewer = (
-			await import('$lib/components/optimizer/optimizer-artifact-viewer.svelte')
+		OptimiserArtifactViewer = (
+			await import('$lib/components/optimiser/optimiser-artifact-viewer.svelte')
 		).default;
 
 		// Setup theme and UI state
@@ -157,6 +168,10 @@
 		if (sessionStorage.getItem('showWelcomeOverlay') === 'true') {
 			showWelcomeOverlay = true; // Trigger the overlay to show.
 		}
+
+		// --- TUTORIAL INITIALIZATION ---
+		// Check tutorial status on mount
+		checkTutorialStatus();
 
 		// --- UNSAVED CHANGES PROTECTION ---
 		// Only add event listener if we're in the browser
@@ -195,6 +210,11 @@
 
 	function handleWelcomeClose() {
 		showWelcomeOverlay = false;
+	}
+
+	// Handle tutorial close
+	function handleTutorialClose() {
+		hideCanvasTutorial();
 	}
 
 	// --- CANVAS STATE ---
@@ -534,7 +554,7 @@
 		parser: 'Analyzes the token stream to build a syntax tree.',
 		analyser: 'Performs semantic analysis on the syntax tree.',
 		translator: 'Translates the syntax tree into target code.',
-		optimizer: 'Advanced optimisation techniques for code enhancement.'
+		optimiser: 'Advanced optimisation techniques for code enhancement.'
 	};
 
 	const node_labels: Record<NodeType, string> = {
@@ -543,7 +563,7 @@
 		parser: 'Parser',
 		analyser: 'Analyser',
 		translator: 'Translator',
-		optimizer: 'Optimiser'
+		optimiser: 'Optimiser'
 	};
 
 	function handleCreateNode(type: NodeType) {
@@ -577,7 +597,7 @@
 
 	function handlePhaseSelect(type: NodeType) {
 		// Validate node access before proceeding
-		if (type !== 'optimizer' && !validateNodeAccess(type)) {
+		if (type !== 'optimiser' && !validateNodeAccess(type)) {
 			return; // Toast message already shown by validateNodeAccess
 		}
 
@@ -586,14 +606,20 @@
 		translationError = null;
 		if (type === 'source') {
 			show_code_input = true;
+			// Update active phase for AI assistant
+			setActivePhase('source');
 		} else {
 			selected_phase = type;
-			// Only check for source code on non-optimizer phases
-			if (type !== 'optimizer') {
+			// Update active phase for AI assistant
+			setActivePhase(type);
+			// Only check for source code on non-optimiser phases
+			if (type !== 'optimiser') {
 				const confirmedCode = get(confirmedSourceCode);
 				if (!confirmedCode.trim()) {
 					AddToast('Source code required: Please add source code to begin the compilation process', 'error');
 					selected_phase = null;
+					// Clear active phase for AI assistant when phase selection fails
+					setActivePhase(null);
 					return;
 				}
 			}
@@ -646,6 +672,8 @@
 	function returnToCanvas() {
 		selected_phase = null;
 		show_code_input = false;
+		// Clear active phase for AI assistant
+		setActivePhase(null);
 	}
 
 	function handleCodeSubmit(code: string) {
@@ -833,13 +861,17 @@
 						/>
 					{/if}
 
-					{#if selected_phase === 'optimizer' && OptimizerPhaseTutorial}
-						<svelte:component this={OptimizerPhaseTutorial} />
-						<svelte:component this={OptimizerPhaseInspector} />
-						<svelte:component this={OptimizerArtifactViewer} />
+					{#if selected_phase === 'optimiser' && OptimiserPhaseTutorial}
+						<svelte:component this={OptimiserPhaseTutorial} />
+						<svelte:component this={OptimiserPhaseInspector} />
+						<svelte:component this={OptimiserArtifactViewer} />
 					{/if}
 				</div>
-				<button on:click={returnToCanvas} class="return-button"> ← Return to Canvas </button>
+				<button on:click={returnToCanvas} class="return-button" aria-label="Return to Canvas" title="Return to Canvas">
+					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+						<path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+				</button>
 			</div>
 		</div>
 	{/if}
@@ -860,6 +892,17 @@
 	on:confirm={handleClearCanvasConfirm}
 	on:cancel={handleClearCanvasCancel}
 />
+
+
+<!-- AI Assistant Component -->
+<AiAssistant />
+
+<!-- Canvas Tutorial Modal -->
+<CanvasTutorial 
+	bind:show={showCanvasTutorial} 
+	on:close={handleTutorialClose}
+/>
+
 
 <style>
 	:global(html, body) {
@@ -977,21 +1020,26 @@
 	}
 	.return-button {
 		position: fixed;
-		bottom: 20px;
-		right: 20px;
-		padding: 0.5rem 1rem;
+		top: 5.2rem;
+		right: 2.3rem;
+		width: 40px;
+		height: 40px;
 		background: #bed2e6;
-		color: black;
+		color: #041a47;
 		border: none;
-		border-radius: 4px;
+		border-radius: 8px;
 		cursor: pointer;
 		z-index: 1000;
-		margin-right: 1rem;
-		margin-bottom: 1rem;
-		font-weight: bold;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 2px 8px rgba(4, 26, 71, 0.15);
+		transition: all 0.2s ease;
 	}
 	.return-button:hover {
 		background: #a8bdd1;
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px rgba(4, 26, 71, 0.2);
 	}
 	.code-input-overlay {
 		position: fixed;
@@ -1098,11 +1146,12 @@
 	}
 	:global(html.dark-mode) .return-button {
 		background: #1a3a7a;
-		margin-right: 1rem;
 		color: #cccccc;
+		box-shadow: 0 2px 8px rgba(26, 58, 122, 0.3);
 	}
 	:global(html.dark-mode) .return-button:hover {
 		background: #2a4a8a;
-		margin-right: 1rem;
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px rgba(26, 58, 122, 0.4);
 	}
 </style>

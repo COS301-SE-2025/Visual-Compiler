@@ -14,7 +14,7 @@
     <div class="tutorial-content">
         <h2>Optimisation</h2>
         <p class="description">
-            Optimisation is the process of automatically improving the intermediate code generated from your source code. The goal is to produce a final program that runs faster, uses less memory, or results in a smaller binary file, all <b>without changing the program's intended behavior or output</b>.
+            Optimisation is the process of automatically improving the intermediate code generated from your source code. The goal is to produce a final program that runs faster or uses less resources, all without changing the program's intended behavior or output.
         </p>
         <div class="separator"></div>
         <div class="tutorial-container">
@@ -23,7 +23,7 @@
                     <div class="tutorial-step">
                         <h3>1. What is optimisation?</h3>
                         <p>
-                            Optimisations are performed on an <b>Intermediate Representation (IR)</b> of the code, such as an Abstract Syntax Tree (AST), which is a structured, tree-like model that the compiler can easily analyze and manipulate. The code you provided performs source-to-source transformation, meaning it takes Go code, optimizes its AST, and outputs new, improved Go code.
+                            Optimisations are performed on an intermediate representation of the code, such as the syntax tree. It performs source-to-source transformation, meaning it takes Go code, optimises it, and outputs new, improved Go code.
                         </p>
                         <div class="opt-benefits">
                             <b>Think of it like a master editor reviewing a draft of a document:</b>
@@ -51,7 +51,7 @@
                     <div class="tutorial-step">
                         <h3>3. Constant Folding</h3>
                         <p>
-                            <b>Concept:</b> Constant folding is the process of evaluating constant expressions during compile time rather than waiting to evaluate them at runtime. The compiler identifies sub-expressions within the code that are composed entirely of constants (literal values like 5 or variables declared as const), calculates their result once, and replaces the entire expression with the computed constant value.
+                            Constant folding is the process of evaluating constant expressions during compile time rather than waiting to evaluate them at runtime. The compiler identifies sub-expressions within the code that are composed entirely of constants (literal values like 5 or variables declared as const), calculates their result once, and replaces the entire expression with the computed constant value.
                         </p>
                         <div class="opt-example">
                             <div class="code-block">
@@ -72,7 +72,7 @@ circumference := 62.8318</code></pre>
                     <div class="tutorial-step">
                         <h3>4. Dead Code Elimination</h3>
                         <p>
-                            <b>Concept:</b> Dead code elimination (DCE) is the removal of code that has no effect on the program's output. This code is "dead" because its execution is either impossible or its results are never used. There are two main types:
+                            Dead code elimination is the removal of code that has no effect on the program's output. This code is "dead" because its execution is either impossible or its results are never used. There are two main types:
                         </p>
                         <ul>
                             <li><b>Unreachable Code:</b> Code that can never be executed, such as statements after a return or inside an <code>if false</code> block.</li>
@@ -106,7 +106,7 @@ circumference := 62.8318</code></pre>
                     <div class="tutorial-step">
                         <h3>5. Loop Unrolling</h3>
                         <p>
-                            <b>Concept:</b> Loop unrolling is an optimisation that reduces the overhead of a loop's control mechanism by explicitly repeating the loop body multiple times per iteration. Loop control overhead includes the instructions for incrementing the counter, checking the loop condition, and jumping back to the start.
+                            Loop unrolling is an optimisation that reduces the overhead of a loop's control mechanism by explicitly repeating the loop body multiple times per iteration. Loop control overhead includes the instructions for incrementing the counter, checking the loop condition, and jumping back to the start.
                         </p>
                         <div class="opt-example">
                             <div class="code-block">

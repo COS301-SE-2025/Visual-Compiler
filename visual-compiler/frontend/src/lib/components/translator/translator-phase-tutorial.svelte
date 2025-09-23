@@ -1,6 +1,6 @@
 <script lang="ts">
     let current_step = 1;
-    const total_steps = 6;
+    const total_steps = 5;
 
     // Reactive declaration to ensure reactivity
     $: reactive_step = current_step;
@@ -18,22 +18,6 @@
             console.log("Previous Step:", current_step); // Debug log
         }
     }
-
-    const NUMBER = 'NUMBER';
-    const PLUS = 'PLUS';
-    const MINUS = 'MINUS';
-    const ASSIGNMENT = 'ASSIGNMENT';
-    const KEYWORD = 'KEYWORD';
-    const IDENTIFIER = 'IDENTIFIER';
-
-    const token_types = [
-        { type: KEYWORD, desc: 'Reserved words (e.g., int, if, while)' },
-        { type: IDENTIFIER, desc: 'Variable names (e.g., result, count)' },
-        { type: NUMBER, desc: 'Integers (e.g., 10, 42)' },
-        { type: PLUS, desc: 'Addition operator (+)' },
-        { type: MINUS, desc: 'Subtraction operator (-)' },
-        { type: ASSIGNMENT, desc: 'Assignment operator (=)' }
-    ];
 
     const example_rules = [
         {
@@ -73,16 +57,16 @@
                             <p> Before using the translator, you must complete the lexing and parsing phases:</p>
                             <div class="token-list">
                                 <div class="token-item">
-                                    <span class="token-type">Lexing</span>
-                                    <span class="token-desc">Break your source code into tokens</span>
+                                    <span class="token-type">Lexer</span>
+                                    <span class="token-desc">Converts your source code into a token stream</span>
                                 </div>
                                 <div class="token-item">
-                                    <span class="token-type">Parsing</span>
-                                    <span class="token-desc">Use the tokens to create a syntax tree</span>
+                                    <span class="token-type">Parser</span>
+                                    <span class="token-desc">Converts your token stream into a syntax tree</span>
                                 </div>
                             </div>
                             <div class="info-block">
-                                <p>✨ Once the syntax tree is ready, you can proceed to define translation rules and generate target code.</p>
+                                <p>Once the syntax tree is ready, you can proceed to define translation rules and generate target code. Note that your token types are used in translation. ✨</p>
                             </div>
                         </div>
                     </div>
@@ -90,7 +74,7 @@
                     <div class="tutorial-step">
                         <h3>2. Define Translation Rules</h3>
                         <div class="step-content">
-                            <p>📝 Click "+ Add New Rule" for each pattern you want to translate:</p>
+                            <p>Click "+ Add New Rule" for each pattern you want to translate:</p>
                             <div class="example-block">
                                 <div class="example-header">
                                     <span>Example Rule for Addition</span>
@@ -105,8 +89,7 @@
                                         <code class="pattern-code">add [&#123;IDENTIFIER&#125;], &#123;INTEGER&#125;</code>
                                     </div>
                                     <div class="output-section">
-                                        <span>✅ Result:</span>
-                                        <p>This changes <code> var + 13 </code> to <code> add [var], 13 </code></p>
+                                        <p>This converts <code> var + 13 </code> to <code> add [var], 13 </code></p>
                                     </div>
                                 </div>
                             </div>
@@ -119,10 +102,10 @@
                             <p> Click "Submit Rules" to generate your output:</p>
                             <div class="code-sample">
                                 <div class="code-header">
-                                    <span>-- Example Output for <code>result = 12</code>:</span>
+                                    <span>Example Output for <code>result = 12</code>:</span>
                                 </div>
                                 <pre class="code-output">
-📝 Assembly Output:
+Target Code Output:
 
 mov    rax, [result]
 add    rax, 12
@@ -132,22 +115,7 @@ add    rax, 12
                     </div>
                 {:else if reactive_step === 4}
                     <div class="tutorial-step">
-                        <h3>4. Token Types Reference</h3>
-                        <div class="step-content">
-                            <p>Use these token types to define your rules:</p>
-                            <div class="token-list">
-                                {#each token_types as { type, desc }}
-                                    <div class="token-item">
-                                        <span class="token-type">🔹 {type}</span>
-                                        <span class="token-desc">{desc}</span>
-                                    </div>
-                                {/each}
-                            </div>
-                        </div>
-                    </div>
-                {:else if reactive_step === 5}
-                    <div class="tutorial-step">
-                        <h3>5. Ready-to-Use Examples</h3>
+                        <h3>4. Ready-to-Use Examples</h3>
                         <div class="step-content">
                             <p> Here are some examples to get you started:</p>
                             {#each example_rules as { sequence, translation, source, output }}
@@ -165,7 +133,7 @@ add    rax, 12
                                             <code class="pattern-code">{translation}</code>
                                         </div>
                                         <div class="output-section">
-                                            <span>✅ Output:</span>
+                                            <span>Target Code:</span>
                                             <pre class="code-output">{output}</pre>
                                         </div>
                                     </div>
@@ -173,9 +141,9 @@ add    rax, 12
                             {/each}
                         </div>
                     </div>
-                {:else if reactive_step === 6}
+                {:else if reactive_step === 5}
                     <div class="tutorial-step">
-                        <h3>6. Important Warnings</h3>
+                        <h3>5. Important Warnings</h3>
                         <div class="step-content">
                             <p>Avoid these common mistakes:</p>
                             {#each critical_donts as { mistake, wrong, right }}

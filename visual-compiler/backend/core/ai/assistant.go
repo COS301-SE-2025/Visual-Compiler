@@ -27,7 +27,7 @@ func ConnectAI(api_key string) *openai.Client {
 
 func QuestionAnswer(question string, ctx context.Context) string {
 
-	prompt := "You are an educational assistant. Answer any question relevant to compiler construction clearly, concisely, and at a student level of complexity. Otherwise, politely inform the user that you only explain the topics within the phases of compilation. Provide simple examples where necessary and use plain text only, no markdown or special symbols. If the user seeks system-specific guidance, such as navigation, suggest the canvas tutorial and FAQ tab."
+	prompt := "You are an educational assistant. Answer any question relevant to compiler construction clearly, concisely, and at a student level of complexity. Otherwise, politely inform the user that you only explain the topics within the phases of compilation. Structure it like a chat message, therefore no headings, no newlines and no special formatting. If the user seeks system-specific guidance, such as navigation, suggest the canvas tutorial and FAQ tab."
 
 	messages := []openai.ChatCompletionMessage{
 		{
@@ -63,10 +63,10 @@ func GenerateInput(phase string, artefact string, ctx context.Context) (string, 
 
 	case "source":
 
-		prompt = `You are an educational assistant.
+		prompt = `You are an educational assistant for compiler construction.
 
-Generate a small program in an arbitrary programming language, without comments.
-Format your response strictly as raw code, without any additional text or markdown or formatting whatsoever, for example,
+Generate a small program in an imaginary programming language, without comments or complex syntax.
+Format your response strictly as plain text, without any additional text or markdown or formatting whatsoever, for example,
 
 int blue = 13;
 
@@ -79,9 +79,9 @@ for _i range(12)
 
 	case "lexer":
 
-		prompt = `You are an educational assistant.
+		prompt = `You are an educational assistant for compiler construction.
 
-Generate a list of token definitions in order of priority for a lexer that will perfectly lex the user's source code. Ignore whitespaces except if they are syntactically significant.
+Generate a list of token definitions in order of priority for a lexer that will perfectly lex the user's source code. Include punctuation, but ignore whitespaces except if they are syntactically significant.
 
 The token definitions should follow this structure: 
 1. "type": string for token type
@@ -98,7 +98,7 @@ Format your response strictly as a JSON array, without any additional text whats
 
 	case "parser":
 
-		prompt = `You are an educational assistant.
+		prompt = `You are an educational assistant for compiler construction.
 
 Generate a context-free grammar for a parser that will perfectly parse the user's token stream.
 
@@ -127,9 +127,10 @@ Format your response strictly as a JSON object, without any additional text what
 
 	case "analyser":
 
-		prompt = `You are an educational assistant.
+		prompt = `You are an educational assistant for compiler construction.
 
-Generate the scope and type rules for an analyser that will perfectly analyse the user's syntax tree.
+Generate the scope and type rules for an analyser that will appropriately analyse the user's syntax tree.
+The seven grammar rules are constant, do not add more, only change the token if necessary.
 
 Format your response strictly as a JSON object with this structure, without any additional text whatsoever, for example,
 
@@ -159,9 +160,10 @@ Format your response strictly as a JSON object with this structure, without any 
 
 	case "translator":
 
-		prompt = `You are an educational assistant.
+		prompt = `You are an educational assistant for compiler construction.
 
 Generate a list of translation rules for a translator that will perfectly translate the user's syntax tree.
+Remember to include tokens for punctation and write out full recursions instead of using shorthands.
 
 The translation rules should follow this structure: 
 1. "sequence": string of comma-separated token types
@@ -184,7 +186,7 @@ Format your response strictly as a JSON array, without any additional text whats
 
 	case "optimiser":
 
-		prompt = `You are an educational assistant.
+		prompt = `You are an educational assistant for compiler construction.
 
 Generate a simple, complete Go program without comments that contains examples for the following optimisation: 
 1. Constant folding for basic operators

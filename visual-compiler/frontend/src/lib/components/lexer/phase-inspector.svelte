@@ -2,7 +2,7 @@
 	// @ts-nocheck
 	import type { Token } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { DataSet, Network } from 'vis-network/standalone';
 	import { fade, scale } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
@@ -1018,7 +1018,7 @@
 	            }
 	        );
 
-	        if (!response.ok) return;
+	        if (!response || !response.ok) return;
 
 	        const data = await response.json();
 	        
@@ -1049,6 +1049,51 @@
 	        console.error('Error updating inputs:', error);
 	    }
 	}
+
+	// Add event listener for AI-generated lexer rules
+    let aiLexerEventListener: (event: CustomEvent) => void;
+
+    onMount(() => {
+        // Listen for AI-generated lexer rules
+        aiLexerEventListener = (event: CustomEvent) => {
+            if (event.detail && event.detail.rules && Array.isArray(event.detail.rules)) {
+                console.log('Received AI lexer rules:', event.detail.rules);
+                
+                // Clear existing user input rows and populate with AI-generated rules
+                userInputRows = event.detail.rules.map(rule => ({
+                    type: rule.type,
+                    regex: rule.regex,
+                    error: ''
+                }));
+                
+                // Ensure we're in regex mode and not showing default
+                selectedType = 'REGEX';
+                showDefault = false;
+                
+                // Reset other states
+                showRegexActionButtons = false;
+                showGenerateButton = false;
+                submissionStatus = { show: false, success: false, message: '' };
+                
+                // Update the lexer state
+                lexerState.update(state => ({
+                    ...state,
+                    userInputRows: [...userInputRows]
+                }));
+                
+                AddToast('AI lexer rules inserted into input rows!', 'success');
+            }
+        };
+
+        window.addEventListener('ai-lexer-generated', aiLexerEventListener);
+    });
+
+    onDestroy(() => {
+        if (aiLexerEventListener) {
+            window.removeEventListener('ai-lexer-generated', aiLexerEventListener);
+        }
+    });
+
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -1681,7 +1726,7 @@
 		border-radius: 6px;
 		font-size: 0.9rem;
 		font-weight: 500;
-		cursor: pointer;
+			cursor: pointer;
 		transition: background-color 0.2s ease, transform 0.2s;
 	}
 
