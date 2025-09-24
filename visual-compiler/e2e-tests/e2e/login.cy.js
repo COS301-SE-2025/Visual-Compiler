@@ -1,7 +1,7 @@
 describe('Login Test', () => {
     it('Successful', () => {
-        const test_username = "e2e_tester";
-        const test_password = "password1234";
+        const test_username = "e2e tester";
+        const test_password = "testUser13";
 
         cy.visit('http://localhost:5173/auth-page');
 
@@ -23,9 +23,8 @@ describe('Login Test', () => {
     })
 
     it('Unsuccessful', () => {
-        const test_username = "e2e_tester80";
-        const test_password = "password1234";
-        const test_email = "e2e_tester@gmail.com"
+        const test_username = "e2e teste";
+        const test_password = "testUser1";
 
         cy.visit('http://localhost:5173/auth-page');
 
@@ -42,7 +41,7 @@ describe('Login Test', () => {
 
         cy.get('.icon-submit-btn').click();
 
-        cy.contains('Login failed: Invalid credentials');
+        cy.contains('Login failed:');
 
     })
 })

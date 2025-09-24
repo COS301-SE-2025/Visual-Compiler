@@ -10,16 +10,12 @@ import (
 
 func TestSetupOptimisingRouter(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	router := routers.SetupOptimisingRouter()
+	r := gin.New()
+	router := routers.SetupOptimisingRouter(r.Group("/"))
 	if router == nil {
 		t.Errorf("SetupRouter function does not initialise router")
 	}
-}
-
-func TestOptimisingRouterRoutes(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := routers.SetupOptimisingRouter()
-	endpoints := router.Routes()
+	endpoints := r.Routes()
 	if len(endpoints) != 2 {
 		t.Errorf("Amount of routes does not match")
 	}

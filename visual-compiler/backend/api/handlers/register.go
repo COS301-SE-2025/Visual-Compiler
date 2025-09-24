@@ -24,7 +24,7 @@ type Request struct {
 	// User's password
 	Password string `json:"password" binding:"required,min=8"`
 	// User's username
-	Username string `json:"username" binding:"required,min=6"`
+	Username string `json:"username" binding:"required,min=1"`
 }
 
 // @Summary Register User
@@ -109,6 +109,7 @@ func Register(c *gin.Context) {
 	res, err := http.Post(auth_domain+"/oauth/token", "application/json", bytes.NewBuffer(json_token))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token Auth0 request failed: " + err.Error()})
+		users_collection.DeleteOne(ctx, bson.M{"_id": inserted_result.InsertedID})
 		return
 	}
 	defer res.Body.Close()
@@ -119,6 +120,7 @@ func Register(c *gin.Context) {
 	}
 	if err := json.Unmarshal(body, &res_token); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Token parse failed (Auth0)"})
+		users_collection.DeleteOne(ctx, bson.M{"_id": inserted_result.InsertedID})
 		return
 	}
 
@@ -140,16 +142,20 @@ func Register(c *gin.Context) {
 	auth_res, err := cli.Do(auth_request)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User creation failed (Auth0): " + err.Error()})
+		users_collection.DeleteOne(ctx, bson.M{"_id": inserted_result.InsertedID})
 		return
 	}
 
 	if auth_res.StatusCode >= 300 {
 		bytes_body_error, _ := io.ReadAll(auth_res.Body)
+		var body_array map[string]string
+		_ = json.Unmarshal(bytes_body_error, &body_array)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error":       "User creation failed (Auth0)",
 			"status_code": auth_res.StatusCode,
-			"body":        string(bytes_body_error),
+			"body":        body_array["message"],
 		})
+		users_collection.DeleteOne(ctx, bson.M{"_id": inserted_result.InsertedID})
 		return
 	}
 	defer auth_res.Body.Close()
@@ -164,6 +170,7 @@ func Register(c *gin.Context) {
 	})
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+		users_collection.DeleteOne(ctx, bson.M{"_id": inserted_result.InsertedID})
 		return
 	}
 

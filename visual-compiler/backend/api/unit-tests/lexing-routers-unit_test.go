@@ -10,17 +10,13 @@ import (
 
 func TestSetupLexingRouter(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	router := routers.SetupLexingRouter()
+	r := gin.New()
+	router := routers.SetupLexingRouter(r.Group("/"))
 	if router == nil {
 		t.Errorf("SetupRouter function does not initialise router")
 	}
-}
-
-func TestLexingRouterRoutes(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := routers.SetupLexingRouter()
-	endpoints := router.Routes()
-	if len(endpoints) != 9 {
+	endpoints := r.Routes()
+	if len(endpoints) != 11 {
 		t.Errorf("Amount of routes does not match")
 	}
 }
