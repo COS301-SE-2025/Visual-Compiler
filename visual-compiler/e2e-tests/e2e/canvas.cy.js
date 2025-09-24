@@ -24,7 +24,6 @@ describe('Canvas Test', ()=> {
     it('Add and connect Nodes', () => {
 
         cy.visit('http://localhost:5173/main-workspace');
-
         cy.wait(1000);
 
         const project_name = 'canvas_project';
