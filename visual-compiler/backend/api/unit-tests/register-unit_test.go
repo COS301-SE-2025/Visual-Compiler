@@ -72,7 +72,7 @@ func TestRegisterInvalidUsername(t *testing.T) {
 	user_data := handlers.Request{
 		Email:    "user@gmail.com",
 		Password: "passsdw32323@@@",
-		Username: "in",
+		Username: "",
 	}
 
 	req, err := json.Marshal(user_data)

@@ -11,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func TestReadRules_InvalidInput(t *testing.T) {
+func TestReadRules_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createPhaseTestContext(t)
 
@@ -24,9 +24,8 @@ func TestReadRules_InvalidInput(t *testing.T) {
 
 	handlers.ReadRules(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		var mess map[string]string
-		t.Errorf(mess["error"])
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
 	} else {
 		body_bytes, err := io.ReadAll(rec.Body)
 		if err != nil {
@@ -37,13 +36,13 @@ func TestReadRules_InvalidInput(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error: %v", err)
 		}
-		if body_array["error"] != "Input is invalid" {
-			t.Errorf("BadRequest status code expected")
+		if body_array["error"] != "Unauthorized" {
+			t.Errorf("Incorrect error")
 		}
 	}
 }
 
-func TestTranslateCode_InvalidInput(t *testing.T) {
+func TestTranslateCode_Unauthorised(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	contxt, rec := createPhaseTestContext(t)
 
@@ -56,8 +55,8 @@ func TestTranslateCode_InvalidInput(t *testing.T) {
 
 	handlers.TranslateCode(contxt)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Errorf("BadRequest status code expected")
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("StatusUnauthorized status code expected")
 	} else {
 		body_bytes, err := io.ReadAll(rec.Body)
 		if err != nil {
@@ -68,7 +67,7 @@ func TestTranslateCode_InvalidInput(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error: %v", err)
 		}
-		if body_array["error"] != "Input is invalid" {
+		if body_array["error"] != "Unauthorized" {
 			t.Errorf("Incorrect error")
 		}
 	}
