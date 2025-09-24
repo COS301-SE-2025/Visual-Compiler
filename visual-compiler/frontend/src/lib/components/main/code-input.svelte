@@ -18,6 +18,9 @@
 	// Add flag to control window closing behavior
 	let shouldCloseWindow = true;
 
+	// Guest user detection
+	let isGuestUser = false;
+
 	// --- REAL PROJECTS DATA ---
 	let projects: Array<{ name: string; code: string }> = [
 		{ name: 'Select a project...', code: '' }
@@ -26,6 +29,11 @@
 
 	// Fetch projects from backend
 	async function fetchProjects() {
+		// Skip fetching projects for guest users
+		if (isGuestUser) {
+			return;
+		}
+
 		const userId = localStorage.getItem('user_id');
 		if (!userId) return;
 
@@ -83,6 +91,10 @@
 	let aiSubmittedEventListener: (event: CustomEvent) => void;
 
 	onMount(() => {
+		// Check if user is a guest
+		const accessToken = sessionStorage.getItem('access_token');
+		isGuestUser = accessToken === 'guestuser';
+		
 		fetchProjects();
 		
 		// Listen for AI-generated source code
@@ -310,7 +322,7 @@
 		placeholder="Paste or type your source code here…"
 	></textarea>
 
-	<div class="controls-grid">
+	<div class="controls-grid" class:guest-mode={isGuestUser}>
 		<div class="control-item">
 			<label class="upload-btn">
 				Upload File
@@ -318,14 +330,16 @@
 			</label>
 		</div>
 
-		<div class="control-item project-selector">
-			<label for="project-select">Import from Project</label>
-			<select id="project-select" bind:value={selectedProject} on:change={handleProjectSelect}>
-				{#each projects as project}
-					<option value={project}>{project.name}</option>
-				{/each}
-			</select>
-		</div>
+		{#if !isGuestUser}
+			<div class="control-item project-selector">
+				<label for="project-select">Import from Project</label>
+				<select id="project-select" bind:value={selectedProject} on:change={handleProjectSelect}>
+					{#each projects as project}
+						<option value={project}>{project.name}</option>
+					{/each}
+				</select>
+			</div>
+		{/if}
 	</div>
 
 
@@ -388,6 +402,22 @@
 		gap: 1rem;
 		align-items: flex-end; /* Align items to the bottom */
 		margin-bottom: 1rem;
+	}
+
+	.controls-grid.guest-mode {
+		grid-template-columns: 1fr;
+		justify-items: center;
+	}
+
+	.controls-grid.guest-mode .upload-btn {
+		width: 150px;
+		padding: 0.5rem 1.5rem;
+		justify-self: center;
+	}
+
+	.controls-grid.guest-mode + .controls .confirm-btn {
+		width: 150px;
+		justify-content: center;
 	}
 
 	.control-item {
