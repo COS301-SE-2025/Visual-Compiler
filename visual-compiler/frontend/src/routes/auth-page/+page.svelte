@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { AddToast } from '$lib/stores/toast';
 	import { goto } from '$app/navigation';
-	import { projectName } from '$lib/stores/project';
+	import { projectName, deleteProject } from '$lib/stores/project';
 	import { resetPipeline } from '$lib/stores/pipeline';
 	import { resetSourceCode } from '$lib/stores/source-code';
 	import { resetLexerState } from '$lib/stores/lexer';
@@ -230,8 +230,8 @@
 			sessionStorage.setItem('authToken', 'guestuser'); // Alternative key for compatibility
 			
 			// Set guest user data in localStorage
-			localStorage.setItem('user_id', 'guest');
-			localStorage.setItem('users_id', 'guest'); // Also store as users_id for optimiser compatibility
+			localStorage.setItem('user_id', '68d32088d29390ec2c897f35');
+			localStorage.setItem('users_id', '68d32088d29390ec2c897f35'); // Also store as users_id for optimiser compatibility
 			localStorage.setItem('is_admin', 'false');
 			
 			// Clear any existing projects for guest user
@@ -251,7 +251,7 @@
 					},
 					body: JSON.stringify({
 						project_name: guestProjectName,
-						users_id: 'guest'
+						users_id: localStorage.getItem('user_id') || '68d32088d29390ec2c897f35'
 					})
 				});
 
@@ -263,6 +263,9 @@
 					projectName.set(guestProjectName);
 					
 					console.log('Guest project created:', guestProjectName);
+
+					// Set up cleanup for guest project on logout/close
+					setupGuestProjectCleanup(guestProjectName);
 				} else {
 					console.warn('Failed to create guest project, continuing with guest login');
 					// Still set the project name even if creation fails
@@ -287,6 +290,69 @@
 		} catch (error) {
 			AddToast(`Guest login error: ${(error as Error).message}. Please try again`, 'error');
 		}
+	}
+
+	// deleteGuestProject
+	// Return type: Promise<void>
+	// Parameter type(s): string (projectName)
+	// Deletes a guest project from the backend to ensure temporary projects are cleaned up
+	async function deleteGuestProject(projectName: string): Promise<void> {
+		try {
+			console.log(`Attempting to delete guest project: ${projectName}`);
+			await deleteProject(projectName, localStorage.getItem('user_id') || '68d32088d29390ec2c897f35');
+			console.log(`Guest project deleted successfully: ${projectName}`);
+		} catch (error) {
+			console.error(`Error deleting guest project: ${projectName}`, error);
+		}
+	}
+
+	// setupGuestProjectCleanup
+	// Return type: void  
+	// Parameter type(s): string (projectName)
+	// Sets up event listeners to clean up guest projects when the user logs out or closes the application
+	function setupGuestProjectCleanup(projectName: string): void {
+		if (typeof window === 'undefined') return;
+
+		// Function to handle cleanup
+		const cleanup = async () => {
+			const userId = localStorage.getItem('user_id');
+			if (userId === (localStorage.getItem('user_id') || '68d32088d29390ec2c897f35')) {
+				await deleteGuestProject(projectName);
+				// Clear guest project data
+				localStorage.removeItem('guest_project_name');
+			}
+		};
+
+		// Handle page unload (browser close, refresh, navigate away)
+		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+			const userId = localStorage.getItem('user_id') || '68d32088d29390ec2c897f35';
+			const guestId = '68d32088d29390ec2c897f35';
+			if (userId === guestId) {
+				// Use sendBeacon for more reliable cleanup on page unload
+				navigator.sendBeacon('http://localhost:8080/api/users/deleteProject', JSON.stringify({
+					project_name: projectName,
+					users_id: userId
+				}));
+			}
+		};
+
+		// Handle visibility change (tab close, window minimize)
+		const handleVisibilityChange = async () => {
+			if (document.hidden) {
+				const userId = localStorage.getItem('user_id') || '68d32088d29390ec2c897f35';
+				const guestId = '68d32088d29390ec2c897f35';
+				if (userId === guestId) {
+					await cleanup();
+				}
+			}
+		};
+
+		// Add event listeners
+		window.addEventListener('beforeunload', handleBeforeUnload);
+		document.addEventListener('visibilitychange', handleVisibilityChange);
+
+		// Store cleanup function reference for potential manual cleanup
+		(window as any).guestProjectCleanup = cleanup;
 	}
 </script>
 

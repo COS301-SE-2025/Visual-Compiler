@@ -7,6 +7,7 @@
 	import { projectName } from '$lib/stores/project';
 	import { pipelineStore, setActivePhase } from '$lib/stores/pipeline';
 	import { confirmedSourceCode } from '$lib/stores/source-code';
+	import { aiAssistantOpen } from '$lib/stores/ai-assistant';
 	import NavBar from '$lib/components/main/nav-bar.svelte';
 	import Toolbox from '$lib/components/main/Toolbox.svelte';
 	import CodeInput from '$lib/components/main/code-input.svelte';
@@ -909,7 +910,7 @@
 
 	<!-- Return to Canvas Button (positioned to the left of AI Assistant) -->
 	{#if selected_phase}
-		<button on:click={returnToCanvas} class="return-button" aria-label="Return to Canvas" title="Return to Canvas">
+		<button on:click={returnToCanvas} class="return-button" class:ai-open={$aiAssistantOpen} aria-label="Return to Canvas" title="Return to Canvas">
 			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
 				<path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
 			</svg>
@@ -1081,6 +1082,9 @@
 		box-shadow: 0 2px 8px rgba(4, 26, 71, 0.15);
 		transition: all 0.2s ease;
 	}
+	.return-button.ai-open {
+		right: calc(6.3rem + 330px); /* Move left by AI assistant width (380px) + some margin */
+	}
 	.return-button:hover {
 		background: #a8bdd1;
 		transform: translateY(-1px);
@@ -1193,6 +1197,9 @@
 		background: #1a3a7a;
 		color: #cccccc;
 		box-shadow: 0 2px 8px rgba(26, 58, 122, 0.3);
+	}
+	:global(html.dark-mode) .return-button.ai-open {
+		right: calc(6.3rem + 330px); /* Move left by AI assistant width (380px) + some margin */
 	}
 	:global(html.dark-mode) .return-button:hover {
 		background: #2a4a8a;

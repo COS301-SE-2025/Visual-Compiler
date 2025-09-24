@@ -5,6 +5,7 @@
 	import AdminPanel from './admin-panel.svelte';
 	import WelcomeOverlay from '../project-hub/project-hub.svelte'; // Adjusted path
 	import { onMount } from 'svelte';
+	import { deleteProject } from '../../../lib/stores/project';
 
 	const light_logo_url = '/half_stack_phoenix_only.png';
 	const dark_logo_url = '/half_stack_phoenix_grey.png';
@@ -22,10 +23,33 @@
 	let is_guest_user = false; // Track if user is a guest
 
 	// logout
-	// Return type: void
+	// Return type: Promise<void>
 	// Parameter type(s): none
-	// Navigates the user to the login page.
-	function logout() {
+	// Handles logout for both regular users and guests, cleaning up guest projects if necessary.
+	async function logout() {
+		// Check if user is a guest and clean up their project
+		const userId = localStorage.getItem('user_id') || '68d32088d29390ec2c897f35';
+		const guestProjectName = localStorage.getItem('guest_project_name');
+		const guestId = '68d32088d29390ec2c897f35';
+		
+		if (userId === guestId && guestProjectName) {
+			try {
+				console.log(`Cleaning up guest project on logout: ${guestProjectName}`);
+				await deleteProject(guestProjectName, userId);
+				console.log(`Guest project deleted successfully on logout: ${guestProjectName}`);
+			} catch (error) {
+				console.error(`Error deleting guest project on logout: ${guestProjectName}`, error);
+			}
+			
+			// Clear guest project data from localStorage
+			localStorage.removeItem('guest_project_name');
+		}
+		
+		// Clear all user data
+		localStorage.clear();
+		sessionStorage.clear();
+		
+		// Navigate to auth page
 		goto('/auth-page');
 	}
 
