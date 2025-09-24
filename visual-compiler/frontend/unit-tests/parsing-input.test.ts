@@ -43,8 +43,20 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		vi.clearAllMocks();
 		window.sessionStorage.setItem('access_token', 'test-token-123');
 		
-		// Reset fetch mock
+		// Reset and configure fetch mock with proper response structure
 		mockFetch.mockReset();
+		mockFetch.mockResolvedValue({
+			ok: true,
+			status: 200,
+			json: async () => ({
+				tokens: ['identifier', 'number', 'operator'],
+				tokens_unidentified: []
+			}),
+			text: async () => JSON.stringify({
+				tokens: ['identifier', 'number', 'operator'],
+				tokens_unidentified: []
+			})
+		});
 	});
 
 	// ============= BASIC FUNCTIONALITY TESTS =============
@@ -424,8 +436,20 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 	// ============= API AND SUBMISSION TESTS =============
 
 	it('TestSubmitGrammar_Success: Submits grammar and shows generate button on success', async () => {
+		// Mock the lexer endpoint first (called on component mount)
 		mockFetch.mockResolvedValueOnce({
 			ok: true,
+			status: 200,
+			json: async () => ({
+				tokens: ['identifier', 'number', 'operator'],
+				tokens_unidentified: []
+			})
+		});
+		
+		// Mock the grammar submission endpoint
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			status: 200,
 			json: async () => ({ message: 'Grammar saved successfully' })
 		});
 		
@@ -459,9 +483,20 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 	});
 
 	it('TestSuccessfulGrammarSubmission_Success: Tests successful grammar submission', async () => {
+		// Mock the lexer endpoint first (called on component mount)
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			status: 200,
+			json: async () => ({
+				tokens: ['identifier', 'number', 'operator'],
+				tokens_unidentified: []
+			})
+		});
+		
 		// Mock successful fetch response for grammar submission
 		mockFetch.mockResolvedValueOnce({
 			ok: true,
+			status: 200,
 			json: async () => ({ message: 'Grammar saved successfully' })
 		});
 		
@@ -502,7 +537,11 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Mock the lexer endpoint that is called in fetchTokens
 		mockFetch.mockResolvedValueOnce({
 			ok: true,
-			json: async () => ({ tokens: mockTokens })
+			status: 200,
+			json: async () => ({ 
+				tokens: mockTokens,
+				tokens_unidentified: []
+			})
 		});
 		
 		render(ParsingInput, { source_code: 'int x = 5;' });
@@ -547,6 +586,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// First submit grammar successfully
 		mockFetch.mockResolvedValueOnce({
 			ok: true,
+			status: 200,
 			json: async () => ({ message: 'Grammar saved successfully' })
 		});
 		
@@ -562,13 +602,18 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Mock the syntax tree generation endpoint
 		mockFetch.mockResolvedValueOnce({
 			ok: true,
+			status: 200,
 			json: async () => ({ syntaxTree: mockSyntaxTree })
 		});
 		
 		// Mock the token verification endpoints that are called before tree generation
 		mockFetch.mockResolvedValueOnce({
 			ok: true,
-			json: async () => ({ tokens: [] })
+			status: 200,
+			json: async () => ({ 
+				tokens: [],
+				tokens_unidentified: []
+			})
 		});
 		
 		// Now test the syntax tree generation
@@ -586,6 +631,17 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 	// ============= ERROR HANDLING TESTS =============
 
 	it('TestErrorHandling_Success: Handles API errors gracefully', async () => {
+		// Mock the initial token fetch to succeed
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			status: 200,
+			json: async () => ({
+				tokens: ['identifier', 'number', 'operator'],
+				tokens_unidentified: []
+			})
+		});
+		
+		// Then mock the grammar submission to fail
 		mockFetch.mockRejectedValueOnce(new Error('Network error'));
 		
 		render(ParsingInput, { source_code: 'int x = 5;' });
