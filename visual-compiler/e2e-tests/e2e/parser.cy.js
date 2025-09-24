@@ -84,6 +84,7 @@ describe('Parser Test', ()=> {
         cy.wait(500);
         cy.get('#A-2\\/N-lexer-2').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-parser-3').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
+        cy.wait(500);
         cy.get('.canvas-container').contains('Parser').dblclick();
         cy.wait(500);
         cy.get('.phase-inspector').should('contain','PARSING');
