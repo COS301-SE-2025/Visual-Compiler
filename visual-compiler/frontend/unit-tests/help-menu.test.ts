@@ -31,8 +31,9 @@ describe('HelpMenu Component', () => {
 		expect(screen.getByText('How do I add a new node to the canvas?')).toBeInTheDocument();
 		expect(screen.getByText('How do I move a node?')).toBeInTheDocument();
 		expect(screen.getByText('How do I connect two nodes?')).toBeInTheDocument();
-		expect(screen.getByText('How do I delete a node or connection?')).toBeInTheDocument();
-		expect(screen.getByText(/Why can.t I configure a Lexer or Parser node/)).toBeInTheDocument();
+		expect(screen.getByText('How do I delete a node?')).toBeInTheDocument();
+		expect(screen.getByText('How do I delete a connection?')).toBeInTheDocument();
+		expect(screen.getByText(/Why can.t I configure a/)).toBeInTheDocument();
 	});
 
 	it('TestQuestionToggle_Success: Expands and collapses FAQ answers', async () => {
@@ -105,12 +106,16 @@ describe('HelpMenu Component', () => {
 				answerPart: 'Click and hold on an output anchor'
 			},
 			{
-				question: 'How do I delete a node or connection?',
+				question: 'How do I delete a node?',
 				answerPart: 'To delete a node, right-click'
 			},
 			{
-				question: "Why can't I configure a Lexer or Parser node?",
-				answerPart: 'You must first add and submit code'
+				question: 'How do I delete a connection?',
+				answerPart: 'To delete a connection'
+			},
+			{
+				question: "Why can't I configure a",
+				answerPart: 'You must first complete the previous phases'
 			}
 		];
 
@@ -119,7 +124,7 @@ describe('HelpMenu Component', () => {
 			let searchPattern: string | RegExp;
 			if (question.includes("can't")) {
 				// Use a more flexible pattern for the special case
-				searchPattern = /Why can.t I configure a Lexer or Parser node.*▼/;
+				searchPattern = /Why can.t I configure a.*▼/;
 			} else {
 				searchPattern = new RegExp(question.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '.*▼');
 			}

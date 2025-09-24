@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { onMount, createEventDispatcher } from 'svelte';
     import { AddToast } from '$lib/stores/toast';
     import { projectName } from '$lib/stores/project';
     import { get } from 'svelte/store';
     import { lexerState } from '$lib/stores/lexer';
+    import { onMount, createEventDispatcher, onDestroy } from 'svelte';
 
     export let source_code = '';
 
@@ -59,10 +59,88 @@
         ]
     };
 
-    // onMount
+    let aiParserEventListener: (event: CustomEvent) => void;
+
     onMount(async () => {
         addNewRule();
-        await fetchTokens(); // Try to fetch existing tokens
+        await fetchTokens();
+
+        // Listen for AI-generated parser grammar
+        aiParserEventListener = (event: CustomEvent) => {
+            if (event.detail && event.detail.grammar) {
+                console.log('Received AI parser grammar:', event.detail.grammar);
+                
+                const grammar = event.detail.grammar;
+                
+                // Clear existing rules first
+                grammar_rules = [];
+                rule_id_counter = 0;
+                translation_id_counter = 0;
+                
+                // Populate variables and terminals
+                variables_string = grammar.variables || '';
+                terminals_string = grammar.terminals || '';
+                
+                // Handle rules
+                if (grammar.rules && Array.isArray(grammar.rules)) {
+                    grammar_rules = grammar.rules.map((rule, index) => {
+                        rule_id_counter++;
+                        
+                        // Each rule should have exactly one translation per output array
+                        const translations = [];
+                        if (Array.isArray(rule.output) && rule.output.length > 0) {
+                            // Join the output array into a single string for the translation
+                            translation_id_counter++;
+                            translations.push({
+                                id: translation_id_counter,
+                                value: rule.output.join(' ')
+                            });
+                        } else {
+                            // Fallback: empty translation
+                            translation_id_counter++;
+                            translations.push({
+                                id: translation_id_counter,
+                                value: ''
+                            });
+                        }
+                        
+                        return {
+                            id: rule_id_counter,
+                            nonTerminal: rule.input || '',
+                            translations: translations
+                        };
+                    });
+                }
+                
+                // If no rules were generated, add a blank one
+                if (grammar_rules.length === 0) {
+                    addNewRule();
+                }
+                
+                // Reset states
+                show_default_grammar = false;
+                is_grammar_submitted = false;
+                
+                // Force reactivity update
+                grammar_rules = grammar_rules;
+                variables_string = variables_string;
+                terminals_string = terminals_string;
+                
+                AddToast('AI parser grammar inserted into grammar editor!', 'success');
+                
+                console.log('Final grammar_rules:', grammar_rules);
+                console.log('Final variables_string:', variables_string);
+                console.log('Final terminals_string:', terminals_string);
+            }
+        };
+
+        window.addEventListener('ai-parser-generated', aiParserEventListener);
+    });
+
+    onDestroy(() => {
+        if (aiParserEventListener) {
+            window.removeEventListener('ai-parser-generated', aiParserEventListener);
+        }
     });
 
     // handleGrammarChange
@@ -142,10 +220,10 @@
 
     // handleSubmitGrammar
     async function handleSubmitGrammar() {
-        const user_id = localStorage.getItem('user_id');
+        const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
         const project = get(projectName);
 
-        if (!user_id) {
+        if (!accessToken) {
             AddToast('Authentication required: Please log in to save grammar rules', 'error');
             return;
         }
@@ -232,8 +310,7 @@
             .filter((rule) => rule.input && rule.output.length > 0);
 
         const final_json_output = {
-            users_id: user_id,
-            project_name: project,
+            project_name: project, 
             variables: variable_list,
             terminals: terminal_list,
             start: start_variable,
@@ -244,8 +321,8 @@
             const response = await fetch('http://localhost:8080/api/parsing/grammar', {
                 method: 'POST',
                 headers: { 
-                    'accept': 'application/json',
-                    'Content-Type': 'application/json' 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}` 
                 },
                 body: JSON.stringify(final_json_output)
             });
@@ -267,20 +344,19 @@
 
     // fetchTokens
     async function fetchTokens() {
-        const user_id = localStorage.getItem('user_id');
+        const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
         const project = get(projectName);
 
-        if (!user_id || !project) return null;
+        if (!accessToken || !project) return null;
 
         try {
             const response = await fetch('http://localhost:8080/api/lexing/lexer', {
                 method: 'POST',
                 headers: {
-                    'accept': 'application/json',
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
                 },
                 body: JSON.stringify({
-                    users_id: user_id,
                     project_name: project
                 })
             });
@@ -301,10 +377,10 @@
 
     // generateSyntaxTree
     async function generateSyntaxTree() {
-        const user_id = localStorage.getItem('user_id');
+        const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
         const project = get(projectName);
 
-        if (!user_id || !project) {
+        if (!accessToken || !project) {
             AddToast('Authentication error: Missing user credentials or project information', 'error');
             return;
         }
@@ -314,32 +390,29 @@
             const tokensResponse = await fetch(`http://localhost:8080/api/lexing/lexer`, {
                 method: 'POST',
                 headers: {
-                    'accept': 'application/json',
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}` 
                 },
                 body: JSON.stringify({
-                    users_id: user_id,
-                    project_name: project
+                    project_name: project 
                 })
             });
 
             if (!tokensResponse.ok) {
-
-                 const dfa_token_response = await fetch(`http://localhost:8080/api/lexing/dfaToTokens`, {
+                const dfa_token_response = await fetch(`http://localhost:8080/api/lexing/dfaToTokens`, {
                     method: 'POST',
                     headers: {
-                        'accept': 'application/json',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}` 
                     },
                     body: JSON.stringify({
-                        users_id: user_id,
-                        project_name: project
+                        project_name: project 
                     })
                 });
 
-                if (!dfa_token_response) {
+                if (!dfa_token_response.ok) {
                     AddToast('Tokens required: Please complete lexical analysis and generate tokens first', 'error');
-                    dispatch('parsingerror', {parsing_error: true,parsing_error_details: 'Tokens required: Please complete lexical analysis and generate tokens first'});
+                    dispatch('parsingerror', {parsing_error: true, parsing_error_details: 'Tokens required: Please complete lexical analysis and generate tokens first'});
                     return;
                 }
             }
@@ -348,21 +421,20 @@
             const response = await fetch('http://localhost:8080/api/parsing/tree', {
                 method: 'POST',
                 headers: {
-                    'accept': 'application/json',
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}` 
                 },
                 body: JSON.stringify({
-                    users_id: user_id,
-                    project_name: project
+                    project_name: project 
                 })
             });
 
             const data = await response.json();
-            console.log('Syntax tree response:', data); // Debug log
+            console.log('Syntax tree response:', data); 
 
             if (!response.ok) {
                 if (data.error) {
-                    throw new Error(data.details);
+                    throw new Error(data.details || data.error);
                 }
                 throw new Error('Failed to generate syntax tree');
             }
@@ -371,12 +443,12 @@
                 AddToast('Parse tree generated successfully! Your syntax analysis is complete', 'success');
                 dispatch('treereceived', data.tree);
             } else {
-                dispatch('parsingerror',{parsing_error: true,parsing_error_details: 'A'});
+                dispatch('parsingerror', {parsing_error: true, parsing_error_details: 'No tree data in response'});
                 throw new Error('No tree data in response');
             }
         } catch (error) {
-            dispatch('parsingerror',{parsing_error: true,parsing_error_details: error});
-            console.error('Full error details:', error); // Debug log
+            dispatch('parsingerror', {parsing_error: true, parsing_error_details: error.message});
+            console.error('Full error details:', error); 
             AddToast(
                 `Failed to generate syntax tree: ${error.message}. Please ensure tokens and grammar are valid.`,
                 'error'

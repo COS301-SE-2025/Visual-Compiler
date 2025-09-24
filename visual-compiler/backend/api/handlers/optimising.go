@@ -20,9 +20,16 @@ import (
 // @Param request body SourceCodeOnlyRequest true "Read optimising code from User"
 // @Success 200 {object} map[string]string "Optimising code successfully and stored"
 // @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /optimising/source_code [post]
 func StoreOptimisingCode(c *gin.Context) {
+	authID, is_existing := c.Get("auth0_id")
+	if !is_existing {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	var req SourceCodeOnlyRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -31,23 +38,35 @@ func StoreOptimisingCode(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
+	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("optimising")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	var dbUser struct {
+		UsersID bson.ObjectID `bson:"_id"`
+		Auth0ID string        `bson:"auth0_id"`
+	}
+
+	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
 	filters := bson.M{
-		"users_id":     req.UsersID,
+		"users_id":     dbUser.UsersID,
 		"project_name": req.Project_Name,
 	}
 	var userexisting bson.M
 
-	err := collection.FindOne(ctx, filters).Decode(&userexisting)
+	err = collection.FindOne(ctx, filters).Decode(&userexisting)
 
 	if err == mongo.ErrNoDocuments {
 		_, err = collection.InsertOne(ctx, bson.M{
 			"optimising_source_code": req.Code,
-			"users_id":               req.UsersID,
+			"users_id":               dbUser.UsersID,
 			"project_name":           req.Project_Name,
 		})
 		if err != nil {
@@ -77,8 +96,6 @@ func StoreOptimisingCode(c *gin.Context) {
 }
 
 type OptimiseCodeRequest struct {
-	// Represents the User's ID from frontend
-	UsersID bson.ObjectID `json:"users_id" binding:"required"`
 	// User's project name
 	Project_Name string `json:"project_name" binding:"required"`
 	// Simplify any code before execution (3 + 4 becomes 7 before execution)
@@ -97,9 +114,16 @@ type OptimiseCodeRequest struct {
 // @Param request body OptimiseCodeRequest true "Optimise code"
 // @Success 200 {object} map[string]string "Code successfully optimised and stored"
 // @Failure 400 {object} map[string]string "Invalid input"
+// @Failure 401 {object} map[string]string "Unauthorized"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /optimising/optimise [post]
 func OptimiseCode(c *gin.Context) {
+	authID, is_existing := c.Get("auth0_id")
+	if !is_existing {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	var req OptimiseCodeRequest
 
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -108,23 +132,39 @@ func OptimiseCode(c *gin.Context) {
 	}
 
 	mongo_cli := db.ConnectClient()
+	users_collection := mongo_cli.Database("visual-compiler").Collection("users")
 	collection := mongo_cli.Database("visual-compiler").Collection("optimising")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	var dbUser struct {
+		UsersID bson.ObjectID `bson:"_id"`
+		Auth0ID string        `bson:"auth0_id"`
+	}
+
+	err := users_collection.FindOne(ctx, bson.M{"auth0_id": authID}).Decode(&dbUser)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
 	var res struct {
 		OptimisingSourceCode string `bson:"optimising_source_code"`
 	}
 
-	err := collection.FindOne(ctx, bson.M{"users_id": req.UsersID}).Decode(&res)
+	filters := bson.M{
+		"users_id":     dbUser.UsersID,
+		"project_name": req.Project_Name,
+	}
+	err = collection.FindOne(ctx, filters).Decode(&res)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Source code not found. Please enter a source code"})
 		return
 	}
 
-	filters := bson.M{
-		"users_id":     req.UsersID,
+	filters = bson.M{
+		"users_id":     dbUser.UsersID,
 		"project_name": req.Project_Name,
 	}
 

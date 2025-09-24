@@ -12,7 +12,7 @@ describe('InfoSection Component', () => {
 		expect(aboutButton).toHaveClass('active');
 
 		// Check that the "About" content is visible
-		expect(screen.getByText('An Educational Tool for a Complex World')).toBeInTheDocument();
+		expect(screen.getByText('Visual Compiler')).toBeInTheDocument();
 
 		// Check that content for other tabs is NOT visible
 		expect(screen.queryByText('Value Through Innovation')).toBeNull();

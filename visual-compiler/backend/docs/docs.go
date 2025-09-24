@@ -15,6 +15,134 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/ai/answer": {
+            "post": {
+                "description": "The user sends a question to the AI assistance about the compilation process",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI"
+                ],
+                "summary": "AI assistant answers user's question",
+                "parameters": [
+                    {
+                        "description": "Answer user's question",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.AnswerQuestion"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "AI response received",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input/Response failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ai/generate": {
+            "post": {
+                "description": "The AI generates input (upon request) based on the current process the user is on in the compilation process",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "AI"
+                ],
+                "summary": "AI assistant generates input",
+                "parameters": [
+                    {
+                        "description": "Generate input",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.InputGenerate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "AI response received",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input/Response failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/analysing/analyse": {
             "post": {
                 "description": "Accepts scope rules, grammar rules and type rules from the user. Searches the database for the syntax tree created from the user. If it exists, the analysing process is performed and the artefacts are stored in the database",
@@ -51,6 +179,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid input or artefacts failed to insert",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -122,6 +259,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -177,6 +323,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -209,7 +364,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -225,6 +380,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid input/Conversion failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -273,7 +437,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -296,8 +460,141 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "404": {
                         "description": "DFA/source code not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/lexing/getCode": {
+            "get": {
+                "description": "Searches the database for the user's source code",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Lexing"
+                ],
+                "summary": "Get user's code",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project Name",
+                        "name": "project_name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Source code retrieved",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input/Response failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/lexing/getTokens": {
+            "get": {
+                "description": "Searches the database for the user's tokens",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Lexing"
+                ],
+                "summary": "Get user's tokens",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project Name",
+                        "name": "project_name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tokens retrieved",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input/Response failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -337,7 +634,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -353,6 +650,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid input/Lexing failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -401,7 +707,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -417,6 +723,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid input/Conversion failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -465,7 +780,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -481,6 +796,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid input/Conversion failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -529,7 +853,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -545,6 +869,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid input/Conversion failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -616,6 +949,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "404": {
                         "description": "Source code not found",
                         "schema": {
@@ -680,6 +1022,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -728,6 +1079,77 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid input",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/parsing/getTree": {
+            "get": {
+                "description": "Searches the database for the user's syntax tree",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Parsing"
+                ],
+                "summary": "Get user's syntax tree",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project Name",
+                        "name": "project_name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Syntax Tree retrieved",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input/Response failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -815,6 +1237,17 @@ const docTemplate = `{
                     "Parsing"
                 ],
                 "summary": "Create and store syntax tree from stored grammar and tokens",
+                "parameters": [
+                    {
+                        "description": "Create syntax tree",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Syntax tree successfully created and stored/updated",
@@ -868,6 +1301,17 @@ const docTemplate = `{
                     "Parsing"
                 ],
                 "summary": "Create and store syntax tree as a string from stored tree",
+                "parameters": [
+                    {
+                        "description": "Convert tree to string",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Syntax tree String successfully created and stored/updated",
@@ -951,6 +1395,15 @@ const docTemplate = `{
                             }
                         }
                     },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
@@ -983,7 +1436,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -999,6 +1452,15 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid input/Conversion failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1671,8 +2133,7 @@ const docTemplate = `{
                 "grammar_rules",
                 "project_name",
                 "scope_rules",
-                "type_rules",
-                "users_id"
+                "type_rules"
             ],
             "properties": {
                 "grammar_rules": {
@@ -1700,11 +2161,17 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/services.TypeRule"
                     }
-                },
-                "users_id": {
-                    "description": "User's ID for storing purposes",
-                    "type": "string",
-                    "example": "685df259c1294de5546b045f"
+                }
+            }
+        },
+        "handlers.AnswerQuestion": {
+            "type": "object",
+            "required": [
+                "question"
+            ],
+            "properties": {
+                "question": {
+                    "type": "string"
                 }
             }
         },
@@ -1737,6 +2204,21 @@ const docTemplate = `{
                 }
             }
         },
+        "handlers.InputGenerate": {
+            "type": "object",
+            "required": [
+                "artefact",
+                "phase"
+            ],
+            "properties": {
+                "artefact": {
+                    "type": "string"
+                },
+                "phase": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.LoginReq": {
             "type": "object",
             "required": [
@@ -1757,8 +2239,7 @@ const docTemplate = `{
         "handlers.OptimiseCodeRequest": {
             "type": "object",
             "required": [
-                "project_name",
-                "users_id"
+                "project_name"
             ],
             "properties": {
                 "constant_folding": {
@@ -1776,9 +2257,17 @@ const docTemplate = `{
                 "project_name": {
                     "description": "User's project name",
                     "type": "string"
-                },
-                "users_id": {
-                    "description": "Represents the User's ID from frontend",
+                }
+            }
+        },
+        "handlers.ProjectNameRequest": {
+            "type": "object",
+            "required": [
+                "project_name"
+            ],
+            "properties": {
+                "project_name": {
+                    "description": "User's project name",
                     "type": "string"
                 }
             }
@@ -1813,7 +2302,6 @@ const docTemplate = `{
                 "rules",
                 "start",
                 "terminals",
-                "users_id",
                 "variables"
             ],
             "properties": {
@@ -1846,11 +2334,6 @@ const docTemplate = `{
                         " NUMBER",
                         " PUNCTUATION"
                     ]
-                },
-                "users_id": {
-                    "description": "User's ID for storing purposes",
-                    "type": "string",
-                    "example": "685df259c1294de5546b045f"
                 },
                 "variables": {
                     "description": "User's defined variables",
@@ -1893,8 +2376,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "pairs",
-                "project_name",
-                "users_id"
+                "project_name"
             ],
             "properties": {
                 "pairs": {
@@ -1907,10 +2389,6 @@ const docTemplate = `{
                 "project_name": {
                     "description": "User's project name",
                     "type": "string"
-                },
-                "users_id": {
-                    "description": "Represents the User's ID from frontend",
-                    "type": "string"
                 }
             }
         },
@@ -1918,8 +2396,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "project_name",
-                "source_code",
-                "users_id"
+                "source_code"
             ],
             "properties": {
                 "project_name": {
@@ -1929,10 +2406,6 @@ const docTemplate = `{
                 "source_code": {
                     "description": "Represents the User's source code",
                     "type": "string"
-                },
-                "users_id": {
-                    "description": "Represents the User's ID from frontend",
-                    "type": "string"
                 }
             }
         },
@@ -1940,8 +2413,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "project_name",
-                "translation_rules",
-                "users_id"
+                "translation_rules"
             ],
             "properties": {
                 "project_name": {
@@ -1954,19 +2426,13 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/services.TranslationRule"
                     }
-                },
-                "users_id": {
-                    "description": "User's ID for searching and storing purposes",
-                    "type": "string",
-                    "example": "685df259c1294de5546b045f"
                 }
             }
         },
         "handlers.readDFARequest": {
             "type": "object",
             "required": [
-                "project_name",
-                "users_id"
+                "project_name"
             ],
             "properties": {
                 "accepting_states": {
@@ -1997,10 +2463,6 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/services.Transition"
                     }
-                },
-                "users_id": {
-                    "description": "Represents the User's ID from frontend",
-                    "type": "string"
                 }
             }
         },

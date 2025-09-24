@@ -10,17 +10,13 @@ import (
 
 func TestSetupParsingRouter(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	router := routers.SetupParsingRouter()
+	r := gin.New()
+	router := routers.SetupParsingRouter(r.Group("/"))
 	if router == nil {
 		t.Errorf("SetupRouter function does not initialise router")
 	}
-}
-
-func TestParsingRouterRoutes(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := routers.SetupParsingRouter()
-	endpoints := router.Routes()
-	if len(endpoints) != 3 {
+	endpoints := r.Routes()
+	if len(endpoints) != 4 {
 		t.Errorf("Amount of routes does not match")
 	}
 }

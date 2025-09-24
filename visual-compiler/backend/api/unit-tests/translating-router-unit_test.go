@@ -10,16 +10,13 @@ import (
 
 func TestSetupTranslatingRouter(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	router := routers.SetupTranslatorRouter()
+	r := gin.New()
+	router := routers.SetupTranslatorRouter(r.Group("/"))
 	if router == nil {
 		t.Errorf("SetupRouter function does not initialise router")
 	}
-}
 
-func TestTranslatingRouterRoutes(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	router := routers.SetupTranslatorRouter()
-	endpoints := router.Routes()
+	endpoints := r.Routes()
 	if len(endpoints) != 2 {
 		t.Errorf("Amount of routes does not match")
 	}

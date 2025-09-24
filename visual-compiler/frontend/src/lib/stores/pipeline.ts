@@ -39,6 +39,9 @@ export interface PhaseCompletionStatus {
     translator: boolean;
 }
 
+// Define the available phase types
+export type PhaseType = 'source' | 'lexer' | 'parser' | 'analyser' | 'translator' | null;
+
 // Create the phase completion status store
 export const phase_completion_status = writable<PhaseCompletionStatus>({
     source: false,
@@ -48,12 +51,20 @@ export const phase_completion_status = writable<PhaseCompletionStatus>({
     translator: false
 });
 
+// Create the active phase store to track which phase the user is currently working on
+export const activePhase = writable<PhaseType>(null);
+
 // Add a function to update phase status
 export function updatePhaseStatus(phases: Partial<PhaseCompletionStatus>) {
     phase_completion_status.update(status => ({
         ...status,
         ...phases
     }));
+}
+
+// Add function to set the active phase
+export function setActivePhase(phase: PhaseType) {
+    activePhase.set(phase);
 }
 
 // Helper functions for pipeline management
@@ -79,4 +90,6 @@ export const resetPhaseStatus = () => {
         analyser: false,
         translator: false
     });
+    // Reset active phase when resetting
+    activePhase.set(null);
 };

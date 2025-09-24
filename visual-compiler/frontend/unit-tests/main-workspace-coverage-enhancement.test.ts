@@ -84,7 +84,20 @@ vi.mock('$lib/stores/pipeline', () => ({
 		}),
 		set: vi.fn(),
 		update: vi.fn()
-	}
+	},
+	activePhase: {
+		subscribe: vi.fn((fn) => {
+			fn(null);
+			return { unsubscribe: vi.fn() };
+		}),
+		set: vi.fn(),
+		update: vi.fn()
+	},
+	setActivePhase: vi.fn(),
+	updatePhaseStatus: vi.fn(),
+	resetPipeline: vi.fn(),
+	updatePipeline: vi.fn(),
+	resetPhaseStatus: vi.fn()
 }));
 
 // Mock components to avoid import errors

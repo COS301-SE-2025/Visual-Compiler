@@ -1,7 +1,7 @@
 describe('Lexer Test', ()=> {
     beforeEach('Login user',()=>{
-       const test_username = "e2e_tester";
-        const test_password = "password1234";
+        const test_username = "e2e tester";
+        const test_password = "testUser13";
 
         cy.visit('http://localhost:5173/auth-page');
 
@@ -41,6 +41,13 @@ describe('Lexer Test', ()=> {
         cy.get('#project-name-input').type(project_name);
         cy.get('#confirm-project-name').click();
         cy.wait(500);
+
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Get Started").click();
 
         //source code node
         cy.get('button').should('contain', 'Source Code');
@@ -121,6 +128,13 @@ describe('Lexer Test', ()=> {
         cy.get('#project-name-input').type(project_name);
         cy.get('#confirm-project-name').click();
         cy.wait(500);
+
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Get Started").click();
 
         //source code node
         cy.get('button').should('contain', 'Source Code');

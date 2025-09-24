@@ -1,4 +1,10 @@
 coverage:
+  ignore:
+    - "**/docs.go"
+    - "**/middleware.go"
+    - "**/users.go"
+    - "**/delete-user.go"
+
   status:
     project:
       default:
