@@ -3,12 +3,16 @@
     import { AddToast } from '$lib/stores/toast';
     import { get } from 'svelte/store';
     import { projectName } from '$lib/stores/project';
+    import { aiAssistantOpen } from '../../stores/ai-assistant';
     import { onMount, onDestroy } from 'svelte';
     
     let isOpen = false;
     let activeTab: 'questions' | 'generate' = 'questions';
     let messageInput = '';
     let messages: Array<{id: number, text: string, isUser: boolean, timestamp: Date}> = [];
+    
+    // Update the store whenever isOpen changes
+    $: aiAssistantOpen.set(isOpen);
     
     // Subscribe to the active phase
     $: currentPhase = $activePhase;
