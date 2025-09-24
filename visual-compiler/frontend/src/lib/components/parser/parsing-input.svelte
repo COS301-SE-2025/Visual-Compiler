@@ -32,6 +32,13 @@
     let tokens = null;
     let tokens_unidentified = null;
 
+
+    let user_grammar_rules: Rule[] = [];
+    let user_variables_string = '';
+    let user_terminals_string = '';
+    let user_rule_id_counter = 0;
+    let user_translation_id_counter = 0;
+
     // --- DEFAULT GRAMMAR DATA ---
     const DEFAULT_GRAMMAR = {
         variables: 'PROGRAM, STATEMENT, FUNCTION, ITERATION, DECLARATION, ELEMENT, TYPE, EXPRESSION, FUNCTION_DEFINITION, FUNCTION_BLOCK, RETURN, ITERATION_DEFINITION, ITERATION_BLOCK, PARAMETER, PRINT',
@@ -69,6 +76,11 @@
         aiParserEventListener = (event: CustomEvent) => {
             if (event.detail && event.detail.grammar) {
                 console.log('Received AI parser grammar:', event.detail.grammar);
+                
+                // Save current state as user input before AI insertion
+                if (!show_default_grammar) {
+                    saveCurrentAsUserInput();
+                }
                 
                 const grammar = event.detail.grammar;
                 
@@ -117,8 +129,7 @@
                     addNewRule();
                 }
                 
-                // Reset states
-                show_default_grammar = false;
+
                 is_grammar_submitted = false;
                 
                 // Force reactivity update
@@ -143,9 +154,22 @@
         }
     });
 
+    // Function to save current state as user input
+    function saveCurrentAsUserInput() {
+        user_grammar_rules = JSON.parse(JSON.stringify(grammar_rules));
+        user_variables_string = variables_string;
+        user_terminals_string = terminals_string;
+        user_rule_id_counter = rule_id_counter;
+        user_translation_id_counter = translation_id_counter;
+    }
+
     // handleGrammarChange
     function handleGrammarChange() {
         is_grammar_submitted = false;
+        
+        if (!show_default_grammar) {
+            saveCurrentAsUserInput();
+        }
     }
 
     // addNewRule
@@ -181,6 +205,11 @@
     // insertDefaultGrammar
     function insertDefaultGrammar() {
         handleGrammarChange();
+        
+        // Save current user input before switching to default
+        saveCurrentAsUserInput();
+        
+        // Set default values
         show_default_grammar = true;
         variables_string = DEFAULT_GRAMMAR.variables;
         terminals_string = DEFAULT_GRAMMAR.terminals;
@@ -210,12 +239,18 @@
     function removeDefaultGrammar() {
         handleGrammarChange();
         show_default_grammar = false;
-        variables_string = '';
-        terminals_string = '';
-        grammar_rules = [];
-        rule_id_counter = 0;
-        translation_id_counter = 0;
-        addNewRule();
+        
+        // Restore user input
+        grammar_rules = JSON.parse(JSON.stringify(user_grammar_rules));
+        variables_string = user_variables_string;
+        terminals_string = user_terminals_string;
+        rule_id_counter = user_rule_id_counter;
+        translation_id_counter = user_translation_id_counter;
+        
+        // If no user data was saved (fresh start), create empty rule
+        if (grammar_rules.length === 0) {
+            addNewRule();
+        }
     }
 
     // handleSubmitGrammar
@@ -692,6 +727,9 @@
     .default-toggle-btn.selected {
         background: #d0e2ff;
         border-color: #003399;
+        box-shadow: 0 0 0 2px rgba(0, 51, 153, 0.3);
+        font-weight: bold;
+        transform: scale(1.05);
     }
     .default-toggle-btn:hover {
         background: #f5f8fd;
@@ -914,6 +952,9 @@
         background-color: #001a6e;
         border-color: #60a5fa;
         color: #e0e7ff;
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4);
+        font-weight: bold;
+        transform: scale(1.05);
     }
     :global(html.dark-mode) .default-toggle-btn:not(.selected):hover {
         background-color: #374151;

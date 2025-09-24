@@ -1179,7 +1179,7 @@
 							/>
 						</svg>
 					</button>
-					<div bind:this={regexNfaContainer} class="vis-graph-area" />
+					<div bind:this={regexNfaContainer} class="vis-graph-area"></div>
 				</div>
 				<button
 					class="submit-button"
@@ -1207,7 +1207,7 @@
 							/>
 						</svg>
 					</button>
-					<div bind:this={regexDfaContainer} class="vis-graph-area" />
+					<div bind:this={regexDfaContainer} class="vis-graph-area"></div>
 				</div>
 				<button
 					class="submit-button"
@@ -1358,7 +1358,7 @@
 				<div class="vis-heading">
 					<span class="vis-title">NFA Visualization</span>
 				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand NFA visualization to fullscreen">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -1371,14 +1371,14 @@
 						/>
 					</svg>
 				</button>
-				<div bind:this={nfaContainer} class="vis-graph-area" />
+				<div bind:this={nfaContainer} class="vis-graph-area"></div>
 			</div>
 		{:else if automataDisplay === 'DFA' && showDfaVis}
 			<div class="automata-container pretty-vis-box">
 				<div class="vis-heading">
 					<span class="vis-title">DFA Visualization</span>
 				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand DFA visualization to fullscreen">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -1391,7 +1391,7 @@
 						/>
 					</svg>
 				</button>
-				<div bind:this={dfaContainer} class="vis-graph-area" />
+				<div bind:this={dfaContainer} class="vis-graph-area"></div>
 			</div>
 		{:else if automataDisplay === 'RE' && showRegexOutput && regexRules.length > 0}
 			<div class="regex-display-container pretty-vis-box">
@@ -1422,7 +1422,7 @@
 				<div class="vis-heading">
 					<span class="vis-title">NFA Visualization (from REGEX)</span>
 				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand NFA visualization from regex to fullscreen">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -1443,7 +1443,7 @@
 				<div class="vis-heading">
 					<span class="vis-title">DFA Visualization (from REGEX)</span>
 				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand DFA visualization from regex to fullscreen">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -1464,16 +1464,28 @@
 
 
 {#if isExpanded}
-	<div class="modal-backdrop" on:click={toggleExpand} transition:fade={{ duration: 200 }}>
+	<div 
+		class="modal-backdrop" 
+		on:click={toggleExpand} 
+		on:keydown={(e) => e.key === 'Escape' && toggleExpand()}
+		role="presentation"
+		tabindex="-1"
+		transition:fade={{ duration: 200 }}
+	>
 		<div
 			class="modal-content"
 			on:click|stopPropagation
+			on:keydown|stopPropagation
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="modal-title"
+			tabindex="0"
 			transition:scale={{ duration: 250, start: 0.95 }}
 			on:introend={fitGraphToModal}
 		>
 			<div class="modal-header">
 				<div class="header-left">
-					<h3>Expanded Automaton View</h3>
+					<h3 id="modal-title">Expanded Automaton View</h3>
 				</div>
 				<div class="header-center">
 					<div class="zoom-controls">

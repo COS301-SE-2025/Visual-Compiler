@@ -24,7 +24,6 @@ describe('Canvas Test', ()=> {
     it('Add and connect Nodes', () => {
 
         cy.visit('http://localhost:5173/main-workspace');
-
         cy.wait(1000);
 
         const project_name = 'canvas_project';
@@ -40,6 +39,13 @@ describe('Canvas Test', ()=> {
         cy.get('#project-name-input').type(project_name);
         cy.get('#confirm-project-name').click();
         cy.wait(500);
+
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Get Started").click();
 
         //source code node
         cy.get('button').should('contain', 'Source Code');
