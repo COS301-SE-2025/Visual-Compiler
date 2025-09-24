@@ -95,18 +95,20 @@
                 
                 // Handle rules
                 if (grammar.rules && Array.isArray(grammar.rules)) {
-                    grammar_rules = grammar.rules.map((rule, index) => {
+                    grammar_rules = grammar.rules.map((rule) => {
                         rule_id_counter++;
                         
-                        // Each rule should have exactly one translation per output array
+                        // Create separate translations for each element in the output array
                         const translations = [];
                         if (Array.isArray(rule.output) && rule.output.length > 0) {
-                            // Join the output array into a single string for the translation
-                            translation_id_counter++;
-                            translations.push({
-                                id: translation_id_counter,
-                                value: rule.output.join(' ')
-                            });
+                            // Each element in the output array becomes its own translation block
+                            for (const outputElement of rule.output) {
+                                translation_id_counter++;
+                                translations.push({
+                                    id: translation_id_counter,
+                                    value: outputElement.toString().trim()
+                                });
+                            }
                         } else {
                             // Fallback: empty translation
                             translation_id_counter++;
@@ -133,7 +135,7 @@
                 is_grammar_submitted = false;
                 
                 // Force reactivity update
-                grammar_rules = grammar_rules;
+                grammar_rules = [...grammar_rules];
                 variables_string = variables_string;
                 terminals_string = terminals_string;
                 
