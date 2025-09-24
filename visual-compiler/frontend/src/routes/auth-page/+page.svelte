@@ -82,7 +82,7 @@
 
 			// Success case - backend returns 201 with message "Successfully registered user"
 			if (response.status === 201 && data.message === "Successfully registered user") {
-				AddToast('Account created successfully! Please log in with your new credentials', 'success');
+				AddToast('✅ Account created successfully! Please check your email and verify your account before logging in', 'success');
 
 				// Reset the form
 				reg_email = '';

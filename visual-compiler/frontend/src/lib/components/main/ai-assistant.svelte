@@ -720,33 +720,15 @@
                     if (validationResult.isValid && validationResult.data) {
                         console.log('Valid parser response, dispatching event with data:', validationResult.data);
                         
-                        // Transform the data to match what the parsing component expects
-                        const transformedData = {
-                            variables: validationResult.data.variables,
-                            terminals: validationResult.data.terminals,
-                            start: validationResult.data.start,
-                            rules: validationResult.data.rules.map((rule, index) => ({
-                                id: index + 1,
-                                nonTerminal: rule.input,
-                                translations: [
-                                    {
-                                        id: 1,
-                                        rule: rule.output.join(' ')
-                                    }
-                                ]
-                            }))
-                        };
-                        
-                        console.log('Transformed parser data:', transformedData);
-                        
-                        // Dispatch event to populate parser grammar
+                        // Fix: Don't transform the data - send it as is
+                        // The parsing component expects the original format
                         window.dispatchEvent(new CustomEvent('ai-parser-generated', {
-                            detail: { grammar: transformedData }
+                            detail: { grammar: validationResult.data }
                         }));
                         
                         messages = [...messages, {
                             id: Date.now() + 2,
-                            text: `Parser grammar generated successfully! The context-free grammar with ${validationResult.data.rules.length} rules has been automatically inserted into the grammar editor. You can review and modify it as needed.`,
+                            text: `✅ Parser grammar generated successfully! The context-free grammar with ${validationResult.data.rules.length} rules has been automatically inserted into the grammar editor. You can review and modify it as needed.`,
                             isUser: false,
                             timestamp: new Date()
                         }];
