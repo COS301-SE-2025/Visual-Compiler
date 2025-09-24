@@ -189,6 +189,38 @@
 	function toggleConfirmPasswordVisibility() {
 		show_confirm_password = !show_confirm_password;
 	}
+
+	// handleGuestLogin
+	// Return type: Promise<void>
+	// Parameter type(s): none
+	// Handles guest login by setting guest access token and navigating to workspace.
+	async function handleGuestLogin() {
+		try {
+			// Set guest access token
+			sessionStorage.setItem('access_token', 'guestuser');
+			sessionStorage.setItem('authToken', 'guestuser'); // Alternative key for compatibility
+			
+			// Set guest user data in localStorage
+			localStorage.setItem('user_id', 'guest');
+			localStorage.setItem('users_id', 'guest'); // Also store as users_id for optimiser compatibility
+			localStorage.setItem('is_admin', 'false');
+			
+			// Clear any existing projects for guest user
+			localStorage.removeItem('user_projects');
+
+			console.log('Guest login initiated');
+
+			AddToast('Welcome! You\'re now using the Visual Compiler as a guest', 'success');
+
+			sessionStorage.setItem('showWelcomeOverlay', 'false');
+
+			await new Promise((res) => setTimeout(res, 1500));
+
+			await goto('/main-workspace');
+		} catch (error) {
+			AddToast(`Guest login error: ${(error as Error).message}. Please try again`, 'error');
+		}
+	}
 </script>
 
 <div class="video-background">
@@ -282,7 +314,7 @@
 						<div class="divider">
 							<span>or</span>
 						</div>
-						<button type="button" class="guest-login-btn" aria-label="Continue as Guest">
+						<button type="button" class="guest-login-btn" on:click={handleGuestLogin} aria-label="Continue as Guest">
 							<svg class="guest-icon" viewBox="0 0 24 24" width="20" height="20">
 								<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
 								<circle cx="12" cy="7" r="4" />
