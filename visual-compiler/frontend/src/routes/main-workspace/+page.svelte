@@ -867,13 +867,17 @@
 						<svelte:component this={OptimiserArtifactViewer} />
 					{/if}
 				</div>
-				<button on:click={returnToCanvas} class="return-button" aria-label="Return to Canvas" title="Return to Canvas">
-					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-					</svg>
-				</button>
 			</div>
 		</div>
+	{/if}
+
+	<!-- Return to Canvas Button (positioned to the left of AI Assistant) -->
+	{#if selected_phase}
+		<button on:click={returnToCanvas} class="return-button" aria-label="Return to Canvas" title="Return to Canvas">
+			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+				<path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+			</svg>
+		</button>
 	{/if}
 
 	{#if show_code_input}
@@ -1020,16 +1024,16 @@
 	}
 	.return-button {
 		position: fixed;
-		top: 5.2rem;
-		right: 2.3rem;
-		width: 40px;
-		height: 40px;
+		bottom: 2rem;
+		right: 6.3rem;
+		width: 56px;
+		height: 56px;
 		background: #bed2e6;
 		color: #041a47;
 		border: none;
-		border-radius: 8px;
+		border-radius: 12px;
 		cursor: pointer;
-		z-index: 1000;
+		z-index: 2000;
 		display: flex;
 		align-items: center;
 		justify-content: center;
