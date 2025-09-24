@@ -42,6 +42,13 @@ describe('Translator Test', ()=> {
         cy.get('#confirm-project-name').click();
         cy.wait(500);
 
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Get Started").click();
+
         //source code node
         cy.get('button').should('contain', 'Source Code');
         cy.get('button').contains('Source Code').click();
@@ -67,7 +74,7 @@ describe('Translator Test', ()=> {
         cy.get('.default-toggle-btn').click();
         cy.get('.submit-button').contains('Submit').click();
         cy.get('.generate-button').contains('Generate Tokens').click();
-        cy.get('button').contains('Return to Canvas').click();
+        cy.get('.return-button').click();
 
         //parser node
         cy.get('button').should('contain', 'Parser');
@@ -84,7 +91,7 @@ describe('Translator Test', ()=> {
         cy.get('.default-toggle-btn').click();
         cy.get('.submit-button').contains('Submit Grammar').click();
         cy.get('.submit-button').contains('Generate Syntax Tree').click();
-        cy.get('button').contains('Return to Canvas').click();
+        cy.get('.return-button').click();
 
         //analyser
         cy.get('button').should('contain', 'Analyser');
@@ -105,7 +112,7 @@ describe('Translator Test', ()=> {
         cy.get('.default-toggle-btn').click();
         cy.get('.submit-button').contains('Submit All Rules').click();
         cy.get('.generate-button').contains('Generate Symbol Table').click();
-        cy.get('button').contains('Return to Canvas').click();
+        cy.get('.return-button').click();
 
         //translator
         cy.get('button').should('contain', 'Translator');
@@ -130,7 +137,7 @@ describe('Translator Test', ()=> {
         cy.get('.default-toggle-btn').click();
         cy.get('.action-btn').contains('Submit Rules').click();
         cy.get('.action-btn').contains('Translate Code').click();
-        cy.get('button').contains('Return to Canvas').click();
+        cy.get('.return-button').click();
   
     })
 

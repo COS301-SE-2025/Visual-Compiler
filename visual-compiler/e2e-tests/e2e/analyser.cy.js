@@ -43,7 +43,14 @@ describe('Analyser Test', ()=> {
         cy.get('#confirm-project-name').click();
         cy.wait(500);
 
-         //source code node
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Get Started").click();
+
+        //source code node
         cy.get('button').should('contain', 'Source Code');
         cy.get('button').contains('Source Code').click();
         cy.get('.canvas-container').should('contain','Source Code');
@@ -68,7 +75,7 @@ describe('Analyser Test', ()=> {
         cy.get('.default-toggle-btn').click();
         cy.get('.submit-button').contains('Submit').click();
         cy.get('.generate-button').contains('Generate Tokens').click();
-        cy.get('button').contains('Return to Canvas').click();
+        cy.get('.return-button').click();
 
         //parser node
         cy.get('button').should('contain', 'Parser');
@@ -85,7 +92,7 @@ describe('Analyser Test', ()=> {
         cy.get('.default-toggle-btn').click();
         cy.get('.submit-button').contains('Submit Grammar').click();
         cy.get('.submit-button').contains('Generate Syntax Tree').click();
-        cy.get('button').contains('Return to Canvas').click();
+        cy.get('.return-button').click();
 
         //analyser
         cy.get('button').should('contain', 'Analyser');

@@ -40,6 +40,13 @@ describe('Canvas Test', ()=> {
         cy.get('#confirm-project-name').click();
         cy.wait(500);
 
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Get Started").click();
+
         //source code node
         cy.get('button').should('contain', 'Source Code');
         cy.get('button').contains('Source Code').click();
