@@ -15,6 +15,7 @@
 	import ClearCanvasConfirmation from '$lib/components/main/clear-canvas-confirmation.svelte';
 	import AiAssistant from '$lib/components/main/ai-assistant.svelte';
 	import CanvasTutorial from '$lib/components/main/canvas-tutorial.svelte';
+	import GuestWelcomePopup from '$lib/components/main/guest-welcome-popup.svelte';
 	import { phase_completion_status } from '$lib/stores/pipeline';
 	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial } from '$lib/stores/tutorial';
 
@@ -52,6 +53,9 @@
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
 	let showClearCanvasModal = false;
+
+	// --- GUEST USER STATE ---
+	let showGuestWelcomePopup = false;
 
 	// --- TUTORIAL STATE ---
 	let showCanvasTutorial = false;
@@ -169,6 +173,13 @@
 			showWelcomeOverlay = true; // Trigger the overlay to show.
 		}
 
+		// --- GUEST USER CHECK ---
+		// Check if user is a guest and show guest welcome popup
+		const accessToken = sessionStorage.getItem('access_token');
+		if (accessToken === 'guestuser') {
+			showGuestWelcomePopup = true;
+		}
+
 		// --- TUTORIAL INITIALIZATION ---
 		// Check tutorial status on mount
 		checkTutorialStatus();
@@ -210,6 +221,11 @@
 
 	function handleWelcomeClose() {
 		showWelcomeOverlay = false;
+	}
+
+	// Handle guest welcome popup close
+	function handleGuestWelcomeClose() {
+		showGuestWelcomePopup = false;
 	}
 
 	// Handle tutorial close
@@ -893,6 +909,11 @@
 	on:cancel={handleClearCanvasCancel}
 />
 
+<!-- Guest Welcome Popup -->
+<GuestWelcomePopup 
+	bind:show={showGuestWelcomePopup} 
+	on:close={handleGuestWelcomeClose}
+/>
 
 <!-- AI Assistant Component -->
 <AiAssistant />
