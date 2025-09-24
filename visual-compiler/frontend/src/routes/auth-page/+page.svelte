@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { AddToast } from '$lib/stores/toast';
 	import { goto } from '$app/navigation';
+	import { projectName } from '$lib/stores/project';
+	import { resetPipeline } from '$lib/stores/pipeline';
+	import { resetSourceCode } from '$lib/stores/source-code';
+	import { resetLexerState } from '$lib/stores/lexer';
+	import { phase_completion_status } from '$lib/stores/pipeline';
 
 	let active_tab: 'login' | 'register' = 'login';
 	let show_password = false;
@@ -77,7 +82,7 @@
 
 			// Success case - backend returns 201 with message "Successfully registered user"
 			if (response.status === 201 && data.message === "Successfully registered user") {
-				AddToast('🎉 Account created successfully! Please log in with your new credentials', 'success');
+				AddToast('Account created successfully! Please log in with your new credentials', 'success');
 
 				// Reset the form
 				reg_email = '';
@@ -193,9 +198,33 @@
 	// handleGuestLogin
 	// Return type: Promise<void>
 	// Parameter type(s): none
-	// Handles guest login by setting guest access token and navigating to workspace.
+	// Handles guest login by setting guest access token, creating a guest project, and navigating to workspace.
 	async function handleGuestLogin() {
 		try {
+			// Clear all workspace state first to ensure clean slate for guest
+			resetPipeline(); // Clear pipeline/canvas data
+			resetSourceCode(); // Clear source code
+			resetLexerState(); // Clear lexer state
+			
+			// Reset phase completion status
+			phase_completion_status.set({
+				source: false,
+				lexer: false,
+				parser: false,
+				analyser: false,
+				translator: false
+			});
+
+			// Clear all workspace-specific state that might persist
+			// Note: These will be cleared when the workspace loads, but we clear them here too for safety
+			if (typeof window !== 'undefined') {
+				// Clear any workspace session data
+				sessionStorage.removeItem('workspace_tokens');
+				sessionStorage.removeItem('workspace_syntax_tree');
+				sessionStorage.removeItem('workspace_symbol_table');
+				sessionStorage.removeItem('workspace_translated_code');
+			}
+
 			// Set guest access token
 			sessionStorage.setItem('access_token', 'guestuser');
 			sessionStorage.setItem('authToken', 'guestuser'); // Alternative key for compatibility
@@ -207,6 +236,44 @@
 			
 			// Clear any existing projects for guest user
 			localStorage.removeItem('user_projects');
+
+			// Generate random 5-character string for project name
+			const randomChars = Math.random().toString(36).substring(2, 7).toUpperCase();
+			const guestProjectName = `Guest Project ${randomChars}`;
+
+			// Create a guest project
+			try {
+				const response = await fetch('http://localhost:8080/api/users/save', {
+					method: 'POST',
+					headers: {
+						'accept': 'application/json',
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						project_name: guestProjectName,
+						users_id: 'guest'
+					})
+				});
+
+				if (response.ok) {
+					// Store the created project name for the guest session
+					localStorage.setItem('guest_project_name', guestProjectName);
+					
+					// Set the project name in the store so it displays in the workspace
+					projectName.set(guestProjectName);
+					
+					console.log('Guest project created:', guestProjectName);
+				} else {
+					console.warn('Failed to create guest project, continuing with guest login');
+					// Still set the project name even if creation fails
+					projectName.set(guestProjectName);
+				}
+			} catch (projectError) {
+				console.warn('Error creating guest project:', projectError);
+				// Continue with guest login even if project creation fails
+				// Still set the project name for display purposes
+				projectName.set(guestProjectName);
+			}
 
 			console.log('Guest login initiated');
 
