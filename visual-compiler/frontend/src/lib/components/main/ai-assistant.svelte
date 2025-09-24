@@ -520,7 +520,7 @@
             // Add error message
             messages = [...messages, {
                 id: Date.now() + 3,
-                text: `❌ Sorry, I encountered an error: ${error.message}. Please try again.`,
+                text: `Sorry, I encountered an error: ${error.message}. Please try again.`,
                 isUser: false,
                 timestamp: new Date()
             }];
@@ -658,7 +658,7 @@
                             
                             messages = [...messages, {
                                 id: Date.now() + 3,
-                                text: `✅ Source code generated and submitted successfully! Your code has been automatically saved to your project and is ready for lexical analysis.`,
+                                text: `Source code generated and submitted successfully! Your code has been automatically saved to your project and is ready for lexical analysis.`,
                                 isUser: false,
                                 timestamp: new Date()
                             }];
@@ -667,7 +667,7 @@
                         } else {
                             messages = [...messages, {
                                 id: Date.now() + 3,
-                                text: `✅ Source code generated successfully! The code has been inserted into your source code input area. Please review and click "Confirm Code" to submit it.`,
+                                text: `Source code generated successfully! The code has been inserted into your source code input area. Please review and click "Confirm Code" to submit it.`,
                                 isUser: false,
                                 timestamp: new Date()
                             }];
@@ -690,7 +690,7 @@
                         
                         messages = [...messages, {
                             id: Date.now() + 2,
-                            text: `✅ Lexer rules generated successfully! ${validationResult.data.length} token rules have been automatically inserted into the Regular Expression input rows. You can review and modify them as needed.`,
+                            text: `Lexer rules generated successfully! ${validationResult.data.length} token rules have been automatically inserted into the Regular Expression input rows. You can review and modify them as needed.`,
                             isUser: false,
                             timestamp: new Date()
                         }];
@@ -742,7 +742,7 @@
                         
                         messages = [...messages, {
                             id: Date.now() + 2,
-                            text: `✅ Parser grammar generated successfully! The context-free grammar with ${validationResult.data.rules.length} rules has been automatically inserted into the grammar editor. You can review and modify it as needed.`,
+                            text: `Parser grammar generated successfully! The context-free grammar with ${validationResult.data.rules.length} rules has been automatically inserted into the grammar editor. You can review and modify it as needed.`,
                             isUser: false,
                             timestamp: new Date()
                         }];
@@ -778,7 +778,7 @@
                         
                         messages = [...messages, {
                             id: Date.now() + 2,
-                            text: `✅ Analyser configuration generated successfully! ${scopeCount} scope rules, ${typeCount} type rules, and grammar linking rules have been automatically inserted into the analyser editor. You can review and modify them as needed.`,
+                            text: `Analyser configuration generated successfully! ${scopeCount} scope rules, ${typeCount} type rules, and grammar linking rules have been automatically inserted into the analyser editor. You can review and modify them as needed.`,
                             isUser: false,
                             timestamp: new Date()
                         }];
@@ -811,7 +811,7 @@
                         
                         messages = [...messages, {
                             id: Date.now() + 2,
-                            text: `✅ Translator rules generated successfully! ${validationResult.data.length} translation rules have been automatically inserted into the translator editor. You can review and modify them as needed.`,
+                            text: `Translator rules generated successfully! ${validationResult.data.length} translation rules have been automatically inserted into the translator editor. You can review and modify them as needed.`,
                             isUser: false,
                             timestamp: new Date()
                         }];
@@ -844,7 +844,7 @@
                         
                         messages = [...messages, {
                             id: Date.now() + 2,
-                            text: `✅ Optimiser code generated successfully! The Go source code has been automatically inserted into the code input area. You can review and modify it as needed before selecting optimisation techniques.`,
+                            text: `Optimiser code generated successfully! The Go source code has been automatically inserted into the code input area. You can review and modify it as needed before selecting optimisation techniques.`,
                             isUser: false,
                             timestamp: new Date()
                         }];
@@ -888,7 +888,7 @@
             
             messages = [...messages, {
                 id: Date.now() + 3,
-                text: `❌ Failed to generate ${phaseConfig[phase].name} input: ${error.message}. Please try again.`,
+                text: `Failed to generate ${phaseConfig[phase].name} input: ${error.message}. Please try again.`,
                 isUser: false,
                 timestamp: new Date()
             }];
@@ -1168,9 +1168,9 @@
 
     /* Floating button */
     .chatbot-toggle {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
         background: linear-gradient(135deg, #8451C7, #AFA2D7);
         border: none;
         color: white;

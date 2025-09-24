@@ -1,85 +1,85 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { get } from 'svelte/store';
 import {
-  optimizerState,
-  resetOptimizerState,
-  updateOptimizerStateFromProject,
-  type OptimizerState
-} from '../src/lib/stores/optimizer';
+  optimiserState,
+  resetOptimiserState,
+  updateOptimiserStateFromProject,
+  type OptimiserState
+} from '../src/lib/stores/optimiser';
 
 describe('Optimizer Store', () => {
   beforeEach(() => {
-    resetOptimizerState();
+    resetOptimiserState();
   });
 
   describe('Initial State', () => {
     it('has correct default state', () => {
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       
       expect(state).toEqual({
         selectedLanguage: 'Go',
         selectedTechniques: [],
         inputCode: '',
-        isOptimizing: false,
-        optimizedCode: null,
-        optimizationError: null
+        isOptimising: false,
+        optimisedCode: null,
+        optimisationError: null
       });
     });
 
     it('initializes with Go as default language', () => {
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       
       expect(state.selectedLanguage).toBe('Go');
     });
 
     it('initializes with empty arrays and strings', () => {
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       
       expect(state.inputCode).toBe('');
       expect(state.selectedTechniques).toEqual([]);
-      expect(state.optimizedCode).toBeNull();
-      expect(state.optimizationError).toBeNull();
-      expect(state.isOptimizing).toBe(false);
+      expect(state.optimisedCode).toBeNull();
+      expect(state.optimisationError).toBeNull();
+      expect(state.isOptimising).toBe(false);
     });
   });
 
   describe('Reset Functionality', () => {
     it('resets state to initial values', () => {
       // Modify state first using the store's update method
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         selectedLanguage: 'Java',
         selectedTechniques: ['technique1'],
         inputCode: 'some code',
-        isOptimizing: true,
-        optimizedCode: {
+        isOptimising: true,
+        optimisedCode: {
           optimized: ['optimized code'],
           language: 'Java',
           techniques: ['technique1']
         },
-        optimizationError: 'some error'
+        optimisationError: 'some error'
       }));
       
       // Reset and verify
-      resetOptimizerState();
-      const state = get(optimizerState);
+      resetOptimiserState();
+      const state = get(optimiserState);
       
       expect(state).toEqual({
         selectedLanguage: 'Go',
         selectedTechniques: [],
         inputCode: '',
-        isOptimizing: false,
-        optimizedCode: null,
-        optimizationError: null
+        isOptimising: false,
+        optimisedCode: null,
+        optimisationError: null
       });
     });
 
     it('can be called multiple times safely', () => {
-      resetOptimizerState();
-      resetOptimizerState();
-      resetOptimizerState();
+      resetOptimiserState();
+      resetOptimiserState();
+      resetOptimiserState();
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.selectedLanguage).toBe('Go');
       expect(state.selectedTechniques).toEqual([]);
     });
@@ -87,49 +87,49 @@ describe('Optimizer Store', () => {
 
   describe('Direct State Updates', () => {
     it('allows updating selected language', () => {
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         selectedLanguage: 'Java'
       }));
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.selectedLanguage).toBe('Java');
     });
 
     it('allows updating selected techniques', () => {
       const techniques = ['Dead Code Elimination', 'Loop Unrolling'];
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         selectedTechniques: techniques
       }));
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.selectedTechniques).toEqual(techniques);
     });
 
     it('allows updating input code', () => {
       const testCode = 'func main() { fmt.Println("Hello") }';
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         inputCode: testCode
       }));
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.inputCode).toBe(testCode);
     });
 
     it('allows updating optimization status', () => {
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
-        isOptimizing: true
+        isOptimising: true
       }));
       
-      const state = get(optimizerState);
-      expect(state.isOptimizing).toBe(true);
+      const state = get(optimiserState);
+      expect(state.isOptimising).toBe(true);
     });
 
     it('allows updating optimized code', () => {
-      const optimizedCode = {
+      const optimisedCode = {
         optimized: ['optimized function() { return result; }'],
         language: 'Go',
         techniques: ['Dead Code Elimination'],
@@ -140,36 +140,36 @@ describe('Optimizer Store', () => {
         }
       };
 
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
-        optimizedCode: optimizedCode
+        optimisedCode: optimisedCode
       }));
       
-      const state = get(optimizerState);
-      expect(state.optimizedCode).toEqual(optimizedCode);
+      const state = get(optimiserState);
+      expect(state.optimisedCode).toEqual(optimisedCode);
     });
 
     it('allows updating optimization error', () => {
       const error = 'Compilation failed';
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
-        optimizationError: error
+        optimisationError: error
       }));
       
-      const state = get(optimizerState);
-      expect(state.optimizationError).toBe(error);
+      const state = get(optimiserState);
+      expect(state.optimisationError).toBe(error);
     });
   });
 
-  describe('updateOptimizerStateFromProject', () => {
+  describe('updateOptimiserStateFromProject', () => {
     it('updates state from valid project data', () => {
       const projectData = {
-        optimizing: {
+        optimising: {
           language: 'Java',
           techniques: ['Constant Folding', 'Dead Code Elimination'],
           input_code: 'public class Test { public static void main(String[] args) {} }',
-          optimized_code: {
-            optimized: ['public class Test { public static void main(String[] args) {} }'],
+          optimised_code: {
+            optimised: ['public class Test { public static void main(String[] args) {} }'],
             language: 'Java',
             techniques: ['Constant Folding'],
             performance_gains: {
@@ -182,14 +182,14 @@ describe('Optimizer Store', () => {
         }
       };
 
-      updateOptimizerStateFromProject(projectData);
+      updateOptimiserStateFromProject(projectData);
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.selectedLanguage).toBe('Java');
       expect(state.selectedTechniques).toEqual(['Constant Folding', 'Dead Code Elimination']);
       expect(state.inputCode).toBe('public class Test { public static void main(String[] args) {} }');
-      expect(state.optimizedCode).toEqual({
-        optimized: ['public class Test { public static void main(String[] args) {} }'],
+      expect(state.optimisedCode).toEqual({
+        optimised: ['public class Test { public static void main(String[] args) {} }'],
         language: 'Java',
         techniques: ['Constant Folding'],
         performanceGains: {
@@ -198,29 +198,29 @@ describe('Optimizer Store', () => {
           codeSize: '15% smaller'
         }
       });
-      expect(state.optimizationError).toBeNull();
-      expect(state.isOptimizing).toBe(false);
+      expect(state.optimisationError).toBeNull();
+      expect(state.isOptimising).toBe(false);
     });
 
     it('handles project data with error', () => {
       const projectData = {
-        optimizing: {
+        optimising: {
           language: 'Python',
           techniques: ['Loop Unrolling'],
           input_code: 'def test(): pass',
-          optimized_code: null,
+          optimised_code: null,
           error: 'Syntax error on line 1'
         }
       };
 
-      updateOptimizerStateFromProject(projectData);
+      updateOptimiserStateFromProject(projectData);
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.selectedLanguage).toBe('Python');
       expect(state.selectedTechniques).toEqual(['Loop Unrolling']);
       expect(state.inputCode).toBe('def test(): pass');
-      expect(state.optimizedCode).toBeNull();
-      expect(state.optimizationError).toBe('Syntax error on line 1');
+      expect(state.optimisedCode).toBeNull();
+      expect(state.optimisationError).toBe('Syntax error on line 1');
     });
 
     it('handles project data with missing optimizing section', () => {
@@ -228,62 +228,62 @@ describe('Optimizer Store', () => {
         someOtherData: 'value'
       };
 
-      const initialState = get(optimizerState);
-      updateOptimizerStateFromProject(projectData);
+      const initialState = get(optimiserState);
+      updateOptimiserStateFromProject(projectData);
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state).toEqual(initialState);
     });
 
     it('handles null project data', () => {
-      const initialState = get(optimizerState);
-      updateOptimizerStateFromProject(null);
+      const initialState = get(optimiserState);
+      updateOptimiserStateFromProject(null);
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state).toEqual(initialState);
     });
 
     it('handles undefined project data', () => {
-      const initialState = get(optimizerState);
-      updateOptimizerStateFromProject(undefined);
+      const initialState = get(optimiserState);
+      updateOptimiserStateFromProject(undefined);
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state).toEqual(initialState);
     });
 
     it('uses default values for missing fields', () => {
       const projectData = {
-        optimizing: {
+        optimising: {
           // Missing most fields
         }
       };
 
-      updateOptimizerStateFromProject(projectData);
+      updateOptimiserStateFromProject(projectData);
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.selectedLanguage).toBe('Go'); // default
       expect(state.selectedTechniques).toEqual([]); // default
       expect(state.inputCode).toBe(''); // default
-      expect(state.optimizedCode).toBeNull(); // default
-      expect(state.optimizationError).toBeNull(); // default
+      expect(state.optimisedCode).toBeNull(); // default
+      expect(state.optimisationError).toBeNull(); // default
     });
 
     it('handles partial optimized_code data', () => {
       const projectData = {
-        optimizing: {
+        optimising: {
           language: 'Go',
-          optimized_code: {
-            optimized: ['some code'],
+          optimised_code: {
+            optimised: ['some code'],
             // Missing language, techniques, performance_gains
           }
         }
       };
 
-      updateOptimizerStateFromProject(projectData);
+      updateOptimiserStateFromProject(projectData);
       
-      const state = get(optimizerState);
-      expect(state.optimizedCode).toEqual({
-        optimized: ['some code'],
+      const state = get(optimiserState);
+      expect(state.optimisedCode).toEqual({
+        optimised: ['some code'],
         language: 'Go', // default
         techniques: [], // default
         performanceGains: undefined // missing
@@ -294,9 +294,9 @@ describe('Optimizer Store', () => {
   describe('Store Reactivity', () => {
     it('notifies subscribers when state changes', () => {
       const subscriber = vi.fn();
-      const unsubscribe = optimizerState.subscribe(subscriber);
+      const unsubscribe = optimiserState.subscribe(subscriber);
       
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         inputCode: 'test'
       }));
@@ -306,13 +306,13 @@ describe('Optimizer Store', () => {
     });
 
     it('provides current state to new subscribers', () => {
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         inputCode: 'existing code'
       }));
       
       const subscriber = vi.fn();
-      const unsubscribe = optimizerState.subscribe(subscriber);
+      const unsubscribe = optimiserState.subscribe(subscriber);
       
       expect(subscriber).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -327,10 +327,10 @@ describe('Optimizer Store', () => {
       const subscriber1 = vi.fn();
       const subscriber2 = vi.fn();
       
-      const unsubscribe1 = optimizerState.subscribe(subscriber1);
-      const unsubscribe2 = optimizerState.subscribe(subscriber2);
+      const unsubscribe1 = optimiserState.subscribe(subscriber1);
+      const unsubscribe2 = optimiserState.subscribe(subscriber2);
       
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         inputCode: 'test'
       }));
@@ -345,32 +345,32 @@ describe('Optimizer Store', () => {
 
   describe('Language Support', () => {
     it('supports Java language', () => {
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         selectedLanguage: 'Java'
       }));
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.selectedLanguage).toBe('Java');
     });
 
     it('supports Python language', () => {
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         selectedLanguage: 'Python'
       }));
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.selectedLanguage).toBe('Python');
     });
 
     it('supports Go language', () => {
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         selectedLanguage: 'Go'
       }));
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.selectedLanguage).toBe('Go');
     });
   });
@@ -378,7 +378,7 @@ describe('Optimizer Store', () => {
   describe('Complex Workflow Scenarios', () => {
     it('handles complete optimization workflow', () => {
       // Initial setup
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         selectedLanguage: 'Go',
         selectedTechniques: ['Dead Code Elimination', 'Constant Folding'],
@@ -386,19 +386,19 @@ describe('Optimizer Store', () => {
       }));
 
       // Start optimization
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
-        isOptimizing: true
+        isOptimising: true
       }));
 
-      let state = get(optimizerState);
-      expect(state.isOptimizing).toBe(true);
+      let state = get(optimiserState);
+      expect(state.isOptimising).toBe(true);
 
       // Complete optimization successfully
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
-        isOptimizing: false,
-        optimizedCode: {
+        isOptimising: false,
+        optimisedCode: {
           optimized: ['func main() { fmt.Println(5) }'],
           language: 'Go',
           techniques: ['Dead Code Elimination', 'Constant Folding'],
@@ -408,59 +408,59 @@ describe('Optimizer Store', () => {
             codeSize: '5% smaller'
           }
         },
-        optimizationError: null
+        optimisationError: null
       }));
 
-      state = get(optimizerState);
-      expect(state.isOptimizing).toBe(false);
-      expect(state.optimizedCode).toBeDefined();
-      expect(state.optimizationError).toBeNull();
+      state = get(optimiserState);
+      expect(state.isOptimising).toBe(false);
+      expect(state.optimisedCode).toBeDefined();
+      expect(state.optimisationError).toBeNull();
     });
 
     it('handles optimization error workflow', () => {
       // Setup and start optimization
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         selectedLanguage: 'Java',
         inputCode: 'invalid syntax here',
-        isOptimizing: true
+        isOptimising: true
       }));
 
       // Optimization fails
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
-        isOptimizing: false,
-        optimizedCode: null,
-        optimizationError: 'Compilation failed: syntax error'
+        isOptimising: false,
+        optimisedCode: null,
+        optimisationError: 'Compilation failed: syntax error'
       }));
 
-      const state = get(optimizerState);
-      expect(state.isOptimizing).toBe(false);
-      expect(state.optimizedCode).toBeNull();
-      expect(state.optimizationError).toBe('Compilation failed: syntax error');
+      const state = get(optimiserState);
+      expect(state.isOptimising).toBe(false);
+      expect(state.optimisedCode).toBeNull();
+      expect(state.optimisationError).toBe('Compilation failed: syntax error');
     });
 
     it('handles state reset during optimization', () => {
       // Setup optimization in progress
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         selectedLanguage: 'Python',
         inputCode: 'def test(): pass',
-        isOptimizing: true,
+        isOptimising: true,
         selectedTechniques: ['Loop Unrolling']
       }));
 
       // Reset state
-      resetOptimizerState();
+      resetOptimiserState();
 
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state).toEqual({
         selectedLanguage: 'Go',
         selectedTechniques: [],
         inputCode: '',
-        isOptimizing: false,
-        optimizedCode: null,
-        optimizationError: null
+        isOptimising: false,
+        optimisedCode: null,
+        optimisationError: null
       });
     });
   });
@@ -473,9 +473,9 @@ describe('Optimizer Store', () => {
         codeSize: '10% smaller'
       };
 
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
-        optimizedCode: {
+        optimisedCode: {
           optimized: ['optimized code'],
           language: 'Go',
           techniques: ['Optimization'],
@@ -483,14 +483,14 @@ describe('Optimizer Store', () => {
         }
       }));
 
-      const state = get(optimizerState);
-      expect(state.optimizedCode?.performanceGains).toEqual(performanceGains);
+      const state = get(optimiserState);
+      expect(state.optimisedCode?.performanceGains).toEqual(performanceGains);
     });
 
     it('handles missing performance gains', () => {
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
-        optimizedCode: {
+        optimisedCode: {
           optimized: ['optimized code'],
           language: 'Go',
           techniques: ['Optimization']
@@ -498,29 +498,29 @@ describe('Optimizer Store', () => {
         }
       }));
 
-      const state = get(optimizerState);
-      expect(state.optimizedCode?.performanceGains).toBeUndefined();
+      const state = get(optimiserState);
+      expect(state.optimisedCode?.performanceGains).toBeUndefined();
     });
   });
 
   describe('Type Safety and Edge Cases', () => {
     it('maintains correct TypeScript types', () => {
-      const state: OptimizerState = get(optimizerState);
+      const state: optimiserState = get(optimiserState);
       
       expect(typeof state.selectedLanguage).toBe('string');
       expect(Array.isArray(state.selectedTechniques)).toBe(true);
       expect(typeof state.inputCode).toBe('string');
-      expect(typeof state.isOptimizing).toBe('boolean');
-      expect(state.optimizedCode === null || typeof state.optimizedCode === 'object').toBe(true);
+      expect(typeof state.isOptimising).toBe('boolean');
+      expect(state.optimisedCode === null || typeof state.optimisedCode === 'object').toBe(true);
     });
 
     it('handles empty techniques array', () => {
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         selectedTechniques: []
       }));
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.selectedTechniques).toEqual([]);
     });
 
@@ -533,23 +533,23 @@ describe('Optimizer Store', () => {
         'Common Sub-expression Elimination'
       ];
       
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         selectedTechniques: techniques
       }));
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.selectedTechniques).toEqual(techniques);
     });
 
     it('preserves technique order', () => {
       const techniques = ['C', 'A', 'B'];
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         selectedTechniques: techniques
       }));
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.selectedTechniques).toEqual(['C', 'A', 'B']);
     });
 
@@ -559,23 +559,23 @@ describe('Optimizer Store', () => {
         fmt.Println("World")
       }`;
       
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         inputCode: multilineCode
       }));
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.inputCode).toBe(multilineCode);
     });
 
     it('handles special characters in input code', () => {
       const codeWithSymbols = 'func test() { return "special chars: !@#$%^&*()_+" }';
-      optimizerState.update(state => ({
+      optimiserState.update(state => ({
         ...state,
         inputCode: codeWithSymbols
       }));
       
-      const state = get(optimizerState);
+      const state = get(optimiserState);
       expect(state.inputCode).toBe(codeWithSymbols);
     });
   });

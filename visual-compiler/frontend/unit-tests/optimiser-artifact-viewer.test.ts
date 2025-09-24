@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import OptimizerArtifactViewer from '../src/lib/components/optimizer/optimizer-artifact-viewer.svelte';
-import { optimizerState } from '../src/lib/stores/optimizer';
+import OptimizerArtifactViewer from '../src/lib/components/optimiser/optimiser-artifact-viewer.svelte';
+import { optimiserState } from '../src/lib/stores/optimiser';
 import { AddToast } from '../src/lib/stores/toast';
 
 // Mock the stores
@@ -9,12 +9,12 @@ vi.mock('../src/lib/stores/toast', () => ({
   AddToast: vi.fn()
 }));
 
-vi.mock('../src/lib/stores/optimizer', () => ({
-  optimizerState: {
+vi.mock('../src/lib/stores/optimiser', () => ({
+  optimiserState: {
     subscribe: vi.fn((fn) => {
       fn({
-        optimizedCode: null,
-        optimizationError: null
+        optimisedCode: null,
+        optimisationError: null
       });
       return { unsubscribe: vi.fn() };
     })
@@ -57,14 +57,14 @@ describe('OptimizerArtifactViewer Component', () => {
 
   describe('Optimized Code Display', () => {
     it('displays optimized code when provided', () => {
-      const mockOptimizedCode = {
-        optimized: ['package main', 'func main() {', '  fmt.Println("Hello")', '}'],
+      const mockoptimisedCode = {
+        optimised: ['package main', 'func main() {', '  fmt.Println("Hello")', '}'],
         language: 'Go'
       };
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizedCode: mockOptimizedCode
+          optimisedCode: mockoptimisedCode
         }
       });
 
@@ -77,14 +77,14 @@ describe('OptimizerArtifactViewer Component', () => {
     });
 
     it('displays line numbers correctly', () => {
-      const mockOptimizedCode = {
-        optimized: ['line1', 'line2', 'line3'],
+      const mockoptimisedCode = {
+        optimised: ['line1', 'line2', 'line3'],
         language: 'Go'
       };
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizedCode: mockOptimizedCode
+          optimisedCode: mockoptimisedCode
         }
       });
 
@@ -95,14 +95,14 @@ describe('OptimizerArtifactViewer Component', () => {
     });
 
     it('handles empty optimized array', () => {
-      const mockOptimizedCode = {
-        optimized: [],
+      const mockoptimisedCode = {
+        optimised: [],
         language: 'Go'
       };
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizedCode: mockOptimizedCode
+          optimisedCode: mockoptimisedCode
         }
       });
 
@@ -113,14 +113,14 @@ describe('OptimizerArtifactViewer Component', () => {
 
   describe('Copy Functionality', () => {
     it('copies optimized code to clipboard successfully', async () => {
-      const mockOptimizedCode = {
-        optimized: ['package main', 'func main() {}'],
+      const mockoptimisedCode = {
+        optimised: ['package main', 'func main() {}'],
         language: 'Go'
       };
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizedCode: mockOptimizedCode
+          optimisedCode: mockoptimisedCode
         }
       });
 
@@ -132,8 +132,8 @@ describe('OptimizerArtifactViewer Component', () => {
     });
 
     it('handles clipboard copy failure', async () => {
-      const mockOptimizedCode = {
-        optimized: ['package main', 'func main() {}'],
+      const mockoptimisedCode = {
+        optimised: ['package main', 'func main() {}'],
         language: 'Go'
       };
 
@@ -143,7 +143,7 @@ describe('OptimizerArtifactViewer Component', () => {
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizedCode: mockOptimizedCode
+          optimisedCode: mockoptimisedCode
         }
       });
 
@@ -163,14 +163,14 @@ describe('OptimizerArtifactViewer Component', () => {
     });
 
     it('does not show copy button when optimized array is empty', () => {
-      const mockOptimizedCode = {
-        optimized: [],
+      const mockoptimisedCode = {
+        optimised: [],
         language: 'Go'
       };
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizedCode: mockOptimizedCode
+          optimisedCode: mockoptimisedCode
         }
       });
 
@@ -186,7 +186,7 @@ describe('OptimizerArtifactViewer Component', () => {
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizationError: mockError
+          optimisationError: mockError
         }
       });
 
@@ -202,7 +202,7 @@ describe('OptimizerArtifactViewer Component', () => {
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizationError: mockError
+          optimisationError: mockError
         }
       });
 
@@ -216,7 +216,7 @@ describe('OptimizerArtifactViewer Component', () => {
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizationError: mockError
+          optimisationError: mockError
         }
       });
 
@@ -228,7 +228,7 @@ describe('OptimizerArtifactViewer Component', () => {
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizationError: mockError
+          optimisationError: mockError
         }
       });
 
@@ -240,7 +240,7 @@ describe('OptimizerArtifactViewer Component', () => {
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizationError: mockError
+          optimisationError: mockError
         }
       });
 
@@ -251,14 +251,14 @@ describe('OptimizerArtifactViewer Component', () => {
 
   describe('Store Integration', () => {
     it('displays optimized code when passed as props', () => {
-      const mockOptimizedCode = {
-        optimized: ['store code line 1', 'store code line 2'],
+      const mockoptimisedCode = {
+        optimised: ['store code line 1', 'store code line 2'],
         language: 'Go'
       };
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizedCode: mockOptimizedCode
+          optimisedCode: mockoptimisedCode
         }
       });
 
@@ -271,7 +271,7 @@ describe('OptimizerArtifactViewer Component', () => {
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizationError: mockError
+          optimisationError: mockError
         }
       });
 
@@ -282,14 +282,14 @@ describe('OptimizerArtifactViewer Component', () => {
 
   describe('Component Rendering', () => {
     it('renders correctly with mixed states', () => {
-      const mockOptimizedCode = {
-        optimized: ['test line'],
+      const mockoptimisedCode = {
+        optimised: ['test line'],
         language: 'Go'
       };
 
       render(OptimizerArtifactViewer, {
         props: {
-          optimizedCode: mockOptimizedCode
+          optimisedCode: mockoptimisedCode
         }
       });
 

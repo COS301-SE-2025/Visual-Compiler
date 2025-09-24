@@ -15,6 +15,7 @@
 	import ClearCanvasConfirmation from '$lib/components/main/clear-canvas-confirmation.svelte';
 	import AiAssistant from '$lib/components/main/ai-assistant.svelte';
 	import CanvasTutorial from '$lib/components/main/canvas-tutorial.svelte';
+	import GuestWelcomePopup from '$lib/components/main/guest-welcome-popup.svelte';
 	import { phase_completion_status } from '$lib/stores/pipeline';
 	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial } from '$lib/stores/tutorial';
 
@@ -52,6 +53,10 @@
 	let workspace_el: HTMLElement;
 	let show_drag_tip = false;
 	let showClearCanvasModal = false;
+
+	// --- GUEST USER STATE ---
+	let showGuestWelcomePopup = false;
+	let isGuestUser = false;
 
 	// --- TUTORIAL STATE ---
 	let showCanvasTutorial = false;
@@ -169,6 +174,30 @@
 			showWelcomeOverlay = true; // Trigger the overlay to show.
 		}
 
+		// --- GUEST USER CHECK ---
+		// Check if user is a guest and show guest welcome popup
+		const accessToken = sessionStorage.getItem('access_token');
+		if (accessToken === 'guestuser') {
+			showGuestWelcomePopup = true;
+			isGuestUser = true;
+			
+			// Ensure all phase states are completely reset for guest users
+			// Clear any remaining phase data that might persist
+			show_tokens = false;
+			tokens = [];
+			unexpected_tokens = [];
+			syntaxTreeData = null;
+			artifactData = null;
+			parsing_error = false;
+			parsing_error_details = '';
+			show_symbol_table = false;
+			symbol_table = [];
+			analyser_error = false;
+			analyser_error_details = '';
+			translated_code = [];
+			translationError = null;
+		}
+
 		// --- TUTORIAL INITIALIZATION ---
 		// Check tutorial status on mount
 		checkTutorialStatus();
@@ -210,6 +239,11 @@
 
 	function handleWelcomeClose() {
 		showWelcomeOverlay = false;
+	}
+
+	// Handle guest welcome popup close
+	function handleGuestWelcomeClose() {
+		showGuestWelcomePopup = false;
 	}
 
 	// Handle tutorial close
@@ -733,23 +767,25 @@
 				<div class="project-info-bar">
 					<span class="project-name">{currentProjectName}</span>
 					<div class="separator"></div>
-					<button class="save-button" on:click={saveProject} aria-label="Save Project" title="Save Project">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="20"
-							height="20"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-						>
-							<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-							<polyline points="17 21 17 13 7 13 7 21" />
-							<polyline points="7 3 7 8 15 8" />
-						</svg>
-					</button>
+					{#if !isGuestUser}
+						<button class="save-button" on:click={saveProject} aria-label="Save Project" title="Save Project">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								width="20"
+								height="20"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							>
+								<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+								<polyline points="17 21 17 13 7 13 7 21" />
+								<polyline points="7 3 7 8 15 8" />
+							</svg>
+						</button>
+					{/if}
 					<button class="clear-button" on:click={showClearCanvasConfirmation} aria-label="Clear Canvas" title="Clear Canvas">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -867,13 +903,17 @@
 						<svelte:component this={OptimiserArtifactViewer} />
 					{/if}
 				</div>
-				<button on:click={returnToCanvas} class="return-button" aria-label="Return to Canvas" title="Return to Canvas">
-					<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-						<path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-					</svg>
-				</button>
 			</div>
 		</div>
+	{/if}
+
+	<!-- Return to Canvas Button (positioned to the left of AI Assistant) -->
+	{#if selected_phase}
+		<button on:click={returnToCanvas} class="return-button" aria-label="Return to Canvas" title="Return to Canvas">
+			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+				<path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+			</svg>
+		</button>
 	{/if}
 
 	{#if show_code_input}
@@ -893,6 +933,11 @@
 	on:cancel={handleClearCanvasCancel}
 />
 
+<!-- Guest Welcome Popup -->
+<GuestWelcomePopup 
+	bind:show={showGuestWelcomePopup} 
+	on:close={handleGuestWelcomeClose}
+/>
 
 <!-- AI Assistant Component -->
 <AiAssistant />
@@ -1020,16 +1065,16 @@
 	}
 	.return-button {
 		position: fixed;
-		top: 5.2rem;
-		right: 2.3rem;
-		width: 40px;
-		height: 40px;
+		bottom: 2rem;
+		right: 6.3rem;
+		width: 56px;
+		height: 56px;
 		background: #bed2e6;
 		color: #041a47;
 		border: none;
-		border-radius: 8px;
+		border-radius: 12px;
 		cursor: pointer;
-		z-index: 1000;
+		z-index: 2000;
 		display: flex;
 		align-items: center;
 		justify-content: center;
