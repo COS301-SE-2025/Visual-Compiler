@@ -276,6 +276,25 @@
 							/>
 						</button>
 					</form>
+
+					<!-- Guest Login Section -->
+					<div class="guest-login-section">
+						<div class="divider">
+							<span>or</span>
+						</div>
+						<button type="button" class="guest-login-btn" aria-label="Continue as Guest">
+							<svg class="guest-icon" viewBox="0 0 24 24" width="20" height="20">
+								<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+								<circle cx="12" cy="7" r="4" />
+								<path d="M12 14v7" opacity="0.5" />
+								<path d="M8 18h8" opacity="0.5" />
+							</svg>
+							<span class="guest-text">
+								<span class="guest-title">Continue as Guest</span>
+								<span class="guest-subtitle">Try the Visual Compiler without an account</span>
+							</span>
+						</button>
+					</div>
 				{:else}
 					<form on:submit={handleRegister}>
 						<div class="input-group">
@@ -650,6 +669,110 @@
 
 	.icon-submit-btn:disabled {
 		cursor: not-allowed;
+	}
+
+	/* Guest Login Styles */
+	.guest-login-section {
+		width: 280px;
+		margin: 1.5rem auto 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.divider {
+		position: relative;
+		width: 100%;
+		text-align: center;
+		margin: 0.5rem 0;
+	}
+
+	.divider::before {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 0;
+		right: 0;
+		height: 1px;
+		background: linear-gradient(to right, transparent, #e5e7eb 20%, #e5e7eb 80%, transparent);
+		z-index: 1;
+	}
+
+	.divider span {
+		position: relative;
+		background: rgba(255, 255, 255, 0.95);
+		padding: 0 1rem;
+		font-size: 0.875rem;
+		color: #6b7280;
+		font-weight: 500;
+		z-index: 2;
+		border-radius: 4px;
+	}
+
+	.guest-login-btn {
+		width: 100%;
+		padding: 0.875rem 1rem;
+		background: rgba(255, 255, 255, 0.9);
+		border: 2px solid #e5e7eb;
+		border-radius: 8px;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		transition: all 0.2s ease;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	}
+
+	.guest-login-btn:hover {
+		border-color: #041a47;
+		box-shadow: 0 2px 4px rgba(4, 26, 71, 0.1);
+		transform: translateY(-1px);
+	}
+
+	.guest-icon {
+		flex-shrink: 0;
+		stroke: #6b7280;
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		fill: none;
+		transition: stroke 0.2s ease;
+	}
+
+	.guest-login-btn:hover .guest-icon {
+		stroke: #041a47;
+	}
+
+	.guest-text {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		flex: 1;
+	}
+
+	.guest-title {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: #374151;
+		line-height: 1.2;
+		transition: color 0.2s ease;
+	}
+
+	.guest-subtitle {
+		font-size: 0.75rem;
+		color: #6b7280;
+		line-height: 1.3;
+		margin-top: 0.125rem;
+		transition: color 0.2s ease;
+	}
+
+	.guest-login-btn:hover .guest-title {
+		color: #041a47;
+	}
+
+	.guest-login-btn:hover .guest-subtitle {
+		color: #374151;
 	}
 
 	.main-content {
