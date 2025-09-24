@@ -81,7 +81,8 @@ for _i range(12)
 
 		prompt = `You are an educational assistant for compiler construction.
 
-Generate a list of token definitions in order of priority for a lexer that will perfectly lex the user's source code. Include punctuation, but ignore whitespaces except if they are syntactically significant.
+Generate a list of token definitions in order of priority for a lexer that will perfectly lex the user's source code.
+Include punctuation, but ignore whitespaces except if they are syntactically significant.
 
 The token definitions should follow this structure: 
 1. "type": string for token type
@@ -101,6 +102,7 @@ Format your response strictly as a JSON array, without any additional text whats
 		prompt = `You are an educational assistant for compiler construction.
 
 Generate a context-free grammar for a parser that will perfectly parse the user's token stream.
+Do not add any epsilon transitions.
 
 The grammar should follow this structure: 
 1. "variables": string of comma-separated variable names
