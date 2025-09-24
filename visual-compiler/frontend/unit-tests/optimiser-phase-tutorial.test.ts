@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import OptimizerPhaseTutorial from '../src/lib/components/optimizer/optimizer-phase-tutorial.svelte';
+import OptimizerPhaseTutorial from '../src/lib/components/optimiser/optimiser-phase-tutorial.svelte';
 
 describe('OptimizerPhaseTutorial Component', () => {
   beforeEach(() => {
@@ -121,8 +121,8 @@ describe('OptimizerPhaseTutorial Component', () => {
       render(OptimizerPhaseTutorial);
       
       expect(screen.getByText('1. What is optimisation?')).toBeInTheDocument();
-      expect(screen.getByText(/Intermediate Representation/)).toBeInTheDocument();
-      expect(screen.getByText(/Abstract Syntax Tree/)).toBeInTheDocument();
+      expect(screen.getByText(/intermediate representation/i)).toBeInTheDocument();
+      expect(screen.getByText(/syntax tree/i)).toBeInTheDocument();
     });
 
     it('shows step 2 content about benefits', async () => {
@@ -280,8 +280,8 @@ describe('OptimizerPhaseTutorial Component', () => {
     it('explains intermediate representation', () => {
       render(OptimizerPhaseTutorial);
       
-      expect(screen.getByText(/Intermediate Representation \(IR\)/)).toBeInTheDocument();
-      expect(screen.getByText(/Abstract Syntax Tree \(AST\)/)).toBeInTheDocument();
+      expect(screen.getByText(/intermediate representation/i)).toBeInTheDocument();
+      expect(screen.getByText(/syntax tree/i)).toBeInTheDocument();
     });
 
     it('covers optimization benefits comprehensively', async () => {

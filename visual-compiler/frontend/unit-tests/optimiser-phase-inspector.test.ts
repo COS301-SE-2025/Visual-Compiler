@@ -1,13 +1,13 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import OptimizerPhaseInspector from '../src/lib/components/optimizer/optimizer-phase-inspector.svelte';
-import { optimizerState } from '../src/lib/stores/optimizer';
+import OptimizerPhaseInspector from '../src/lib/components/optimiser/optimiser-phase-inspector.svelte';
+import { optimiserState } from '../src/lib/stores/optimiser';
 import { projectName } from '../src/lib/stores/project';
 import { AddToast } from '../src/lib/stores/toast';
 
 // Mock the stores
-vi.mock('../src/lib/stores/optimizer', () => ({
-  optimizerState: {
+vi.mock('../src/lib/stores/optimiser', () => ({
+  optimiserState: {
     subscribe: vi.fn((fn) => {
       fn({
         selectedLanguage: 'Go',
@@ -103,31 +103,31 @@ describe('OptimizerPhaseInspector Component', () => {
       const constantFoldingButton = screen.getByRole('button', { name: 'Constant Folding' });
       await fireEvent.click(constantFoldingButton);
       
-      expect(optimizerState.update).toHaveBeenCalled();
+      expect(optimiserState.update).toHaveBeenCalled();
     });
 
     it('allows deselecting optimization techniques', async () => {
       render(OptimizerPhaseInspector);
       
       // Clear mount calls
-      vi.mocked(optimizerState.update).mockClear();
+      vi.mocked(optimiserState.update).mockClear();
       
       const deadCodeButton = screen.getByRole('button', { name: 'Dead Code Elimination' });
       
       // Select first
       await fireEvent.click(deadCodeButton);
-      expect(optimizerState.update).toHaveBeenCalledTimes(1);
+      expect(optimiserState.update).toHaveBeenCalledTimes(1);
       
       // Deselect
       await fireEvent.click(deadCodeButton);
-      expect(optimizerState.update).toHaveBeenCalledTimes(2);
+      expect(optimiserState.update).toHaveBeenCalledTimes(2);
     });
 
     it('allows selecting multiple techniques', async () => {
       render(OptimizerPhaseInspector);
       
       // Clear mount calls
-      vi.mocked(optimizerState.update).mockClear();
+      vi.mocked(optimiserState.update).mockClear();
       
       const constantFoldingButton = screen.getByRole('button', { name: 'Constant Folding' });
       const loopUnrollingButton = screen.getByRole('button', { name: 'Loop Unrolling' });
@@ -135,7 +135,7 @@ describe('OptimizerPhaseInspector Component', () => {
       await fireEvent.click(constantFoldingButton);
       await fireEvent.click(loopUnrollingButton);
       
-      expect(optimizerState.update).toHaveBeenCalledTimes(2);
+      expect(optimiserState.update).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -148,7 +148,7 @@ describe('OptimizerPhaseInspector Component', () => {
         target: { value: 'package main\n\nimport "fmt"\n\nfunc main() {\n\tfmt.Println("Hello")\n}' }
       });
       
-      expect(optimizerState.update).toHaveBeenCalled();
+      expect(optimiserState.update).toHaveBeenCalled();
     });
 
     it('updates store when code changes', async () => {
@@ -159,7 +159,7 @@ describe('OptimizerPhaseInspector Component', () => {
         target: { value: 'new code content' }
       });
       
-      expect(optimizerState.update).toHaveBeenCalledWith(expect.any(Function));
+      expect(optimiserState.update).toHaveBeenCalledWith(expect.any(Function));
     });
   });
 
@@ -177,7 +177,7 @@ describe('OptimizerPhaseInspector Component', () => {
       await fireEvent.click(insertDefaultButton);
       
       // Should update the store with default values
-      expect(optimizerState.update).toHaveBeenCalled();
+      expect(optimiserState.update).toHaveBeenCalled();
     });
   });
 
@@ -223,7 +223,7 @@ describe('OptimizerPhaseInspector Component', () => {
       await fireEvent.click(optimizeButton);
       
       expect(AddToast).toHaveBeenCalledWith(
-        'Authentication required: Please log in to use the optimizer',
+        'Authentication required: Please log in to use the optimiser',
         'error'
       );
     });
@@ -312,7 +312,7 @@ describe('OptimizerPhaseInspector Component', () => {
       await fireEvent.click(optimizeButton);
       
       await waitFor(() => {
-        expect(optimizerState.update).toHaveBeenCalledWith(expect.any(Function));
+        expect(optimiserState.update).toHaveBeenCalledWith(expect.any(Function));
       });
     });
 
@@ -388,7 +388,7 @@ describe('OptimizerPhaseInspector Component', () => {
       await fireEvent.click(optimizeButton);
       
       await waitFor(() => {
-        expect(optimizerState.update).toHaveBeenCalledWith(expect.any(Function));
+        expect(optimiserState.update).toHaveBeenCalledWith(expect.any(Function));
       });
     });
   });
@@ -398,26 +398,26 @@ describe('OptimizerPhaseInspector Component', () => {
       render(OptimizerPhaseInspector);
       
       // Should call update at least once on mount
-      expect(optimizerState.update).toHaveBeenCalled();
+      expect(optimiserState.update).toHaveBeenCalled();
     });
 
     it('updates store when technique selection changes', async () => {
       render(OptimizerPhaseInspector);
       
       // Clear previous calls from mount
-      vi.mocked(optimizerState.update).mockClear();
+      vi.mocked(optimiserState.update).mockClear();
       
       // Change technique selection
       const constantFoldingButton = screen.getByRole('button', { name: 'Constant Folding' });
       await fireEvent.click(constantFoldingButton);
       
-      expect(optimizerState.update).toHaveBeenCalled();
+      expect(optimiserState.update).toHaveBeenCalled();
     });
 
     it('subscribes to store changes correctly', () => {
       render(OptimizerPhaseInspector);
       
-      expect(optimizerState.subscribe).toHaveBeenCalled();
+      expect(optimiserState.subscribe).toHaveBeenCalled();
     });
   });
 
