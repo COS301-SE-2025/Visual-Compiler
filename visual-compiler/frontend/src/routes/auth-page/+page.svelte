@@ -265,7 +265,7 @@
 					console.log('Guest project created:', guestProjectName);
 
 					// Set up cleanup for guest project on logout/close
-					setupGuestProjectCleanup(guestProjectName);
+					// setupGuestProjectCleanup(guestProjectName);
 				} else {
 					console.warn('Failed to create guest project, continuing with guest login');
 					// Still set the project name even if creation fails

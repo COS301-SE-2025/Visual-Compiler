@@ -65,7 +65,7 @@ func GenerateInput(phase string, artefact string, ctx context.Context) (string, 
 
 		prompt = `You are an educational assistant for compiler construction.
 
-Generate a small program in an imaginary programming language, without comments or complex syntax.
+Generate a small program in an imaginary programming language, without any strings, comments or complex syntax.
 Format your response strictly as plain text, without any additional text or markdown or formatting whatsoever, for example,
 
 int blue = 13;
