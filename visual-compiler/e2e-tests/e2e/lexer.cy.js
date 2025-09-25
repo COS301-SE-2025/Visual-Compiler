@@ -47,6 +47,7 @@ describe('Lexer Test', ()=> {
         cy.get('button').contains("Next").click();
         cy.get('button').contains("Next").click();
         cy.get('button').contains("Next").click();
+		cy.get('button').contains("Next").click();
         cy.get('button').contains("Get Started").click();
 
         //source code node
@@ -134,6 +135,7 @@ describe('Lexer Test', ()=> {
         cy.get('button').contains("Next").click();
         cy.get('button').contains("Next").click();
         cy.get('button').contains("Next").click();
+		cy.get('button').contains("Next").click();
         cy.get('button').contains("Get Started").click();
 
         //source code node
@@ -193,5 +195,6 @@ describe('Lexer Test', ()=> {
         cy.contains('Tokenization complete');
   
     })
+
 
 });

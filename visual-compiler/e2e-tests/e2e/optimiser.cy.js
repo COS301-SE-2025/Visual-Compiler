@@ -47,6 +47,7 @@ describe('Optimiser Test', ()=> {
         cy.get('button').contains("Next").click();
         cy.get('button').contains("Next").click();
         cy.get('button').contains("Next").click();
+		cy.get('button').contains("Next").click();
         cy.get('button').contains("Get Started").click();
 
 
@@ -61,5 +62,6 @@ describe('Optimiser Test', ()=> {
   
         cy.contains('Code optimisation completed successfully');
     })
+
 
 });
