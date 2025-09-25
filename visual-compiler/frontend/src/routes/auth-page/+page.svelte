@@ -37,7 +37,7 @@
 		event.preventDefault();
 
 		if (reg_password !== reg_confirm_password) {
-			AddToast('🔒 Passwords don\'t match - please make sure both password fields are identical', 'error');
+			AddToast('Passwords don\'t match. Please make sure both password fields are identical', 'error');
 			return;
 		}
 
@@ -82,7 +82,7 @@
 
 			// Success case - backend returns 201 with message "Successfully registered user"
 			if (response.status === 201 && data.message === "Successfully registered user") {
-				AddToast('✅ Account created successfully! Please check your email and verify your account before logging in', 'success');
+				AddToast('Account successfully created! Please check your email and verify your account before logging in.', 'success');
 
 				// Reset the form
 				reg_email = '';
