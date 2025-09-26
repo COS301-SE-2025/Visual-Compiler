@@ -191,21 +191,29 @@ func ParseTerminal(state *ParseState, terminal string, position int) (*TreeNode,
 // Attempts to parse a variable using all applicable rules
 func ParseVariable(state *ParseState, variable string, position int) (*TreeNode, int, bool) {
 
+	var best_node *TreeNode
+	best_position := position
+	success := false
+
 	for _, rule := range state.Grammar.Rules {
 
 		if rule.Input == variable {
+			node, new_position, match := TryRule(state, rule, position)
 
-			node, new_position, success := TryRule(state, rule, position)
-
-			if success {
-				return node, new_position, true
+			if match && new_position > best_position {
+				best_node = node
+				best_position = new_position
+				success = true
 			}
 		}
 	}
 
-	return nil, position, false
+	if success {
+		return best_node, best_position, true
+	} else {
+		return nil, position, false
+	}
 }
-
 // Name: tryRule
 //
 // Parameters: *ParseState, ParsingRule, int
@@ -225,14 +233,14 @@ func TryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int,
 
 	for _, symbol := range rule.Output {
 
-		child_node, new_position, success := ParseSymbol(state, symbol, current_position)
+		child, next_position, match := ParseSymbol(state, symbol, current_position)
 
-		if !success {
+		if !match {
 			return nil, position, false
 		}
 
-		node.Children = append(node.Children, child_node)
-		current_position = new_position
+		node.Children = append(node.Children, child)
+		current_position = next_position
 	}
 
 	return node, current_position, true
