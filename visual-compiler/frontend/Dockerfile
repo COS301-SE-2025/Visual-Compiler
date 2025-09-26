@@ -3,18 +3,18 @@ FROM node:20-alpine AS build
 WORKDIR /visual-compiler-frontend
 
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm install --frozen-lockfile
 
 COPY . .
-RUN npm run build
+RUN npm run build -- --logLevel silent
 
 FROM node:20-alpine
 
 WORKDIR /visual-compiler-frontend
 
 COPY --from=build /visual-compiler-frontend/package.json ./
-COPY --from=build /visual-compiler-frontend/.svelte-kit/output ./
+COPY --from=build /visual-compiler-frontend/build ./build
 
 EXPOSE 3000
 
-CMD [ "node", "server/index.js" ]
+CMD [ "node", "build" ]
