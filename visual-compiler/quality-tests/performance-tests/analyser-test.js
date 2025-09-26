@@ -35,72 +35,44 @@ export default function () {
     const source_code_url = "http://localhost:8080/api/lexing/code";
 
     const source_code_data = JSON.stringify({
-            source_code: `int main() {
+            source_code: `int blue = 13;
 
-            var red int
-            red = 13
+int new(int red)
+{
+    red = red + 1;
+    return red;
+}
 
-            var orange int
-            orange = 5
+int _i = 0;
+for _i range(12)
+{
+    blue = new(blue);
+    print(blue);
+}
 
-            var yellow int
-            yellow = 55
-
-            var green int
-            green = 5
-
-            var blue int
-            blue = 5
-
-            var purple int
-            purple = 5
-
-            var pink int
-            pink = 5
-
-            var red int
-            red = 13
-
-            var orange int
-            orange = 5
-
-            var yellow int
-            yellow = 55
-
-            var green int
-            green = 5
-
-            var blue int
-            blue = 5
-
-            var purple int
-            purple = 5
-
-            var pink int
-            pink = 5
-
-            var red int
-            red = 13
-
-            var orange int
-            orange = 5
-
-            var yellow int
-            yellow = 55
-
-            var green int
-            green = 5
-
-            var blue int
-            blue = 5
-
-            var purple int
-            purple = 5
-
-            var pink int
-            pink = 5
-
-            }`,
+int change(int r)
+{
+    r = r + 1;
+    return r;
+}
+int _j = 0;
+for _j range(12)
+{
+    blue = change(blue);
+    print(blue);
+}
+    
+int next(int re)
+{
+    re = re + 1;
+    return re;
+}
+int _k = 0;
+for _k range(12)
+{
+    blue = next(blue);
+    print(blue);
+}`,
             project_name: project_name
     });
 
@@ -125,14 +97,17 @@ export default function () {
 
     const lexer_rules_data = JSON.stringify({
         pairs: [
-            { Type: "KEYWORD", Regex: "int|var|func" },
-            { Type: "IDENTIFIER", Regex: "[a-zA-Z_]+" },
-            { Type: "OPERATOR", Regex: "=" },
-            { Type: "INTEGER", Regex: "[0-9]+" },
-            { Type: "OPEN_SCOPE", Regex: "\\{" },
-            { Type: "CLOSE_SCOPE", Regex: "\\}" },
-            { Type: "OPEN_BRACKET", Regex: "\\(" },
-            { Type: "CLOSE_BRACKET", Regex: "\\)" }
+            { Type: 'KEYWORD', Regex: 'int|return|print'},
+            { Type: 'CONTROL', Regex: 'for|range'},
+            { Type: 'IDENTIFIER', Regex: '[a-zA-Z_]+'},
+            { Type: 'INTEGER', Regex: '[0-9]+'},
+            { Type: 'ASSIGNMENT', Regex: '='},
+            { Type: 'OPERATOR', Regex: '[+\\-*/%]' },
+            { Type: 'DELIMITER', Regex: ';'},
+            { Type: 'OPEN_BRACKET', Regex: '\\('},
+            { Type: 'CLOSE_BRACKET', Regex: '\\)'},
+            { Type: 'OPEN_SCOPE', Regex: '\{'},
+            { Type: 'CLOSE_SCOPE', Regex: '\}'}
         ],
         project_name: project_name
     });
@@ -175,24 +150,30 @@ export default function () {
     const grammar_url = "http://localhost:8080/api/parsing/grammar";
 
     const grammar_data = JSON.stringify({
-        variables: ["PROGRAM","FUNCTION_D","FUNCTION_BLOCK","CODE","STATEMENT", "PARAM","TERM"],
-    terminals: ["KEYWORD","IDENTIFIER","OPERATOR","INTEGER","OPEN_BRACKET", "CLOSE_BRACKET", "OPEN_SCOPE", "CLOSE_SCOPE"],
-    start: "PROGRAM",
-    rules: [
-        { "input": "PROGRAM", "output": ["FUNCTION_D", "FUNCTION_BLOCK"] },
-
-        { "input": "FUNCTION_D", "output": ["KEYWORD","IDENTIFIER","PARAM"] },
-        { "input": "PARAM", "output": ["OPEN_BRACKET","CLOSE_BRACKET"] },
-        { "input": "FUNCTION_BLOCK", "output": ["OPEN_SCOPE", "CODE", "CLOSE_SCOPE"] },
-
-        { "input": "CODE", "output": ["STATEMENT", "CODE"] },
-        { "input": "CODE", "output": ["STATEMENT"] },
-
-        { "input": "STATEMENT", "output": ["KEYWORD","IDENTIFIER","KEYWORD"] },
-        { "input": "STATEMENT", "output": ["IDENTIFIER","OPERATOR","TERM"] },
-        { "input": "TERM", "output": ["INTEGER"] },
-    ],
-
+        variables: ["PROGRAM", "STATEMENT", "FUNCTION", "ITERATION", "DECLARATION", "ELEMENT", "TYPE", "EXPRESSION", "FUNCTION_DEFINITION", "FUNCTION_BLOCK", "RETURN", "ITERATION_DEFINITION", "ITERATION_BLOCK", "PARAMETER", "PRINT"],
+        terminals: ["KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "OPERATOR", "DELIMITER", "OPEN_BRACKET", "CLOSE_BRACKET", "OPEN_SCOPE", "CLOSE_SCOPE", "CONTROL"],
+        start: "PROGRAM",
+        rules: [
+            { "input": "PROGRAM", "output": ["STATEMENT", "FUNCTION", "STATEMENT", "ITERATION", "FUNCTION", "STATEMENT", "ITERATION", "FUNCTION", "STATEMENT", "ITERATION"] },
+            { "input": "STATEMENT", "output": ["DECLARATION", "DELIMITER"] },
+            { "input": "DECLARATION", "output": ["TYPE", "IDENTIFIER", "ASSIGNMENT", "ELEMENT"] },
+            { "input": "DECLARATION", "output": ["IDENTIFIER", "ASSIGNMENT", "EXPRESSION"] },
+            { "input": "DECLARATION", "output": ["IDENTIFIER", "ASSIGNMENT", "IDENTIFIER", "PARAMETER"] },
+            { "input": "TYPE", "output": ["KEYWORD"] },
+            { "input": "EXPRESSION", "output": ["ELEMENT", "OPERATOR", "ELEMENT"] },
+            { "input": "ELEMENT", "output": ["INTEGER"] },
+            { "input": "ELEMENT", "output": ["IDENTIFIER"] },
+            { "input": "FUNCTION", "output": ["FUNCTION_DEFINITION", "FUNCTION_BLOCK"] },
+            { "input": "FUNCTION_DEFINITION", "output": ["TYPE", "IDENTIFIER", "PARAMETER"] },
+            { "input": "FUNCTION_BLOCK", "output": ["OPEN_SCOPE", "STATEMENT", "RETURN", "CLOSE_SCOPE"] },
+            { "input": "RETURN", "output": ["KEYWORD", "ELEMENT", "DELIMITER"] },
+            { "input": "ITERATION", "output": ["ITERATION_DEFINITION", "ITERATION_BLOCK"] },
+            { "input": "ITERATION_DEFINITION", "output": ["CONTROL", "IDENTIFIER", "CONTROL", "PARAMETER"] },
+            { "input": "ITERATION_BLOCK", "output": ["OPEN_SCOPE", "STATEMENT", "PRINT", "CLOSE_SCOPE"] },
+            { "input": "PARAMETER", "output": ["OPEN_BRACKET", "ELEMENT", "CLOSE_BRACKET"] },
+            { "input": "PARAMETER", "output": ["OPEN_BRACKET", "TYPE", "IDENTIFIER", "CLOSE_BRACKET"] },
+            { "input": "PRINT", "output": ["KEYWORD", "OPEN_BRACKET", "ELEMENT", "CLOSE_BRACKET", "DELIMITER"] }
+        ],
         project_name: project_name
     });
 
@@ -207,6 +188,7 @@ export default function () {
     check(grammar_res, {
       "status is 200": (r) => r.status === 200,
     });
+
 
     sleep(1);
 
@@ -239,17 +221,19 @@ export default function () {
             {"start": "\\{", "end":"\\}"}
         ],
        type_rules: [
-            {"ResultData": "int", "Assignment":"=", "LHSData":"INTEGER"}
+            {"ResultData": "int", "Assignment":"=", "LHSData":"INTEGER"},
+            {"ResultData": "int", "Assignment":"=", "LHSData":"int"},
+            {"ResultData": "int", "Assignment":"=", "LHSData":"int", "OPERATOR":["+"], "RHSData":"INTEGER"}
        ],
-       grammar_rules: [{
-            "TypeRule": "INTEGER",
+       grammar_rules: {
+            "TypeRule": "TYPE",
             "VariableRule":   "IDENTIFIER",
-            "FunctionRule":   "FUNCTION_D",
-            "ParameterRule":  "PARAM",
-            "AssignmentRule": "OPERATOR",
-            "OperatorRule":   "OP",
-            "TermRule" :      "TERM"
-    }],
+            "FunctionRule":   "FUNCTION_DEFINITION",
+            "ParameterRule":  "PARAMETER",
+            "AssignmentRule": "ASSIGNMENT",
+            "OperatorRule":   "OPERATOR",
+            "TermRule" :      "ELEMENT"
+    },
         project_name: project_name
     });
 
@@ -264,7 +248,6 @@ export default function () {
     check(analyse_res, {
       "status is 200": (r) => r.status === 200,
     });
-    console.log(analyse_res)
 
     sleep(1);
 
