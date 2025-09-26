@@ -38,7 +38,7 @@
 		if (!userId) return;
 
 		try {
-			const response = await fetch(`http://localhost:8080/api/users/getProjects?users_id=${userId}`, {
+			const response = await fetch(`https://www.visual-compiler.co.za/api/users/getProjects?users_id=${userId}`, {
 				method: 'GET',
 				headers: {
 					'accept': 'application/json'
@@ -179,29 +179,20 @@
 	}
 
 	async function submitCode() {
-    if (!code_text.trim()) return;
-    const project = get(projectName);
-    
-    // Check sessionStorage first, then localStorage for backward compatibility
-    const accessToken = sessionStorage.getItem('access_token') || 
-                       sessionStorage.getItem('authToken') || 
-                       localStorage.getItem('access_token') || 
-                       localStorage.getItem('authToken') || 
-                       localStorage.getItem('token');
-    
-    if (!accessToken) {
-        AddToast('Authentication required: Please log in to save source code', 'error');
-        return;
-    }
-    if (!project) {
-        AddToast('No project selected: Please select or create a project first', 'error');
-        return;
-    }
-
-    console.log('Using access token:', accessToken.substring(0, 20) + '...'); // Debug log
+		if (!code_text.trim()) return;
+		const user_id = localStorage.getItem('user_id');
+		const project = get(projectName);
+		if (!user_id) {
+			AddToast('Authentication required: Please log in to save source code', 'error');
+			return;
+		}
+		if (!project) {
+			AddToast('No project selected: Please select or create a project first', 'error');
+			return;
+		}
 
     try {
-        const res = await fetch('http://localhost:8080/api/lexing/code', {
+        const res = await fetch('https://www.visual-compiler.co.za/api/lexing/code', {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -259,7 +250,7 @@
 
 		try {
 			const response = await fetch(
-				`http://localhost:8080/api/users/getProject?project_name=${encodeURIComponent(selectedProject.name)}&users_id=${userId}`, 
+				`https://www.visual-compiler.co.za/api/users/getProject?project_name=${encodeURIComponent(selectedProject.name)}&users_id=${userId}`, 
 				{
 					method: 'GET',
 					headers: {

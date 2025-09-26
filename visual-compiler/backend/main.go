@@ -5,6 +5,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -26,6 +27,9 @@ import (
 // @host localhost:8080
 // @BasePath /api
 func main() {
+	log.SetOutput(io.Discard)
+	gin.SetMode(gin.ReleaseMode)
+
 	db.ConnectClient()
 
 	// Set up Gin engine

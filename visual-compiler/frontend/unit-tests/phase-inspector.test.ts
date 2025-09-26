@@ -160,7 +160,7 @@ describe('PhaseInspector Component', () => {
 		await waitFor(() => {
 			// The endpoint is /rules when selectedType is REGEX
 			expect(mockFetch).toHaveBeenCalledWith(
-				'http://localhost:8080/api/lexing/rules',
+				'https://www.visual-compiler.co.za/api/lexing/rules',
 				expect.any(Object)
 			);
 		});
@@ -247,7 +247,7 @@ describe('PhaseInspector Component', () => {
 		await waitFor(() => {
 			// Check that the second fetch call was for token generation
 			expect(mockFetch).toHaveBeenCalledWith(
-				'http://localhost:8080/api/lexing/lexer',
+				'https://www.visual-compiler.co.za/api/lexing/lexer',
 				expect.any(Object)
 			);
 			expect(handleGenerate).toHaveBeenCalledWith(expectedCallbackPayload);

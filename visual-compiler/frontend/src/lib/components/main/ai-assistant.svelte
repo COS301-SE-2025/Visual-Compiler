@@ -59,7 +59,7 @@
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/api/lexing/getCode?project_name=${encodeURIComponent(project)}`, {
+            const response = await fetch(`https://www.visual-compiler.co.za/api/lexing/getCode?project_name=${encodeURIComponent(project)}`, {
                 method: 'GET',
                 headers: { 
                     'Authorization': `Bearer ${accessToken}`
@@ -93,7 +93,7 @@
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/api/lexing/getTokens?project_name=${encodeURIComponent(project)}`, {
+            const response = await fetch(`https://www.visual-compiler.co.za/api/lexing/getTokens?project_name=${encodeURIComponent(project)}`, {
                 method: 'GET',
                 headers: { 
                     'Authorization': `Bearer ${accessToken}`
@@ -131,7 +131,7 @@
         }
 
         try {
-            const response = await fetch(`http://localhost:8080/api/parsing/getTree?project_name=${encodeURIComponent(project)}`, {
+            const response = await fetch(`https://www.visual-compiler.co.za/api/parsing/getTree?project_name=${encodeURIComponent(project)}`, {
                 method: 'GET',
                 headers: { 
                     'Authorization': `Bearer ${accessToken}`
@@ -389,7 +389,7 @@
         }
 
         try {
-            const response = await fetch('http://localhost:8080/api/lexing/code', {
+            const response = await fetch('https://www.visual-compiler.co.za/api/lexing/code', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -466,7 +466,7 @@
             }];
 
             // Send question to backend
-            const response = await fetch('http://localhost:8080/api/ai/answer', {
+            const response = await fetch('https://www.visual-compiler.co.za/api/ai/answer', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -609,9 +609,9 @@
             };
             
             console.log('Request body:', JSON.stringify(requestBody, null, 2));
-            console.log('Request URL:', 'http://localhost:8080/api/ai/generate');
+            console.log('Request URL:', 'https://www.visual-compiler.co.za/api/ai/generate');
 
-            const response = await fetch('http://localhost:8080/api/ai/generate', {
+            const response = await fetch('https://www.visual-compiler.co.za/api/ai/generate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

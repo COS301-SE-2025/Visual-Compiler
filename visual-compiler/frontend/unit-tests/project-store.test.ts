@@ -59,7 +59,7 @@ describe('Project Store', () => {
             expect(result).toBe(true);
             expect(get(projectName)).toBe('Test Project');
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8080/api/users/save',
+                'https://www.visual-compiler.co.za/api/users/save',
                 {
                     method: 'POST',
                     headers: {
@@ -140,7 +140,7 @@ describe('Project Store', () => {
             expect(result).toBe(true);
             expect(get(projectName)).toBe('');
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8080/api/users/save',
+                'https://www.visual-compiler.co.za/api/users/save',
                 expect.objectContaining({
                     body: JSON.stringify({
                         project_name: '',
@@ -168,7 +168,7 @@ describe('Project Store', () => {
 
             expect(result).toEqual(mockProjects);
             expect(mockFetch).toHaveBeenCalledWith(
-                'http://localhost:8080/api/users/getProjects?users_id=user123',
+                'https://www.visual-compiler.co.za/api/users/getProjects?users_id=user123',
                 {
                     method: 'GET',
                     headers: {

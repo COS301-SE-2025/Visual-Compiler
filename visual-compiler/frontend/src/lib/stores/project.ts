@@ -4,7 +4,7 @@ export const projectName = writable<string>('');
 
 export const saveProject = async (name: string, userId: string) => {
     try {
-        const response = await fetch('http://localhost:8080/api/users/save', {
+        const response = await fetch('https://www.visual-compiler.co.za/api/users/save', {
             method: 'POST',
             headers: {
                 'accept': 'application/json',
@@ -34,7 +34,7 @@ export const saveProject = async (name: string, userId: string) => {
 
 export const getProjects = async (userId: string) => {
     try {
-        const response = await fetch(`http://localhost:8080/api/users/getProjects?users_id=${userId}`, {
+        const response = await fetch(`https://www.visual-compiler.co.za/api/users/getProjects?users_id=${userId}`, {
             method: 'GET',
             headers: {
                 'accept': 'application/json'
@@ -59,7 +59,7 @@ export const getProjects = async (userId: string) => {
 
 export const deleteProject = async (name: string, userId: string) => {
     try {
-        const response = await fetch('http://localhost:8080/api/users/deleteProject', {
+        const response = await fetch('https://www.visual-compiler.co.za/api/users/deleteProject', {
             method: 'DELETE',
             headers: {
                 'accept': 'application/json',
