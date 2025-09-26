@@ -111,6 +111,25 @@ func TestReadGrammer_ValidGrammar(t *testing.T) {
 	}
 }
 
+func TestReadGrammar_LeftRecursion(t *testing.T) {
+	input := []byte(`{
+		"variables": ["A", "B"],
+		"terminals": ["a", "b"],
+		"start": "A",
+		"rules": [
+			{ "input": "A", "output": ["A", "b"] },
+			{ "input": "A", "output": ["a", "B"] },
+			{ "input": "B", "output": ["ε"] },
+		]
+	}`)
+
+	_, err := services.ReadGrammar(input)
+
+	if err == nil {
+		t.Errorf("Expected error for left recursion in grammar")
+	}
+}
+
 func TestCreateSyntaxTree_NoTokens(t *testing.T) {
 	tokens := []services.TypeValue{}
 
@@ -408,6 +427,29 @@ func TestCreateSyntaxTree_EpsilonTransition(t *testing.T) {
 	}
 	if syntax_tree.Root == nil || len(syntax_tree.Root.Children) != 1 {
 		t.Errorf("Incorrect syntax tree structure")
+	}
+}
+
+func TestCreateSyntaxTree_TokenTerminalMismatch(t *testing.T) {
+	tokens := []services.TypeValue{
+		{Type: "IDENTIFIER", Value: "x"},
+		{Type: "ASSIGNMENT", Value: "="},
+		{Type: "INTEGER", Value: "12"},
+	}
+
+	grammar := services.Grammar{
+		Variables: []string{"STATEMENT"},
+		Terminals: []string{"IDENTIFIER", "ASSIGNMENT", "NUMBER"},
+		Start:     "STATEMENT",
+		Rules: []services.ParsingRule{
+			{Input: "STATEMENT", Output: []string{"IDENTIFIER", "ASSIGNMENT", "NUMBER"}},
+		},
+	}
+
+	_, err := services.CreateSyntaxTree(tokens, grammar)
+
+	if err == nil {
+		t.Errorf("Expected error for token types not matching grammar terminals")
 	}
 }
 

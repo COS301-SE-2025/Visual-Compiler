@@ -1111,7 +1111,7 @@
 		<div class="instructions-content">
 			<h4 class="instructions-header">Instructions</h4>
 			<p class="instructions-text">
-				Enter regular expressions or an automata to tokenise your source code. The type that you choose for each token is important.
+				Enter regular expression rules in order of priority or an automata to tokenise your source code. The token types are used throughout the other phases.
 			</p>
 		</div>
 	</div>
