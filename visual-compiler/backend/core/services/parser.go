@@ -236,12 +236,6 @@ func TryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int,
 	for _, symbol := range rule.Output {
 
 		if symbol == "ε" {
-			epsilon := &TreeNode{
-				Symbol:   "ε",
-				Value:    "",
-				Children: nil,
-			}
-			node.Children = append(node.Children, epsilon)
 			continue
 		}
 
@@ -295,9 +289,6 @@ func ConvertTreeToString(node *TreeNode, branch_indent string, is_leaf bool) str
 	}
 
 	for i, child := range node.Children {
-		if child.Symbol == "ε" {
-			continue
-		}
 		tail_node := false
 		if i == len(node.Children)-1 {
 			tail_node = true
