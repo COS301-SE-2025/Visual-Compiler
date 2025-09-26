@@ -9,10 +9,6 @@ services:
       - "3000:3000"
     mem_limit: 256m
     cpus: 0.5
-    volumes:
-      - ./visual-compiler/frontend:/visual-compiler-frontend
-      - /visual-compiler-frontend/node_modules
-    command: node build
 
   backend:
     build: 
@@ -30,4 +26,8 @@ services:
       - Mongo_username
       - Mongo_password
       - Mongo_URI
-    command: ./backend
+      - AUTH0_DOMAIN
+      - CLIENT_ID
+      - CLIENT_SECRET
+      - CUSTOM_API
+      - OPENAI_API_KEY
