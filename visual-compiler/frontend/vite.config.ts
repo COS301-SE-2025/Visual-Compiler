@@ -32,8 +32,22 @@ export default defineConfig(({ mode }) => ({
 						'src/lib/server/**',
 						'node_modules/**',
 						'unit-tests/**/*.server.{test,spec}.{js,ts}',
-						"unit-tests/landing-page.test.ts"
 					],
+					coverage: {
+						exclude: [
+							'src/lib/server/**',
+							'node_modules/**',
+							'svelte.config.js',
+							'src/lib/components/main/ai-assistant.svelte',
+							'unit-tests/mock-node.svelte',
+							'unit-tests/test-utils.ts',
+							'src/lib/stores/lexer.ts',
+							'**/*.config.*',
+							'**/*.d.ts',
+							'**/coverage/**',
+							'**/dist/**'
+						]
+					},
 					setupFiles: ['./vitest-setup-client.ts']
 				},
 				resolve: {

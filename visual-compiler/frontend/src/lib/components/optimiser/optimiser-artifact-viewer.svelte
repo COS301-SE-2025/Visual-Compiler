@@ -1,20 +1,20 @@
 <script lang="ts">
     import { AddToast } from '$lib/stores/toast';
-    import { optimizerState } from '$lib/stores/optimizer';
+    import { optimiserState } from '$lib/stores/optimiser';
 
-    // Props to receive the optimized code
-    export let optimizedCode: any = null;
-    export let optimizationError: any = null;
+    // Props to receive the optimised code
+    export let optimisedCode: any = null;
+    export let optimisationError: any = null;
 
     /**
      * copy_to_clipboard
-     * @description Copies the optimized code to the user's clipboard.
+     * @description Copies the optimised code to the user's clipboard.
      * @param {void}
      * @returns {void}
      */
     function copy_to_clipboard() {
-        if (optimizedCode && optimizedCode.optimized && optimizedCode.optimized.length > 0) {
-            const code_as_string = optimizedCode.optimized.join('\n');
+        if (optimisedCode && optimisedCode.optimised && optimisedCode.optimised.length > 0) {
+            const code_as_string = optimisedCode.optimised.join('\n');
             navigator.clipboard
                 .writeText(code_as_string)
                 .then(() => {
@@ -27,20 +27,20 @@
         }
     }
 
-    $: if ($optimizerState?.optimizedCode) {
-        optimizedCode = $optimizerState.optimizedCode;
-        optimizationError = null;
+    $: if ($optimiserState?.optimisedCode) {
+        optimisedCode = $optimiserState.optimisedCode;
+        optimisationError = null;
     }
 
-    $: if ($optimizerState?.optimizationError) {
-        optimizationError = $optimizerState.optimizationError;
+    $: if ($optimiserState?.optimisationError) {
+        optimisationError = $optimiserState.optimisationError;
     }
 </script>
 
 <div class="artifact-container">
     <div class="artifact-header">
         <h2 class="artifact-title">Optimiser Artefact</h2>
-        {#if optimizedCode && optimizedCode.optimized && optimizedCode.optimized.length > 0}
+        {#if optimisedCode && optimisedCode.optimised && optimisedCode.optimised.length > 0}
             <button class="copy-button" on:click={copy_to_clipboard} title="Copy to clipboard">
                 <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -62,7 +62,7 @@
     </div>
 
     <div class="artifact-viewer">
-        {#if optimizationError}
+        {#if optimisationError}
             <div class="error-state">
                 <div class="error-icon">
                     <svg
@@ -83,27 +83,27 @@
                 </div>
                 <h4>Optimisation Failed</h4>
                 <p class="error-message">
-                    {#if optimizationError.message?.includes('source code is not valid go')}
+                    {#if optimisationError.message?.includes('source code is not valid go')}
                         The provided code contains syntax errors. Please check your Go code syntax and try again.
-                    {:else if optimizationError.message?.includes('User ID not found')}
+                    {:else if optimisationError.message?.includes('User ID not found')}
                         Authentication error. Please refresh the page and try again.
                     {:else}
                         The optimisation could not be completed with the provided code. Please check your input and try again.
                     {/if}
                 </p>
-                <pre class="error-details">{optimizationError.message || String(optimizationError)}</pre>
+                <pre class="error-details">{optimisationError.message || String(optimisationError)}</pre>
             </div>
-        {:else if optimizedCode && optimizedCode.optimized && optimizedCode.optimized.length > 0}
+        {:else if optimisedCode && optimisedCode.optimised && optimisedCode.optimised.length > 0}
             <div class="artifact-subheader">
                 <h3>Optimised Code</h3>
             </div>
             <div class="code-wrapper">
                 <div class="line-numbers">
-                    {#each optimizedCode.optimized as _, i}
+                    {#each optimisedCode.optimised as _, i}
                         <span>{i + 1}</span>
                     {/each}
                 </div>
-                <pre class="code-block"><code>{#each optimizedCode.optimized as line}{line}{'\n'}{/each}</code></pre>
+                <pre class="code-block"><code>{#each optimisedCode.optimised as line}{line}{'\n'}{/each}</code></pre>
             </div>
         {:else}
             <div class="empty-state">

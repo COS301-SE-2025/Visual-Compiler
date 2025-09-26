@@ -42,14 +42,14 @@ describe('TranslatorPhaseTutorial Component', () => {
 		const nextButton = screen.getByRole('button', { name: /next/i });
 		await fireEvent.click(nextButton);
 
-		expect(screen.getByText('2 / 6')).toBeInTheDocument();
+		expect(screen.getByText('2 / 5')).toBeInTheDocument();
 	});
 
-	// Test: Renders all token types in step 4
-	it('TestTokenTypesRender_Success: Renders all token types in step 4', async () => {
+	// Test: Renders all example rules in step 4
+	it('TestTokenTypesRender_Success: Renders all example rules in step 4', async () => {
 		render(TranslatorPhaseTutorial);
 
-		// Navigate to step 4 (token types)
+		// Navigate to step 4 (ready-to-use examples)
 		const nextButtons = screen.getAllByRole('button').filter(btn => 
 			btn.textContent?.includes('Next') || btn.textContent?.includes('→')
 		);
@@ -60,28 +60,21 @@ describe('TranslatorPhaseTutorial Component', () => {
 			await fireEvent.click(nextButtons[0]); // Step 4
 
 			await waitFor(() => {
-				// Verify all 6 token types are rendered in the each loop
-				expect(screen.getByText('🔹 KEYWORD')).toBeInTheDocument();
-				expect(screen.getByText('Reserved words (e.g., int, if, while)')).toBeInTheDocument();
-				expect(screen.getByText('🔹 IDENTIFIER')).toBeInTheDocument();
-				expect(screen.getByText('Variable names (e.g., result, count)')).toBeInTheDocument();
-				expect(screen.getByText('🔹 NUMBER')).toBeInTheDocument();
-				expect(screen.getByText('Integers (e.g., 10, 42)')).toBeInTheDocument();
-				expect(screen.getByText('🔹 PLUS')).toBeInTheDocument();
-				expect(screen.getByText('Addition operator (+)')).toBeInTheDocument();
-				expect(screen.getByText('🔹 MINUS')).toBeInTheDocument();
-				expect(screen.getByText('Subtraction operator (-)')).toBeInTheDocument();
-				expect(screen.getByText('🔹 ASSIGNMENT')).toBeInTheDocument();
-				expect(screen.getByText('Assignment operator (=)')).toBeInTheDocument();
+				// Verify example rules are rendered in step 4
+				expect(screen.getByText('4. Ready-to-Use Examples')).toBeInTheDocument();
+				expect(screen.getByText('12 + 13')).toBeInTheDocument();
+				expect(screen.getByText('INTEGER, OPERATOR, INTEGER')).toBeInTheDocument();
+				expect(screen.getByText('bool found = true;')).toBeInTheDocument();
+				expect(screen.getByText('KEYWORD, IDENTIFIER, ASSIGNMENT, BOOLEAN')).toBeInTheDocument();
 			});
 		}
 	});
 
-	// Test: Renders all example rules in step 5
-	it('TestExampleRulesRender_Success: Renders all example rules in step 5', async () => {
+	// Test: Renders all critical mistakes in step 5
+	it('TestExampleRulesRender_Success: Renders all critical mistakes in step 5', async () => {
 		render(TranslatorPhaseTutorial);
 
-		// Navigate to step 5 (example rules)
+		// Navigate to step 5 (important warnings)
 		const nextButtons = screen.getAllByRole('button').filter(btn => 
 			btn.textContent?.includes('Next') || btn.textContent?.includes('→')
 		);
@@ -92,43 +85,15 @@ describe('TranslatorPhaseTutorial Component', () => {
 			}
 
 		await waitFor(() => {
-			// Verify both example rules are rendered in the each loop
-			expect(screen.getByText('12 + 13')).toBeInTheDocument();
-			expect(screen.getByText('INTEGER, OPERATOR, INTEGER')).toBeInTheDocument();
-			expect(screen.getByText(/mov\s+rax, \{INTEGER\}/)).toBeInTheDocument();
-			expect(screen.getByText(/mov\s+rax, 12/)).toBeInTheDocument(); // Use regex for multi-line text
-			expect(screen.getByText('bool found = true;')).toBeInTheDocument();
-			expect(screen.getByText('KEYWORD, IDENTIFIER, ASSIGNMENT, BOOLEAN')).toBeInTheDocument();
-			expect(screen.getByText(/mov\s+rax, \[\{IDENTIFIER\}\]/)).toBeInTheDocument();
-			expect(screen.getByText(/mov\s+rax, \[found\]/)).toBeInTheDocument();
+			// Verify critical mistakes are rendered in step 5
+			expect(screen.getByText('5. Important Warnings')).toBeInTheDocument();
+			expect(screen.getByText('Not using token types')).toBeInTheDocument();
+			expect(screen.getByText('int, result, =, 1')).toBeInTheDocument();
+			expect(screen.getByText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER')).toBeInTheDocument();
+			expect(screen.getByText('Skipping placeholders')).toBeInTheDocument();
+			expect(screen.getByText('mov [result], 1')).toBeInTheDocument();
+			expect(screen.getByText('MOV [{IDENTIFIER}], {INTEGER}')).toBeInTheDocument();
 		});
-		}
-	});
-
-	// Test: Renders all critical mistakes in step 6
-	it('TestCriticalDontsRender_Success: Renders all critical mistakes in step 6', async () => {
-		render(TranslatorPhaseTutorial);
-
-		// Navigate to step 6 (critical mistakes)
-		const nextButtons = screen.getAllByRole('button').filter(btn => 
-			btn.textContent?.includes('Next') || btn.textContent?.includes('→')
-		);
-		
-		if (nextButtons.length > 0) {
-			for (let i = 0; i < 5; i++) {
-				await fireEvent.click(nextButtons[0]);
-			}
-
-			await waitFor(() => {
-				// Verify critical mistakes are rendered in the each loop
-				expect(screen.getByText('Not using token types')).toBeInTheDocument();
-				expect(screen.getByText('int, result, =, 1')).toBeInTheDocument();
-				expect(screen.getByText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER')).toBeInTheDocument();
-				
-				expect(screen.getByText('Skipping placeholders')).toBeInTheDocument();
-				expect(screen.getByText('mov [result], 1')).toBeInTheDocument();
-				expect(screen.getByText('MOV [{IDENTIFIER}], {INTEGER}')).toBeInTheDocument();
-			});
 		}
 	});
 });

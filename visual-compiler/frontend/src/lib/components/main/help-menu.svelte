@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
+	import { showCanvasTutorial } from '$lib/stores/tutorial';
 
 	const dispatch = createEventDispatcher();
 
@@ -22,14 +23,19 @@
 				'Click and hold on an output anchor (the grey circle on the right side of a node) and drag the line to an input anchor (the circle on the left side of another node).'
 		},
 		{
-			question: 'How do I delete a node or connection?',
+			question: 'How do I delete a node?',
 			answer:
 				'To delete a node, right-click on it to open its configuration modal, where you will find a delete option. To delete a connection, click and drag one of its connection points away from its anchor and release it onto the empty canvas.'
 		},
 		{
-			question: 'Why can’t I configure a Lexer or Parser node?',
+			question: 'How do I delete a connection?',
 			answer:
-				'You must first add and submit code using a "Source Code" node before you can configure the subsequent phases of the compiler.'
+				'To delete a connection, click and drag one of its connection points away from its anchor and release it onto the empty canvas.'
+		},
+		{
+			question: 'Why can’t I configure a node',
+			answer:
+				'You must first complete the previous phases of the compiler before you can configure the subsequent phases.'
 		}
 	];
 
@@ -39,6 +45,11 @@
 		} else {
 			active_question_index = index;
 		}
+	}
+
+	function startTutorial() {
+		showCanvasTutorial();
+		dispatch('close');
 	}
 </script>
 
@@ -61,6 +72,12 @@
 				{/if}
 			</div>
 		{/each}
+	</div>
+	
+	<div class="tutorial-section">
+		<button class="tutorial-btn" on:click={startTutorial}>
+			<span>Take Canvas Tutorial</span>
+		</button>
 	</div>
 </div>
 
@@ -166,6 +183,47 @@
 		font-size: 0.8rem;
 	}
 
+	/* Tutorial Section Styles */
+	.tutorial-section {
+		padding: 1rem 1.5rem;
+		border-top: 1px solid #e0e0e0;
+		background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+	}
+
+	.tutorial-btn {
+		width: 100%;
+		padding: 0.75rem 1rem;
+		background: linear-gradient(135deg, #041a47, #0c2d5e);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.95rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		box-shadow: 0 2px 4px rgba(4, 26, 71, 0.3);
+	}
+
+	.tutorial-btn:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 8px rgba(4, 26, 71, 0.4);
+		background: linear-gradient(135deg, #052759, #0e3a75);
+	}
+
+	:global(html.dark-mode) .tutorial-btn {
+		background: linear-gradient(135deg, #001A6E, #002a8e);
+		box-shadow: 0 2px 4px rgba(0, 26, 110, 0.4);
+	}
+
+	:global(html.dark-mode) .tutorial-btn:hover {
+		background: linear-gradient(135deg, #002a8e, #003bb3);
+		box-shadow: 0 4px 8px rgba(0, 26, 110, 0.5);
+	}
+
 	:global(html.dark-mode) .help-popup {
 		background: #1a2a4a;
 		color: #f0f0f0;
@@ -195,4 +253,11 @@
 	:global(html.dark-mode) .faq-answer {
 		color: #ccc;
 	}
+	
+	:global(html.dark-mode) .tutorial-section {
+		border-top-color: #2a3a5a;
+		background: #1a2a4a ;
+	}
+
+
 </style>
