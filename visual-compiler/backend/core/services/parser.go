@@ -75,20 +75,11 @@ func ReadGrammar(input []byte) (Grammar, error) {
 		grammar.Terminals[i] = strings.ToUpper(term)
 	}
 
-	for i, rule := range grammar.Rules {
-
-		filtered := []string{}
-
-		for _, out := range rule.Output {
-			if out != "" && out != "ε" {
-				filtered = append(filtered, out)
-			}
+	for _, rule := range grammar.Rules {
+		if len(rule.Output) > 0 && rule.Output[0] == rule.Input {
+			return Grammar{}, fmt.Errorf("grammar includes left recursion")
 		}
-
-		grammar.Rules[i].Output = filtered
 	}
-
-	grammar = EliminateLeftRecursion(grammar)
 
 	return grammar, nil
 }
@@ -108,6 +99,17 @@ func CreateSyntaxTree(tokens []TypeValue, grammar Grammar) (SyntaxTree, error) {
 
 	if grammar.Start == "" {
 		return SyntaxTree{}, fmt.Errorf("no start variable found")
+	}
+
+	link := make(map[string]bool)
+	for _, term := range grammar.Terminals {
+		link[term] = true
+	}
+
+	for _, token := range tokens {
+		if !link[token.Type] {
+			return SyntaxTree{}, fmt.Errorf("token types do not correspond to grammar terminals")
+		}
 	}
 
 	state := &ParseState{
@@ -191,21 +193,29 @@ func ParseTerminal(state *ParseState, terminal string, position int) (*TreeNode,
 // Attempts to parse a variable using all applicable rules
 func ParseVariable(state *ParseState, variable string, position int) (*TreeNode, int, bool) {
 
+	var best_node *TreeNode
+	best_position := position
+	success := false
+
 	for _, rule := range state.Grammar.Rules {
 
 		if rule.Input == variable {
+			node, new_position, match := TryRule(state, rule, position)
 
-			node, new_position, success := TryRule(state, rule, position)
-
-			if success {
-				return node, new_position, true
+			if match && new_position > best_position {
+				best_node = node
+				best_position = new_position
+				success = true
 			}
 		}
 	}
 
-	return nil, position, false
+	if success {
+		return best_node, best_position, true
+	} else {
+		return nil, position, false
+	}
 }
-
 // Name: tryRule
 //
 // Parameters: *ParseState, ParsingRule, int
@@ -225,135 +235,21 @@ func TryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int,
 
 	for _, symbol := range rule.Output {
 
-		child_node, new_position, success := ParseSymbol(state, symbol, current_position)
-
-		if !success {
-			return nil, position, false
-		}
-
-		node.Children = append(node.Children, child_node)
-		current_position = new_position
-	}
-
-	return node, current_position, true
-}
-
-// Name: EliminateLeftRecursion
-//
-// Parameters: Grammar
-//
-// Return: Grammar
-//
-// Convert left-recursive rules to right-recursive rules to prevent infinite recursion
-func EliminateLeftRecursion(grammar Grammar) Grammar {
-
-	has_left := false
-
-	for _, rule := range grammar.Rules {
-
-		if len(rule.Output) > 0 && rule.Output[0] == rule.Input {
-			has_left = true
-			break
-		}
-	}
-
-	if !has_left {
-		return grammar
-	}
-
-	new_grammar := grammar
-	processed_rules := make(map[string]bool)
-	final_rules := make([]ParsingRule, 0)
-	new_variables := make([]string, len(grammar.Variables))
-	copy(new_variables, grammar.Variables)
-
-	variable_rules := make(map[string][]ParsingRule)
-	for _, rule := range grammar.Rules {
-		variable_rules[rule.Input] = append(variable_rules[rule.Input], rule)
-	}
-
-	for variable := range variable_rules {
-
-		if processed_rules[variable] {
+		if symbol == "ε" {
 			continue
 		}
 
-		left_rules := make([]ParsingRule, 0)
-		nonleft_rules := make([]ParsingRule, 0)
-		rules := variable_rules[variable]
+		child, next_position, match := ParseSymbol(state, symbol, current_position)
 
-		for _, rule := range rules {
-			if len(rule.Output) > 0 && rule.Output[0] == rule.Input {
-				left_rules = append(left_rules, rule)
-			} else {
-				nonleft_rules = append(nonleft_rules, rule)
-			}
+		if !match {
+			return nil, position, false
 		}
 
-		if len(left_rules) > 0 {
-
-			new_var := variable + "'"
-			new_variables = append(new_variables, new_var)
-
-			if len(nonleft_rules) == 0 {
-				nonleft_rules = append(nonleft_rules, ParsingRule{
-					Input:  variable,
-					Output: []string{},
-				})
-			}
-
-			for _, nlr := range nonleft_rules {
-
-				new_output := make([]string, len(nlr.Output))
-				copy(new_output, nlr.Output)
-
-				if len(new_output) == 0 {
-					new_output = []string{new_var}
-				} else {
-					new_output = append(new_output, new_var)
-				}
-
-				final_rules = append(final_rules, ParsingRule{
-					Input:  variable,
-					Output: new_output,
-				})
-			}
-
-			for _, lr := range left_rules {
-
-				if len(lr.Output) > 1 {
-
-					new_output := make([]string, len(lr.Output)-1)
-					copy(new_output, lr.Output[1:])
-					new_output = append(new_output, new_var)
-
-					final_rules = append(final_rules, ParsingRule{
-						Input:  new_var,
-						Output: new_output,
-					})
-				}
-			}
-
-			final_rules = append(final_rules, ParsingRule{
-				Input:  new_var,
-				Output: []string{},
-			})
-
-			processed_rules[variable] = true
-
-		} else {
-
-			for _, rule := range rules {
-				final_rules = append(final_rules, rule)
-			}
-
-			processed_rules[variable] = true
-		}
+		node.Children = append(node.Children, child)
+		current_position = next_position
 	}
 
-	new_grammar.Rules = final_rules
-	new_grammar.Variables = new_variables
-	return new_grammar
+	return node, current_position, true
 }
 
 // Name: ConvertTreeToString
