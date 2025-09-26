@@ -3,7 +3,7 @@ version: "3.9"
 services:
   frontend:
     image: nginx:alpine
-    container-name: frontend
+    container_name: frontend
     ports:
       - "3000:3000"
     volumes:
