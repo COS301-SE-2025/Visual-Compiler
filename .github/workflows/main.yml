@@ -89,7 +89,7 @@ jobs:
       - name: Making sure Frontend is running
         run: |
           for i in {1..30}; do
-            if curl -s http://localhost:5173 > /dev/null; then
+            if curl -s http://localhost:3000 > /dev/null; then
               echo "Frontend is running"
               exit 0
             fi
