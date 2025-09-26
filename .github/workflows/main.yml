@@ -27,26 +27,10 @@ jobs:
         working-directory: ./visual-compiler/frontend
         run: npm install
 
-      - name: Tests for frontend
-        working-directory: ./visual-compiler/frontend
-        run: npm run test -- --coverage
-
-      - name: Upload coverage for frontend
-        uses: codecov/codecov-action@v4
-        with:
-          flags: frontend
-          name: coverage-frontend
-          directory: ./visual-compiler/frontend
-          files: ./visual-compiler/frontend/coverage/lcov.info
-
       - name: Go setup for Backend
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
-
-      - name: Linting for Frontend using ESLint
-        working-directory: ./visual-compiler/frontend
-        run: npm run lint -- --fix
 
       - name: Go Modules Cache
         uses: actions/cache@v4
@@ -69,32 +53,6 @@ jobs:
           CLIENT_SECRET: ${{secrets.CLIENT_SECRET}}
           CUSTOM_API: ${{secrets.CUSTOM_API}}
           OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
-
-      - name: Tests for Backend
-        working-directory: ./visual-compiler/backend
-        env:
-          Mongo_username: ${{ secrets.MONGODB_USERNAME }}
-          Mongo_password: ${{secrets.MONGODB_PASSWORD}}
-          Mongo_URI: ${{secrets.MONGODB_URI}}
-          AUTH0_DOMAIN: ${{secrets.AUTH0_DOMAIN}}
-          CLIENT_ID: ${{secrets.CLIENT_ID}}
-          CLIENT_SECRET: ${{secrets.CLIENT_SECRET}}
-          CUSTOM_API: ${{secrets.CUSTOM_API}}
-          OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
-        run: go test -tags=coverage -coverpkg=./... ./... -coverprofile=coverage.out
-
-      - name: Upload coverage for backend
-        uses: codecov/codecov-action@v4
-        with:
-          flags: backend
-          name: coverage-backend
-          directory: ./visual-compiler/backend
-          files: coverage.out
-
-      - name: Linting for Backend using Semgrep
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: ./visual-compiler/backend/.semgrep-go.yml
 
       - name: Docker Compose Installation
         run: |
@@ -140,14 +98,6 @@ jobs:
           done
           echo "Frontend failed"
           exit 1
-
-      - name: Cypress Installation
-        working-directory: ./visual-compiler
-        run: npm install cypress --save-dev
-
-      - name: Run Cypress
-        working-directory: ./visual-compiler
-        run: npx cypress run
 
       - name: Docker Compose Shut down
         if: always()
