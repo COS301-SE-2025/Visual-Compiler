@@ -96,6 +96,13 @@ jobs:
         with:
           config: ./visual-compiler/backend/.semgrep-go.yml
 
+  e2e_test:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout main code
+        uses: actions/checkout@v4
+        
       - name: Docker Compose Installation
         run: |
           sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -116,13 +123,6 @@ jobs:
       - name: Docker Build and Compose for deployment
         run: docker compose --env-file backend.env up -d --build
 
-  e2e_test:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout main code
-        uses: actions/checkout@v4
-        
       - name: Making sure Backend is running
         run: |
           for i in {1..30}; do
