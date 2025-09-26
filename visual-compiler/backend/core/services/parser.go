@@ -75,19 +75,6 @@ func ReadGrammar(input []byte) (Grammar, error) {
 		grammar.Terminals[i] = strings.ToUpper(term)
 	}
 
-	for i, rule := range grammar.Rules {
-
-		filtered := []string{}
-
-		for _, out := range rule.Output {
-			if out != "" && out != "ε" {
-				filtered = append(filtered, out)
-			}
-		}
-
-		grammar.Rules[i].Output = filtered
-	}
-
 	grammar = EliminateLeftRecursion(grammar)
 
 	return grammar, nil
@@ -232,6 +219,16 @@ func TryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int,
 	current_position := position
 
 	for _, symbol := range rule.Output {
+
+		if symbol == "ε" {
+			epsilon := &TreeNode{
+				Symbol:   "ε",
+				Value:    "",
+				Children: nil,
+			}
+			node.Children = append(node.Children, epsilon)
+			continue
+		}
 
 		child, next_position, match := ParseSymbol(state, symbol, current_position)
 
@@ -401,6 +398,9 @@ func ConvertTreeToString(node *TreeNode, branch_indent string, is_leaf bool) str
 	}
 
 	for i, child := range node.Children {
+		if child.Symbol == "ε" {
+			continue
+		}
 		tail_node := false
 		if i == len(node.Children)-1 {
 			tail_node = true
