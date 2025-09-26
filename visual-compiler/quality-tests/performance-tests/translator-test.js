@@ -251,6 +251,54 @@ for _k range(12)
 
     sleep(1);
 
+    // TRANSLATOR
+
+    const translator_rule_url = "http://localhost:8080/api/translating/readRules";
+
+    const translator_rule_data = JSON.stringify({
+        translation_rules: [
+            { "sequence": ["KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "DELIMITER"], "translation": ['add     rax, {INTEGER}', 'mov     [{IDENTIFIER}], rax'] },
+            { "sequence": ["KEYWORD", "IDENTIFIER", "OPEN_BRACKET", "KEYWORD", "IDENTIFIER", "CLOSE_BRACKET", "OPEN_SCOPE", "IDENTIFIER", "ASSIGNMENT", "IDENTIFIER", "OPERATOR", "INTEGER", "DELIMITER", "KEYWORD", "IDENTIFIER", "DELIMITER", "CLOSE_SCOPE"], "translation": ['func {IDENTIFIER}:', '     mov     rbx, [{IDENTIFIER}]', '     add     rbx, {INTEGER}', '     mov     [{IDENTIFIER}], rbx', '     return'] },
+            { "sequence": ["CONTROL", "IDENTIFIER", "CONTROL", "OPEN_BRACKET", "INTEGER", "CLOSE_BRACKET", "OPEN_SCOPE", "IDENTIFIER", "ASSIGNMENT", "IDENTIFIER", "OPEN_BRACKET", "IDENTIFIER", "CLOSE_BRACKET", "DELIMITER", "KEYWORD", "OPEN_BRACKET", "IDENTIFIER", "CLOSE_BRACKET", "DELIMITER", "CLOSE_SCOPE"], "translation": ['func {CONTROL}:', '     jump    [{IDENTIFIER}], {INTEGER}', '     param   rcx, [{IDENTIFIER}]', '     call    {IDENTIFIER}', '     print   [{IDENTIFIER}]'] },
+        ],
+        project_name: project_name
+    });
+
+    const translator_rule_params = {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer guestuser"
+        },
+    };
+
+    let translator_rule_res = http.post(translator_rule_url, translator_rule_data, translator_rule_params);
+    check(translator_rule_res, {
+      "status is 200": (r) => r.status === 200,
+    });
+
+
+    sleep(1);
+
+    const translator_url = "http://localhost:8080/api/translating/translate";
+
+    const translator_data = JSON.stringify({
+        project_name: project_name
+    });
+
+    const translator_params = {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer guestuser"
+        },
+    };
+
+    let translator_res = http.post(translator_url, translator_data, translator_params);
+    check(translator_res, {
+      "status is 200": (r) => r.status === 200,
+    });
+    
+    sleep(1);
+
     const delete_project_url = "http://localhost:8080/api/users/deleteProject";
             const delete_project_data =  JSON.stringify({
                 users_id: "68d32088d29390ec2c897f35",
