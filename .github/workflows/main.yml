@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
     services:
       docker:
@@ -103,10 +103,6 @@ jobs:
         if: always()
         run: docker compose down
       
-  deploy:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
       - name: Setting up SSH for EC2 instance
         run: |
           mkdir -p ~/.ssh
