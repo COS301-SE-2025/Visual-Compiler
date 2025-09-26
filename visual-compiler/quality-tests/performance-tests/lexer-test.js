@@ -16,6 +16,25 @@ export let options = {
 export default function () {
 
     let project_name = "guest_project_" + Math.floor(Math.random() * 100000);
+
+    const project_url = "http://localhost:8080/api/users/save";
+        const project_data =  JSON.stringify({
+            users_id: "68d32088d29390ec2c897f35",
+            project_name: project_name
+        });
+        const project_params = {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer guestuser"
+            },
+        };
+    
+        let project_res = http.post(project_url, project_data, project_params);
+    
+        check(project_res, {
+          "status is 200": (r) => r.status === 200,
+        });
+
     const source_code_url = "http://localhost:8080/api/lexing/code";
 
     const source_code_data = JSON.stringify({
@@ -162,4 +181,23 @@ export default function () {
     });
     
     sleep(1);
+
+    const delete_project_url = "http://localhost:8080/api/users/deleteProject";
+        const delete_project_data =  JSON.stringify({
+            users_id: "68d32088d29390ec2c897f35",
+            project_name: project_name
+        });
+        const delete_project_params = {
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer guestuser"
+            },
+        };
+    
+        let delete_project_res = http.request("DELETE", delete_project_url, delete_project_data, delete_project_params);
+    
+        check(delete_project_res, {
+          "status is 200": (r) => r.status === 200,
+        });
+    
 }

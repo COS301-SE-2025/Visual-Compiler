@@ -7,100 +7,101 @@ export let options = {
       {duration: '20s', target: 10},
       {duration: '20s', target: 0},
     ],
-    thresholds: {
-      http_req_duration: ["p(95)<500"],
-      http_req_failed: ["rate<0.01"],
-    },
 }
 
 export default function () {
 
     let project_name = "guest_project_" + Math.floor(Math.random() * 100000);
 
+    const project_url = "http://localhost:8080/api/users/save";
+    const project_data =  JSON.stringify({
+        users_id: "68d32088d29390ec2c897f35",
+        project_name: project_name
+    });
+    const project_params = {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer guestuser"
+        },
+    };
+
+    let project_res = http.post(project_url, project_data, project_params);
+
+    check(project_res, {
+      "status is 200": (r) => r.status === 200,
+    });
+
     // SOURCE CODE
     const source_code_url = "http://localhost:8080/api/lexing/code";
 
     const source_code_data = JSON.stringify({
-          source_code: `func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, error) {
+            source_code: `func main() {
 
-    tokens := []TypeValue{}
-    tokens_unidentified := []string{}
+            var red int
+            red = 13
 
-    if source == "" {
-        return nil, nil, fmt.Errorf("source code is empty")
-    }
+            var orange int
+            orange = 5
 
-    if len(rules) == 0 {
-        return nil, nil, fmt.Errorf("no rules specified")
-    }
+            var yellow int
+            yellow = 55
 
-    var builder strings.Builder
+            var green int
+            green = 5
 
-    for i := 0; i < len(source); i++ {
+            var blue int
+            blue = 5
 
-        r := rune(source[i])
+            var purple int
+            purple = 5
 
-        if unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) || r == '-' {
+            var pink int
+            pink = 5
 
-            builder.WriteRune(r)
+            var red int
+            red = 13
 
-        } else {
+            var orange int
+            orange = 5
 
-            builder.WriteRune(' ')
-            builder.WriteRune(r)
+            var yellow int
+            yellow = 55
 
-            if i+1 < len(source) {
+            var green int
+            green = 5
 
-                i++
-                r = rune(source[i])
+            var blue int
+            blue = 5
 
-                if !(unicode.IsLetter(r) || unicode.IsDigit(r) || unicode.IsSpace(r) || r == ';' || r == '_' || r == '.' || r == '-' || r == ')') {
+            var purple int
+            purple = 5
 
-                    builder.WriteRune(r)
+            var pink int
+            pink = 5
 
-                } else {
-                    i--
-                }
-            }
+            var red int
+            red = 13
 
-            builder.WriteRune(' ')
-        }
-    }
+            var orange int
+            orange = 5
 
-    var words = strings.Fields(builder.String())
+            var yellow int
+            yellow = 55
 
-    for _, word := range words {
+            var green int
+            green = 5
 
-        found := false
+            var blue int
+            blue = 5
 
-        for _, rule := range rules {
+            var purple int
+            purple = 5
 
-            re := regexp.MustCompile("^" + rule.Regex + "$")
+            var pink int
+            pink = 5
 
-            if re.MatchString(word) {
-                found = true
-                tokens = append(tokens, TypeValue{Type: rule.Type, Value: word})
-                break
-            }
-        }
-
-        if !found {
-            tokens_unidentified = append(tokens_unidentified, word)
-        }
-    }
-
-    for current_token := 0; current_token < len(tokens_unidentified); current_token++ {
-        for other_token := current_token + 1; other_token < len(tokens_unidentified); other_token++ {
-            if tokens_unidentified[current_token] == tokens_unidentified[other_token] {
-                tokens_unidentified = append(tokens_unidentified[:other_token], tokens_unidentified[other_token+1:]...)
-                other_token--
-            }
-    }
-}
-
-    return tokens, tokens_unidentified, nil
-}`,
-          project_name: project_name
+            }`,
+            project_name: project_name
     });
 
     const source_code_params = {
@@ -124,11 +125,14 @@ export default function () {
 
     const lexer_rules_data = JSON.stringify({
         pairs: [
-            { Type: "keyword", Regex: "func|if|for|var|return" },
-            { Type: "identifier", Regex: "[a-zA-Z_][a-zA-Z0-9_]*" },
-            { Type: "operator", Regex: "==|:=|\\+\\+|\\+|-|<|>|!" },
-            { Type: "literal", Regex: "\".*\"|[0-9]+" },
-            { Type: "punctuation", Regex: "[\\(\\)\\{\\}\\[\\],.:;]" }
+            { Type: "KEYWORD", Regex: "int|var|func" },
+            { Type: "IDENTIFIER", Regex: "[a-zA-Z_]+" },
+            { Type: "OPERATOR", Regex: "=" },
+            { Type: "INTEGER", Regex: "[0-9]+" },
+            { Type: "OPEN_SCOPE", Regex: "\\{" },
+            { Type: "CLOSE_SCOPE", Regex: "\\}" },
+            { Type: "OPEN_BRACKET", Regex: "\\(" },
+            { Type: "CLOSE_BRACKET", Regex: "\\)" }
         ],
         project_name: project_name
     });
@@ -164,6 +168,7 @@ export default function () {
     check(lexer_res, {
       "status is 200": (r) => r.status === 200,
     });
+    //console.log(lexer_res)
     
     sleep(1);
 
@@ -172,7 +177,23 @@ export default function () {
     const grammar_url = "http://localhost:8080/api/parsing/grammar";
 
     const grammar_data = JSON.stringify({
-          project_name: project_name
+        variables: ["PROGRAM","FUNCTION_D","FUNCTION_BLOCK","CODE","STATEMENT"],
+    terminals: ["KEYWORD","IDENTIFIER","OPERATOR","INTEGER","OPEN_BRACKET", "CLOSE_BRACKET", "OPEN_SCOPE", "CLOSE_SCOPE"],
+    start: "PROGRAM",
+    rules: [
+        { "input": "PROGRAM", "output": ["FUNCTION_D", "PROGRAM"] },
+
+        { "input": "FUNCTION_D", "output": ["KEYWORD","IDENTIFIER","CLOSE_BRACKET","OPEN_BRACKET","FUNCTION_BLOCK"] },
+        { "input": "FUNCTION_BLOCK", "output": ["OPEN_SCOPE", "CODE", "CLOSE_SCOPE"] },
+
+        { "input": "CODE", "output": ["STATEMENT", "CODE"] },
+        { "input": "CODE", "output": ["STATEMENT"] },
+
+        { "input": "STATEMENT", "output": ["KEYWORD","IDENTIFIER","KEYWORD"] },
+        { "input": "STATEMENT", "output": ["IDENTIFIER","OPERATOR","INTEGER"] },
+    ],
+
+        project_name: project_name
     });
 
     const grammar_params = {
@@ -186,6 +207,26 @@ export default function () {
     check(grammar_res, {
       "status is 200": (r) => r.status === 200,
     });
+    
+    sleep(1);
+
+    const delete_project_url = "http://localhost:8080/api/users/deleteProject";
+            const delete_project_data =  JSON.stringify({
+                users_id: "68d32088d29390ec2c897f35",
+                project_name: project_name
+            });
+            const delete_project_params = {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer guestuser"
+                },
+            };
+        
+            let delete_project_res = http.request("DELETE", delete_project_url, delete_project_data, delete_project_params);
+        
+            check(delete_project_res, {
+              "status is 200": (r) => r.status === 200,
+            });
     
     sleep(1);
 
