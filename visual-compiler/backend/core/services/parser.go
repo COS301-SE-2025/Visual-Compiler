@@ -75,7 +75,11 @@ func ReadGrammar(input []byte) (Grammar, error) {
 		grammar.Terminals[i] = strings.ToUpper(term)
 	}
 
-	grammar = EliminateLeftRecursion(grammar)
+	for _, rule := range grammar.Rules {
+		if len(rule.Output) > 0 && rule.Output[0] == rule.Input {
+			return Grammar{}, fmt.Errorf("grammar includes left recursion")
+		}
+	}
 
 	return grammar, nil
 }
@@ -95,6 +99,17 @@ func CreateSyntaxTree(tokens []TypeValue, grammar Grammar) (SyntaxTree, error) {
 
 	if grammar.Start == "" {
 		return SyntaxTree{}, fmt.Errorf("no start variable found")
+	}
+
+	link := make(map[string]bool)
+	for _, term := range grammar.Terminals {
+		link[term] = true
+	}
+
+	for _, token := range tokens {
+		if !link[token.Type] {
+			return SyntaxTree{}, fmt.Errorf("token types do not correspond to grammar terminals")
+		}
 	}
 
 	state := &ParseState{
@@ -241,124 +256,6 @@ func TryRule(state *ParseState, rule ParsingRule, position int) (*TreeNode, int,
 	}
 
 	return node, current_position, true
-}
-
-// Name: EliminateLeftRecursion
-//
-// Parameters: Grammar
-//
-// Return: Grammar
-//
-// Convert left-recursive rules to right-recursive rules to prevent infinite recursion
-func EliminateLeftRecursion(grammar Grammar) Grammar {
-
-	has_left := false
-
-	for _, rule := range grammar.Rules {
-
-		if len(rule.Output) > 0 && rule.Output[0] == rule.Input {
-			has_left = true
-			break
-		}
-	}
-
-	if !has_left {
-		return grammar
-	}
-
-	new_grammar := grammar
-	processed_rules := make(map[string]bool)
-	final_rules := make([]ParsingRule, 0)
-	new_variables := make([]string, len(grammar.Variables))
-	copy(new_variables, grammar.Variables)
-
-	variable_rules := make(map[string][]ParsingRule)
-	for _, rule := range grammar.Rules {
-		variable_rules[rule.Input] = append(variable_rules[rule.Input], rule)
-	}
-
-	for variable := range variable_rules {
-
-		if processed_rules[variable] {
-			continue
-		}
-
-		left_rules := make([]ParsingRule, 0)
-		nonleft_rules := make([]ParsingRule, 0)
-		rules := variable_rules[variable]
-
-		for _, rule := range rules {
-			if len(rule.Output) > 0 && rule.Output[0] == rule.Input {
-				left_rules = append(left_rules, rule)
-			} else {
-				nonleft_rules = append(nonleft_rules, rule)
-			}
-		}
-
-		if len(left_rules) > 0 {
-
-			new_var := variable + "'"
-			new_variables = append(new_variables, new_var)
-
-			if len(nonleft_rules) == 0 {
-				nonleft_rules = append(nonleft_rules, ParsingRule{
-					Input:  variable,
-					Output: []string{},
-				})
-			}
-
-			for _, nlr := range nonleft_rules {
-
-				new_output := make([]string, len(nlr.Output))
-				copy(new_output, nlr.Output)
-
-				if len(new_output) == 0 {
-					new_output = []string{new_var}
-				} else {
-					new_output = append(new_output, new_var)
-				}
-
-				final_rules = append(final_rules, ParsingRule{
-					Input:  variable,
-					Output: new_output,
-				})
-			}
-
-			for _, lr := range left_rules {
-
-				if len(lr.Output) > 1 {
-
-					new_output := make([]string, len(lr.Output)-1)
-					copy(new_output, lr.Output[1:])
-					new_output = append(new_output, new_var)
-
-					final_rules = append(final_rules, ParsingRule{
-						Input:  new_var,
-						Output: new_output,
-					})
-				}
-			}
-
-			final_rules = append(final_rules, ParsingRule{
-				Input:  new_var,
-				Output: []string{},
-			})
-
-			processed_rules[variable] = true
-
-		} else {
-
-			for _, rule := range rules {
-				final_rules = append(final_rules, rule)
-			}
-
-			processed_rules[variable] = true
-		}
-	}
-
-	new_grammar.Rules = final_rules
-	new_grammar.Variables = new_variables
-	return new_grammar
 }
 
 // Name: ConvertTreeToString
