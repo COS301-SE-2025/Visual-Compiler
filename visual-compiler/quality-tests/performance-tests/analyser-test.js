@@ -3,8 +3,8 @@ import { check, sleep } from 'k6';
 
 export let options = {
     stages: [
-      {duration: '20s', target: 10},
-      {duration: '20s', target: 10},
+      {duration: '20s', target: 1},
+      {duration: '20s', target: 1},
       {duration: '20s', target: 0},
     ],
 }
@@ -35,7 +35,7 @@ export default function () {
     const source_code_url = "http://localhost:8080/api/lexing/code";
 
     const source_code_data = JSON.stringify({
-            source_code: `func main() {
+            source_code: `int main() {
 
             var red int
             red = 13
@@ -168,8 +168,6 @@ export default function () {
     check(lexer_res, {
       "status is 200": (r) => r.status === 200,
     });
-    //console.log(lexer_res)
-    
     sleep(1);
 
     // PARSER
@@ -177,20 +175,22 @@ export default function () {
     const grammar_url = "http://localhost:8080/api/parsing/grammar";
 
     const grammar_data = JSON.stringify({
-        variables: ["PROGRAM","FUNCTION_D","FUNCTION_BLOCK","CODE","STATEMENT"],
+        variables: ["PROGRAM","FUNCTION_D","FUNCTION_BLOCK","CODE","STATEMENT", "PARAM","TERM"],
     terminals: ["KEYWORD","IDENTIFIER","OPERATOR","INTEGER","OPEN_BRACKET", "CLOSE_BRACKET", "OPEN_SCOPE", "CLOSE_SCOPE"],
     start: "PROGRAM",
     rules: [
         { "input": "PROGRAM", "output": ["FUNCTION_D", "FUNCTION_BLOCK"] },
 
-        { "input": "FUNCTION_D", "output": ["KEYWORD","IDENTIFIER","OPEN_BRACKET","CLOSE_BRACKET"] },
+        { "input": "FUNCTION_D", "output": ["KEYWORD","IDENTIFIER","PARAM"] },
+        { "input": "PARAM", "output": ["OPEN_BRACKET","CLOSE_BRACKET"] },
         { "input": "FUNCTION_BLOCK", "output": ["OPEN_SCOPE", "CODE", "CLOSE_SCOPE"] },
 
         { "input": "CODE", "output": ["STATEMENT", "CODE"] },
         { "input": "CODE", "output": ["STATEMENT"] },
 
         { "input": "STATEMENT", "output": ["KEYWORD","IDENTIFIER","KEYWORD"] },
-        { "input": "STATEMENT", "output": ["IDENTIFIER","OPERATOR","INTEGER"] },
+        { "input": "STATEMENT", "output": ["IDENTIFIER","OPERATOR","TERM"] },
+        { "input": "TERM", "output": ["INTEGER"] },
     ],
 
         project_name: project_name
@@ -228,6 +228,44 @@ export default function () {
       "status is 200": (r) => r.status === 200,
     });
     
+    sleep(1);
+
+    // ANALYSER
+
+     const analyse_url = "http://localhost:8080/api/analysing/analyse";
+
+    const analyse_data = JSON.stringify({
+       scope_rules: [
+            {"start": "\\{", "end":"\\}"}
+        ],
+       type_rules: [
+            {"ResultData": "int", "Assignment":"=", "LHSData":"INTEGER"}
+       ],
+       grammar_rules: [{
+            "TypeRule": "INTEGER",
+            "VariableRule":   "IDENTIFIER",
+            "FunctionRule":   "FUNCTION_D",
+            "ParameterRule":  "PARAM",
+            "AssignmentRule": "OPERATOR",
+            "OperatorRule":   "OP",
+            "TermRule" :      "TERM"
+    }],
+        project_name: project_name
+    });
+
+    const analyse_params = {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer guestuser"
+        },
+    };
+
+    let analyse_res = http.post(analyse_url, analyse_data, analyse_params);
+    check(analyse_res, {
+      "status is 200": (r) => r.status === 200,
+    });
+    console.log(analyse_res)
+
     sleep(1);
 
     const delete_project_url = "http://localhost:8080/api/users/deleteProject";
