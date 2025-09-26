@@ -1,12 +1,22 @@
+FROM node:20-alpine AS build
+
+WORKDIR /visual-compiler-frontend
+
+COPY package.json package-lock.json* ./
+RUN npm install --frozen-lockfile
+
+COPY . .
+RUN npm run build
+
 FROM node:20-alpine
 
 WORKDIR /visual-compiler-frontend
 
-COPY package.json ./
-RUN npm install
+COPY --from=build /visual-compiler-frontend/package.json ./
+COPY --from=build /visual-compiler-frontend/build ./build
 
-COPY . .
+RUN npm install --omit=dev
 
-EXPOSE 5173
+EXPOSE 3000
 
-CMD [ "npm", "run", "dev", "--", "--host" ]
+CMD [ "node", "build" ]

@@ -243,7 +243,7 @@
 
 			// Create a guest project
 			try {
-				const response = await fetch('http://localhost:8080/api/users/save', {
+				const response = await fetch('https://www.visual-compiler.co.za/api/users/save', {
 					method: 'POST',
 					headers: {
 						'accept': 'application/json',
@@ -329,7 +329,7 @@
 			const guestId = '68d32088d29390ec2c897f35';
 			if (userId === guestId) {
 				// Use sendBeacon for more reliable cleanup on page unload
-				navigator.sendBeacon('http://localhost:8080/api/users/deleteProject', JSON.stringify({
+				navigator.sendBeacon('https://www.visual-compiler.co.za/api/users/deleteProject', JSON.stringify({
 					project_name: projectName,
 					users_id: userId
 				}));

@@ -443,7 +443,7 @@
 
 		try {
 			// Convert DFA to Regex
-			const dfaToRegexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
+			const dfaToRegexRes = await fetch('https://www.visual-compiler.co.za/api/lexing/dfaToRegex', {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
@@ -458,7 +458,7 @@
 			}
 
 			// Convert Regex to NFA
-			const regexToNfaRes = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
+			const regexToNfaRes = await fetch('https://www.visual-compiler.co.za/api/lexing/regexToNFA', {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
@@ -623,7 +623,7 @@
 
 		try {
 			// Convert DFA to Regex
-			const regexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
+			const regexRes = await fetch('https://www.visual-compiler.co.za/api/lexing/dfaToRegex', {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
@@ -638,7 +638,7 @@
 			}
 
 			// Convert Regex to DFA
-			const dfaRes = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
+			const dfaRes = await fetch('https://www.visual-compiler.co.za/api/lexing/regexToDFA', {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',

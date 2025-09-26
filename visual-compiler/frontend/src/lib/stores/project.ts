@@ -59,7 +59,7 @@ export const getProjects = async (userId: string) => {
 
 export const deleteProject = async (name: string, userId: string) => {
     try {
-        const response = await fetch('http://localhost:8080/api/users/deleteProject', {
+        const response = await fetch('https://www.visual-compiler.co.za/api/users/deleteProject', {
             method: 'DELETE',
             headers: {
                 'accept': 'application/json',

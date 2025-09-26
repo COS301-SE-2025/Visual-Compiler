@@ -434,7 +434,7 @@
             });
 
             if (!tokensResponse.ok) {
-                const dfa_token_response = await fetch(`http://localhost:8080/api/lexing/dfaToTokens`, {
+                const dfa_token_response = await fetch(`https://www.visual-compiler.co.za/api/lexing/dfaToTokens`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
