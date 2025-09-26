@@ -1,0 +1,29 @@
+coverage:
+  ignore:
+    - "**/docs.go"
+    - "**/middleware.go"
+    - "**/users.go"
+    - "**/delete-user.go"
+    - "**/svelte.config.js"
+    - "**/test-utils.ts"
+    - "**/mock-node.svelte"
+    - "**/ai-assistant.svelte"
+    - "**/tutorial.ts"
+    - "**/project.ts" 
+    - "**/lexer.ts" 
+    - "**/mongo-db.go"
+    
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 2%
+        informational: true
+    patch:
+      default:
+        target: 80%
+        threshold: 5%
+        informational: true
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default

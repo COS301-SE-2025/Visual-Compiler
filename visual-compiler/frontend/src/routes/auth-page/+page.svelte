@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { AddToast } from '$lib/stores/toast';
 	import { goto } from '$app/navigation';
+	import { projectName, deleteProject } from '$lib/stores/project';
+	import { resetPipeline } from '$lib/stores/pipeline';
+	import { resetSourceCode } from '$lib/stores/source-code';
+	import { resetLexerState } from '$lib/stores/lexer';
+	import { phase_completion_status } from '$lib/stores/pipeline';
 
 	let active_tab: 'login' | 'register' = 'login';
 	let show_password = false;
@@ -32,7 +37,7 @@
 		event.preventDefault();
 
 		if (reg_password !== reg_confirm_password) {
-			AddToast('� Passwords don\'t match - please make sure both password fields are identical', 'error');
+			AddToast('🔒 Passwords don\'t match - please make sure both password fields are identical', 'error');
 			return;
 		}
 
@@ -52,25 +57,42 @@
 			const data = await response.json();
 
 			if (!response.ok) {
-				if ((data.error).includes("Password")) {
-					AddToast(`Registration error: Password must be atleast 8 characters`, 'error');
-				}else if ((data.error).includes("Username")) {
-					AddToast(`Registration error: Username must be atleast 6 characters`, 'error');
-				}else{
+				// Handle specific backend error messages
+				if (data.error.includes("Password")) {
+					AddToast(`Registration error: Password must be at least 8 characters`, 'error');
+				} else if (data.error.includes("Username")) {
+					AddToast(`Registration error: Username must be at least 6 characters`, 'error');
+				} else if (data.error.includes("Email already exists")) {
+					AddToast(`Registration error: This email is already registered. Please use a different email address`, 'error');
+				} else if (data.error.includes("Username is already taken")) {
+					AddToast(`Registration error: This username is already taken. Please choose a different username`, 'error');
+				} else if (data.error.includes("Input is invalid")) {
+					AddToast(`Registration error: Please check your input format and try again`, 'error');
+				} else if (data.error.includes("Database error")) {
+					AddToast(`Registration error: Database connection issue. Please try again later`, 'error');
+				} else if (data.error.includes("Error in hashing password")) {
+					AddToast(`Registration error: Server error processing password. Please try again`, 'error');
+				} else if (data.error.includes("Error in registering user")) {
+					AddToast(`Registration error: Could not complete registration. Please try again`, 'error');
+				} else {
 					AddToast(`Registration failed: ${data.error || 'Please check your information and try again'}`, 'error');
 				}
 				return;
 			}
 
-			AddToast('Account created successfully! Please log in with your new credentials', 'success');
+			// Success case - backend returns 201 with message "Successfully registered user"
+			if (response.status === 201 && data.message === "Successfully registered user") {
+				AddToast('✅ Account created successfully! Please check your email and verify your account before logging in', 'success');
 
-			// Reset the form
-			reg_email = '';
-			reg_username = '';
-			reg_password = '';
-			reg_confirm_password = '';
+				// Reset the form
+				reg_email = '';
+				reg_username = '';
+				reg_password = '';
+				reg_confirm_password = '';
 
-			active_tab = 'login';
+				// Switch to login tab
+				active_tab = 'login';
+			}
 		} catch (error) {
 			AddToast(`Registration error: ${(error as Error).message}. Please check your connection and try again`, 'error');
 		}
@@ -99,23 +121,59 @@
 			const data = await response.json();
 
 			if (!response.ok) {
-				AddToast(`Login failed: ${data.error || 'Please check your username and password'}`, 'error');
+				// Handle specific backend error messages
+				if (data.error.includes("Input is invalid")) {
+					AddToast('Login error: Please check your input format and try again', 'error');
+				} else if (data.error.includes("Invalid credentials")) {
+					AddToast('Login failed: Invalid username/email or password. Please check your credentials', 'error');
+				} else if (data.error.includes("Password is incorrect")) {
+					AddToast('Login failed: Incorrect password. Please try again', 'error');
+				} else if (data.error.includes("Database error")) {
+					AddToast('Login error: Database connection issue. Please try again later', 'error');
+				} else {
+					AddToast(`Login failed: ${data.error || 'Please check your username and password'}`, 'error');
+				}
 				return;
 			}
 
-			if (data.id) {
-				console.log('user_id from backend:', data.id);
+			// Success case - backend returns 200 with message, id, is_admin, and projects
+			if (response.status === 200 && data.message && data.id) {
+				// Store user data in localStorage
 				localStorage.setItem('user_id', data.id);
+				localStorage.setItem('users_id', data.id); // Also store as users_id for optimiser compatibility
 				localStorage.setItem('is_admin', data.is_admin ? 'true' : 'false');
+				
+				// Store the Auth0 access token in sessionStorage (as requested)
+				if (data.auth_token) {
+					sessionStorage.setItem('access_token', data.auth_token);
+					sessionStorage.setItem('authToken', data.auth_token); // Alternative key for compatibility
+				}
+				
+				// Store projects if available
+				if (data.projects) {
+					localStorage.setItem('user_projects', JSON.stringify(data.projects));
+				}
+
+				console.log('Login successful:', {
+					user_id: data.id,
+					is_admin: data.is_admin,
+					projects: data.projects,
+					has_auth_token: !!data.auth_token
+				});
+
+				// Extract username from the welcome message or use the login input
+				const welcomeMessage = data.message.includes('Welcome') ? 
+					data.message : 
+					`Welcome back! Redirecting to your workspace...`;
+				
+				AddToast(welcomeMessage, 'success');
+
+				sessionStorage.setItem('showWelcomeOverlay', 'true');
+
+				await new Promise((res) => setTimeout(res, 2000));
+
+				await goto('/main-workspace');
 			}
-
-			AddToast('Welcome back! Redirecting to your workspace...', 'success');
-
-			sessionStorage.setItem('showWelcomeOverlay', 'true');
-
-			await new Promise((res) => setTimeout(res, 2000));
-
-			await goto('/main-workspace');
 		} catch (error) {
 			AddToast(`Login error: ${(error as Error).message}. Please check your connection and try again`, 'error');
 		}
@@ -135,6 +193,166 @@
 	// Toggles the visibility of the confirm password field.
 	function toggleConfirmPasswordVisibility() {
 		show_confirm_password = !show_confirm_password;
+	}
+
+	// handleGuestLogin
+	// Return type: Promise<void>
+	// Parameter type(s): none
+	// Handles guest login by setting guest access token, creating a guest project, and navigating to workspace.
+	async function handleGuestLogin() {
+		try {
+			// Clear all workspace state first to ensure clean slate for guest
+			resetPipeline(); // Clear pipeline/canvas data
+			resetSourceCode(); // Clear source code
+			resetLexerState(); // Clear lexer state
+			
+			// Reset phase completion status
+			phase_completion_status.set({
+				source: false,
+				lexer: false,
+				parser: false,
+				analyser: false,
+				translator: false
+			});
+
+			// Clear all workspace-specific state that might persist
+			// Note: These will be cleared when the workspace loads, but we clear them here too for safety
+			if (typeof window !== 'undefined') {
+				// Clear any workspace session data
+				sessionStorage.removeItem('workspace_tokens');
+				sessionStorage.removeItem('workspace_syntax_tree');
+				sessionStorage.removeItem('workspace_symbol_table');
+				sessionStorage.removeItem('workspace_translated_code');
+			}
+
+			// Set guest access token
+			sessionStorage.setItem('access_token', 'guestuser');
+			sessionStorage.setItem('authToken', 'guestuser'); // Alternative key for compatibility
+			
+			// Set guest user data in localStorage
+			localStorage.setItem('user_id', '68d32088d29390ec2c897f35');
+			localStorage.setItem('users_id', '68d32088d29390ec2c897f35'); // Also store as users_id for optimiser compatibility
+			localStorage.setItem('is_admin', 'false');
+			
+			// Clear any existing projects for guest user
+			localStorage.removeItem('user_projects');
+
+			// Generate random 5-character string for project name
+			const randomChars = Math.random().toString(36).substring(2, 7).toUpperCase();
+			const guestProjectName = `Guest Project ${randomChars}`;
+
+			// Create a guest project
+			try {
+				const response = await fetch('http://localhost:8080/api/users/save', {
+					method: 'POST',
+					headers: {
+						'accept': 'application/json',
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify({
+						project_name: guestProjectName,
+						users_id: localStorage.getItem('user_id') || '68d32088d29390ec2c897f35'
+					})
+				});
+
+				if (response.ok) {
+					// Store the created project name for the guest session
+					localStorage.setItem('guest_project_name', guestProjectName);
+					
+					// Set the project name in the store so it displays in the workspace
+					projectName.set(guestProjectName);
+					
+					console.log('Guest project created:', guestProjectName);
+
+					// Set up cleanup for guest project on logout/close
+					// setupGuestProjectCleanup(guestProjectName);
+				} else {
+					console.warn('Failed to create guest project, continuing with guest login');
+					// Still set the project name even if creation fails
+					projectName.set(guestProjectName);
+				}
+			} catch (projectError) {
+				console.warn('Error creating guest project:', projectError);
+				// Continue with guest login even if project creation fails
+				// Still set the project name for display purposes
+				projectName.set(guestProjectName);
+			}
+
+			console.log('Guest login initiated');
+
+			AddToast('Welcome! You\'re now using the Visual Compiler as a guest', 'success');
+
+			sessionStorage.setItem('showWelcomeOverlay', 'false');
+
+			await new Promise((res) => setTimeout(res, 1500));
+
+			await goto('/main-workspace');
+		} catch (error) {
+			AddToast(`Guest login error: ${(error as Error).message}. Please try again`, 'error');
+		}
+	}
+
+	// deleteGuestProject
+	// Return type: Promise<void>
+	// Parameter type(s): string (projectName)
+	// Deletes a guest project from the backend to ensure temporary projects are cleaned up
+	async function deleteGuestProject(projectName: string): Promise<void> {
+		try {
+			console.log(`Attempting to delete guest project: ${projectName}`);
+			await deleteProject(projectName, localStorage.getItem('user_id') || '68d32088d29390ec2c897f35');
+			console.log(`Guest project deleted successfully: ${projectName}`);
+		} catch (error) {
+			console.error(`Error deleting guest project: ${projectName}`, error);
+		}
+	}
+
+	// setupGuestProjectCleanup
+	// Return type: void  
+	// Parameter type(s): string (projectName)
+	// Sets up event listeners to clean up guest projects when the user logs out or closes the application
+	function setupGuestProjectCleanup(projectName: string): void {
+		if (typeof window === 'undefined') return;
+
+		// Function to handle cleanup
+		const cleanup = async () => {
+			const userId = localStorage.getItem('user_id');
+			if (userId === (localStorage.getItem('user_id') || '68d32088d29390ec2c897f35')) {
+				await deleteGuestProject(projectName);
+				// Clear guest project data
+				localStorage.removeItem('guest_project_name');
+			}
+		};
+
+		// Handle page unload (browser close, refresh, navigate away)
+		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+			const userId = localStorage.getItem('user_id') || '68d32088d29390ec2c897f35';
+			const guestId = '68d32088d29390ec2c897f35';
+			if (userId === guestId) {
+				// Use sendBeacon for more reliable cleanup on page unload
+				navigator.sendBeacon('http://localhost:8080/api/users/deleteProject', JSON.stringify({
+					project_name: projectName,
+					users_id: userId
+				}));
+			}
+		};
+
+		// Handle visibility change (tab close, window minimize)
+		const handleVisibilityChange = async () => {
+			if (document.hidden) {
+				const userId = localStorage.getItem('user_id') || '68d32088d29390ec2c897f35';
+				const guestId = '68d32088d29390ec2c897f35';
+				if (userId === guestId) {
+					await cleanup();
+				}
+			}
+		};
+
+		// Add event listeners
+		window.addEventListener('beforeunload', handleBeforeUnload);
+		document.addEventListener('visibilitychange', handleVisibilityChange);
+
+		// Store cleanup function reference for potential manual cleanup
+		(window as any).guestProjectCleanup = cleanup;
 	}
 </script>
 
@@ -223,6 +441,25 @@
 							/>
 						</button>
 					</form>
+
+					<!-- Guest Login Section -->
+					<div class="guest-login-section">
+						<div class="divider">
+							<span>or</span>
+						</div>
+						<button type="button" class="guest-login-btn" on:click={handleGuestLogin} aria-label="Continue as Guest">
+							<svg class="guest-icon" viewBox="0 0 24 24" width="20" height="20">
+								<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+								<circle cx="12" cy="7" r="4" />
+								<path d="M12 14v7" opacity="0.5" />
+								<path d="M8 18h8" opacity="0.5" />
+							</svg>
+							<span class="guest-text">
+								<span class="guest-title">Continue as Guest</span>
+								<span class="guest-subtitle">Try the Visual Compiler without an account</span>
+							</span>
+						</button>
+					</div>
 				{:else}
 					<form on:submit={handleRegister}>
 						<div class="input-group">
@@ -597,6 +834,110 @@
 
 	.icon-submit-btn:disabled {
 		cursor: not-allowed;
+	}
+
+	/* Guest Login Styles */
+	.guest-login-section {
+		width: 280px;
+		margin: 1.5rem auto 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.divider {
+		position: relative;
+		width: 100%;
+		text-align: center;
+		margin: 0.5rem 0;
+	}
+
+	.divider::before {
+		content: '';
+		position: absolute;
+		top: 50%;
+		left: 0;
+		right: 0;
+		height: 1px;
+		background: linear-gradient(to right, transparent, #e5e7eb 20%, #e5e7eb 80%, transparent);
+		z-index: 1;
+	}
+
+	.divider span {
+		position: relative;
+		background: rgba(255, 255, 255, 0.95);
+		padding: 0 1rem;
+		font-size: 0.875rem;
+		color: #6b7280;
+		font-weight: 500;
+		z-index: 2;
+		border-radius: 4px;
+	}
+
+	.guest-login-btn {
+		width: 100%;
+		padding: 0.875rem 1rem;
+		background: rgba(255, 255, 255, 0.9);
+		border: 2px solid #e5e7eb;
+		border-radius: 8px;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		transition: all 0.2s ease;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+	}
+
+	.guest-login-btn:hover {
+		border-color: #041a47;
+		box-shadow: 0 2px 4px rgba(4, 26, 71, 0.1);
+		transform: translateY(-1px);
+	}
+
+	.guest-icon {
+		flex-shrink: 0;
+		stroke: #6b7280;
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		fill: none;
+		transition: stroke 0.2s ease;
+	}
+
+	.guest-login-btn:hover .guest-icon {
+		stroke: #041a47;
+	}
+
+	.guest-text {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		flex: 1;
+	}
+
+	.guest-title {
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: #374151;
+		line-height: 1.2;
+		transition: color 0.2s ease;
+	}
+
+	.guest-subtitle {
+		font-size: 0.75rem;
+		color: #6b7280;
+		line-height: 1.3;
+		margin-top: 0.125rem;
+		transition: color 0.2s ease;
+	}
+
+	.guest-login-btn:hover .guest-title {
+		color: #041a47;
+	}
+
+	.guest-login-btn:hover .guest-subtitle {
+		color: #374151;
 	}
 
 	.main-content {

@@ -116,16 +116,17 @@
 	 * @returns {Promise<void>}
 	 */
 	async function handleSubmit() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName);
-		if (!user_id) {
+		
+		if (!accessToken) {
 			AddToast('Authentication required: Please log in to save translation rules', 'error');
 			return;
 		}
 		if (!project) {
-            AddToast('No project selected: Please select or create a project first', 'error');
-            return;
-        }
+			AddToast('No project selected: Please select or create a project first', 'error');
+			return;
+		}
 
 		const isValid = rules.every(
 			(rule) => rule.tokenSequence.trim() !== '' && rule.lines.every((line) => line.trim() !== '')
@@ -137,8 +138,7 @@
 		}
 
 		const apiPayload = {
-			users_id: user_id,
-			project_name: get(projectName),
+			project_name: project,
 			translation_rules: rules.map((rule) => ({
 				sequence: [rule.tokenSequence],
 				translation: rule.lines
@@ -155,7 +155,10 @@
 		try {
 			const response = await fetch('https://www.visual-compiler.co.za/api/translating/readRules', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
 				body: JSON.stringify(apiPayload)
 			});
 
@@ -180,24 +183,28 @@
 	 * @returns {Promise<void>}
 	 */
 	async function handleTranslate() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName);
-		if (!user_id) {
+		
+		if (!accessToken) {
 			AddToast('Authentication required: Please log in to perform translation', 'error');
 			return;
 		}
 		if (!project) {
-            AddToast('No project selected: Please select or create a project first', 'error');
-            return;
-        }
+			AddToast('No project selected: Please select or create a project first', 'error');
+			return;
+		}
 
 		console.log('Requesting final translation from backend...');
 
 		try {
 			const response = await fetch('https://www.visual-compiler.co.za/api/translating/translate', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project }) 
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 
 			if (!response.ok) {
@@ -241,6 +248,47 @@
 		isSubmitted = false;
 		show_default_rules = false;
 	}
+
+	// Add event listener for AI-generated translator rules
+	let aiTranslatorEventListener: (event: CustomEvent) => void;
+
+	// Add onMount and onDestroy imports if not already present
+	import { onMount, onDestroy } from 'svelte';
+
+	onMount(() => {
+		// Listen for AI-generated translator rules
+		aiTranslatorEventListener = (event: CustomEvent) => {
+			if (event.detail && event.detail.rules && Array.isArray(event.detail.rules)) {
+				console.log('Received AI translator rules:', event.detail.rules);
+				
+				// Clear existing rules and populate with AI-generated rules
+				rules = event.detail.rules.map(rule => ({
+					tokenSequence: rule.sequence || '',
+					lines: Array.isArray(rule.translation) ? rule.translation : ['']
+				}));
+				
+				// Reset submission states
+				isSubmitted = false;
+				translationSuccessful = false;
+				show_default_rules = false;
+				
+				// Force reactivity
+				rules = [...rules];
+				
+				AddToast('AI translator rules inserted into translation editor!', 'success');
+				
+				console.log('Final translator rules:', rules);
+			}
+		};
+
+		window.addEventListener('ai-translator-generated', aiTranslatorEventListener);
+	});
+
+	onDestroy(() => {
+		if (aiTranslatorEventListener) {
+			window.removeEventListener('ai-translator-generated', aiTranslatorEventListener);
+		}
+	});
 </script>
 
 <div class="inspector-container">

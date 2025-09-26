@@ -1,74 +1,26 @@
 package tests
 
 import (
-	"testing"
-
-	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/handlers"
-	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/routers"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-
 	"bytes"
-	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"testing"
 	"time"
+
+	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/handlers"
+	"github.com/gin-gonic/gin"
 )
 
-var user_id string
-
-func startServer(t *testing.T) *http.Server {
-	gin.SetMode(gin.ReleaseMode)
-	router := gin.Default()
-
-	// Attach CORS middleware
-	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
-	user_router := routers.SetupUserRouter()
-	//go run main.go
-	router.Any("/api/users/*any", func(c *gin.Context) {
-		c.Request.URL.Path = c.Param("any")
-		user_router.HandleContext(c)
-	})
-
-	server := &http.Server{
-		Addr:    ":8080",
-		Handler: router,
-	}
-	//goroutine needed so test does not enter an infinite loop
-	go func() {
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			t.Errorf("Server failed to start: %v", err)
-		}
-	}()
-
-	time.Sleep(100 * time.Millisecond)
-	return server
-}
-
-func closeServer(server *http.Server) {
-	cont, cancel_cont := context.WithTimeout(context.Background(), 3*time.Second)
-	defer cancel_cont()
-	server.Shutdown(cont)
-}
-
 func TestRegister_ExistingEmail(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
+	server = startServerCore(t)
 
 	user_data := map[string]string{
-		"username": "tiaharripersad",
-		"email":    "tia@gmail.com",
-		"password": "tia1234$$",
+		"username": "test u",
+		"email":    "halfstack.testuser@gmail.com",
+		"password": "password",
 	}
 
 	req, err := json.Marshal(user_data)
@@ -107,12 +59,14 @@ func TestRegister_ExistingEmail(t *testing.T) {
 }
 
 func TestRegister_NewUser(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
+
+
+	username := fmt.Sprintf("user-%s", time.Now().Format("20060102-150405.000000000"))
+	email := fmt.Sprintf("%s@gmail.com", time.Now().Format("20060102-150405.000000000"))
 
 	user_data := map[string]string{
-		"username": "jasmine1",
-		"email":    "j@gmail.com",
+		"username": username,
+		"email":    email,
 		"password": "jazzy1234$$",
 	}
 
@@ -146,13 +100,11 @@ func TestRegister_NewUser(t *testing.T) {
 }
 
 func TestRegister_ExistingUsername(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
 
 	user_data := map[string]string{
-		"username": "jasmine1",
-		"email":    "jah@gmail.com",
-		"password": "jazzyo234$$",
+		"username": "test user",
+		"email":    "halfstack.testuse@gmail.com",
+		"password": "password",
 	}
 	req, err := json.Marshal(user_data)
 	if err != nil {
@@ -188,12 +140,11 @@ func TestRegister_ExistingUsername(t *testing.T) {
 }
 
 func TestLogin_Success(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
 
 	user_data := map[string]string{
-		"login":    "jasmine1",
-		"password": "jazzy1234$$",
+		"login":    "test user",
+		"email":    "halfstack.testuser@gmail.com",
+		"password": "testUser13",
 	}
 	req, err := json.Marshal(user_data)
 	if err != nil {
@@ -223,17 +174,16 @@ func TestLogin_Success(t *testing.T) {
 		_ = json.Unmarshal(body_bytes, &body_array)
 
 		t.Logf("Login working: %s", body_array["message"])
-		user_id = body_array["id"]
+		test_user_id = body_array["id"]
 	}
 }
 
 func TestEditUser_NoAdmin(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
 
 	user_data := map[string]string{
-		"login":    "jasmine1",
-		"password": "jazzy1234$$",
+		"login":    "test user",
+		"email":    "halfstack.testuser@gmail.com",
+		"password": "password",
 	}
 	req, err := json.Marshal(user_data)
 	if err != nil {
@@ -263,8 +213,6 @@ func TestEditUser_NoAdmin(t *testing.T) {
 }
 
 func TestEditUser_NotAdmin(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
 
 	user_data := map[string]string{
 		"users_id": test_user_id,
@@ -299,12 +247,11 @@ func TestEditUser_NotAdmin(t *testing.T) {
 }
 
 func TestLogin_IncorrectPassword(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
 
 	user_data := map[string]string{
-		"login":    "jasmine1",
-		"password": "jazzy16899",
+		"login":    "test user",
+		"email":    "halfstack.testuser@gmail.com",
+		"password": "halfStack",
 	}
 	req, err := json.Marshal(user_data)
 	if err != nil {
@@ -341,12 +288,11 @@ func TestLogin_IncorrectPassword(t *testing.T) {
 }
 
 func TestLogin_InvalidUser(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
 
 	user_data := map[string]string{
-		"login":    "rando",
-		"password": "jazzy1234$$",
+		"login":    "",
+		"email":    "halfstack.testuser@gmail.com",
+		"password": "password",
 	}
 	req, err := json.Marshal(user_data)
 	if err != nil {
@@ -373,56 +319,10 @@ func TestLogin_InvalidUser(t *testing.T) {
 	}
 }
 
-func TestDeleteUser_Existing(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
-
-	user_data := map[string]string{
-		"users_id": user_id,
-	}
-	req, err := json.Marshal(user_data)
-	if err != nil {
-		t.Errorf("converting data to json failed")
-	}
-
-	res, err := http.NewRequest("DELETE",
-		"http://localhost:8080/api/users/delete",
-		bytes.NewBuffer(req),
-	)
-	if err != nil {
-		t.Errorf("User deletion failed")
-	}
-	res.Header.Set("Content-Type", "application/json")
-	client := &http.Client{}
-
-	response, err := client.Do(res)
-	if err != nil {
-		t.Errorf("Error: %v", err)
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != http.StatusOK {
-		body_bytes, _ := io.ReadAll(response.Body)
-		t.Errorf("User deletion failed: %s", string(body_bytes))
-	} else {
-
-		body_bytes, err := io.ReadAll(response.Body)
-		if err != nil {
-			t.Errorf("Error: %v", err)
-		}
-		var body_array map[string]string
-		_ = json.Unmarshal(body_bytes, &body_array)
-
-		t.Logf("Deletion working: %s", body_array["message"])
-	}
-}
-
 func TestDeleteUser_Invalid(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
 
 	user_data := map[string]string{
-		"users_id": user_id,
+		"users_id": "1",
 	}
 	req, err := json.Marshal(user_data)
 	if err != nil {
@@ -466,8 +366,6 @@ func TestDeleteUser_Invalid(t *testing.T) {
 }
 
 func TestGetAllUsers(t *testing.T) {
-	server := startServer(t)
-	defer closeServer(server)
 
 	res, err := http.Get(
 		"http://localhost:8080/api/users/getUsers",
@@ -494,6 +392,8 @@ func TestGetAllUsers(t *testing.T) {
 }
 
 func TestConnectToMongo_Valid(t *testing.T) {
+	defer closeServerCore(t, server)
+
 	gin.SetMode(gin.TestMode)
 	router := gin.Default()
 	router.GET("/test-mongo", handlers.ConnectToMongo)

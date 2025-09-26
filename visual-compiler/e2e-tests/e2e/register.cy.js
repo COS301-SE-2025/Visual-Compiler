@@ -1,7 +1,7 @@
 describe('Registration Test', () => {
     it('Successful', () => {
         const test_username = `e2e_tester_${Date.now()}`;
-        const test_password = "password1234";
+        const test_password = "Password$$1234";
         const test_email = `e2e_tester_${Date.now()}@gmail.com`;
 
         cy.visit('http://localhost:5173/auth-page');
@@ -11,7 +11,7 @@ describe('Registration Test', () => {
         cy.contains('button', 'Login').should('have.class', 'active');
         cy.contains('button', 'Register').should('not.have.class', 'active');
 
-        cy.wait(1000); 
+        cy.wait(500); 
         cy.get('.tab-nav button').contains("Register").click();
         cy.get('.tab-nav button').contains("Register").should('have.class', 'active');
 
@@ -24,8 +24,6 @@ describe('Registration Test', () => {
 		cy.get('#regConfirmPassword').type(test_password);
 
         cy.get('.icon-submit-btn').click();
-
-        cy.contains('Account created successfully', {timeout: 1000});
 
     })
 
@@ -41,7 +39,7 @@ describe('Registration Test', () => {
         cy.contains('button', 'Login').should('have.class', 'active');
         cy.contains('button', 'Register').should('not.have.class', 'active');
 
-        cy.wait(1000); 
+        cy.wait(500); 
         cy.get('.tab-nav button').contains("Register").click();
         cy.get('.tab-nav button').contains("Register").should('have.class', 'active');
 

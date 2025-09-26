@@ -5,6 +5,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store';  
+	import { activePhase, setActivePhase } from '$lib/stores/pipeline'; 
 
 	let code_text = '';
 	
@@ -13,6 +14,12 @@
 	let isConfirmed = false;
 	let textareaEl: HTMLTextAreaElement;
 	export let onCodeSubmitted: (code: string) => void = () => {};
+	
+	// Add flag to control window closing behavior
+	let shouldCloseWindow = true;
+
+	// Guest user detection
+	let isGuestUser = false;
 
 	// --- REAL PROJECTS DATA ---
 	let projects: Array<{ name: string; code: string }> = [
@@ -22,6 +29,11 @@
 
 	// Fetch projects from backend
 	async function fetchProjects() {
+		// Skip fetching projects for guest users
+		if (isGuestUser) {
+			return;
+		}
+
 		const userId = localStorage.getItem('user_id');
 		if (!userId) return;
 
@@ -71,13 +83,56 @@
 		isConfirmed = !!value;
 	});
 
-	onDestroy(() => {
-		unsubscribe(); // clean up store subscription
+	
+	// Add event listener for AI-generated source code
+	let aiEventListener: (event: CustomEvent) => void;
+
+	// Add another event listener for AI-submitted source code
+	let aiSubmittedEventListener: (event: CustomEvent) => void;
+
+	onMount(() => {
+		// Check if user is a guest
+		const accessToken = sessionStorage.getItem('access_token');
+		isGuestUser = accessToken === 'guestuser';
+		
+		fetchProjects();
+		
+		// Listen for AI-generated source code
+		aiEventListener = (event: CustomEvent) => {
+			if (event.detail && event.detail.code) {
+				// Store the previous code before replacing
+				previous_code_text = code_text;
+				// Replace the textarea content with AI-generated code
+				code_text = event.detail.code;
+				// Reset the default input flag since this is AI-generated
+				isDefaultInput = false;
+			}
+		};
+
+		// Listen for AI-submitted source code
+		aiSubmittedEventListener = (event: CustomEvent) => {
+			if (event.detail && event.detail.code) {
+				// Update the confirmed source code store
+				confirmedSourceCode.set(event.detail.code);
+				isConfirmed = true;
+				console.log('AI code submitted and confirmed, window staying open');
+			}
+		};
+
+		window.addEventListener('ai-source-generated', aiEventListener);
+		window.addEventListener('ai-source-submitted', aiSubmittedEventListener);
 	});
 
-	// Load projects when component mounts
-	onMount(() => {
-		fetchProjects();
+	onDestroy(() => {
+		setActivePhase(null);
+		unsubscribe();
+		
+		if (aiEventListener) {
+			window.removeEventListener('ai-source-generated', aiEventListener);
+		}
+		if (aiSubmittedEventListener) {
+			window.removeEventListener('ai-source-submitted', aiSubmittedEventListener);
+		}
 	});
 
 	function handleDefaultInput() {
@@ -136,27 +191,49 @@
 			return;
 		}
 
-		try {
-			const res = await fetch('https://www.visual-compiler.co.za/api/lexing/code', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					users_id: user_id,
-					project_name:project,
-					source_code: code_text
-				})
-			});
-			if (!res.ok) throw new Error();
-			AddToast('Source code saved successfully! Ready to begin lexical analysis', 'success');
-			confirmedSourceCode.set(code_text);
-			isConfirmed = true;
-			onCodeSubmitted(code_text);
-			await tick();
-		} catch {
-			AddToast('Save failed: Unable to save source code. Please check your connection and try again', 'error');
-		}
-	}
-
+    try {
+        const res = await fetch('http://localhost:8080/api/lexing/code', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+                project_name: project,
+                source_code: code_text
+            })
+        });
+        
+        if (!res.ok) {
+            const errorData = await res.json();
+            console.error('API Error:', errorData); // Debug log
+            
+            if (res.status === 401) {
+                AddToast('Authentication failed: Please log in again', 'error');
+            } else {
+                AddToast(`Save failed: ${errorData.error || 'Unable to save source code'}`, 'error');
+            }
+            return;
+        }
+        
+        const data = await res.json();
+        console.log('Success response:', data); // Debug log
+        
+        AddToast('Source code saved successfully! Ready to begin lexical analysis', 'success');
+        confirmedSourceCode.set(code_text);
+        isConfirmed = true;
+        
+        // Only call onCodeSubmitted if we should close the window (manual submission)
+        if (shouldCloseWindow) {
+            onCodeSubmitted(code_text);
+        }
+        
+        await tick();
+    } catch (error) {
+        console.error('Request failed:', error); // Debug log
+        AddToast(`Save failed: ${(error as Error).message}. Please check your connection and try again`, 'error');
+    }
+}
 	// --- NEW FUNCTION TO HANDLE PROJECT SELECTION ---
 	async function handleProjectSelect() {
 		if (!selectedProject || selectedProject.name === 'Select a project...') {
@@ -209,6 +286,7 @@
 	// Reset confirmation flag if user changes the text
 	$: isConfirmed = code_text === confirmed_code && !!code_text;
 	$: displayed_text = isConfirmed ? `Current source code: ${code_text}` : code_text;
+
 </script>
 
 <div class="code-input-container">
@@ -235,7 +313,7 @@
 		placeholder="Paste or type your source code here…"
 	></textarea>
 
-	<div class="controls-grid">
+	<div class="controls-grid" class:guest-mode={isGuestUser}>
 		<div class="control-item">
 			<label class="upload-btn">
 				Upload File
@@ -243,14 +321,16 @@
 			</label>
 		</div>
 
-		<div class="control-item project-selector">
-			<label for="project-select">Import from Project</label>
-			<select id="project-select" bind:value={selectedProject} on:change={handleProjectSelect}>
-				{#each projects as project}
-					<option value={project}>{project.name}</option>
-				{/each}
-			</select>
-		</div>
+		{#if !isGuestUser}
+			<div class="control-item project-selector">
+				<label for="project-select">Import from Project</label>
+				<select id="project-select" bind:value={selectedProject} on:change={handleProjectSelect}>
+					{#each projects as project}
+						<option value={project}>{project.name}</option>
+					{/each}
+				</select>
+			</div>
+		{/if}
 	</div>
 
 
@@ -313,6 +393,22 @@
 		gap: 1rem;
 		align-items: flex-end; /* Align items to the bottom */
 		margin-bottom: 1rem;
+	}
+
+	.controls-grid.guest-mode {
+		grid-template-columns: 1fr;
+		justify-items: center;
+	}
+
+	.controls-grid.guest-mode .upload-btn {
+		width: 150px;
+		padding: 0.5rem 1.5rem;
+		justify-self: center;
+	}
+
+	.controls-grid.guest-mode + .controls .confirm-btn {
+		width: 150px;
+		justify-content: center;
 	}
 
 	.control-item {

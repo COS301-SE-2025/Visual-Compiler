@@ -56,3 +56,29 @@ export const getProjects = async (userId: string) => {
         return [];
     }
 };
+
+export const deleteProject = async (name: string, userId: string) => {
+    try {
+        const response = await fetch('http://localhost:8080/api/users/deleteProject', {
+            method: 'DELETE',
+            headers: {
+                'accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                project_name: name,
+                users_id: userId
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.message || 'Project deleted successfully';
+    } catch (error) {
+        console.error('Error deleting project:', error);
+        throw error;
+    }
+};

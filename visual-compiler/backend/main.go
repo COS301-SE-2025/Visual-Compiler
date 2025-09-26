@@ -8,9 +8,11 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/api/routers"
+	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/ai"
 	"github.com/COS301-SE-2025/Visual-Compiler/backend/core/db"
 	_ "github.com/COS301-SE-2025/Visual-Compiler/backend/docs"
 	"github.com/gin-contrib/cors"
@@ -37,7 +39,7 @@ func main() {
 	router.Use(cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "https://visual-compiler.co.za"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		MaxAge:           12 * time.Hour,
@@ -48,37 +50,47 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
 	})
 
-	// Attach your routes
 	api_user_routes := routers.SetupUserRouter()
-	api_lexing_routes := routers.SetupLexingRouter()
-	api_parsing_routes := routers.SetupParsingRouter()
-	api_analysing_routes := routers.SetupAnalysingRouter()
-	api_translating_routes := routers.SetupTranslatorRouter()
 
 	router.Any("/api/users/*any", func(c *gin.Context) {
 		c.Request.URL.Path = c.Param("any")
 		api_user_routes.HandleContext(c)
 	})
 
-	router.Any("/api/lexing/*any", func(c *gin.Context) {
-		c.Request.URL.Path = c.Param("any")
-		api_lexing_routes.HandleContext(c)
-	})
+	protected_routes := router.Group("/api", routers.Auth0MiddleWare())
 
-	router.Any("/api/parsing/*any", func(c *gin.Context) {
-		c.Request.URL.Path = c.Param("any")
-		api_parsing_routes.HandleContext(c)
-	})
+	protected_lexing_routes := protected_routes.Group("/lexing")
+	{
+		routers.SetupLexingRouter(protected_lexing_routes)
+	}
 
-	router.Any("/api/analysing/*any", func(c *gin.Context) {
-		c.Request.URL.Path = c.Param("any")
-		api_analysing_routes.HandleContext(c)
-	})
+	protected_parsing_routes := protected_routes.Group("/parsing")
+	{
+		routers.SetupParsingRouter(protected_parsing_routes)
+	}
 
-	router.Any("/api/translating/*any", func(c *gin.Context) {
-		c.Request.URL.Path = c.Param("any")
-		api_translating_routes.HandleContext(c)
-	})
+	protected_analysing_routes := protected_routes.Group("/analysing")
+	{
+		routers.SetupAnalysingRouter(protected_analysing_routes)
+	}
+
+	protected_translating_routes := protected_routes.Group("/translating")
+	{
+		routers.SetupTranslatorRouter(protected_translating_routes)
+	}
+
+	protected_optimising_routes := protected_routes.Group("/optimising")
+	{
+		routers.SetupOptimisingRouter(protected_optimising_routes)
+	}
+
+	protected_ai_routes := protected_routes.Group("/ai")
+	{
+		routers.SetupAIRouter(protected_ai_routes)
+	}
+
+	ai.ConnectAI(os.Getenv("OPENAI_API_KEY"))
+	log.Println("AI assistant up and running")
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 

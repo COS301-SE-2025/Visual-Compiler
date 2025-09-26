@@ -2,7 +2,7 @@
 	// @ts-nocheck
 	import type { Token } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { DataSet, Network } from 'vis-network/standalone';
 	import { fade, scale } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
@@ -89,9 +89,10 @@
 			return;
 		}
 
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName);
-		if (!user_id) {
+		
+		if (!accessToken) {
 			AddToast('Authentication required: Please log in to save lexical rules', 'error');
 			return;
 		}
@@ -102,7 +103,6 @@
 
 		if (selectedType === 'REGEX') {
 			const requestData = {
-				users_id: user_id,
 				project_name: project,
 				pairs: nonEmptyRows.map((row) => ({
 					Type: row.type.toUpperCase(),
@@ -112,7 +112,10 @@
 			try {
 				const res = await fetch('https://www.visual-compiler.co.za/api/lexing/rules', {
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
+					headers: { 
+						'Content-Type': 'application/json',
+						'Authorization': `Bearer ${accessToken}`
+					},
 					body: JSON.stringify(requestData)
 				});
 				if (!res.ok) {
@@ -127,65 +130,35 @@
 			return;
 		}
 
-		const requestData = {
-			users_id: user_id,
-			project_name: project,
-			source_code: showDefault ? DEFAULT_SOURCE_CODE : userSourceCode,
-			pairs: nonEmptyRows.map((row) => ({
-				Type: row.type.toUpperCase(),
-				Regex: row.regex
-			}))
-		};
-
-		try {
-			const storeResponse = await fetch('https://www.visual-compiler.co.za/api/lexing/code', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(requestData)
-			});
-			if (!storeResponse.ok) {
-				const errorText = await storeResponse.text();
-				throw new Error(`Server error (${storeResponse.status}): ${errorText}`);
-			}
-			submissionStatus = { show: true, success: true, message: 'Code stored successfully!' };
-			showGenerateButton = true;
-		} catch (error) {
-			console.error('Store error:', error);
-			AddToast('Connection error: Cannot reach server. Please ensure the backend is running and try again', 'error');
-		}
-
-		// Show regex action buttons after successful submit in REGEX mode
-		if (selectedType === 'REGEX' && !hasErrors) {
-			showRegexActionButtons = true;
-		}
+		// For AUTOMATA type, we don't need to store source code here since it's already stored from code-input
+		submissionStatus = { show: true, success: true, message: 'Ready for tokenization!' };
+		showGenerateButton = true;
 	}
 
 	async function generateTokens() {
 		try {
-			const user_id = localStorage.getItem('user_id');
+			const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 			const project = get(projectName);
-			if (!user_id) {
+			
+			if (!accessToken) {
 				AddToast('Authentication required: Please log in to generate tokens', 'error');
 				return;
 			}
 			if (!project) {
-                AddToast('No project selected: Please select or create a project first', 'error');
-                return;
-            }
+				AddToast('No project selected: Please select or create a project first', 'error');
+				return;
+			}
 
 			const requestData = {
-				users_id: user_id,
-				source_code: source_code,
-				project_name: project,
-				pairs: (showDefault ? editableDefaultRows : userInputRows).map((row) => ({
-					Type: row.type.toUpperCase(),
-					Regex: row.regex
-				}))
+				project_name: project
 			};
 
 			const response = await fetch('https://www.visual-compiler.co.za/api/lexing/lexer', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
 				body: JSON.stringify(requestData)
 			});
 
@@ -217,10 +190,10 @@
 
 	// Helper: Save DFA to backend
 	async function saveDfaToBackend() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
+		if (!accessToken) {
 			AddToast('Authentication required: Please log in to save automata data', 'error');
 			return;
 		}
@@ -238,7 +211,6 @@
 			transitions: [],
 			start_state: startState.trim(),
 			accepting_states: parseAcceptedStates(acceptedStates),
-			users_id: user_id,
 			project_name: project
 		};
 
@@ -261,7 +233,10 @@
 		try {
 			const response = await fetch('https://www.visual-compiler.co.za/api/lexing/dfa', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
 				body: JSON.stringify(dfa)
 			});
 			if (!response.ok) {
@@ -280,10 +255,10 @@
 		const saved = await saveDfaToBackend();
 		if (!saved) return;
 
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
+		if (!accessToken) {
 			AddToast('Authentication required: Please log in to perform tokenization', 'error');
 			return;
 		}
@@ -293,13 +268,15 @@
 			return;
 		}
 
-		// Only need to send users_id, backend loads DFA from DB
-		const body = { users_id: user_id, project_name: project };
+		const body = { project_name: project };
 
 		try {
 			const response = await fetch('https://www.visual-compiler.co.za/api/lexing/dfaToTokens', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
 				body: JSON.stringify(body)
 			});
 			if (!response.ok) {
@@ -448,29 +425,31 @@
 	}
 
 	async function showNfaDiagram() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+		if (!accessToken) {
+			AddToast('Authentication required: Please log in to generate NFA', 'error');
 			return;
 		}
 
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
-		// 1. Save DFA to backend (if not already saved)
 		const saved = await saveDfaToBackend();
 		if (!saved) return;
 
 		try {
-			// 2. Convert DFA to Regex
-			const dfaToRegexRes = await fetch('https://www.visual-compiler.co.za/api/lexing/dfaToRegex', {
+			// Convert DFA to Regex
+			const dfaToRegexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!dfaToRegexRes.ok) {
 				const errorText = await dfaToRegexRes.text();
@@ -478,11 +457,14 @@
 				return;
 			}
 
-			// 3. Convert Regex to NFA
-			const regexToNfaRes = await fetch('https://www.visual-compiler.co.za/api/lexing/regexToNFA', {
+			// Convert Regex to NFA
+			const regexToNfaRes = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!regexToNfaRes.ok) {
 				const errorText = await regexToNfaRes.text();
@@ -491,7 +473,7 @@
 			}
 			const nfaData = await regexToNfaRes.json();
 			regexNfa = adaptAutomatonForVis(nfaData.nfa);
-			currentAutomatonForModal = { data: regexNfa, isDfa: false }; // Store for modal
+			currentAutomatonForModal = { data: regexNfa, isDfa: false };
 			showNfaVis = true;
 			showDfaVis = false;
 			automataDisplay = 'NFA';
@@ -623,29 +605,31 @@
 
 	// Show DFA button handler
 	async function handleShowDfa() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+		if (!accessToken) {
+			AddToast('Authentication required: Please log in to generate DFA', 'error');
 			return;
 		}
 
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
-		// 1. Save DFA to backend (if not already saved)
 		const saved = await saveDfaToBackend();
 		if (!saved) return;
 
 		try {
-			// 2. Convert DFA to Regex
-			const regexRes = await fetch('https://www.visual-compiler.co.za/api/lexing/dfaToRegex', {
+			// Convert DFA to Regex
+			const regexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!regexRes.ok) {
 				const errorText = await regexRes.text();
@@ -653,11 +637,14 @@
 				return;
 			}
 
-			// 3. Convert Regex to DFA
-			const dfaRes = await fetch('https://www.visual-compiler.co.za/api/lexing/regexToDFA', {
+			// Convert Regex to DFA
+			const dfaRes = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!dfaRes.ok) {
 				const errorText = await dfaRes.text();
@@ -684,24 +671,27 @@
 		const saved = await saveDfaToBackend();
 		if (!saved) return;
 
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+		if (!accessToken) {
+			AddToast('Authentication required: Please log in to convert DFA', 'error');
 			return;
 		}
 
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 
 		try {
 			const response = await fetch('https://www.visual-compiler.co.za/api/lexing/dfaToRegex', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -725,23 +715,26 @@
 	let regexDfaContainer: HTMLElement;
 
 	async function handleRegexToNFA() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+		if (!accessToken) {
+			AddToast('Authentication required: Please log in to convert Regex', 'error');
 			return;
 		}
 
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 		try {
 			const response = await fetch('https://www.visual-compiler.co.za/api/lexing/regexToNFA', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -762,23 +755,26 @@
 	}
 
 	async function handleRegexToDFA() {
-		const user_id = localStorage.getItem('user_id');
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
 		const project = get(projectName); 
 
-		if (!user_id) {
-			AddToast('User not logged in.', 'error');
+		if (!accessToken) {
+			AddToast('Authentication required: Please log in to convert Regex', 'error');
 			return;
 		}
 
 		if (!project) {
-			AddToast('No project selected.', 'error');
+			AddToast('No project selected: Please select or create a project first', 'error');
 			return;
 		}
 		try {
 			const response = await fetch('https://www.visual-compiler.co.za/api/lexing/regexToDFA', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ users_id: user_id, project_name: project })
+				headers: { 
+					'Content-Type': 'application/json',
+					'Authorization': `Bearer ${accessToken}`
+				},
+				body: JSON.stringify({ project_name: project })
 			});
 			if (!response.ok) {
 				const errorText = await response.text();
@@ -1022,7 +1018,7 @@
 	            }
 	        );
 
-	        if (!response.ok) return;
+	        if (!response || !response.ok) return;
 
 	        const data = await response.json();
 	        
@@ -1053,6 +1049,51 @@
 	        console.error('Error updating inputs:', error);
 	    }
 	}
+
+	// Add event listener for AI-generated lexer rules
+    let aiLexerEventListener: (event: CustomEvent) => void;
+
+    onMount(() => {
+        // Listen for AI-generated lexer rules
+        aiLexerEventListener = (event: CustomEvent) => {
+            if (event.detail && event.detail.rules && Array.isArray(event.detail.rules)) {
+                console.log('Received AI lexer rules:', event.detail.rules);
+                
+                // Clear existing user input rows and populate with AI-generated rules
+                userInputRows = event.detail.rules.map(rule => ({
+                    type: rule.type,
+                    regex: rule.regex,
+                    error: ''
+                }));
+                
+                // Ensure we're in regex mode and not showing default
+                selectedType = 'REGEX';
+                showDefault = false;
+                
+                // Reset other states
+                showRegexActionButtons = false;
+                showGenerateButton = false;
+                submissionStatus = { show: false, success: false, message: '' };
+                
+                // Update the lexer state
+                lexerState.update(state => ({
+                    ...state,
+                    userInputRows: [...userInputRows]
+                }));
+                
+                AddToast('AI lexer rules inserted into input rows!', 'success');
+            }
+        };
+
+        window.addEventListener('ai-lexer-generated', aiLexerEventListener);
+    });
+
+    onDestroy(() => {
+        if (aiLexerEventListener) {
+            window.removeEventListener('ai-lexer-generated', aiLexerEventListener);
+        }
+    });
+
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -1138,7 +1179,7 @@
 							/>
 						</svg>
 					</button>
-					<div bind:this={regexNfaContainer} class="vis-graph-area" />
+					<div bind:this={regexNfaContainer} class="vis-graph-area"></div>
 				</div>
 				<button
 					class="submit-button"
@@ -1166,7 +1207,7 @@
 							/>
 						</svg>
 					</button>
-					<div bind:this={regexDfaContainer} class="vis-graph-area" />
+					<div bind:this={regexDfaContainer} class="vis-graph-area"></div>
 				</div>
 				<button
 					class="submit-button"
@@ -1317,7 +1358,7 @@
 				<div class="vis-heading">
 					<span class="vis-title">NFA Visualization</span>
 				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand NFA visualization to fullscreen">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -1330,14 +1371,14 @@
 						/>
 					</svg>
 				</button>
-				<div bind:this={nfaContainer} class="vis-graph-area" />
+				<div bind:this={nfaContainer} class="vis-graph-area"></div>
 			</div>
 		{:else if automataDisplay === 'DFA' && showDfaVis}
 			<div class="automata-container pretty-vis-box">
 				<div class="vis-heading">
 					<span class="vis-title">DFA Visualization</span>
 				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand DFA visualization to fullscreen">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -1350,7 +1391,7 @@
 						/>
 					</svg>
 				</button>
-				<div bind:this={dfaContainer} class="vis-graph-area" />
+				<div bind:this={dfaContainer} class="vis-graph-area"></div>
 			</div>
 		{:else if automataDisplay === 'RE' && showRegexOutput && regexRules.length > 0}
 			<div class="regex-display-container pretty-vis-box">
@@ -1381,7 +1422,7 @@
 				<div class="vis-heading">
 					<span class="vis-title">NFA Visualization (from REGEX)</span>
 				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand NFA visualization from regex to fullscreen">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -1402,7 +1443,7 @@
 				<div class="vis-heading">
 					<span class="vis-title">DFA Visualization (from REGEX)</span>
 				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand DFA visualization from regex to fullscreen">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -1423,16 +1464,28 @@
 
 
 {#if isExpanded}
-	<div class="modal-backdrop" on:click={toggleExpand} transition:fade={{ duration: 200 }}>
+	<div 
+		class="modal-backdrop" 
+		on:click={toggleExpand} 
+		on:keydown={(e) => e.key === 'Escape' && toggleExpand()}
+		role="presentation"
+		tabindex="-1"
+		transition:fade={{ duration: 200 }}
+	>
 		<div
 			class="modal-content"
 			on:click|stopPropagation
+			on:keydown|stopPropagation
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="modal-title"
+			tabindex="0"
 			transition:scale={{ duration: 250, start: 0.95 }}
 			on:introend={fitGraphToModal}
 		>
 			<div class="modal-header">
 				<div class="header-left">
-					<h3>Expanded Automaton View</h3>
+					<h3 id="modal-title">Expanded Automaton View</h3>
 				</div>
 				<div class="header-center">
 					<div class="zoom-controls">
@@ -1685,7 +1738,7 @@
 		border-radius: 6px;
 		font-size: 0.9rem;
 		font-weight: 500;
-		cursor: pointer;
+			cursor: pointer;
 		transition: background-color 0.2s ease, transform 0.2s;
 	}
 

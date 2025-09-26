@@ -24,11 +24,21 @@ vi.mock('$app/stores', () => ({
 
 const mockSuccessResponse = {
 	ok: true,
-	json: async () => ({ message: 'Success' })
+	status: 201,
+	json: async () => ({ message: 'Successfully registered user' })
 };
 const mockFailedResponse = {
 	ok: false,
 	json: async () => ({ error: 'Failed' })
+};
+const mockLoginSuccessResponse = {
+	ok: true,
+	status: 200,
+	json: async () => ({ 
+		message: 'Welcome back, halfstack! Redirecting to your workspace...',
+		id: 'user123',
+		is_admin: true
+	})
 };
 
 describe('page start up', () => {
@@ -69,7 +79,7 @@ describe('login page', () => {
 				finished: Promise.resolve(),
 				cancel: () => {}
 			}));
-		global.fetch = vi.fn().mockResolvedValue(mockSuccessResponse);
+		global.fetch = vi.fn().mockResolvedValue(mockLoginSuccessResponse);
 		render(page_comp);
 		render(toasts);
 		const username = screen.getByLabelText('Username');
@@ -88,7 +98,7 @@ describe('login page', () => {
 			})
 		});
 		await waitFor(() => {
-			expect(screen.getByText('Welcome back! Redirecting to your workspace...')).toBeInTheDocument();
+			expect(screen.getByText('Welcome back, halfstack! Redirecting to your workspace...')).toBeInTheDocument();
 		});
 	});
 
@@ -393,8 +403,9 @@ describe('login page advanced', () => {
 		
 		const mockLoginResponse = {
 			ok: true,
+			status: 200,
 			json: async () => ({ 
-				message: 'Success',
+				message: 'Welcome back, halfstack! Redirecting to your workspace...',
 				id: 'user123',
 				is_admin: true
 			})
@@ -452,8 +463,9 @@ describe('login page advanced', () => {
 		
 		const mockLoginResponse = {
 			ok: true,
+			status: 200,
 			json: async () => ({ 
-				message: 'Success',
+				message: 'Welcome back, regularuser! Redirecting to your workspace...',
 				id: 'user456',
 				is_admin: false
 			})
