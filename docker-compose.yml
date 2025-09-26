@@ -2,12 +2,11 @@ version: "3.9"
 
 services:
   frontend:
-    image: nginx:alpine
-    container_name: frontend
+    build:
+      context: ./visual-compiler/frontend
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    volumes:
-      - ./visual-compiler/frontend/frontend-build:/usr/share/nginx/html:ro
     mem_limit: 256m
     cpus: 0.5
 
