@@ -71,8 +71,9 @@
 		return $nodes;
 	})();
 
-	// Create a key that changes when display nodes change
-	$: canvasKey = displayNodes.length > 0 ? `${displayNodes.length}-${displayNodes.map(n => `${n.id}-${n.position.x}-${n.position.y}`).join('|')}` : 'empty';
+	// Create a key that only changes when we truly need to recreate the canvas
+	// Avoid recreation when just adding nodes - only recreate when clearing canvas
+	$: canvasKey = displayNodes.length === 0 ? 'empty-canvas' : 'active-canvas';
 
 	let canvas_el: any;
 	let last_click = -Infinity;
