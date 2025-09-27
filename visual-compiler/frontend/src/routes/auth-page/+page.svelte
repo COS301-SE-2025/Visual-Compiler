@@ -568,9 +568,10 @@
 
 		<main class="main-content">
 			<div class="feature-quote">
-				<h1 class="app-title">Visual Compiler</h1>
+				<img src="/visual-compiler.png" alt="Visual Compiler" class="project-image"/>
 			</div>
 		</main>
+
 	</div>
 </div>
 
@@ -967,11 +968,9 @@
 		}
 	}
 
-	.app-title {
-		font-size: 3rem;
-		font-weight: 900;
-		margin: 0 auto;
-		line-height: 1.1;
-		color: #1d3159;
+	.project-image {
+		width: 612px;
+		height: auto;
 	}
+
 </style>
