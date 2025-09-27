@@ -892,9 +892,11 @@
 
 		<!-- Recenter Button -->
 		{#if $nodes.length > 0 && !isRecentering}
-			<button class="recenter-button" on:click={recenterCanvas} aria-label="Recenter Canvas" title="Recenter all nodes and connections">
-				<span>Recenter</span>
-			</button>
+			   <button class="recenter-button icon-only" on:click={recenterCanvas} aria-label="Recenter Canvas" title="Recenter all nodes and connections">
+				   <svg width="32" height="32" viewBox="0 0 296.991 296.991" fill="#ffffff" xmlns="http://www.w3.org/2000/svg" stroke="#ffffff">
+					   <path d="M281.991,133.496h-13.445c-6.8-54.74-50.31-98.25-105.05-105.05V15c0-8.284-6.716-15-15-15c-8.284,0-15,6.716-15,15v13.446 c-54.74,6.8-98.25,50.31-105.05,105.05H15.001c-8.284,0-15,6.716-15,15c0,8.284,6.716,15,15,15h13.445 c6.8,54.74,50.31,98.25,105.05,105.05v13.445c0,8.284,6.716,15,15,15c8.284,0,15-6.716,15-15v-13.445 c54.74-6.8,98.25-50.31,105.05-105.05h13.445c8.284,0,15-6.716,15-15C296.991,140.212,290.275,133.496,281.991,133.496z M163.496,238.232V191c0-8.284-6.716-15-15-15c-8.284,0-15,6.716-15,15v47.232c-38.172-6.36-68.376-36.564-74.736-74.736h47.231 c8.284,0,15-6.716,15-15c0-8.284-6.716-15-15-15H58.76c6.36-38.172,36.564-68.376,74.736-74.736v47.231c0,8.284,6.716,15,15,15 c8.284,0,15-6.716,15-15V58.76c38.172,6.36,68.376,36.564,74.736,74.736h-47.231c-8.284,0-15,6.716-15,15c0,8.284,6.716,15,15,15 h47.231C231.872,201.668,201.667,231.872,163.496,238.232z"></path>
+				   </svg>
+			   </button>
 		{/if}
 
 		{#if show_drag_tip}
@@ -1105,24 +1107,30 @@
 	.save-button:hover {
 		background-color: #eef2f7;
 	}
-	.clear-button {
-		background-color: transparent;
-		color: #dc2626;
-		border: none;
-		border-radius: 50%;
-		width: 32px;
-		height: 32px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		transition: background-color 0.2s ease;
-		margin-left: 0.25rem;
-	}
-	.clear-button:hover {
-		background-color: #fee2e2;
-	}
-
+	   .recenter-button {
+		   position: absolute;
+		   bottom: 1rem;
+		   left: 1rem;
+		   width: 56px;
+		   height: 56px;
+		   background: linear-gradient(135deg, #001A6E 0%, #041a47 100%);
+		   border: none;
+		   border-radius: 12px;
+		   cursor: pointer;
+		   box-shadow: 0 2px 8px rgba(4, 26, 71, 0.15);
+		   transition: all 0.2s ease;
+		   z-index: 100;
+		   display: flex;
+		   align-items: center;
+		   justify-content: center;
+		   padding: 0;
+	   }
+   .recenter-button.icon-only svg {
+	   display: block;
+	   margin: auto;
+	   width: 32px;
+	   height: 32px;
+   }
 	.recenter-button {
 		position: absolute;
 		bottom: 1rem;
