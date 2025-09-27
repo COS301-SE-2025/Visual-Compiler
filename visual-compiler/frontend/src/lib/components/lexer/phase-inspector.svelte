@@ -66,11 +66,8 @@
 		}
 
 		if (rowsToValidate.length === 1 && !rowsToValidate[0].type && !rowsToValidate[0].regex) {
-			submissionStatus = {
-				show: true,
-				success: false,
-				message: 'Please fill in both Type and Regular Expression'
-			};
+			// Replace custom status with AddToast
+			AddToast('Please fill in both Type and Regular Expression', 'error');
 			return;
 		}
 
@@ -81,11 +78,8 @@
 		}
 
 		if (hasErrors) {
-			submissionStatus = {
-				show: true,
-				success: false,
-				message: 'Please fix the errors before submitting'
-			};
+			// Replace custom status with AddToast
+			AddToast('Please fix the errors before submitting', 'error');
 			return;
 		}
 
@@ -122,7 +116,8 @@
 					const errorText = await res.text();
 					throw new Error(errorText);
 				}
-				submissionStatus = { show: true, success: true, message: 'Rules stored successfully!' };
+				// Replace custom status with AddToast
+				AddToast('Rules stored successfully!', 'success');
 				showRegexActionButtons = true;
 			} catch (error) {
 				AddToast('Save failed: Unable to store lexical rules. Please check your connection and try again', 'error');
@@ -130,8 +125,8 @@
 			return;
 		}
 
-		// For AUTOMATA type, we don't need to store source code here since it's already stored from code-input
-		submissionStatus = { show: true, success: true, message: 'Ready for tokenization!' };
+		// For AUTOMATA type
+		AddToast('Ready for tokenization!', 'success');
 		showGenerateButton = true;
 	}
 
@@ -177,11 +172,8 @@
 			});
 
 			showGenerateButton = false;
-			submissionStatus = {
-				show: true,
-				success: true,
-				message: data.message || 'Tokens generated successfully!'
-			};
+			// Replace custom status with AddToast
+			AddToast(data.message || 'Tokens generated successfully!', 'success');
 		} catch (error) {
 			console.error('Generate tokens error:', error);
 			AddToast('Tokenization failed: Unable to generate tokens from your lexical rules', 'error');
@@ -298,7 +290,7 @@
 	function handleInputChange() {
 		showGenerateButton = false;
 		showRegexActionButtons = false;
-		submissionStatus = { show: false, success: false, message: '' };
+		// Remove the custom submissionStatus reset since we're using AddToast now
 		
 		// Update the store when inputs change
 		lexerState.update(state => ({
@@ -1283,15 +1275,6 @@
 						</div>
 					{/if}
 				</div>
-				{#if submissionStatus.show}
-					<div
-						class="status-message"
-						class:success={submissionStatus.success === true}
-						class:info={submissionStatus.message === 'info'}
-					>
-						{submissionStatus.message}
-					</div>
-				{/if}
 			</div>
 		{/if}
 	{:else if selectedType === 'AUTOMATA'}
@@ -1747,6 +1730,7 @@
 		transform: translateY(-2px);
 	}
 
+	/* REMOVE these unused status message styles since we're using AddToast:
 	.status-message {
 		text-align: center;
 		padding: 0.5rem 1rem;
@@ -1776,6 +1760,7 @@
 			opacity: 1;
 		}
 	}
+	*/
 
 	.automaton-btn-row {
 		display: flex;
