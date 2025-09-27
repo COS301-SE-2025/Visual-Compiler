@@ -22,6 +22,7 @@
 	let submissionStatus = { show: false, success: false, message: '' };
 	let showGenerateButton = false;
 	let showRegexActionButtons = false;
+	let regexRulesSubmitted = false;
 
 	// New state for the expandable modal
 	let isExpanded = false;
@@ -124,6 +125,7 @@
 				}
 				submissionStatus = { show: true, success: true, message: 'Rules stored successfully!' };
 				showRegexActionButtons = true;
+				regexRulesSubmitted = true;
 			} catch (error) {
 				AddToast('Save failed: Unable to store lexical rules. Please check your connection and try again', 'error');
 			}
@@ -298,6 +300,7 @@
 	function handleInputChange() {
 		showGenerateButton = false;
 		showRegexActionButtons = false;
+		regexRulesSubmitted = false;
 		submissionStatus = { show: false, success: false, message: '' };
 		
 		// Update the store when inputs change
@@ -495,6 +498,7 @@
 	function selectType(type: 'AUTOMATA' | 'REGEX') {
 		selectedType = type;
 		showRegexActionButtons = false;
+		regexRulesSubmitted = false;
 		
 		// Reset visualization states only
 		showNfaVis = false;
@@ -1072,6 +1076,7 @@
                 
                 // Reset other states
                 showRegexActionButtons = false;
+                regexRulesSubmitted = false;
                 showGenerateButton = false;
                 submissionStatus = { show: false, success: false, message: '' };
                 
@@ -1268,21 +1273,35 @@
 				{/if}
 				<div class="button-stack">
 					<button class="submit-button" on:click={handleSubmit}> Submit </button>
-					{#if showRegexActionButtons}
-						<div class="regex-action-buttons">
-							<button class="generate-button" on:click={generateTokens}>Generate Tokens</button>
-							<button
-								class="generate-button"
-								on:click={handleRegexToNFA}
-								title="Convert Regular Expression to a NFA">NFA</button
-							>
-							<button
-								class="generate-button"
-								on:click={handleRegexToDFA}
-								title="Convert Regular Expression to a DFA">DFA</button
-							>
-						</div>
-					{/if}
+					<div class="regex-action-buttons">
+						<button 
+							class="generate-button" 
+							class:disabled={!regexRulesSubmitted}
+							disabled={!regexRulesSubmitted}
+							on:click={generateTokens}
+							title={regexRulesSubmitted ? "Generate tokens from submitted rules" : "Submit regular expressions first"}
+						>
+							Generate Tokens
+						</button>
+						<button
+							class="generate-button"
+							class:disabled={!regexRulesSubmitted}
+							disabled={!regexRulesSubmitted}
+							on:click={handleRegexToNFA}
+							title={regexRulesSubmitted ? "Convert Regular Expression to a NFA" : "Submit regular expressions first"}
+						>
+							NFA
+						</button>
+						<button
+							class="generate-button"
+							class:disabled={!regexRulesSubmitted}
+							disabled={!regexRulesSubmitted}
+							on:click={handleRegexToDFA}
+							title={regexRulesSubmitted ? "Convert Regular Expression to a DFA" : "Submit regular expressions first"}
+						>
+							DFA
+						</button>
+					</div>
 				</div>
 				{#if submissionStatus.show}
 					<div
@@ -1743,9 +1762,25 @@
 		transition: background-color 0.2s ease, transform 0.2s;
 	}
 
-	.generate-button:hover {
+	.generate-button:hover:not(:disabled) {
 		background: #5a6268;
 		transform: translateY(-2px);
+	}
+
+	.generate-button:disabled,
+	.generate-button.disabled {
+		background: #d6d8db;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
+	}
+
+	.generate-button:disabled:hover,
+	.generate-button.disabled:hover {
+		background: #d6d8db;
+		color: #6c757d;
+		transform: none;
 	}
 
 	.status-message {
@@ -2107,9 +2142,25 @@
 		color: #ffffff;
 	}
 
-	:global(html.dark-mode) .generate-button:hover,
-	:global(html.dark-mode) .action-btn:hover {
+	:global(html.dark-mode) .generate-button:hover:not(:disabled),
+	:global(html.dark-mode) .action-btn:hover:not(:disabled) {
 		background: #002a8e;
+	}
+
+	:global(html.dark-mode) .generate-button:disabled,
+	:global(html.dark-mode) .generate-button.disabled {
+		background: #495057;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
+	}
+
+	:global(html.dark-mode) .generate-button:disabled:hover,
+	:global(html.dark-mode) .generate-button.disabled:hover {
+		background: #495057;
+		color: #6c757d;
+		transform: none;
 	}
 
 	:global(html.dark-mode) .automaton-btn {

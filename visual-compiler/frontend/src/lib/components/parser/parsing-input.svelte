@@ -625,9 +625,15 @@
 
     <div class="button-container">
         <button class="submit-button" on:click={handleSubmitGrammar}>Submit Grammar</button>
-        {#if is_grammar_submitted}
-            <button class="submit-button" on:click={generateSyntaxTree}>Generate Syntax Tree</button>
-        {/if}
+        <button 
+            class="submit-button generate-button" 
+            class:disabled={!is_grammar_submitted}
+            disabled={!is_grammar_submitted}
+            on:click={generateSyntaxTree}
+            title={is_grammar_submitted ? "Generate syntax tree from submitted grammar" : "Submit grammar first"}
+        >
+            Generate Syntax Tree
+        </button>
     </div>
 </div>
 
@@ -889,20 +895,42 @@
         gap: 1rem;
         margin-top: 1rem;
     }
-    .submit-button {
+    .submit-button,
+    .generate-button {
         padding: 0.6rem 1.5rem;
         background: #BED2E6;
-        color: 000000;
+        color: #000000;
         border: none;
         border-radius: 6px;
         font-size: 0.9rem;
         font-weight: 500;
         cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+        margin-top: 1rem;
     }
 
-    .submit-button:hover {
+    .submit-button:hover:not(:disabled),
+    .generate-button:hover:not(:disabled) {
         background: #a8bdd1;
         transform: translateY(-2px);
+    }
+
+    .submit-button:disabled,
+    .generate-button:disabled,
+    .generate-button.disabled {
+        background: #d6d8db;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+    }
+
+    .submit-button:disabled:hover,
+    .generate-button:disabled:hover,
+    .generate-button.disabled:hover {
+        background: #d6d8db;
+        color: #6c757d;
+        transform: none;
     }
 
     /* Dark Mode Styles */
@@ -946,9 +974,34 @@
         border-color: #60a5fa;
         color: #60a5fa;
     }
-    :global(html.dark-mode) .submit-button {
+    :global(html.dark-mode) .submit-button,
+    :global(html.dark-mode) .generate-button {
         background-color: #001A6E;
         color: #ffffff;
+    }
+
+    :global(html.dark-mode) .submit-button:hover:not(:disabled),
+    :global(html.dark-mode) .generate-button:hover:not(:disabled) {
+        background-color: #002a8e;
+        transform: translateY(-2px);
+    }
+
+    :global(html.dark-mode) .submit-button:disabled,
+    :global(html.dark-mode) .generate-button:disabled,
+    :global(html.dark-mode) .generate-button.disabled {
+        background: #495057;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .submit-button:disabled:hover,
+    :global(html.dark-mode) .generate-button:disabled:hover,
+    :global(html.dark-mode) .generate-button.disabled:hover {
+        background: #495057;
+        color: #6c757d;
+        transform: none;
     }
     :global(html.dark-mode) .example-btn {
         background: linear-gradient(135deg, #1d4ed8, #2563eb);

@@ -401,17 +401,23 @@
 					<button class="add-line" on:click={() => addLine(ruleIndex)}>+ Add Line</button>
 				</div>
 			{/each}
-			<div>
-				<button class="add-rule-btn" on:click={addRule}>+ Add New Rule</button>
-				<button class="action-btn submit" on:click={handleSubmit}> Submit Rules </button>
+		</div>
+		
+		<div class="button-container">
+			<button class="add-rule-btn" on:click={addRule}>+ Add New Rule</button>
+			<div class="action-buttons">
+				<button class="action-btn submit" on:click={handleSubmit}>Submit Rules</button>
+				<button 
+					class="action-btn submit" 
+					class:disabled={!isSubmitted}
+					disabled={!isSubmitted}
+					on:click={handleTranslate}
+					title={isSubmitted ? "Translate code using submitted rules" : "Submit rules first"}
+				>
+					Translate Code
+				</button>
 			</div>
 		</div>
-	</div>
-
-	<div class="actions">
-		{#if isSubmitted}
-			<button class="action-btn translate" on:click={handleTranslate}> Translate Code </button>
-		{/if}
 	</div>
 </div>
 
@@ -545,6 +551,7 @@
 	.add-line:hover,
 	.add-rule-btn:hover {
 		border-color: #001a6e;
+		transform: translateY(-2px);
 	}
 	.section-heading {
 		color: #001a6e;
@@ -607,6 +614,20 @@
 		gap: 1.5rem;
 	}
 
+	.button-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		margin-top: 1.5rem;
+	}
+
+	.action-buttons {
+		display: flex;
+		justify-content: center;
+		gap: 1rem;
+	}
+
 	.rule-block {
 		background-color: #f5f5f5;
 		border-radius: 0.5rem;
@@ -659,35 +680,42 @@
 	}
 
 	.action-btn {
-		padding: 0.5rem 1rem;
+		padding: 0.6rem 1.5rem;
 		border: none;
-		border-radius: 0.25rem;
+		border-radius: 6px;
 		cursor: pointer;
 		font-size: 0.9rem;
-		font-weight: 600;
-		transition: background-color 0.2s, transform 0.1s;
-		width: 45%;
+		font-weight: 500;
+		transition: background-color 0.2s, transform 0.2s;
+		width: 200px;
+		max-width: 100%;
 	}
 
 	.add-rule-btn {
+		display: flex;
 		justify-content: center;
+		align-items: center;
 		gap: 0.5rem;
 		background-color: #eef2f7;
 		color: #001a6e;
 		border: 1px dashed #c0c7d3;
-		padding: 0.5rem 1rem;
+		padding: 0.6rem 1.5rem;
 		border-radius: 6px;
+		font-size: 0.9rem;
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.2s ease;
-		width: 45%;
-		margin-right: 1rem;
-		margin-left: 0.8rem;
+		width: 200px;
+		max-width: 100%;
 	}
 
 	.action-btn:hover,
 	.submit:hover {
-		background-color: #1a317d;
+		transform: translateY(-2px);
+	}
+
+	.submit:hover {
+		background-color: #a8bdd1;
 	}
 
 	.remove-btn,
@@ -723,34 +751,38 @@
 		background-color: transparent;
 	}
 
-	.actions {
-		display: flex;
-		gap: 1rem;
-		padding-top: 1rem;
-	}
-
 	.submit {
-		background-color: #BED2E6;
-		color: 000000;
+		background: #BED2E6;
+		color: #000000;
+		border: none;
+		border-radius: 6px;
+		font-size: 0.9rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 	}
 
-	.submit:hover {
-		background-color: #a8bdd1;
+	.submit:hover:not(:disabled) {
+		background: #a8bdd1;
 		transform: translateY(-2px);
 	}
 
-	.submit:disabled {
-		background-color: #cccccc;
-		color: #666666;
-		cursor: default;
+	.submit:disabled,
+	.translate:disabled,
+	.translate.disabled {
+		background: #d6d8db;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
 	}
 
-	.translate {
-		background-color: var(--accent-orange);
-		color: white;
-	}
-	.translate:hover {
-		background-color: rgb(98, 102, 109);
+	.submit:disabled:hover,
+	.translate:disabled:hover,
+	.translate.disabled:hover {
+		background: #d6d8db;
+		color: #6c757d;
+		transform: none;
 	}
 
 	/* --- Dark Mode --- */
@@ -786,20 +818,35 @@
 	:global(html.dark-mode) .example-btn {
 		background: linear-gradient(135deg, #1d4ed8, #2563eb);
 	}
-	:global(html.dark-mode) .submit {
-		background-color: #001A6E; 
-		color: #ffffff;            
+	:global(html.dark-mode) .submit,
+	:global(html.dark-mode) .translate {
+		background-color: #001A6E;
+		color: #ffffff;
 	}
 
-	:global(html.dark-mode) .submit:hover {
+	:global(html.dark-mode) .submit:hover:not(:disabled),
+	:global(html.dark-mode) .translate:hover:not(:disabled) {
 		background-color: #002a8e;
 	}
 
-	:global(html.dark-mode) .submit:disabled {
-		background-color: #2d3748;
-		color: #9ca3af;
-		border-color: #4a5568;
+	:global(html.dark-mode) .submit:disabled,
+	:global(html.dark-mode) .translate:disabled,
+	:global(html.dark-mode) .translate.disabled {
+		background-color: #495057;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
 	}
+
+	:global(html.dark-mode) .submit:disabled:hover,
+	:global(html.dark-mode) .translate:disabled:hover,
+	:global(html.dark-mode) .translate.disabled:hover {
+		background-color: #495057;
+		color: #6c757d;
+		transform: none;
+	}
+	
 	/* Add section-header style */
 	.section-header {
 		display: flex;
