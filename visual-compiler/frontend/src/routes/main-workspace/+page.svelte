@@ -171,7 +171,7 @@
 
 		// Setup theme and UI state
 		document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
-		if (!localStorage.getItem('hasSeenDragTip')) {
+		if (!sessionStorage.getItem('hasSeenDragTip')) {
 			show_drag_tip = true;
 		}
 
@@ -749,7 +749,7 @@
 
 	// --- SAVE PROJECT FUNCTIONALITY ---
 	async function saveProject() {
-		const user_id = localStorage.getItem('user_id');
+		const user_id = sessionStorage.getItem('user_id');
 		if (!user_id) {
 			AddToast('Please log in to save your project.', 'error');
 			return;
@@ -959,7 +959,7 @@
 	}
 
 	function dismissDragTip() {
-		localStorage.setItem('hasSeenDragTip', 'true');
+		sessionStorage.setItem('hasSeenDragTip', 'true');
 		show_drag_tip = false;
 	}
 

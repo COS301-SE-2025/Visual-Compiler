@@ -1008,7 +1008,7 @@
 
 	// Add function to update inputs from project data
 	async function updateInputsFromProject() {
-	    const userId = localStorage.getItem('user_id');
+	    const userId = sessionStorage.getItem('user_id');
 	    const project = get(projectName);
 	    
 	    if (!userId || !project) return;

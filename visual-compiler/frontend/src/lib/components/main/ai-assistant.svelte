@@ -50,9 +50,9 @@
         const project = get(projectName);
         const accessToken = sessionStorage.getItem('access_token') || 
                            sessionStorage.getItem('authToken') || 
-                           localStorage.getItem('access_token') || 
-                           localStorage.getItem('authToken') || 
-                           localStorage.getItem('token');
+                           sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           sessionStorage.getItem('token');
         
         if (!accessToken || !project) {
             throw new Error('Missing authentication or project');
@@ -84,9 +84,9 @@
         const project = get(projectName);
         const accessToken = sessionStorage.getItem('access_token') || 
                            sessionStorage.getItem('authToken') || 
-                           localStorage.getItem('access_token') || 
-                           localStorage.getItem('authToken') || 
-                           localStorage.getItem('token');
+                           sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           sessionStorage.getItem('token');
         
         if (!accessToken || !project) {
             throw new Error('Missing authentication or project');
@@ -122,9 +122,9 @@
         const project = get(projectName);
         const accessToken = sessionStorage.getItem('access_token') || 
                            sessionStorage.getItem('authToken') || 
-                           localStorage.getItem('access_token') || 
-                           localStorage.getItem('authToken') || 
-                           localStorage.getItem('token');
+                           sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           sessionStorage.getItem('token');
         
         if (!accessToken || !project) {
             throw new Error('Missing authentication or project');
@@ -379,9 +379,9 @@
         const project = get(projectName);
         const accessToken = sessionStorage.getItem('access_token') || 
                            sessionStorage.getItem('authToken') || 
-                           localStorage.getItem('access_token') || 
-                           localStorage.getItem('authToken') || 
-                           localStorage.getItem('token');
+                           sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           sessionStorage.getItem('token');
         
         if (!accessToken || !project) {
             AddToast('Unable to auto-submit: Missing authentication or project', 'error');
@@ -433,9 +433,9 @@
         
         const accessToken = sessionStorage.getItem('access_token') || 
                            sessionStorage.getItem('authToken') || 
-                           localStorage.getItem('access_token') || 
-                           localStorage.getItem('authToken') || 
-                           localStorage.getItem('token');
+                           sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           sessionStorage.getItem('token');
         
         if (!accessToken) {
             AddToast('Authentication required: Please log in to ask questions', 'error');
@@ -538,9 +538,9 @@
         
         const accessToken = sessionStorage.getItem('access_token') || 
                            sessionStorage.getItem('authToken') || 
-                           localStorage.getItem('access_token') || 
-                           localStorage.getItem('authToken') || 
-                           localStorage.getItem('token');
+                           sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           sessionStorage.getItem('token');
         
         console.log('=== AI Generation Debug Info ===');
         console.log('Phase:', phase);

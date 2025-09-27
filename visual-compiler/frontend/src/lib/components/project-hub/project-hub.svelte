@@ -42,7 +42,7 @@
 	}
 
 	async function fetchProjects() {
-		const userId = localStorage.getItem('user_id');
+		const userId = sessionStorage.getItem('user_id');
 		if (!userId) return;
 
 		try {
@@ -106,7 +106,7 @@
 	}
 
 	async function selectProject(selectedProjectName: string) {
-		const userId = localStorage.getItem('user_id');
+		const userId = sessionStorage.getItem('user_id');
 		if (!userId) {
 			AddToast('Please log in to select a project', 'error');
 			return;
@@ -215,7 +215,7 @@
 
 	async function handleProjectNameConfirm(event: CustomEvent<string>) {
 		const newProjectName = event.detail;
-		const userId = localStorage.getItem('user_id');
+		const userId = sessionStorage.getItem('user_id');
 		if (!userId) return;
 
 		try {
@@ -284,7 +284,7 @@
 	 */
 	async function confirmDelete() {
 		console.log(`Confirmed deletion of project: ${projectToDelete}`);
-		const userId = localStorage.getItem('user_id');
+		const userId = sessionStorage.getItem('user_id');
 		if (!userId) return;
 
 		try {
@@ -328,7 +328,7 @@
 	}
 
 	onMount(() => {
-		const storedUserId = localStorage.getItem('user_id');
+		const storedUserId = sessionStorage.getItem('user_id');
 		userName = storedUserId || 'Guest';
 		
 		// Check if there's already a project loaded
