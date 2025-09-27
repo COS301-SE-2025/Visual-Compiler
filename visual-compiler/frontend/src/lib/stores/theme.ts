@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 
-const stored_theme = typeof localStorage !== 'undefined' ? localStorage.getItem('vc-theme') : null;
+const stored_theme = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('vc-theme') : null;
 const initial_theme = stored_theme === 'dark' ? 'dark' : 'light';
 
 export const theme = writable<'light' | 'dark'>(initial_theme);
@@ -14,7 +14,7 @@ export function ToggleTheme() {
 		const new_theme = current === 'light' ? 'dark' : 'light';
 		// This toggles the class that our custom CSS will use.
 		document.documentElement.classList.toggle('dark-mode', new_theme === 'dark');
-		localStorage.setItem('vc-theme', new_theme);
+		sessionStorage.setItem('vc-theme', new_theme);
 		return new_theme;
 	});
 }
