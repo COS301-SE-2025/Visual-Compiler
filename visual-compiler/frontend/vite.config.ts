@@ -6,6 +6,7 @@ import { svelte } from '@sveltejs/vite-plugin-svelte';
 export default defineConfig(({ mode }) => ({
 	...(mode === 'development' && {
 		server: {
+			 host: '0.0.0.0',
 			allowedHosts: [
 				'visual-compiler-alb-1542446286.eu-north-1.elb.amazonaws.com',
 				'visual-compiler.co.za',

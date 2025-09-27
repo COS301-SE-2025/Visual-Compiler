@@ -71,7 +71,14 @@
 				}));
 			}
 		} catch (error) {
-			console.error('Error fetching projects:', error);
+			if ((error as Error).message == "Failed to fetch") {
+					AddToast(`Service temporarily unavailable. Please try again later.`, 'error');
+
+				}else{
+					AddToast(`Login error: ${(error as Error).message}. Please check your connection and try again`, 'error');
+
+				}
+		
 			recentProjects = []; // Reset to empty array on error
 		}
 	}
@@ -262,7 +269,14 @@
 			
 			handleClose();
 		} catch (error) {
-			console.error('Error saving project:', error);
+			if ((error as Error).message == "Failed to fetch") {
+					AddToast(`Service temporarily unavailable. Please try again later.`, 'error');
+					return;
+				}else{
+					AddToast(`Login error: ${(error as Error).message}. Please check your connection and try again`, 'error');
+					return;
+				}
+		
 		}
 	}
 
@@ -283,7 +297,6 @@
 	 * @description Proceeds with the deletion after user confirmation.
 	 */
 	async function confirmDelete() {
-		console.log(`Confirmed deletion of project: ${projectToDelete}`);
 		const userId = localStorage.getItem('user_id');
 		if (!userId) return;
 
@@ -305,7 +318,6 @@
 			}
 
 			const data = await response.json();
-			console.log('Project deleted successfully:', data);
 
 			// Remove from UI list after successful deletion
 			recentProjects = recentProjects.filter((p) => p.name !== projectToDelete);
@@ -320,7 +332,14 @@
 			showDeleteConfirmPrompt = false;
 			projectToDelete = '';
 		} catch (error) {
-			console.error('Error deleting project:', error);
+			if ((error as Error).message == "Failed to fetch") {
+					AddToast(`Service temporarily unavailable. Please try again later.`, 'error');
+	
+				}else{
+					AddToast(`Login error: ${(error as Error).message}. Please check your connection and try again`, 'error');
+
+				}
+		
 			// Still close the modal even if delete fails
 			showDeleteConfirmPrompt = false;
 			projectToDelete = '';

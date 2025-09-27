@@ -240,7 +240,11 @@
         await tick();
     } catch (error) {
         console.error('Request failed:', error); // Debug log
-        AddToast(`Save failed: ${(error as Error).message}. Please check your connection and try again`, 'error');
+		if ((error as Error).message == "Failed to fetch") {
+				AddToast(`Service temporarily unavailable. Please try again later.`, 'error');
+		}else{
+				AddToast(`Save failed: ${(error as Error).message}. Please check your connection and try again`, 'error');
+		}
     }
 }
 	// --- NEW FUNCTION TO HANDLE PROJECT SELECTION ---

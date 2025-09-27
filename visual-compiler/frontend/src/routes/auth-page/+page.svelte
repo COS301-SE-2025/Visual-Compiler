@@ -94,7 +94,13 @@
 				active_tab = 'login';
 			}
 		} catch (error) {
-			AddToast(`Registration error: ${(error as Error).message}. Please check your connection and try again`, 'error');
+			if ((error as Error).message == "Failed to fetch") {
+					AddToast(`Service temporarily unavailable. Please try again later.`, 'error');
+					return;
+				}else{
+					AddToast(`Login error: ${(error as Error).message}. Please check your connection and try again`, 'error');
+					return;
+				}
 		}
 	}
 
@@ -175,7 +181,12 @@
 				await goto('/main-workspace');
 			}
 		} catch (error) {
-			AddToast(`Login error: ${(error as Error).message}. Please check your connection and try again`, 'error');
+			if ((error as Error).message == "Failed to fetch") {
+				AddToast(`Service temporarily unavailable. Please try again later.`, 'error');
+			}else{
+				AddToast(`Login error: ${(error as Error).message}. Please check your connection and try again`, 'error');
+			}
+			
 		}
 	}
 
@@ -272,6 +283,13 @@
 					projectName.set(guestProjectName);
 				}
 			} catch (projectError) {
+				if ((projectError as Error).message == "Failed to fetch") {
+					AddToast(`Service temporarily unavailable. Please try again later.`, 'error');
+					return;
+				}else{
+					AddToast(`Login error: ${(projectError as Error).message}. Please check your connection and try again`, 'error');
+					return;
+				}
 				console.warn('Error creating guest project:', projectError);
 				// Continue with guest login even if project creation fails
 				// Still set the project name for display purposes
