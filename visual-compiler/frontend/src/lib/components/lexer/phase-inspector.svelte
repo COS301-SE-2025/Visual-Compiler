@@ -1137,24 +1137,25 @@
 
 		{#if selectedType && !showDefault}
 			<button
-				class="default-toggle-btn"
+				class="option-btn example-btn"
 				on:click={insertDefault}
 				type="button"
-				aria-label="Insert default input"
-				title="Insert default input"
+				aria-label="Show example code"
+				title="Show example code"
 			>
-				<span class="icon">🪄</span>
+				Show Example
 			</button>
+
 		{/if}
 		{#if selectedType && showDefault}
 			<button
-				class="default-toggle-btn selected"
+				class="option-btn example-btn selected"
 				on:click={removeDefault}
 				type="button"
-				aria-label="Remove default input"
-				title="Remove default input"
+				aria-label="Restore your input"
+				title="Restore your input"
 			>
-				<span class="icon">🧹</span>
+				Restore Input
 			</button>
 		{/if}
 	</div>
@@ -1808,31 +1809,44 @@
 		background: #f5f8fd;
 	}
 
-	.default-toggle-btn {
-		margin-left: 1.2rem;
-		padding: 0.4rem 0.7rem;
-		border-radius: 50%;
-		border: 2px solid #e5e7eb;
-		background: white;
-		color: #041a47;
-		cursor: pointer;
-		transition: all 0.2s ease;
+	.option-btn {
 		display: flex;
 		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 100%;
+		max-width: 150px;
 		justify-content: center;
-		height: 2.3rem;
-		width: 2.3rem;
+		margin-left: 1rem;
 	}
 
-	.default-toggle-btn.selected {
-		background: #d0e2ff;
-		border-color: #041a47;
+	.example-btn {
+		background: linear-gradient(135deg, #1e40af, #3b82f6);
 	}
 
-	.default-toggle-btn:hover,
-	.default-toggle-btn:focus {
-		background: #f5f8fd;
-		border-color: #7da2e3;
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+	}
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+	}
+
+	.option-btn.selected {
+		background: linear-gradient(135deg, #1e40af, #3b82f6);
 	}
 
 	.icon {
@@ -2115,21 +2129,13 @@
 		background: rgba(45, 55, 72, 0.5);
 	}
 
-	:global(html.dark-mode) .default-toggle-btn {
-		background: transparent;
-		color: #cbd5e1;
-		border-color: #4a5568;
+	:global(html.dark-mode) .example-btn {
+		background: linear-gradient(135deg, #1d4ed8, #2563eb);
 	}
 
-	:global(html.dark-mode) .default-toggle-btn.selected {
-		background: #2d3748;
-		border-color: #63b3ed;
-		color: #e2e8f0;
-	}
-
-	:global(html.dark-mode) .default-toggle-btn:hover {
-		background: rgba(45, 55, 72, 0.5);
-		border-color: #63b3ed;
+	:global(html.dark-mode) .option-btn.selected {
+		background: linear-gradient(135deg, #059669, #10b981);
+		border-color: #059669;
 	}
 
 	:global(html.dark-mode) .vis-heading,

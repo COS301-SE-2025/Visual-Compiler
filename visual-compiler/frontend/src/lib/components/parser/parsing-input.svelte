@@ -544,14 +544,14 @@
         <div class="grammar-header">
             <h3>Context-Free Grammar</h3>
             <button
-                class="default-toggle-btn"
+                class="option-btn example-btn"
                 class:selected={show_default_grammar}
                 on:click={show_default_grammar ? removeDefaultGrammar : insertDefaultGrammar}
                 type="button"
-                aria-label={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
-                title={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
+                aria-label={show_default_grammar ? 'Restore your input' : 'Show context-free grammar example'}
+                title={show_default_grammar ? 'Restore your input' : 'Show context-free grammar example'}
             >
-                <span class="icon">{show_default_grammar ? '🧹' : '🪄'}</span>
+                {show_default_grammar ? 'Restore Input' : 'Show Example'}
             </button>
         </div>
 
@@ -710,38 +710,43 @@
         color: #001a6e;
         font-family: 'Times New Roman';
     }
-    .default-toggle-btn {
-        background: white;
-        border: 2px solid #e5e7eb;
-        color: #001a6e;
-        font-size: 1.2rem;
-        cursor: pointer;
-        transition:
-            background 0.2s,
-            border-color 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 2.2rem;
-        width: 2.2rem;
-        border-radius: 50%;
-    }
-    .default-toggle-btn.selected {
-        background: #d0e2ff;
-        border-color: #003399;
-        box-shadow: 0 0 0 2px rgba(0, 51, 153, 0.3);
-        font-weight: bold;
-        transform: scale(1.05);
-    }
-    .default-toggle-btn:hover {
-        background: #f5f8fd;
-        border-color: #7da2e3;
-    }
-    .icon {
-        font-size: 1.3rem;
-        line-height: 1;
-        pointer-events: none;
-    }
+    .option-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 100%;
+		max-width: 150px;
+		justify-content: center;
+		margin-left: 1rem;
+	}
+
+	.example-btn {
+		background: linear-gradient(135deg, #1e40af, #3b82f6);
+	}
+
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+	}
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+	}
+
+	
 
     .top-inputs {
         display: flex;
@@ -945,22 +950,8 @@
         background-color: #001A6E;
         color: #ffffff;
     }
-    :global(html.dark-mode) .default-toggle-btn {
-        background-color: #2d3748;
-        border-color: #4a5568;
-        color: #d1d5db;
-    }
-    :global(html.dark-mode) .default-toggle-btn.selected {
-        background-color: #001a6e;
-        border-color: #60a5fa;
-        color: #e0e7ff;
-        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4);
-        font-weight: bold;
-        transform: scale(1.05);
-    }
-    :global(html.dark-mode) .default-toggle-btn:not(.selected):hover {
-        background-color: #374151;
-        border-color: #6b7280;
+    :global(html.dark-mode) .example-btn {
+        background: linear-gradient(135deg, #1d4ed8, #2563eb);
     }
 
     
