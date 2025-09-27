@@ -48,6 +48,7 @@ describe('Analyser Test', ()=> {
         cy.get('button').contains("Next").click();
         cy.get('button').contains("Next").click();
         cy.get('button').contains("Next").click();
+		cy.get('button').contains("Next").click();
         cy.get('button').contains("Get Started").click();
 
         //source code node
@@ -137,5 +138,6 @@ describe('Analyser Test', ()=> {
 
         cy.contains('Symbol table generated successfully');
     })
+
 
 });

@@ -47,6 +47,7 @@ describe('Parser Test', ()=> {
         cy.get('button').contains("Next").click();
         cy.get('button').contains("Next").click();
         cy.get('button').contains("Next").click();
+		cy.get('button').contains("Next").click();
         cy.get('button').contains("Get Started").click();
 
         //source code node
@@ -99,5 +100,6 @@ describe('Parser Test', ()=> {
   
         cy.contains('Parse tree generated successfully');
     })
+
 
 });

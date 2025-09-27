@@ -45,6 +45,7 @@ describe('Canvas Test', ()=> {
         cy.get('button').contains("Next").click();
         cy.get('button').contains("Next").click();
         cy.get('button').contains("Next").click();
+		cy.get('button').contains("Next").click();
         cy.get('button').contains("Get Started").click();
 
         //source code node
@@ -95,5 +96,6 @@ describe('Canvas Test', ()=> {
         cy.get('.canvas-container').should('contain','Optimiser');
 
     })
+
 
 })

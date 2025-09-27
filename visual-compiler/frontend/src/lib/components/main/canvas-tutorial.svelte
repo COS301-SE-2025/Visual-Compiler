@@ -80,6 +80,18 @@
 		},
 		{
 			id: 6,
+			title: "Meet Your AI Assistant",
+			description: "Get instant help and generate code with our AI assistant - your personal compiler guide.",
+			icon: "",
+			details: [
+				"Click the purple AI button in the bottom-right corner",
+				"Ask questions about compiler concepts and phases",
+				"Generate input for any phase automatically",
+				"Get explanations tailored to your current work"
+			]
+		},
+		{
+			id: 7,
 			title: "Ready to Build!",
 			description: "You're now ready to create your first compiler pipeline. Start by adding a Source Code node!",
 			icon: "",
@@ -87,7 +99,7 @@
 				"Begin with the Source Code block from the toolbox",
 				"Add phases sequentially and connect them",
 				"Configure each phase as you build",
-				"Use the help menu for additional guidance"
+				"Use the help menu and AI assistant for guidance"
 			]
 		}
 	];

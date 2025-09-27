@@ -111,6 +111,25 @@ func TestReadGrammer_ValidGrammar(t *testing.T) {
 	}
 }
 
+func TestReadGrammar_LeftRecursion(t *testing.T) {
+	input := []byte(`{
+		"variables": ["A", "B"],
+		"terminals": ["a", "b"],
+		"start": "A",
+		"rules": [
+			{ "input": "A", "output": ["A", "b"] },
+			{ "input": "A", "output": ["a", "B"] },
+			{ "input": "B", "output": ["ε"] },
+		]
+	}`)
+
+	_, err := services.ReadGrammar(input)
+
+	if err == nil {
+		t.Errorf("Expected error for left recursion in grammar")
+	}
+}
+
 func TestCreateSyntaxTree_NoTokens(t *testing.T) {
 	tokens := []services.TypeValue{}
 
@@ -245,49 +264,60 @@ func TestCreateSyntaxTree_Valid(t *testing.T) {
 	}
 }
 
-func TestCreateSyntaxTree_Valid_MoreComplex(t *testing.T) {
-
+func TestCreateSyntaxTree_TwoRules(t *testing.T) {
 	tokens := []services.TypeValue{
-		{Type: "KEYWORD", Value: "int"},
-		{Type: "IDENTIFIER", Value: "blue"},
-		{Type: "ASSIGNMENT", Value: "="},
-		{Type: "INTEGER", Value: "13"},
-		{Type: "OPERATOR", Value: "+"},
-		{Type: "INTEGER", Value: "89"},
-		{Type: "SEPARATOR", Value: ";"},
+		{Type: "INTEGER", Value: "42"},
 	}
 
 	grammar := services.Grammar{
-		Variables: []string{"STATEMENT", "DECLARATION", "EXPRESSION", "TYPE", "TERM"},
-		Terminals: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "OPERATOR", "SEPARATOR", "STRING"},
-		Start:     "STATEMENT",
+		Variables: []string{"VARIABLE"},
+		Terminals: []string{"INTEGER", "STRING"},
+		Start:     "VARIABLE",
 		Rules: []services.ParsingRule{
-			{Input: "STATEMENT", Output: []string{"DECLARATION", "SEPARATOR"}},
-			{Input: "DECLARATION", Output: []string{"TYPE", "IDENTIFIER", "ASSIGNMENT", "EXPRESSION"}},
-			{Input: "EXPRESSION", Output: []string{"TERM", "OPERATOR", "TERM"}},
-			{Input: "TERM", Output: []string{"STRING"}},
-			{Input: "TERM", Output: []string{"INTEGER"}},
-			{Input: "TYPE", Output: []string{"KEYWORD"}},
+			{Input: "VARIABLE", Output: []string{"STRING"}},
+			{Input: "VARIABLE", Output: []string{"INTEGER"}},
 		},
 	}
+
 	syntax_tree, err := services.CreateSyntaxTree(tokens, grammar)
 
 	if err != nil {
-		t.Errorf("Error not supposed to occur for not tokens: %v", err)
-	} else {
-		if syntax_tree.Root == nil {
-			t.Errorf("No root")
-		}
-		if syntax_tree.Root.Children == nil {
-			t.Errorf("No children")
-		}
-		if syntax_tree.Root.Symbol == "" {
-			t.Errorf("No symbol")
-		}
+		t.Errorf("Error not supposed to occur: %v", err)
+	}
+	if syntax_tree.Root == nil || syntax_tree.Root.Children[0].Value != "42" {
+		t.Errorf("Incorrect syntax tree structure")
 	}
 }
 
-func TestCreateSyntaxTree_Valid_Complex(t *testing.T) {
+func TestCreateSyntaxTree_TwoRulesRecursive(t *testing.T) {
+	tokens := []services.TypeValue{
+		{Type: "STRING", Value: "red"},
+		{Type: "STRING", Value: "green"},
+		{Type: "STRING", Value: "blue"},
+	}
+
+	grammar := services.Grammar{
+		Variables: []string{"LIST", "STATEMENT"},
+		Terminals: []string{"STRING"},
+		Start:     "LIST",
+		Rules: []services.ParsingRule{
+			{Input: "LIST", Output: []string{"STATEMENT"}},
+			{Input: "LIST", Output: []string{"STATEMENT", "LIST"}},
+			{Input: "STATEMENT", Output: []string{"STRING"}},			
+		},
+	}
+
+	syntax_tree, err := services.CreateSyntaxTree(tokens, grammar)
+
+	if err != nil {
+		t.Errorf("Error not supposed to occur: %v", err)
+	}
+	if syntax_tree.Root == nil || len(syntax_tree.Root.Children) != 2 || syntax_tree.Root.Children[1].Symbol != "LIST" {
+		t.Errorf("Incorrect syntax tree structure")
+	}
+}
+
+func TestCreateSyntaxTree_Complex(t *testing.T) {
 
 	tokens := []services.TypeValue{
 		{Type: "KEYWORD", Value: "int"},
@@ -331,6 +361,95 @@ func TestCreateSyntaxTree_Valid_Complex(t *testing.T) {
 		if syntax_tree.Root.Symbol == "" {
 			t.Errorf("No symbol")
 		}
+	}
+}
+
+func TestCreateSyntaxTree_MoreComplex(t *testing.T) {
+
+	tokens := []services.TypeValue{
+		{Type: "KEYWORD", Value: "int"},
+		{Type: "IDENTIFIER", Value: "blue"},
+		{Type: "ASSIGNMENT", Value: "="},
+		{Type: "INTEGER", Value: "13"},
+		{Type: "OPERATOR", Value: "+"},
+		{Type: "INTEGER", Value: "89"},
+		{Type: "SEPARATOR", Value: ";"},
+	}
+
+	grammar := services.Grammar{
+		Variables: []string{"STATEMENT", "DECLARATION", "EXPRESSION", "TYPE", "TERM"},
+		Terminals: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "OPERATOR", "SEPARATOR", "STRING"},
+		Start:     "STATEMENT",
+		Rules: []services.ParsingRule{
+			{Input: "STATEMENT", Output: []string{"DECLARATION", "SEPARATOR"}},
+			{Input: "DECLARATION", Output: []string{"TYPE", "IDENTIFIER", "ASSIGNMENT", "EXPRESSION"}},
+			{Input: "EXPRESSION", Output: []string{"TERM", "OPERATOR", "TERM"}},
+			{Input: "TERM", Output: []string{"STRING"}},
+			{Input: "TERM", Output: []string{"INTEGER"}},
+			{Input: "TYPE", Output: []string{"KEYWORD"}},
+		},
+	}
+	syntax_tree, err := services.CreateSyntaxTree(tokens, grammar)
+
+	if err != nil {
+		t.Errorf("Error not supposed to occur for not tokens: %v", err)
+	} else {
+		if syntax_tree.Root == nil {
+			t.Errorf("No root")
+		}
+		if syntax_tree.Root.Children == nil {
+			t.Errorf("No children")
+		}
+		if syntax_tree.Root.Symbol == "" {
+			t.Errorf("No symbol")
+		}
+	}
+}
+
+func TestCreateSyntaxTree_EpsilonTransition(t *testing.T) {
+	tokens := []services.TypeValue{
+		{Type: "INTEGER", Value: "13"},
+	}
+
+	grammar := services.Grammar{
+		Variables: []string{"PROGRAM"},
+		Terminals: []string{"INTEGER"},
+		Start:     "PROGRAM",
+		Rules: []services.ParsingRule{
+			{Input: "PROGRAM", Output: []string{"INTEGER", "ε"}},
+		},
+	}
+
+	syntax_tree, err := services.CreateSyntaxTree(tokens, grammar)
+
+	if err != nil {
+		t.Errorf("Error not supposed to occur: %v", err)
+	}
+	if syntax_tree.Root == nil || len(syntax_tree.Root.Children) != 1 {
+		t.Errorf("Incorrect syntax tree structure")
+	}
+}
+
+func TestCreateSyntaxTree_TokenTerminalMismatch(t *testing.T) {
+	tokens := []services.TypeValue{
+		{Type: "IDENTIFIER", Value: "x"},
+		{Type: "ASSIGNMENT", Value: "="},
+		{Type: "INTEGER", Value: "12"},
+	}
+
+	grammar := services.Grammar{
+		Variables: []string{"STATEMENT"},
+		Terminals: []string{"IDENTIFIER", "ASSIGNMENT", "NUMBER"},
+		Start:     "STATEMENT",
+		Rules: []services.ParsingRule{
+			{Input: "STATEMENT", Output: []string{"IDENTIFIER", "ASSIGNMENT", "NUMBER"}},
+		},
+	}
+
+	_, err := services.CreateSyntaxTree(tokens, grammar)
+
+	if err == nil {
+		t.Errorf("Expected error for token types not matching grammar terminals")
 	}
 }
 
@@ -686,124 +805,6 @@ func TestTryRule_True(t *testing.T) {
 	}
 }
 
-func TestEliminateLeftRecursion_NoLeftRecursion(t *testing.T) {
-	grammar := services.Grammar{
-		Variables: []string{"STATEMENT", "DECLARATION"},
-		Terminals: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "SEPARATOR"},
-		Start:     "STATEMENT",
-		Rules: []services.ParsingRule{
-			{Input: "STATEMENT", Output: []string{"DECLARATION", "SEPARATOR"}},
-			{Input: "DECLARATION", Output: []string{"KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER"}},
-		},
-	}
-
-	result := services.EliminateLeftRecursion(grammar)
-
-	if len(result.Rules) != len(grammar.Rules) {
-		t.Errorf("Expected %d rules but received %d", len(grammar.Rules), len(result.Rules))
-	}
-
-	if len(result.Variables) != len(grammar.Variables) {
-		t.Errorf("Expected %d variables but received %d", len(grammar.Variables), len(result.Variables))
-	}
-
-	for i, rule := range result.Rules {
-		if rule.Input != grammar.Rules[i].Input {
-			t.Errorf("Rule %d input changed", i)
-		}
-	}
-}
-
-func TestEliminateLeftRecursion_SingleLeftRecursion(t *testing.T) {
-	grammar := services.Grammar{
-		Variables: []string{"A", "B", "C"},
-		Terminals: []string{"X", "Y", "Z"},
-		Start:     "A",
-		Rules: []services.ParsingRule{
-			{Input: "A", Output: []string{"A", "B", "C"}},
-			{Input: "A", Output: []string{"X"}},
-			{Input: "B", Output: []string{"Y"}},
-			{Input: "C", Output: []string{"Z"}},
-		},
-	}
-
-	result := services.EliminateLeftRecursion(grammar)
-
-	if len(result.Variables) != 4 {
-		t.Errorf("Expected 4 variables but received %d", len(result.Variables))
-	}
-
-	found := false
-	for _, variable := range result.Variables {
-		if variable == "A'" {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Errorf("Expected new variable A' after left recursion elimination")
-	}
-
-	if len(result.Rules) <= len(grammar.Rules) {
-		t.Errorf("Expected more rules after left recursion elimination")
-	}
-
-	for _, rule := range result.Rules {
-		if len(rule.Output) > 0 && rule.Output[0] == rule.Input {
-			t.Errorf("Left recursion still exists in the rule: %s -> %v", rule.Input, rule.Output)
-		}
-	}
-}
-
-func TestEliminateLeftRecursion_MultipleLeftRecursion(t *testing.T) {
-	grammar := services.Grammar{
-		Variables: []string{"A", "B", "C"},
-		Terminals: []string{"X", "Y", "Z"},
-		Start:     "A",
-		Rules: []services.ParsingRule{
-			{Input: "A", Output: []string{"A", "B"}},
-			{Input: "A", Output: []string{"A", "C"}},
-			{Input: "A", Output: []string{"X"}},
-			{Input: "B", Output: []string{"Y"}},
-			{Input: "C", Output: []string{"Z"}},
-		},
-	}
-
-	result := services.EliminateLeftRecursion(grammar)
-
-	if len(result.Variables) != 4 {
-		t.Errorf("Expected 4 variables but received %d", len(result.Variables))
-	}
-
-	found_prime := false
-	for _, variable := range result.Variables {
-		if variable == "A'" {
-			found_prime = true
-			break
-		}
-	}
-	if !found_prime {
-		t.Errorf("Expected new variable A' after left recursion elimination")
-	}
-
-	for _, rule := range result.Rules {
-		if len(rule.Output) > 0 && rule.Output[0] == rule.Input {
-			t.Errorf("Left recursion still exists in the rule: %s -> %v", rule.Input, rule.Output)
-		}
-	}
-
-	found_epsilon := false
-	for _, rule := range result.Rules {
-		if rule.Input == "A'" && len(rule.Output) == 0 {
-			found_epsilon = true
-			break
-		}
-	}
-	if !found_epsilon {
-		t.Errorf("Expected epsilon rule for A' after left recursion elimination")
-	}
-}
-
 func TestConvertTreeToString_Valid(t *testing.T) {
 
 	expected_res := `
@@ -855,7 +856,7 @@ func TestConvertTreeToString_Valid(t *testing.T) {
 	}
 }
 
-func TestConvertTreeToString_NilNode(t *testing.T) {
+func TestConvertTreeToString_Invalid(t *testing.T) {
 
 	expected_res := ""
 
