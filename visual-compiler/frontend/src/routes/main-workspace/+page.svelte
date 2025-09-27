@@ -62,6 +62,9 @@
 	// --- TUTORIAL STATE ---
 	let showCanvasTutorial = false;
 
+	// --- RECENTER STATE ---
+	let isRecentering = false;
+
 	// Subscribe to tutorial store
 	tutorialStore.subscribe(state => {
 		showCanvasTutorial = state.showCanvasTutorial;
@@ -548,6 +551,73 @@
 		showClearCanvasModal = true;
 	}
 
+	// --- RECENTER CANVAS FUNCTIONALITY ---
+	async function recenterCanvas() {
+		// Save current state
+		const currentNodes = get(nodes);
+		const currentConnections = [...physicalConnections];
+		
+		if (currentNodes.length === 0) {
+			AddToast('No nodes to recenter', 'info');
+			return;
+		}
+
+		// Start recentering state
+		isRecentering = true;
+
+		// Create temporary pipeline data
+		const tempPipeline = {
+			nodes: currentNodes,
+			connections: currentConnections
+		};
+
+		// Clear the canvas
+		nodes.set([]);
+		physicalConnections = [];
+
+		// Reset node counter to match the highest existing node ID
+		node_counter = currentNodes.reduce((maxId, node) => {
+			const idNum = parseInt(node.id.split('-')[1]) || 0;
+			return Math.max(maxId, idNum);
+		}, 0);
+
+		// Longer delay to ensure canvas is fully cleared and ready
+		setTimeout(() => {
+			// Recreate nodes with original positions
+			nodes.set(tempPipeline.nodes);
+			
+			// Restore connections data immediately
+			if (Array.isArray(tempPipeline.connections)) {
+				const validConnections = tempPipeline.connections.filter(conn => {
+					const sourceExists = tempPipeline.nodes.some(node => node.id === conn.sourceNodeId);
+					const targetExists = tempPipeline.nodes.some(node => node.id === conn.targetNodeId);
+					return sourceExists && targetExists;
+				});
+				physicalConnections = validConnections;
+			}
+
+			// Wait for nodes to be fully rendered before restoring visual connections
+			setTimeout(() => {
+				// Restore visual connections using DOM events (like project hub)
+				tempPipeline.connections.forEach(conn => {
+					const start_node = document.getElementById(conn.sourceAnchor);
+					const end_node = document.getElementById(conn.targetAnchor);
+
+					if (start_node && end_node) {
+						start_node.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
+						end_node.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }));
+					}
+				});
+				
+				// Short delay to ensure connections are visually established
+				setTimeout(() => {
+					isRecentering = false;
+					AddToast('Canvas recentered successfully!', 'success');
+				}, 150);
+			}, 300); // Increased delay for better node rendering
+		}, 150);
+	}
+
 	function handleClearCanvasConfirm() {
 		// Clear all nodes and connections
 		nodes.set([]);
@@ -810,6 +880,23 @@
 		{/if}
 		<DrawerCanvas {nodes} initialConnections={physicalConnections} onPhaseSelect={handlePhaseSelect} onConnectionChange={handleConnectionChange} />
 
+		<!-- Recenter Loading Overlay -->
+		{#if isRecentering}
+			<div class="recenter-loading-overlay">
+				<div class="recenter-loading-content">
+					<div class="recenter-spinner"></div>
+					<span class="recenter-loading-text">Recentering canvas...</span>
+				</div>
+			</div>
+		{/if}
+
+		<!-- Recenter Button -->
+		{#if $nodes.length > 0 && !isRecentering}
+			<button class="recenter-button" on:click={recenterCanvas} aria-label="Recenter Canvas" title="Recenter all nodes and connections">
+				<span>Recenter</span>
+			</button>
+		{/if}
+
 		{#if show_drag_tip}
 			<div class="help-tip">
 				<span
@@ -1035,6 +1122,83 @@
 	.clear-button:hover {
 		background-color: #fee2e2;
 	}
+
+	.recenter-button {
+		position: absolute;
+		bottom: 1rem;
+		left: 1rem;
+		background: linear-gradient(135deg, #001A6E 0%, #041a47 100%);
+		color: white;
+		border: none;
+		padding: 0.75rem 1rem;
+		border-radius: 8px;
+		cursor: pointer;
+		font-size: 0.875rem;
+		font-weight: 500;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		box-shadow: 0 2px 8px rgba(4, 26, 71, 0.15);
+		transition: all 0.2s ease;
+		z-index: 100;
+	}
+
+	.recenter-button:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 12px rgba(4, 26, 71, 0.25);
+		background: linear-gradient(135deg, #002a8e 0%, #052560 100%);
+	}
+
+	.recenter-button svg {
+		flex-shrink: 0;
+	}
+
+	.recenter-loading-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: rgba(240, 242, 245, 0.8);
+		backdrop-filter: blur(2px);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 200;
+		border-radius: 12px;
+	}
+
+	.recenter-loading-content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		background: white;
+		padding: 2rem;
+		border-radius: 12px;
+		box-shadow: 0 4px 20px rgba(4, 26, 71, 0.15);
+	}
+
+	.recenter-spinner {
+		width: 32px;
+		height: 32px;
+		border: 3px solid #e5e7eb;
+		border-top: 3px solid #001A6E;
+		border-radius: 50%;
+		animation: recenter-spin 1s linear infinite;
+	}
+
+	.recenter-loading-text {
+		color: #041a47;
+		font-weight: 500;
+		font-size: 0.875rem;
+	}
+
+	@keyframes recenter-spin {
+		0% { transform: rotate(0deg); }
+		100% { transform: rotate(360deg); }
+	}
+
 	.analysis-overlay {
 		position: fixed;
 		top: 3.5rem;
@@ -1101,12 +1265,18 @@
 	}
 	.code-input-modal {
 		background: white;
-		padding: 2rem;
-		border-radius: 8px;
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-		max-width: 500px;
-		width: 100%;
+		padding: 0;
+		border-radius: 16px;
+		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+		max-width: 800px;
+		width: 85vw;
+		max-height: 85vh;
+		height: auto;
 		position: relative;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		border: 1px solid rgba(226, 232, 240, 0.8);
 	}
 
 	.close-btn {
@@ -1117,6 +1287,34 @@
 		border: none;
 		font-size: 1.5rem;
 		cursor: pointer;
+		z-index: 1;
+		padding: 0.5rem;
+		border-radius: 4px;
+		transition: background-color 0.2s ease;
+	}
+
+	.close-btn:hover {
+		background: rgba(0, 0, 0, 0.1);
+	}
+
+	/* Responsive design for code input modal */
+	@media (max-width: 768px) {
+		.code-input-modal {
+			max-width: 95vw;
+			width: 95vw;
+			max-height: 85vh;
+			padding: 1.5rem;
+		}
+	}
+
+	@media (max-width: 480px) {
+		.code-input-modal {
+			max-width: 98vw;
+			width: 98vw;
+			max-height: 90vh;
+			padding: 1rem;
+			border-radius: 8px;
+		}
 	}
 
 	.help-tip {
@@ -1175,6 +1373,37 @@
 	:global(html.dark-mode) .clear-button:hover {
 		background-color: #2d1b1b;
 	}
+
+	:global(html.dark-mode) .recenter-button {
+		background: linear-gradient(135deg, #1a2a4a 0%, #0a1a3a 100%);
+		color: #e2e8f0;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+	}
+
+	:global(html.dark-mode) .recenter-button:hover {
+		background: linear-gradient(135deg, #2a3a5a 0%, #1a2a4a 100%);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+	}
+
+	:global(html.dark-mode) .recenter-loading-overlay {
+		background: rgba(22, 24, 35, 0.8);
+	}
+
+	:global(html.dark-mode) .recenter-loading-content {
+		background: #1a2a4a;
+		color: #e2e8f0;
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+	}
+
+	:global(html.dark-mode) .recenter-spinner {
+		border: 3px solid #4a5568;
+		border-top: 3px solid #64b5f6;
+	}
+
+	:global(html.dark-mode) .recenter-loading-text {
+		color: #e2e8f0;
+	}
+
 	:global(html.dark-mode) .analysis-overlay {
 		background: rgba(10, 26, 58, 0.95);
 	}
@@ -1192,6 +1421,10 @@
 
 	:global(html.dark-mode) .close-btn {
 		color: #f0f0f0;
+	}
+	
+	:global(html.dark-mode) .close-btn:hover {
+		background: rgba(255, 255, 255, 0.1);
 	}
 	:global(html.dark-mode) .return-button {
 		background: #1a3a7a;
