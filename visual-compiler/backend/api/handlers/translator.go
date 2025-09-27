@@ -115,7 +115,7 @@ func ReadRules(c *gin.Context) {
 // @Tags Translating
 // @Accept json
 // @Produce json
-// @Param request body IDRequest true "Create Code from Syntax Tree and Translation Rules"
+// @Param request body ProjectNameRequest true "Create Code from Syntax Tree and Translation Rules"
 // @Success 200 {object} map[string]string "Code successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
 // @Failure 401 {object} map[string]string "Unauthorized"

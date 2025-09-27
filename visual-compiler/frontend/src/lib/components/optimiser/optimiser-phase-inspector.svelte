@@ -1,6 +1,6 @@
 <script lang="ts">
-    import { onMount } from 'svelte';
-    import { optimizerState } from '$lib/stores/optimizer';
+    import { onMount, onDestroy } from 'svelte';
+    import { optimiserState } from '$lib/stores/optimiser';
     import { projectName } from '$lib/stores/project';
     import { AddToast } from '$lib/stores/toast';
     import { get } from 'svelte/store';
@@ -10,7 +10,7 @@
     let inputCode = `package main
 
 func main() {
-	
+    
 }`;
 
     // Default button functionality variables
@@ -20,8 +20,10 @@ func main() {
     let userInputCode = `package main
 
 func main() {
-	
+    
 }`;
+
+    let aiOptimiserEventListener: (event: CustomEvent) => void;
 
     const languages = ['Java', 'Python', 'Go'];
     const techniques = ['Constant Folding', 'Dead Code Elimination', 'Loop Unrolling'];
@@ -34,24 +36,57 @@ func main() {
 import "fmt"
 
 func main() {
-	for blue := 1; blue < 5; blue++ {
-		fmt.Println("[Block " + blue + "]")
-		for red := 1; red <= blue; red++ {
-			fmt.Println("	-> " + red)
-			if blue == red {
-				fmt.Println(blue + red)
-			}
-		}
-	}
+    for blue := 1; blue < 5; blue++ {
+        fmt.Println("[Block " + blue + "]")
+        for red := 1; red <= blue; red++ {
+            fmt.Println("	-> " + red)
+            if blue == red {
+                fmt.Println(blue + red)
+            }
+        }
+    }
 }
-	
+    
 func nothing() (int) {
-	var random int = 13
+    var random int = 13
 }`;
 
     // Initialize the store with default values on mount
     onMount(() => {
         updateStore();
+
+        aiOptimiserEventListener = (event: CustomEvent) => {
+            if (event.detail && event.detail.code) {
+                console.log('Received AI optimiser code:', event.detail.code);
+
+                // Save current user input if not showing default
+                if (!showDefault) {
+                    userInputCode = inputCode;
+                }
+                
+                // Insert AI-generated code into the textarea
+                inputCode = event.detail.code;
+                
+                // Reset default state since this is AI-generated
+                showDefault = false;
+                
+                // Update the store with the new code
+                updateStore();
+                
+                AddToast('AI optimiser code inserted into code input area!', 'success');
+                
+                console.log('Final optimiser input code:', inputCode);
+            }
+        };
+
+        // Listen for the event with "z" spelling
+        window.addEventListener('ai-optimiser-generated', aiOptimiserEventListener);
+    });
+
+    onDestroy(() => {
+        if (aiOptimiserEventListener) {
+            window.removeEventListener('ai-optimiser-generated', aiOptimiserEventListener);
+        }
     });
 
     // Default button functions
@@ -90,7 +125,7 @@ func nothing() (int) {
     }
 
     function updateStore() {
-        optimizerState.update(state => ({
+        optimiserState.update(state => ({
             ...state,
             selectedLanguage: selectedLanguage as 'Java' | 'Python' | 'Go',
             selectedTechniques,
@@ -104,11 +139,11 @@ func nothing() (int) {
             return;
         }
 
-        optimizerState.update(state => ({
+        optimiserState.update(state => ({
             ...state,
-            isOptimizing: true,
-            optimizationError: null,
-            optimizedCode: null
+            isOptimising: true,
+            optimisationError: null,
+            optimisedCode: null
         }));
 
         try {
@@ -116,7 +151,7 @@ func nothing() (int) {
             const currentProjectName = get(projectName);
             
             if (!accessToken) {
-                AddToast('Authentication required: Please log in to use the optimizer', 'error');
+                AddToast('Authentication required: Please log in to use the optimiser', 'error');
                 return;
             }
             if (!currentProjectName) {
@@ -141,42 +176,42 @@ func nothing() (int) {
                 throw new Error(errorData.error || 'Failed to store source code');
             }
 
-            const optimizePayload = {
+            const optimisePayload = {
                 project_name: currentProjectName,
                 constant_folding: selectedTechniques.includes('Constant Folding'),
                 dead_code: selectedTechniques.includes('Dead Code Elimination'),
                 loop_unrolling: selectedTechniques.includes('Loop Unrolling')
             };
 
-            const optimizeResponse = await fetch('http://localhost:8080/api/optimising/optimise', {
+            const optimiseResponse = await fetch('http://localhost:8080/api/optimising/optimise', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${accessToken}`
                 },
-                body: JSON.stringify(optimizePayload)
+                body: JSON.stringify(optimisePayload)
             });
 
-            if (!optimizeResponse.ok) {
-                const errorData = await optimizeResponse.json();
+            if (!optimiseResponse.ok) {
+                const errorData = await optimiseResponse.json();
                 throw new Error(errorData.details || 'optimisation failed');
             }
 
-            const optimizeData = await optimizeResponse.json();
+            const optimiseData = await optimiseResponse.json();
 
-            const optimizedCodeLines = optimizeData.optimised_code.split('\n');
-            
-            optimizerState.update(state => ({
+            const optimisedCodeLines = optimiseData.optimised_code.split('\n');
+
+            optimiserState.update(state => ({
                 ...state,
-                isOptimizing: false,
-                optimizedCode: {
-                    optimized: optimizedCodeLines,
+                isOptimising: false,
+                optimisedCode: {
+                    optimised: optimisedCodeLines,
                     language: selectedLanguage,
                     techniques: selectedTechniques,
                     performanceGains: {
                         executionTime: "Improved",
                         memoryUsage: "Reduced",
-                        codeSize: "Optimized"
+                        codeSize: "Optimised"
                     }
                 }
             }));
@@ -185,11 +220,11 @@ func nothing() (int) {
 
         } catch (error) {
             console.error('Optimisation error:', error);
-            
-            optimizerState.update(state => ({
+
+            optimiserState.update(state => ({
                 ...state,
-                isOptimizing: false,
-                optimizationError: error
+                isOptimising: false,
+                optimisationError: error
             }));
 
             AddToast(`Optimisation failed: ${error.message}`, 'error');
@@ -206,13 +241,13 @@ func nothing() (int) {
     }
 
     // Initialize from store, but keep default code if store is empty
-    $: if ($optimizerState) {
+    $: if ($optimiserState) {
         if (!showDefault) {
-            selectedLanguage = $optimizerState.selectedLanguage;
-            selectedTechniques = $optimizerState.selectedTechniques;
+            selectedLanguage = $optimiserState.selectedLanguage;
+            selectedTechniques = $optimiserState.selectedTechniques;
             // Only update inputCode from store if it's not empty, otherwise keep default
-            if ($optimizerState.inputCode.trim()) {
-                inputCode = $optimizerState.inputCode;
+            if ($optimiserState.inputCode.trim()) {
+                inputCode = $optimiserState.inputCode;
             }
         }
     }
@@ -289,10 +324,10 @@ func nothing() (int) {
         <button 
             class="submit-button"
             on:click={handleSubmit}
-            disabled={!inputCode.trim() || selectedTechniques.length === 0 || $optimizerState.isOptimizing}
+            disabled={!inputCode.trim() || selectedTechniques.length === 0 || $optimiserState.isOptimising}
         >
-            {#if $optimizerState.isOptimizing}
-               
+            {#if $optimiserState.isOptimising}
+
                 Optimising...
             {:else}
                 

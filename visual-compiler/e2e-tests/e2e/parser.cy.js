@@ -42,6 +42,14 @@ describe('Parser Test', ()=> {
         cy.get('#confirm-project-name').click();
         cy.wait(500);
 
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+        cy.get('button').contains("Next").click();
+		cy.get('button').contains("Next").click();
+        cy.get('button').contains("Get Started").click();
+
         //source code node
         cy.get('button').should('contain', 'Source Code');
         cy.get('button').contains('Source Code').click();
@@ -67,7 +75,7 @@ describe('Parser Test', ()=> {
         cy.get('.default-toggle-btn').click();
         cy.get('.submit-button').contains('Submit').click();
         cy.get('.generate-button').contains('Generate Tokens').click();
-        cy.get('button').contains('Return to Canvas').click();
+        cy.get('.return-button').click();
 
         //parser node
         cy.get('button').should('contain', 'Parser');
@@ -77,6 +85,7 @@ describe('Parser Test', ()=> {
         cy.wait(500);
         cy.get('#A-2\\/N-lexer-2').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-parser-3').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
+        cy.wait(500);
         cy.get('.canvas-container').contains('Parser').dblclick();
         cy.wait(500);
         cy.get('.phase-inspector').should('contain','PARSING');
@@ -91,5 +100,6 @@ describe('Parser Test', ()=> {
   
         cy.contains('Parse tree generated successfully');
     })
+
 
 });

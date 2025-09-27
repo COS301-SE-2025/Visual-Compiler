@@ -1,9 +1,9 @@
 <script lang="ts">
-    import { onMount, createEventDispatcher } from 'svelte';
     import { AddToast } from '$lib/stores/toast';
     import { projectName } from '$lib/stores/project';
     import { get } from 'svelte/store';
     import { lexerState } from '$lib/stores/lexer';
+    import { onMount, createEventDispatcher, onDestroy } from 'svelte';
 
     export let source_code = '';
 
@@ -32,6 +32,13 @@
     let tokens = null;
     let tokens_unidentified = null;
 
+
+    let user_grammar_rules: Rule[] = [];
+    let user_variables_string = '';
+    let user_terminals_string = '';
+    let user_rule_id_counter = 0;
+    let user_translation_id_counter = 0;
+
     // --- DEFAULT GRAMMAR DATA ---
     const DEFAULT_GRAMMAR = {
         variables: 'PROGRAM, STATEMENT, FUNCTION, ITERATION, DECLARATION, ELEMENT, TYPE, EXPRESSION, FUNCTION_DEFINITION, FUNCTION_BLOCK, RETURN, ITERATION_DEFINITION, ITERATION_BLOCK, PARAMETER, PRINT',
@@ -59,15 +66,110 @@
         ]
     };
 
-    // onMount
+    let aiParserEventListener: (event: CustomEvent) => void;
+
     onMount(async () => {
         addNewRule();
-        await fetchTokens(); // Try to fetch existing tokens
+        await fetchTokens();
+
+        // Listen for AI-generated parser grammar
+        aiParserEventListener = (event: CustomEvent) => {
+            if (event.detail && event.detail.grammar) {
+                console.log('Received AI parser grammar:', event.detail.grammar);
+                
+                // Save current state as user input before AI insertion
+                if (!show_default_grammar) {
+                    saveCurrentAsUserInput();
+                }
+                
+                const grammar = event.detail.grammar;
+                
+                // Clear existing rules first
+                grammar_rules = [];
+                rule_id_counter = 0;
+                translation_id_counter = 0;
+                
+                // Populate variables and terminals
+                variables_string = grammar.variables || '';
+                terminals_string = grammar.terminals || '';
+                
+                // Handle rules
+                if (grammar.rules && Array.isArray(grammar.rules)) {
+                    grammar_rules = grammar.rules.map((rule, index) => {
+                        rule_id_counter++;
+                        
+                        // Each rule should have exactly one translation per output array
+                        const translations = [];
+                        if (Array.isArray(rule.output) && rule.output.length > 0) {
+                            // Join the output array into a single string for the translation
+                            translation_id_counter++;
+                            translations.push({
+                                id: translation_id_counter,
+                                value: rule.output.join(' ')
+                            });
+                        } else {
+                            // Fallback: empty translation
+                            translation_id_counter++;
+                            translations.push({
+                                id: translation_id_counter,
+                                value: ''
+                            });
+                        }
+                        
+                        return {
+                            id: rule_id_counter,
+                            nonTerminal: rule.input || '',
+                            translations: translations
+                        };
+                    });
+                }
+                
+                // If no rules were generated, add a blank one
+                if (grammar_rules.length === 0) {
+                    addNewRule();
+                }
+                
+
+                is_grammar_submitted = false;
+                
+                // Force reactivity update
+                grammar_rules = grammar_rules;
+                variables_string = variables_string;
+                terminals_string = terminals_string;
+                
+                AddToast('AI parser grammar inserted into grammar editor!', 'success');
+                
+                console.log('Final grammar_rules:', grammar_rules);
+                console.log('Final variables_string:', variables_string);
+                console.log('Final terminals_string:', terminals_string);
+            }
+        };
+
+        window.addEventListener('ai-parser-generated', aiParserEventListener);
     });
+
+    onDestroy(() => {
+        if (aiParserEventListener) {
+            window.removeEventListener('ai-parser-generated', aiParserEventListener);
+        }
+    });
+
+    // Function to save current state as user input
+    function saveCurrentAsUserInput() {
+        user_grammar_rules = JSON.parse(JSON.stringify(grammar_rules));
+        user_variables_string = variables_string;
+        user_terminals_string = terminals_string;
+        user_rule_id_counter = rule_id_counter;
+        user_translation_id_counter = translation_id_counter;
+    }
 
     // handleGrammarChange
     function handleGrammarChange() {
         is_grammar_submitted = false;
+        
+        if (!show_default_grammar) {
+            saveCurrentAsUserInput();
+        }
     }
 
     // addNewRule
@@ -103,6 +205,11 @@
     // insertDefaultGrammar
     function insertDefaultGrammar() {
         handleGrammarChange();
+        
+        // Save current user input before switching to default
+        saveCurrentAsUserInput();
+        
+        // Set default values
         show_default_grammar = true;
         variables_string = DEFAULT_GRAMMAR.variables;
         terminals_string = DEFAULT_GRAMMAR.terminals;
@@ -132,12 +239,18 @@
     function removeDefaultGrammar() {
         handleGrammarChange();
         show_default_grammar = false;
-        variables_string = '';
-        terminals_string = '';
-        grammar_rules = [];
-        rule_id_counter = 0;
-        translation_id_counter = 0;
-        addNewRule();
+        
+        // Restore user input
+        grammar_rules = JSON.parse(JSON.stringify(user_grammar_rules));
+        variables_string = user_variables_string;
+        terminals_string = user_terminals_string;
+        rule_id_counter = user_rule_id_counter;
+        translation_id_counter = user_translation_id_counter;
+        
+        // If no user data was saved (fresh start), create empty rule
+        if (grammar_rules.length === 0) {
+            addNewRule();
+        }
     }
 
     // handleSubmitGrammar
@@ -614,6 +727,9 @@
     .default-toggle-btn.selected {
         background: #d0e2ff;
         border-color: #003399;
+        box-shadow: 0 0 0 2px rgba(0, 51, 153, 0.3);
+        font-weight: bold;
+        transform: scale(1.05);
     }
     .default-toggle-btn:hover {
         background: #f5f8fd;
@@ -836,6 +952,9 @@
         background-color: #001a6e;
         border-color: #60a5fa;
         color: #e0e7ff;
+        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4);
+        font-weight: bold;
+        transform: scale(1.05);
     }
     :global(html.dark-mode) .default-toggle-btn:not(.selected):hover {
         background-color: #374151;

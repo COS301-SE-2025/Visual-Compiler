@@ -364,7 +364,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -437,7 +437,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -614,68 +614,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/lexing/getTree": {
-            "get": {
-                "description": "Searches the database for the user's syntax tree",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Lexing"
-                ],
-                "summary": "Get user's syntax tree",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Project Name",
-                        "name": "project_name",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Syntax Tree retrieved",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input/Response failed",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/lexing/lexer": {
             "post": {
                 "description": "Searches the database for the user's rules. If found, the source code and rules are used in the lexer to create the tokens and/or unidentified tokens. The tokens are either created or ,if already existing, updated. If the source code or rules are not found, returns an error",
@@ -696,7 +634,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -769,7 +707,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -842,7 +780,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -915,7 +853,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -1169,6 +1107,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/parsing/getTree": {
+            "get": {
+                "description": "Searches the database for the user's syntax tree",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Parsing"
+                ],
+                "summary": "Get user's syntax tree",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Project Name",
+                        "name": "project_name",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Syntax Tree retrieved",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input/Response failed",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/parsing/grammar": {
             "post": {
                 "description": "Accepts grammar variables, terminals, start variable, and rules from the user and stores them in the database. If it already exists, it updates the current grammar",
@@ -1237,6 +1237,17 @@ const docTemplate = `{
                     "Parsing"
                 ],
                 "summary": "Create and store syntax tree from stored grammar and tokens",
+                "parameters": [
+                    {
+                        "description": "Create syntax tree",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Syntax tree successfully created and stored/updated",
@@ -1290,6 +1301,17 @@ const docTemplate = `{
                     "Parsing"
                 ],
                 "summary": "Create and store syntax tree as a string from stored tree",
+                "parameters": [
+                    {
+                        "description": "Convert tree to string",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Syntax tree String successfully created and stored/updated",
@@ -1414,7 +1436,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.IDRequest"
+                            "$ref": "#/definitions/handlers.ProjectNameRequest"
                         }
                     }
                 ],
@@ -2232,6 +2254,18 @@ const docTemplate = `{
                     "description": "Expand any loops",
                     "type": "boolean"
                 },
+                "project_name": {
+                    "description": "User's project name",
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.ProjectNameRequest": {
+            "type": "object",
+            "required": [
+                "project_name"
+            ],
+            "properties": {
                 "project_name": {
                     "description": "User's project name",
                     "type": "string"
