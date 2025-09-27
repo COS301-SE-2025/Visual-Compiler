@@ -456,7 +456,7 @@
 							</svg>
 							<span class="guest-text">
 								<span class="guest-title">Continue as Guest</span>
-								<span class="guest-subtitle">Try the Visual Compiler without an account</span>
+								<span class="guest-subtitle">Try Visual Compiler without an account</span>
 							</span>
 						</button>
 					</div>
@@ -969,7 +969,7 @@
 	}
 
 	.project-image {
-		width: 612px;
+		width: 520px;
 		height: auto;
 	}
 
