@@ -179,17 +179,26 @@
 	}
 
 	async function submitCode() {
-		if (!code_text.trim()) return;
-		const user_id = localStorage.getItem('user_id');
-		const project = get(projectName);
-		if (!user_id) {
-			AddToast('Authentication required: Please log in to save source code', 'error');
-			return;
-		}
-		if (!project) {
-			AddToast('No project selected: Please select or create a project first', 'error');
-			return;
-		}
+    if (!code_text.trim()) return;
+    const project = get(projectName);
+    
+    // Check sessionStorage first, then localStorage for backward compatibility
+    const accessToken = sessionStorage.getItem('access_token') || 
+                       sessionStorage.getItem('authToken') || 
+                       localStorage.getItem('access_token') || 
+                       localStorage.getItem('authToken') || 
+                       localStorage.getItem('token');
+    
+    if (!accessToken) {
+        AddToast('Authentication required: Please log in to save source code', 'error');
+        return;
+    }
+    if (!project) {
+        AddToast('No project selected: Please select or create a project first', 'error');
+        return;
+    }
+
+    console.log('Using access token:', accessToken.substring(0, 20) + '...'); // Debug log
 
     try {
         const res = await fetch('https://www.visual-compiler.co.za/api/lexing/code', {

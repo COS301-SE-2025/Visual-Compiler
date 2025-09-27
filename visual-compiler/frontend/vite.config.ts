@@ -16,6 +16,15 @@ export default defineConfig(({ mode }) => ({
 		}
 	}),
 	plugins: [sveltekit()],
+	build: {
+		minify: 'terser',
+		terserOptions: {
+			compress: {
+				drop_console: true,
+				drop_debugger: true,
+			}
+		}
+	},
 	test: {
 		globals: true,
 		clearMocks: true,
