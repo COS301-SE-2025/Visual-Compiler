@@ -736,9 +736,13 @@
 			const data = await response.json();
 			regexNfa = adaptAutomatonForVis(data.nfa);
 			currentAutomatonForModal = { data: regexNfa, isDfa: false }; 
-			showRegexNfaVis = true;
-			showRegexDfaVis = false;
-			showRegexVisOnly = true;
+            
+            // FIX: Set states to show only visualization like automata section
+            showRegexNfaVis = true;
+            showRegexDfaVis = false;
+            showRegexVisOnly = true; // This will hide the input and show only visualization
+            automataDisplay = 'NFA'; // Set display type for consistency
+            
 			AddToast('Regex converted to NFA!', 'success');
 			setTimeout(() => renderRegexAutomatonVis(regexNfaContainer, regexNfa, false), 0);
 		} catch (error) {
@@ -777,14 +781,103 @@
 			console.log('DFA from backend:', JSON.stringify(data.dfa, null, 2));
 			regexDfa = adaptAutomatonForVis(data.dfa);
 			currentAutomatonForModal = { data: regexDfa, isDfa: true };
-			showRegexDfaVis = true;
-			showRegexNfaVis = false;
-			showRegexVisOnly = true;
+            
+            // FIX: Set states to show only visualization like automata section
+            showRegexDfaVis = true;
+            showRegexNfaVis = false;
+            showRegexVisOnly = true; // This will hide the input and show only visualization
+            automataDisplay = 'DFA'; // Set display type for consistency
+            
 			AddToast('Regex converted to DFA!', 'success');
 			setTimeout(() => renderRegexAutomatonVis(regexDfaContainer, regexDfa, true), 0);
 		} catch (error) {
 			AddToast('Regex→DFA failed: ' + error, 'error');
 		}
+	}
+
+	// FIX: Update the back function to restore the regex input view
+	function handleBackFromRegexVis() {
+		showRegexVisOnly = false;
+		showRegexNfaVis = false;
+		showRegexDfaVis = false;
+		automataDisplay = null; // Reset display type
+		currentAutomatonForModal = null; // Clear modal data
+		
+		// This will show the regex input rows again
+	}
+
+	// Helper function to render the automaton visualization
+	function renderAutomatonVis(container: HTMLElement, automaton: any, isDfa: boolean) {
+		if (!automaton || !container) return;
+
+		if (networkInstance) {
+			networkInstance.destroy();
+			networkInstance = null;
+		}
+
+		const nodeIds: Record<string, string> = {};
+		automaton.states.forEach((state: string) => {
+			nodeIds[state] = state.replace(/[^a-zA-Z0-9_]/g, '_');
+		});
+		const nodes = new DataSet(
+			automaton.states.map((state: string) => ({
+				id: nodeIds[state],
+				label: state,
+				shape: 'circle',
+				color: automaton.acceptedStates.includes(state)
+					? '#D2FFD2'
+					: state === automaton.startState
+					? '#D2E5FF'
+					: '#FFD2D2',
+				borderWidth: automaton.acceptedStates.includes(state) ? 3 : 1
+			}))
+		);
+		const edgesArr: any[] = [];
+		for (const from of automaton.states) {
+			for (const symbol of automaton.alphabet) {
+				const tos = isDfa
+					? [automaton.transitions[from]?.[symbol]].filter(Boolean)
+					: automaton.transitions[from]?.[symbol] || [];
+				for (const to of tos) {
+					edgesArr.push({ from: nodeIds[from], to: nodeIds[to], label: symbol, arrows: 'to' });
+				}
+			}
+		}
+		const START_NODE_ID = '__start__';
+		nodes.add({
+			id: START_NODE_ID,
+			label: '',
+			shape: 'circle',
+			color: 'rgba(0,0,0,0)',
+			borderWidth: 0,
+			size: 1,
+			font: { size: 1 }
+		});
+		edgesArr.push({
+			from: START_NODE_ID,
+			to: nodeIds[automaton.startState],
+			arrows: { to: { enabled: true, scaleFactor: 0.6 } },
+			color: { color: '#222', opacity: 1 },
+			width: 1.75,
+			label: 'start',
+			font: { size: 13, color: '#222', vadjust: -18, align: 'top' },
+			smooth: { enabled: true, type: 'curvedCCW', roundness: 0.18 },
+			length: 1,
+			physics: false
+		});
+		const edges = new DataSet(edgesArr);
+		networkInstance = new Network(
+			container,
+			{ nodes, edges },
+			{
+				nodes: { shape: 'circle', font: { size: 16 }, margin: 10 },
+				edges: {
+					smooth: { enabled: true, type: 'curvedCW', roundness: 0.3 },
+					font: { size: 14, strokeWidth: 0 }
+				},
+				physics: false
+			}
+		);
 	}
 
 	function adaptAutomatonForVis(automaton: any) {
@@ -900,12 +993,6 @@
 	let automataDisplay: 'NFA' | 'DFA' | 'RE' | null = null;
 
 	let showRegexVisOnly = false;
-
-	function handleBackFromRegexVis() {
-		showRegexVisOnly = false;
-		showRegexNfaVis = false;
-		showRegexDfaVis = false;
-	}
 
 	const toggleExpand = () => {
 		isExpanded = !isExpanded;
@@ -1153,22 +1240,15 @@
 
 	{#if selectedType === 'REGEX'}
 		{#if showRegexVisOnly}
+			<!-- Show only NFA or DFA visualization with back button -->
 			{#if showRegexNfaVis && regexNfa}
 				<div class="automata-container pretty-vis-box">
 					<div class="vis-heading">
 						<span class="vis-title">NFA Visualization (from REGEX)</span>
 					</div>
 					<button on:click={toggleExpand} class="expand-btn" title="Expand view">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="16"
-							height="16"
-							fill="currentColor"
-							viewBox="0 0 16 16"
-						>
-							<path
-								d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
-							/>
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+							<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
 						</svg>
 					</button>
 					<div bind:this={regexNfaContainer} class="vis-graph-area"></div>
@@ -1181,22 +1261,15 @@
 					← Back
 				</button>
 			{/if}
+			
 			{#if showRegexDfaVis && regexDfa}
 				<div class="automata-container pretty-vis-box">
 					<div class="vis-heading">
 						<span class="vis-title">DFA Visualization (from REGEX)</span>
 					</div>
 					<button on:click={toggleExpand} class="expand-btn" title="Expand view">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="16"
-							height="16"
-							fill="currentColor"
-							viewBox="0 0 16 16"
-						>
-							<path
-								d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
-							/>
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+							<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
 						</svg>
 					</button>
 					<div bind:this={regexDfaContainer} class="vis-graph-area"></div>
@@ -1210,6 +1283,7 @@
 				</button>
 			{/if}
 		{:else}
+			<!-- Show regex input form -->
 			<div>
 				<div class="shared-block">
 					<div class="block-headers">
@@ -1248,30 +1322,26 @@
 						{/each}
 					</div>
 					{#if (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).type && 
-      (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).regex}
-    
-	<button class="add-rule-btn" on:click={addNewRow}>+ Add New Rule</button>
-
-{/if}
+                        (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).regex}
+                        <button class="add-rule-btn" on:click={addNewRow}>+ Add New Rule</button>
+                    {/if}
 				</div>
 				{#if formError}
 					<div class="form-error">{formError}</div>
 				{/if}
 				<div class="button-stack">
-					<button class="submit-button" on:click={handleSubmit}> Submit </button>
+					<button class="submit-button" on:click={handleSubmit}>Submit</button>
 					{#if showRegexActionButtons}
 						<div class="regex-action-buttons">
 							<button class="generate-button" on:click={generateTokens}>Generate Tokens</button>
 							<button
 								class="generate-button"
 								on:click={handleRegexToNFA}
-								title="Convert Regular Expression to a NFA">NFA</button
-							>
+								title="Convert Regular Expression to a NFA">NFA</button>
 							<button
 								class="generate-button"
 								on:click={handleRegexToDFA}
-								title="Convert Regular Expression to a DFA">DFA</button
-							>
+								title="Convert Regular Expression to a DFA">DFA</button>
 						</div>
 					{/if}
 				</div>
@@ -1342,16 +1412,8 @@
 					<span class="vis-title">NFA Visualization</span>
 				</div>
 				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand NFA visualization to fullscreen">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						fill="currentColor"
-						viewBox="0 0 16 16"
-					>
-						<path
-							d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
-						/>
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+						<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
 					</svg>
 				</button>
 				<div bind:this={nfaContainer} class="vis-graph-area"></div>
@@ -1362,16 +1424,8 @@
 					<span class="vis-title">DFA Visualization</span>
 				</div>
 				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand DFA visualization to fullscreen">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						fill="currentColor"
-						viewBox="0 0 16 16"
-					>
-						<path
-							d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
-						/>
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+						<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
 					</svg>
 				</button>
 				<div bind:this={dfaContainer} class="vis-graph-area"></div>
@@ -1406,16 +1460,8 @@
 					<span class="vis-title">NFA Visualization (from REGEX)</span>
 				</div>
 				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand NFA visualization from regex to fullscreen">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						fill="currentColor"
-						viewBox="0 0 16 16"
-					>
-						<path
-							d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
-						/>
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+						<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
 					</svg>
 				</button>
 				<div bind:this={regexNfaContainer} class="vis-graph-area" />
@@ -1427,16 +1473,8 @@
 					<span class="vis-title">DFA Visualization (from REGEX)</span>
 				</div>
 				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand DFA visualization from regex to fullscreen">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						fill="currentColor"
-						viewBox="0 0 16 16"
-					>
-						<path
-							d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
-						/>
+					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+						<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
 					</svg>
 				</button>
 				<div bind:this={regexDfaContainer} class="vis-graph-area" />
@@ -1729,38 +1767,6 @@
 		background: #5a6268;
 		transform: translateY(-2px);
 	}
-
-	/* REMOVE these unused status message styles since we're using AddToast:
-	.status-message {
-		text-align: center;
-		padding: 0.5rem 1rem;
-		margin-top: 1rem;
-		border-radius: 4px;
-		font-size: 0.9rem;
-		background: #dc3545;
-		color: white;
-		opacity: 0;
-		animation: fadeInOut 3s ease-in-out;
-	}
-
-	.status-message.success {
-		background: #28a745;
-	}
-	.status-message.info {
-		background: #0096c7;
-	}
-
-	@keyframes fadeInOut {
-		0%,
-		100% {
-			opacity: 0;
-		}
-		10%,
-		90% {
-			opacity: 1;
-		}
-	}
-	*/
 
 	.automaton-btn-row {
 		display: flex;
