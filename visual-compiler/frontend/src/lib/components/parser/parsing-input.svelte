@@ -551,15 +551,13 @@
             </div>
         </div>
 
+        <div class="start-label-container">
+            <span class="start-label">Start</span>
+        </div>
+
         <div class="rules-container">
             {#each grammar_rules as rule, i (rule.id)}
                 <div class="rule-row">
-                    <div class="rule-label">
-                        {#if i === 0}
-                            <span class="start-label">Start</span>
-                        {/if}
-                    </div>
-
                     <div class="rule-inputs">
                         <input
                             type="text"
@@ -751,29 +749,32 @@
         flex-direction: column;
         gap: 1rem;
     }
+
+    .start-label-container {
+        margin-bottom: 0.5rem;
+        padding-left: 0.25rem;
+    }
+
     .rule-row {
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
-    .rule-label {
-        width: 60px;
-        flex-shrink: 0;
-        text-align: right;
-        padding-right: 0.75rem;
-    }
+    
     .start-label {
         font-weight: bold;
         color: #001a6e;
         font-family: monospace;
         font-size: 1rem;
     }
+    
     .rule-inputs {
         display: flex;
         align-items: center;
         gap: 0.75rem;
         flex-grow: 1;
         overflow: hidden;
+        width: 100%;
     }
     .non-terminal-input {
         flex: 0 0 120px;
