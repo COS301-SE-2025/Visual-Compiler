@@ -1377,6 +1377,24 @@
 	.save-button:hover {
 		background-color: #eef2f7;
 	}
+	.clear-button {
+		background-color: transparent;
+		color: #dc2626;
+		border: none;
+		border-radius: 50%;
+		width: 32px;
+		height: 32px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+	.clear-button:hover {
+		background-color: #fef2f2;
+		color: #b91c1c;
+		transform: scale(1.1);
+	}
 	   .recenter-button {
 		   position: absolute;
 		   bottom: 1rem;
@@ -1650,6 +1668,8 @@
 	}
 	:global(html.dark-mode) .clear-button:hover {
 		background-color: #2d1b1b;
+		color: #fca5a5;
+		transform: scale(1.1);
 	}
 
 	:global(html.dark-mode) .recenter-button {
