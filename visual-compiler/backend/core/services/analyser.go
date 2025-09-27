@@ -11,6 +11,7 @@ type Symbol struct {
 	Scope      int
 	Parameters []Symbol
 	Assign     bool
+	IsParam    bool
 }
 
 // struct to store data on a symbol table
@@ -99,9 +100,9 @@ func CreateEmptySymbolTableArtefact() *SymbolTableArtefact {
 func BindSymbol(symbol_table *SymbolTable, symbol Symbol) error {
 
 	current_scope := symbol_table.SymbolScopes[len(symbol_table.SymbolScopes)-1]
-	_, symbol_found := current_scope[symbol.Name]
+	compare_symbol, symbol_found := current_scope[symbol.Name]
 
-	if symbol_found {
+	if symbol_found && !compare_symbol.IsParam {
 		return fmt.Errorf("symbol already declared in scope: %v", symbol.Name)
 	} else {
 		current_scope[symbol.Name] = symbol
@@ -250,7 +251,7 @@ func HandleFunctionScope(new_symbol *Symbol, child *TreeNode, symbol_table *Symb
 
 			if parameter_symbol.Name != "" && parameter_symbol.Type != "" {
 				parameter_symbol.Scope = len(symbol_table.SymbolScopes)
-
+				parameter_symbol.IsParam = true
 				err := BindSymbol(symbol_table, parameter_symbol)
 				if err != nil {
 					return err
