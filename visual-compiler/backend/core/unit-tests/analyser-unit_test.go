@@ -4300,3 +4300,405 @@ func TestAnalyse_DefaultExample(t *testing.T) {
 
 	}
 }
+
+func TestAnalyser(t *testing.T) {
+	scope_rules := []*services.ScopeRule{
+		{Start: "{", End: "}"},
+	}
+
+	syntax_tree := services.SyntaxTree{
+		Root: &services.TreeNode{
+			Symbol: "PROGRAM",
+			Value:  "",
+			Children: []*services.TreeNode{
+				{
+					Symbol: "STATEMENT",
+					Value:  "",
+					Children: []*services.TreeNode{
+						{
+							Symbol: "DECLARATION",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "TYPE",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "KEYWORD",
+											Value:  "int",
+										},
+									},
+								},
+								{
+									Symbol: "IDENTIFIER",
+									Value:  "blue",
+								},
+								{
+									Symbol: "ASSIGNMENT",
+									Value:  "=",
+								},
+								{
+									Symbol: "ELEMENT",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "INTEGER",
+											Value:  "13",
+										},
+									},
+								},
+							},
+						},
+						{
+							Symbol: "DELIMITER",
+							Value:  ";",
+						},
+					},
+				},
+				{
+					Symbol: "FUNCTION",
+					Value:  "",
+					Children: []*services.TreeNode{
+						{
+							Symbol: "FUNCTION_DEFINITION",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "TYPE",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "KEYWORD",
+											Value:  "int",
+										},
+									},
+								},
+								{
+									Symbol: "IDENTIFIER",
+									Value:  "new",
+								},
+								{
+									Symbol: "PARAMETER",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{Symbol: "OPEN_BRACKET", Value: "("},
+										{
+											Symbol: "TYPE",
+											Value:  "",
+											Children: []*services.TreeNode{
+												{Symbol: "KEYWORD", Value: "int"},
+											},
+										},
+										{Symbol: "IDENTIFIER", Value: "red"},
+										{Symbol: "CLOSE_BRACKET", Value: ")"},
+									},
+								},
+							},
+						},
+						{
+							Symbol: "FUNCTION_BLOCK",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{Symbol: "OPEN_SCOPE", Value: "{"},
+								{
+									Symbol: "STATEMENT",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "DECLARATION",
+											Value:  "",
+											Children: []*services.TreeNode{
+												{Symbol: "IDENTIFIER", Value: "red"},
+												{Symbol: "ASSIGNMENT", Value: "="},
+												{
+													Symbol: "EXPRESSION",
+													Value:  "",
+													Children: []*services.TreeNode{
+														{
+															Symbol: "ELEMENT",
+															Value:  "",
+															Children: []*services.TreeNode{
+																{Symbol: "IDENTIFIER", Value: "red"},
+															},
+														},
+														{Symbol: "OPERATOR", Value: "+"},
+														{
+															Symbol: "ELEMENT",
+															Value:  "",
+															Children: []*services.TreeNode{
+																{Symbol: "INTEGER", Value: "1"},
+															},
+														},
+													},
+												},
+											},
+										},
+										{Symbol: "DELIMITER", Value: ";"},
+									},
+								},
+								{
+									Symbol: "RETURN",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{Symbol: "KEYWORD", Value: "return"},
+										{
+											Symbol: "ELEMENT",
+											Value:  "",
+											Children: []*services.TreeNode{
+												{Symbol: "IDENTIFIER", Value: "red"},
+											},
+										},
+										{Symbol: "DELIMITER", Value: ";"},
+									},
+								},
+								{Symbol: "CLOSE_SCOPE", Value: "}"},
+							},
+						},
+					},
+				},
+				{
+					Symbol: "FUNCTION",
+					Value:  "",
+					Children: []*services.TreeNode{
+						{
+							Symbol: "FUNCTION_DEFINITION",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "TYPE",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "KEYWORD",
+											Value:  "int",
+										},
+									},
+								},
+								{
+									Symbol: "IDENTIFIER",
+									Value:  "change",
+								},
+								{
+									Symbol: "PARAMETER",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{Symbol: "OPEN_BRACKET", Value: "("},
+										{
+											Symbol: "TYPE",
+											Value:  "",
+											Children: []*services.TreeNode{
+												{Symbol: "KEYWORD", Value: "int"},
+											},
+										},
+										{Symbol: "IDENTIFIER", Value: "red"},
+										{Symbol: "CLOSE_BRACKET", Value: ")"},
+									},
+								},
+							},
+						},
+						{
+							Symbol: "FUNCTION_BLOCK",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{Symbol: "OPEN_SCOPE", Value: "{"},
+								{
+									Symbol: "STATEMENT",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "DECLARATION",
+											Value:  "",
+											Children: []*services.TreeNode{
+												{Symbol: "IDENTIFIER", Value: "red"},
+												{Symbol: "ASSIGNMENT", Value: "="},
+												{
+													Symbol: "EXPRESSION",
+													Value:  "",
+													Children: []*services.TreeNode{
+														{
+															Symbol: "ELEMENT",
+															Value:  "",
+															Children: []*services.TreeNode{
+																{Symbol: "IDENTIFIER", Value: "red"},
+															},
+														},
+														{Symbol: "OPERATOR", Value: "+"},
+														{
+															Symbol: "ELEMENT",
+															Value:  "",
+															Children: []*services.TreeNode{
+																{Symbol: "INTEGER", Value: "1"},
+															},
+														},
+													},
+												},
+											},
+										},
+										{Symbol: "DELIMITER", Value: ";"},
+									},
+								},
+								{
+									Symbol: "RETURN",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{Symbol: "KEYWORD", Value: "return"},
+										{
+											Symbol: "ELEMENT",
+											Value:  "",
+											Children: []*services.TreeNode{
+												{Symbol: "IDENTIFIER", Value: "red"},
+											},
+										},
+										{Symbol: "DELIMITER", Value: ";"},
+									},
+								},
+								{Symbol: "CLOSE_SCOPE", Value: "}"},
+							},
+						},
+					},
+				},
+				{
+					Symbol: "STATEMENT",
+					Value:  "",
+					Children: []*services.TreeNode{
+						{
+							Symbol: "DECLARATION",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{
+									Symbol: "TYPE",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{Symbol: "KEYWORD", Value: "int"},
+									},
+								},
+								{Symbol: "IDENTIFIER", Value: "_i"},
+								{Symbol: "ASSIGNMENT", Value: "="},
+								{
+									Symbol: "ELEMENT",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{Symbol: "INTEGER", Value: "0"},
+									},
+								},
+							},
+						},
+						{Symbol: "DELIMITER", Value: ";"},
+					},
+				},
+				{
+					Symbol: "ITERATION",
+					Value:  "",
+					Children: []*services.TreeNode{
+						{
+							Symbol: "ITERATION_DEFINITION",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{Symbol: "CONTROL", Value: "for"},
+								{Symbol: "IDENTIFIER", Value: "_i"},
+								{Symbol: "CONTROL", Value: "range"},
+								{
+									Symbol: "PARAMETER",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{Symbol: "OPEN_BRACKET", Value: "("},
+										{
+											Symbol: "ELEMENT",
+											Value:  "",
+											Children: []*services.TreeNode{
+												{Symbol: "INTEGER", Value: "12"},
+											},
+										},
+										{Symbol: "CLOSE_BRACKET", Value: ")"},
+									},
+								},
+							},
+						},
+						{
+							Symbol: "ITERATION_BLOCK",
+							Value:  "",
+							Children: []*services.TreeNode{
+								{Symbol: "OPEN_SCOPE", Value: "{"},
+								{
+									Symbol: "STATEMENT",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{
+											Symbol: "DECLARATION",
+											Value:  "",
+											Children: []*services.TreeNode{
+												{Symbol: "IDENTIFIER", Value: "blue"},
+												{Symbol: "ASSIGNMENT", Value: "="},
+												{Symbol: "IDENTIFIER", Value: "new"},
+												{
+													Symbol: "PARAMETER",
+													Value:  "",
+													Children: []*services.TreeNode{
+														{Symbol: "OPEN_BRACKET", Value: "("},
+														{
+															Symbol: "ELEMENT",
+															Value:  "",
+															Children: []*services.TreeNode{
+																{Symbol: "IDENTIFIER", Value: "blue"},
+															},
+														},
+														{Symbol: "CLOSE_BRACKET", Value: ")"},
+													},
+												},
+											},
+										},
+										{Symbol: "DELIMITER", Value: ";"},
+									},
+								},
+								{
+									Symbol: "PRINT",
+									Value:  "",
+									Children: []*services.TreeNode{
+										{Symbol: "KEYWORD", Value: "print"},
+										{Symbol: "OPEN_BRACKET", Value: "("},
+										{
+											Symbol: "ELEMENT",
+											Value:  "",
+											Children: []*services.TreeNode{
+												{Symbol: "IDENTIFIER", Value: "blue"},
+											},
+										},
+										{Symbol: "CLOSE_BRACKET", Value: ")"},
+										{Symbol: "DELIMITER", Value: ";"},
+									},
+								},
+								{Symbol: "CLOSE_SCOPE", Value: "}"},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	symbol_table := &services.SymbolTable{
+		SymbolScopes: []map[string]services.Symbol{
+			{},
+		},
+	}
+
+	symbol_table_artefact := &services.SymbolTableArtefact{
+		SymbolScopes: []services.Symbol{
+			//{Name: "blue", Type: "int", Scope: 0},
+		},
+	}
+
+	type_rules := []services.TypeRule{}
+	rules := services.GrammarRules{
+		VariableRule:  "IDENTIFIER",
+		TypeRule:      "TYPE",
+		ParameterRule: "PARAMETER",
+		FunctionRule:  "FUNCTION_DEFINITION",
+	}
+
+	err := services.TraverseSyntaxTree(scope_rules, syntax_tree.Root, symbol_table, symbol_table_artefact, rules, type_rules)
+
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+}

@@ -217,7 +217,7 @@ describe('register page', () => {
 		});
 		render(toasts);
 		await waitFor(() => {
-			expect(screen.getByText(/Account created successfully/)).toBeInTheDocument();
+			expect(screen.getByText(/Account successfully created/)).toBeInTheDocument();
 		});
 	});
 
