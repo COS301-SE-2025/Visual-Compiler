@@ -320,7 +320,7 @@
 		}
 	}
 
-	let selectedType: 'AUTOMATA' | 'REGEX' | null = null;
+	let selectedType: 'AUTOMATA' | 'REGEX' | null = 'REGEX';
 	let showDefault = false;
 	let states = '';
 	let startState = '';
