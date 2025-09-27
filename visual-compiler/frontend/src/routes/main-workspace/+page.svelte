@@ -32,6 +32,7 @@
 
 	// --- CONNECTION TRACKING STATE ---
 	let physicalConnections: NodeConnection[] = [];
+	let invalid_connections: NodeConnection[] = [];
 
 	// --- COMPONENT STATE ---
 	let LexerPhaseTutorial: any;
@@ -283,6 +284,42 @@
 			       (conn.sourceNodeId === targetNode.id && conn.targetNodeId === sourceNode.id);
 		});
 	}
+	function getConnection(sourceType: NodeType, targetType: NodeType): NodeConnection|null {
+		
+			const sourceNode = findNodeByType(sourceType);
+			const targetNode = findNodeByType(targetType);
+			
+			if (!sourceNode || !targetNode) {
+				 return null;
+			}
+			
+		return physicalConnections.find(conn => 
+			(conn.sourceNodeId === sourceNode.id && conn.targetNodeId === targetNode.id) ||
+				(conn.sourceNodeId === targetNode.id && conn.targetNodeId === sourceNode.id)
+		) || null;
+	}
+	function showInvalidConnection() {
+		document.querySelectorAll('g[id^="edge-"]').forEach(el => {
+			el.querySelector('path')?.classList.remove('invalid');
+		});
+
+		invalid_connections.forEach(conn => {
+		
+			const path_id = `${conn.targetAnchor}+${conn.sourceAnchor}`; 
+			const path_id2 = `${conn.sourceAnchor}+${conn.targetAnchor}`; 
+			console.log(path_id);
+			console.log(path_id2);
+			const edgePath = document.getElementById(path_id);
+			if (edgePath) {
+				edgePath.classList.add('invalid');
+			} 
+				const edgePath2 = document.getElementById(path_id2);
+				if (edgePath2) {
+					edgePath2.classList.add('invalid');
+				}
+			
+		});
+	}
 
 	// --- CONNECTION VALIDATION FUNCTIONS ---
 	function findNodeByType(nodeType: NodeType): CanvasNode | null {
@@ -303,6 +340,10 @@
 		const confirmedCode = get(confirmedSourceCode);
 		source_code = confirmedCode; // Keep local variable in sync
 		
+		var is_invalid;
+		is_invalid = false;
+
+		
 		switch (nodeType) {
 			case 'source':
 				return true; // Source is always accessible
@@ -319,9 +360,45 @@
 					AddToast('No source code provided: Please enter and submit your source code before proceeding to lexical analysis', 'error');
 					return false;
 				}
+	
 				// Check for physical connection between source and lexer
+				if (hasPhysicalConnection('source', 'parser')) {
+					let conn;
+					conn = getConnection('source','parser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
+				if (hasPhysicalConnection('source', 'analyser')) {
+					let conn;
+					conn = getConnection('source','analyser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
+				if (hasPhysicalConnection('source', 'translator')) {
+					let conn;
+					conn = getConnection('source','translator');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
 				if (!hasPhysicalConnection('source', 'lexer')) {
-					AddToast('Missing connection: Connect the Source Code node to the Lexer node to establish data flow', 'error');
+					AddToast('Missing Source Code → Lexer connection: Connect the Source Code node to the Lexer node to establish data flow', 'error');
+					is_invalid = true;
+				}
+				if (is_invalid)
+				{
+					AddToast('Incorrect connections present (Highlighted in red)', 'error');
 					return false;
 				}
 				return true;
@@ -344,9 +421,39 @@
 					AddToast('Missing Lexer: Add and complete lexical analysis before parsing your code', 'error');
 					return false;
 				}
+				if (hasPhysicalConnection('source', 'parser')) {
+					let conn;
+					conn = getConnection('source','parser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
+				if (hasPhysicalConnection('source', 'analyser')) {
+					let conn;
+					conn = getConnection('source','analyser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
+				if (hasPhysicalConnection('source', 'translator')) {
+					let conn;
+					conn = getConnection('source','translator');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
 				// Check for physical connection between source and lexer
 				if (!hasPhysicalConnection('source', 'lexer')) {
-					AddToast('Missing Source→Lexer connection: Connect these nodes to enable data flow', 'error');
+					AddToast('Missing Source→Lexer connection: Connect these nodes to establish data flow', 'error');
 					return false;
 				}
 				// Check if lexer phase has been completed using the store value
@@ -354,9 +461,34 @@
 					AddToast('Lexical analysis incomplete: Complete tokenization in the Lexer before parsing', 'error');
 					return false;
 				}
+				if (hasPhysicalConnection('lexer', 'analyser')) {
+					let conn;
+					conn = getConnection('lexer','analyser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
+				if (hasPhysicalConnection('lexer', 'translator')) {
+					let conn;
+					conn = getConnection('lexer','translator');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
 				// Check for physical connection between lexer and parser
 				if (!hasPhysicalConnection('lexer', 'parser')) {
 					AddToast('Missing Lexer→Parser connection: Connect these nodes to enable parsing', 'error');
+					return false;
+				}
+				if (is_invalid)
+				{
+					AddToast('Incorrect connections present (Highlighted in red)', 'error');
 					return false;
 				}
 				return true;
@@ -379,6 +511,36 @@
 					AddToast('Missing Lexer: Complete lexical analysis before running semantic analysis', 'error');
 					return false;
 				}
+				if (hasPhysicalConnection('source', 'parser')) {
+					let conn;
+					conn = getConnection('source','parser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
+				if (hasPhysicalConnection('source', 'analyser')) {
+					let conn;
+					conn = getConnection('source','analyser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
+				if (hasPhysicalConnection('source', 'translator')) {
+					let conn;
+					conn = getConnection('source','translator');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
 				// Check for physical connection between source and lexer
 				if (!hasPhysicalConnection('source', 'lexer')) {
 					AddToast('Missing Source→Lexer connection: Connect these nodes to establish data flow', 'error');
@@ -395,6 +557,26 @@
 					AddToast('Missing Parser: Add and complete parsing before semantic analysis', 'error');
 					return false;
 				}
+				if (hasPhysicalConnection('lexer', 'analyser')) {
+					let conn;
+					conn = getConnection('lexer','analyser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
+				if (hasPhysicalConnection('lexer', 'translator')) {
+					let conn;
+					conn = getConnection('lexer','translator');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
 				// Check for physical connection between lexer and parser
 				if (!hasPhysicalConnection('lexer', 'parser')) {
 					AddToast('Missing Lexer→Parser connection: Connect these nodes to enable parsing', 'error');
@@ -405,9 +587,25 @@
 					AddToast('Parsing incomplete: Complete syntax analysis before semantic analysis', 'error');
 					return false;
 				}
+				
+				if (hasPhysicalConnection('parser', 'translator')) {
+					let conn;
+					conn = getConnection('parser','translator');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
 				// Check for physical connection between parser and analyser
 				if (!hasPhysicalConnection('parser', 'analyser')) {
 					AddToast('Missing Parser→Analyser connection: Connect these nodes to enable semantic analysis', 'error');
+					return false;
+				}
+				if (is_invalid)
+				{
+					AddToast('Incorrect connections present (Highlighted in red)', 'error');
 					return false;
 				}
 				return true;
@@ -430,6 +628,36 @@
 					AddToast('Missing Lexer: Complete lexical analysis before code translation', 'error');
 					return false;
 				}
+				if (hasPhysicalConnection('source', 'parser')) {
+					let conn;
+					conn = getConnection('source','parser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
+				if (hasPhysicalConnection('source', 'analyser')) {
+					let conn;
+					conn = getConnection('source','analyser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
+				if (hasPhysicalConnection('source', 'translator')) {
+					let conn;
+					conn = getConnection('source','translator');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
 				// Check for physical connection between source and lexer
 				if (!hasPhysicalConnection('source', 'lexer')) {
 					AddToast('Missing Source→Lexer connection: Connect these nodes to establish data flow', 'error');
@@ -445,6 +673,26 @@
 				if (!parserNodeForTranslator) {
 					AddToast('Missing Parser: Complete parsing before code translation', 'error');
 					return false;
+				}
+				if (hasPhysicalConnection('lexer', 'analyser')) {
+					let conn;
+					conn = getConnection('lexer','analyser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
+				if (hasPhysicalConnection('lexer', 'translator')) {
+					let conn;
+					conn = getConnection('lexer','translator');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
 				}
 				// Check for physical connection between lexer and parser
 				if (!hasPhysicalConnection('lexer', 'parser')) {
@@ -462,6 +710,16 @@
 					AddToast('Missing Analyser: Complete semantic analysis before code translation', 'error');
 					return false;
 				}
+				if (hasPhysicalConnection('parser', 'translator')) {
+					let conn;
+					conn = getConnection('parser','translator');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
 				// Check for physical connection between parser and analyser
 				if (!hasPhysicalConnection('parser', 'analyser')) {
 					AddToast('Missing Parser→Analyser connection: Connect these nodes to enable analysis', 'error');
@@ -475,6 +733,11 @@
 				// Check for physical connection between analyser and translator
 				if (!hasPhysicalConnection('analyser', 'translator')) {
 					AddToast('Missing Analyser→Translator connection: Connect these nodes to enable translation', 'error');
+					return false;
+				}
+				if (is_invalid)
+				{
+					AddToast('Incorrect connections present (Highlighted in red)', 'error');
 					return false;
 				}
 				return true;
@@ -1040,6 +1303,13 @@
 
 
 <style>
+
+	:global(path.edge.invalid),
+	:global(path.target.invalid) {
+	stroke: red !important;
+	stroke-width: 3px !important;
+	}
+
 	:global(html, body) {
 		margin: 0;
 		padding: 0;
