@@ -21,7 +21,7 @@
 	</div>
 
 	<div class="hero_content">
-		<h1 class="main_headline">Demystifying compilers,<br>one block at a time...</h1>
+		<h1 class="main_headline">Demystifying Compilers,<br>One Block at a Time.</h1>
 		<p class="sub_headline">
 			An educational platform to construct, configure, visualise<br>and understand the core phases of compilation.
 		</p>
