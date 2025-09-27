@@ -2,7 +2,7 @@
     import type { NodeType } from '$lib/types';
 
     let current_step = 1;
-    const total_steps = 6;
+    const total_steps = 5; // Changed from 6 to 5
 
     // nextStep
     // Return type: void
@@ -81,15 +81,7 @@
             <div class="tutorial-content-area">
                 {#if current_step === 1}
                     <div class="tutorial-step">
-                        <h3>1. Source Code Input</h3>
-                        <p>Start by entering your source code in the input box:</p>
-                        <div class="code-sample">
-                            <code>{@html sample_code}</code>
-                        </div>
-                    </div>
-                {:else if current_step === 2}
-                    <div class="tutorial-step">
-                        <h3>2.1 Regular Expression Basics</h3>
+                        <h3>1. Regular Expression Basics</h3>
                         <p>Regular expressions use special characters to match patterns:</p>
                         <div class="pattern-example">
                             {#each regex_basics as { type, pattern, example }}
@@ -109,9 +101,9 @@
                             📺 Watch: Regular Expressions explained (YouTube)
                         </a>
                     </div>
-                {:else if current_step === 3}
+                {:else if current_step === 2}
                     <div class="tutorial-step">
-                        <h3>2.2 Deterministic Finite Automata (DFA)</h3>
+                        <h3>2. Deterministic Finite Automata (DFA)</h3>
                         <div class="automata-explainer">
                             <div class="automata-example">
                                 <div class="automata-label">
@@ -167,9 +159,9 @@
                             📺 Watch: DFA explained (YouTube)
                         </a>
                     </div>
-                {:else if current_step === 4}
+                {:else if current_step === 3}
                     <div class="tutorial-step">
-                        <h3>2.3 Non-deterministic Finite Automata (NFA)</h3>
+                        <h3>3. Non-deterministic Finite Automata (NFA)</h3>
                         <div class="automata-explainer">
                             <div class="automata-example">
                                 <div class="automata-label">
@@ -234,9 +226,9 @@
                             📺 Watch: NFA explained (YouTube)
                         </a>
                     </div>
-                {:else if current_step === 5}
+                {:else if current_step === 4}
                     <div class="tutorial-step">
-                        <h3>3. Common Token Patterns</h3>
+                        <h3>4. Common Token Patterns</h3>
                         <p>Here are some common patterns used in lexical analysis:</p>
                         <div class="type-example">
                             {#each regex_examples as { type, pattern, example }}
@@ -248,9 +240,9 @@
                             {/each}
                         </div>
                     </div>
-                {:else if current_step === 6}
+                {:else if current_step === 5}
                     <div class="tutorial-step">
-                        <h3>4. Tokenisation Result</h3>
+                        <h3>5. Tokenisation Result</h3>
                         <div class="token-table">
                             <div class="table-header">
                                 <span class="header-type">Type</span>
