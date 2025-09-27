@@ -12,7 +12,7 @@
 			name: 'Shinn-Ru Hung',
 			role1: 'UI Engineer',
 			role2: 'Integration Engineer',
-			image_url: '/shinn-ru.jpg'
+			image_url: '/austin.jpg'
 		},
 		{
 			name: 'Tia Harripersad',
