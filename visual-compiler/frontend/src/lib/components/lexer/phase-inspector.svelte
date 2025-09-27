@@ -22,6 +22,7 @@
 	let submissionStatus = { show: false, success: false, message: '' };
 	let showGenerateButton = false;
 	let showRegexActionButtons = false;
+	let regexRulesSubmitted = false;
 
 	// New state for the expandable modal
 	let isExpanded = false;
@@ -124,6 +125,7 @@
 				}
 				submissionStatus = { show: true, success: true, message: 'Rules stored successfully!' };
 				showRegexActionButtons = true;
+				regexRulesSubmitted = true;
 			} catch (error) {
 				AddToast('Save failed: Unable to store lexical rules. Please check your connection and try again', 'error');
 			}
@@ -298,6 +300,7 @@
 	function handleInputChange() {
 		showGenerateButton = false;
 		showRegexActionButtons = false;
+		regexRulesSubmitted = false;
 		submissionStatus = { show: false, success: false, message: '' };
 		
 		// Update the store when inputs change
@@ -495,6 +498,7 @@
 	function selectType(type: 'AUTOMATA' | 'REGEX') {
 		selectedType = type;
 		showRegexActionButtons = false;
+		regexRulesSubmitted = false;
 		
 		// Reset visualization states only
 		showNfaVis = false;
@@ -1072,6 +1076,7 @@
                 
                 // Reset other states
                 showRegexActionButtons = false;
+                regexRulesSubmitted = false;
                 showGenerateButton = false;
                 submissionStatus = { show: false, success: false, message: '' };
                 
@@ -1137,24 +1142,25 @@
 
 		{#if selectedType && !showDefault}
 			<button
-				class="default-toggle-btn"
+				class="option-btn example-btn"
 				on:click={insertDefault}
 				type="button"
-				aria-label="Insert default input"
-				title="Insert default input"
+				aria-label="Show example code"
+				title="Show example code"
 			>
-				<span class="icon">🪄</span>
+				Show Example
 			</button>
+
 		{/if}
 		{#if selectedType && showDefault}
 			<button
-				class="default-toggle-btn selected"
+				class="option-btn example-btn selected"
 				on:click={removeDefault}
 				type="button"
-				aria-label="Remove default input"
-				title="Remove default input"
+				aria-label="Restore your input"
+				title="Restore your input"
 			>
-				<span class="icon">🧹</span>
+				Restore Input
 			</button>
 		{/if}
 	</div>
@@ -1267,21 +1273,35 @@
 				{/if}
 				<div class="button-stack">
 					<button class="submit-button" on:click={handleSubmit}> Submit </button>
-					{#if showRegexActionButtons}
-						<div class="regex-action-buttons">
-							<button class="generate-button" on:click={generateTokens}>Generate Tokens</button>
-							<button
-								class="generate-button"
-								on:click={handleRegexToNFA}
-								title="Convert Regular Expression to a NFA">NFA</button
-							>
-							<button
-								class="generate-button"
-								on:click={handleRegexToDFA}
-								title="Convert Regular Expression to a DFA">DFA</button
-							>
-						</div>
-					{/if}
+					<div class="regex-action-buttons">
+						<button 
+							class="generate-button" 
+							class:disabled={!regexRulesSubmitted}
+							disabled={!regexRulesSubmitted}
+							on:click={generateTokens}
+							title={regexRulesSubmitted ? "Generate tokens from submitted rules" : "Submit regular expressions first"}
+						>
+							Generate Tokens
+						</button>
+						<button
+							class="generate-button"
+							class:disabled={!regexRulesSubmitted}
+							disabled={!regexRulesSubmitted}
+							on:click={handleRegexToNFA}
+							title={regexRulesSubmitted ? "Convert Regular Expression to a NFA" : "Submit regular expressions first"}
+						>
+							NFA
+						</button>
+						<button
+							class="generate-button"
+							class:disabled={!regexRulesSubmitted}
+							disabled={!regexRulesSubmitted}
+							on:click={handleRegexToDFA}
+							title={regexRulesSubmitted ? "Convert Regular Expression to a DFA" : "Submit regular expressions first"}
+						>
+							DFA
+						</button>
+					</div>
 				</div>
 				{#if submissionStatus.show}
 					<div
@@ -1742,9 +1762,25 @@
 		transition: background-color 0.2s ease, transform 0.2s;
 	}
 
-	.generate-button:hover {
+	.generate-button:hover:not(:disabled) {
 		background: #5a6268;
 		transform: translateY(-2px);
+	}
+
+	.generate-button:disabled,
+	.generate-button.disabled {
+		background: #d6d8db;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
+	}
+
+	.generate-button:disabled:hover,
+	.generate-button.disabled:hover {
+		background: #d6d8db;
+		color: #6c757d;
+		transform: none;
 	}
 
 	.status-message {
@@ -1808,31 +1844,44 @@
 		background: #f5f8fd;
 	}
 
-	.default-toggle-btn {
-		margin-left: 1.2rem;
-		padding: 0.4rem 0.7rem;
-		border-radius: 50%;
-		border: 2px solid #e5e7eb;
-		background: white;
-		color: #041a47;
-		cursor: pointer;
-		transition: all 0.2s ease;
+	.option-btn {
 		display: flex;
 		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 100%;
+		max-width: 150px;
 		justify-content: center;
-		height: 2.3rem;
-		width: 2.3rem;
+		margin-left: 1rem;
 	}
 
-	.default-toggle-btn.selected {
-		background: #d0e2ff;
-		border-color: #041a47;
+	.example-btn {
+		background: linear-gradient(135deg, #1e40af, #3b82f6);
 	}
 
-	.default-toggle-btn:hover,
-	.default-toggle-btn:focus {
-		background: #f5f8fd;
-		border-color: #7da2e3;
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+	}
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+	}
+
+	.option-btn.selected {
+		background: linear-gradient(135deg, #1e40af, #3b82f6);
 	}
 
 	.icon {
@@ -2093,9 +2142,25 @@
 		color: #ffffff;
 	}
 
-	:global(html.dark-mode) .generate-button:hover,
-	:global(html.dark-mode) .action-btn:hover {
+	:global(html.dark-mode) .generate-button:hover:not(:disabled),
+	:global(html.dark-mode) .action-btn:hover:not(:disabled) {
 		background: #002a8e;
+	}
+
+	:global(html.dark-mode) .generate-button:disabled,
+	:global(html.dark-mode) .generate-button.disabled {
+		background: #495057;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
+	}
+
+	:global(html.dark-mode) .generate-button:disabled:hover,
+	:global(html.dark-mode) .generate-button.disabled:hover {
+		background: #495057;
+		color: #6c757d;
+		transform: none;
 	}
 
 	:global(html.dark-mode) .automaton-btn {
@@ -2115,21 +2180,13 @@
 		background: rgba(45, 55, 72, 0.5);
 	}
 
-	:global(html.dark-mode) .default-toggle-btn {
-		background: transparent;
-		color: #cbd5e1;
-		border-color: #4a5568;
+	:global(html.dark-mode) .example-btn {
+		background: linear-gradient(135deg, #1d4ed8, #2563eb);
 	}
 
-	:global(html.dark-mode) .default-toggle-btn.selected {
-		background: #2d3748;
-		border-color: #63b3ed;
-		color: #e2e8f0;
-	}
-
-	:global(html.dark-mode) .default-toggle-btn:hover {
-		background: rgba(45, 55, 72, 0.5);
-		border-color: #63b3ed;
+	:global(html.dark-mode) .option-btn.selected {
+		background: linear-gradient(135deg, #059669, #10b981);
+		border-color: #059669;
 	}
 
 	:global(html.dark-mode) .vis-heading,

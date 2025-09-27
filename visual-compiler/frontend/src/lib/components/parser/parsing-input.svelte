@@ -544,14 +544,14 @@
         <div class="grammar-header">
             <h3>Context-Free Grammar</h3>
             <button
-                class="default-toggle-btn"
+                class="option-btn example-btn"
                 class:selected={show_default_grammar}
                 on:click={show_default_grammar ? removeDefaultGrammar : insertDefaultGrammar}
                 type="button"
-                aria-label={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
-                title={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
+                aria-label={show_default_grammar ? 'Restore your input' : 'Show context-free grammar example'}
+                title={show_default_grammar ? 'Restore your input' : 'Show context-free grammar example'}
             >
-                <span class="icon">{show_default_grammar ? '🧹' : '🪄'}</span>
+                {show_default_grammar ? 'Restore Input' : 'Show Example'}
             </button>
         </div>
 
@@ -625,9 +625,15 @@
 
     <div class="button-container">
         <button class="submit-button" on:click={handleSubmitGrammar}>Submit Grammar</button>
-        {#if is_grammar_submitted}
-            <button class="submit-button" on:click={generateSyntaxTree}>Generate Syntax Tree</button>
-        {/if}
+        <button 
+            class="submit-button generate-button" 
+            class:disabled={!is_grammar_submitted}
+            disabled={!is_grammar_submitted}
+            on:click={generateSyntaxTree}
+            title={is_grammar_submitted ? "Generate syntax tree from submitted grammar" : "Submit grammar first"}
+        >
+            Generate Syntax Tree
+        </button>
     </div>
 </div>
 
@@ -710,38 +716,43 @@
         color: #001a6e;
         font-family: 'Times New Roman';
     }
-    .default-toggle-btn {
-        background: white;
-        border: 2px solid #e5e7eb;
-        color: #001a6e;
-        font-size: 1.2rem;
-        cursor: pointer;
-        transition:
-            background 0.2s,
-            border-color 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 2.2rem;
-        width: 2.2rem;
-        border-radius: 50%;
-    }
-    .default-toggle-btn.selected {
-        background: #d0e2ff;
-        border-color: #003399;
-        box-shadow: 0 0 0 2px rgba(0, 51, 153, 0.3);
-        font-weight: bold;
-        transform: scale(1.05);
-    }
-    .default-toggle-btn:hover {
-        background: #f5f8fd;
-        border-color: #7da2e3;
-    }
-    .icon {
-        font-size: 1.3rem;
-        line-height: 1;
-        pointer-events: none;
-    }
+    .option-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 100%;
+		max-width: 150px;
+		justify-content: center;
+		margin-left: 1rem;
+	}
+
+	.example-btn {
+		background: linear-gradient(135deg, #1e40af, #3b82f6);
+	}
+
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+	}
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+	}
+
+	
 
     .top-inputs {
         display: flex;
@@ -884,20 +895,42 @@
         gap: 1rem;
         margin-top: 1rem;
     }
-    .submit-button {
+    .submit-button,
+    .generate-button {
         padding: 0.6rem 1.5rem;
         background: #BED2E6;
-        color: 000000;
+        color: #000000;
         border: none;
         border-radius: 6px;
         font-size: 0.9rem;
         font-weight: 500;
         cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+        margin-top: 1rem;
     }
 
-    .submit-button:hover {
+    .submit-button:hover:not(:disabled),
+    .generate-button:hover:not(:disabled) {
         background: #a8bdd1;
         transform: translateY(-2px);
+    }
+
+    .submit-button:disabled,
+    .generate-button:disabled,
+    .generate-button.disabled {
+        background: #d6d8db;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+    }
+
+    .submit-button:disabled:hover,
+    .generate-button:disabled:hover,
+    .generate-button.disabled:hover {
+        background: #d6d8db;
+        color: #6c757d;
+        transform: none;
     }
 
     /* Dark Mode Styles */
@@ -941,26 +974,37 @@
         border-color: #60a5fa;
         color: #60a5fa;
     }
-    :global(html.dark-mode) .submit-button {
+    :global(html.dark-mode) .submit-button,
+    :global(html.dark-mode) .generate-button {
         background-color: #001A6E;
         color: #ffffff;
     }
-    :global(html.dark-mode) .default-toggle-btn {
-        background-color: #2d3748;
-        border-color: #4a5568;
-        color: #d1d5db;
+
+    :global(html.dark-mode) .submit-button:hover:not(:disabled),
+    :global(html.dark-mode) .generate-button:hover:not(:disabled) {
+        background-color: #002a8e;
+        transform: translateY(-2px);
     }
-    :global(html.dark-mode) .default-toggle-btn.selected {
-        background-color: #001a6e;
-        border-color: #60a5fa;
-        color: #e0e7ff;
-        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4);
-        font-weight: bold;
-        transform: scale(1.05);
+
+    :global(html.dark-mode) .submit-button:disabled,
+    :global(html.dark-mode) .generate-button:disabled,
+    :global(html.dark-mode) .generate-button.disabled {
+        background: #495057;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
     }
-    :global(html.dark-mode) .default-toggle-btn:not(.selected):hover {
-        background-color: #374151;
-        border-color: #6b7280;
+
+    :global(html.dark-mode) .submit-button:disabled:hover,
+    :global(html.dark-mode) .generate-button:disabled:hover,
+    :global(html.dark-mode) .generate-button.disabled:hover {
+        background: #495057;
+        color: #6c757d;
+        transform: none;
+    }
+    :global(html.dark-mode) .example-btn {
+        background: linear-gradient(135deg, #1d4ed8, #2563eb);
     }
 
     
