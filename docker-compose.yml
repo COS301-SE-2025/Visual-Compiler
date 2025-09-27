@@ -31,3 +31,4 @@ services:
       - CLIENT_SECRET
       - CUSTOM_API
       - OPENAI_API_KEY
+    restart: unless-stopped

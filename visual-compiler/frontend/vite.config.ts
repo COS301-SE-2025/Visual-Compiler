@@ -17,13 +17,10 @@ export default defineConfig(({ mode }) => ({
 	}),
 	plugins: [sveltekit()],
 	build: {
-		minify: 'terser',
-		terserOptions: {
-			compress: {
-				drop_console: true,
-				drop_debugger: true,
-			}
-		}
+		minify: 'esbuild',
+	},
+	esbuild: {
+		drop: ['console', 'debugger']
 	},
 	test: {
 		globals: true,
