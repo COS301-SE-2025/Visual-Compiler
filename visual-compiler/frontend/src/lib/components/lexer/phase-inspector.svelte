@@ -2,7 +2,7 @@
 	// @ts-nocheck
 	import type { Token } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { DataSet, Network } from 'vis-network/standalone';
 	import { fade, scale } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
@@ -1018,7 +1018,7 @@
 	            }
 	        );
 
-	        if (!response.ok) return;
+	        if (!response || !response.ok) return;
 
 	        const data = await response.json();
 	        
@@ -1049,6 +1049,51 @@
 	        console.error('Error updating inputs:', error);
 	    }
 	}
+
+	// Add event listener for AI-generated lexer rules
+    let aiLexerEventListener: (event: CustomEvent) => void;
+
+    onMount(() => {
+        // Listen for AI-generated lexer rules
+        aiLexerEventListener = (event: CustomEvent) => {
+            if (event.detail && event.detail.rules && Array.isArray(event.detail.rules)) {
+                console.log('Received AI lexer rules:', event.detail.rules);
+                
+                // Clear existing user input rows and populate with AI-generated rules
+                userInputRows = event.detail.rules.map(rule => ({
+                    type: rule.type,
+                    regex: rule.regex,
+                    error: ''
+                }));
+                
+                // Ensure we're in regex mode and not showing default
+                selectedType = 'REGEX';
+                showDefault = false;
+                
+                // Reset other states
+                showRegexActionButtons = false;
+                showGenerateButton = false;
+                submissionStatus = { show: false, success: false, message: '' };
+                
+                // Update the lexer state
+                lexerState.update(state => ({
+                    ...state,
+                    userInputRows: [...userInputRows]
+                }));
+                
+                AddToast('AI lexer rules inserted into input rows!', 'success');
+            }
+        };
+
+        window.addEventListener('ai-lexer-generated', aiLexerEventListener);
+    });
+
+    onDestroy(() => {
+        if (aiLexerEventListener) {
+            window.removeEventListener('ai-lexer-generated', aiLexerEventListener);
+        }
+    });
+
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -1066,7 +1111,7 @@
 		<div class="instructions-content">
 			<h4 class="instructions-header">Instructions</h4>
 			<p class="instructions-text">
-				Enter regular expressions or an automata to tokenise your source code. The type that you choose for each token is important.
+				Enter regular expression rules in order of priority or an automata to tokenise your source code. The token types are used throughout the other phases.
 			</p>
 		</div>
 	</div>
@@ -1134,7 +1179,7 @@
 							/>
 						</svg>
 					</button>
-					<div bind:this={regexNfaContainer} class="vis-graph-area" />
+					<div bind:this={regexNfaContainer} class="vis-graph-area"></div>
 				</div>
 				<button
 					class="submit-button"
@@ -1162,7 +1207,7 @@
 							/>
 						</svg>
 					</button>
-					<div bind:this={regexDfaContainer} class="vis-graph-area" />
+					<div bind:this={regexDfaContainer} class="vis-graph-area"></div>
 				</div>
 				<button
 					class="submit-button"
@@ -1313,7 +1358,7 @@
 				<div class="vis-heading">
 					<span class="vis-title">NFA Visualization</span>
 				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand NFA visualization to fullscreen">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -1326,14 +1371,14 @@
 						/>
 					</svg>
 				</button>
-				<div bind:this={nfaContainer} class="vis-graph-area" />
+				<div bind:this={nfaContainer} class="vis-graph-area"></div>
 			</div>
 		{:else if automataDisplay === 'DFA' && showDfaVis}
 			<div class="automata-container pretty-vis-box">
 				<div class="vis-heading">
 					<span class="vis-title">DFA Visualization</span>
 				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand DFA visualization to fullscreen">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -1346,7 +1391,7 @@
 						/>
 					</svg>
 				</button>
-				<div bind:this={dfaContainer} class="vis-graph-area" />
+				<div bind:this={dfaContainer} class="vis-graph-area"></div>
 			</div>
 		{:else if automataDisplay === 'RE' && showRegexOutput && regexRules.length > 0}
 			<div class="regex-display-container pretty-vis-box">
@@ -1377,7 +1422,7 @@
 				<div class="vis-heading">
 					<span class="vis-title">NFA Visualization (from REGEX)</span>
 				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand NFA visualization from regex to fullscreen">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -1398,7 +1443,7 @@
 				<div class="vis-heading">
 					<span class="vis-title">DFA Visualization (from REGEX)</span>
 				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand DFA visualization from regex to fullscreen">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						width="16"
@@ -1419,16 +1464,28 @@
 
 
 {#if isExpanded}
-	<div class="modal-backdrop" on:click={toggleExpand} transition:fade={{ duration: 200 }}>
+	<div 
+		class="modal-backdrop" 
+		on:click={toggleExpand} 
+		on:keydown={(e) => e.key === 'Escape' && toggleExpand()}
+		role="presentation"
+		tabindex="-1"
+		transition:fade={{ duration: 200 }}
+	>
 		<div
 			class="modal-content"
 			on:click|stopPropagation
+			on:keydown|stopPropagation
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="modal-title"
+			tabindex="0"
 			transition:scale={{ duration: 250, start: 0.95 }}
 			on:introend={fitGraphToModal}
 		>
 			<div class="modal-header">
 				<div class="header-left">
-					<h3>Expanded Automaton View</h3>
+					<h3 id="modal-title">Expanded Automaton View</h3>
 				</div>
 				<div class="header-center">
 					<div class="zoom-controls">
@@ -1681,7 +1738,7 @@
 		border-radius: 6px;
 		font-size: 0.9rem;
 		font-weight: 500;
-		cursor: pointer;
+			cursor: pointer;
 		transition: background-color 0.2s ease, transform 0.2s;
 	}
 

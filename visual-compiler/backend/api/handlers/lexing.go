@@ -219,7 +219,7 @@ func CreateRulesFromCode(c *gin.Context) {
 // @Tags Lexing
 // @Accept json
 // @Produce json
-// @Param request body IDRequest true "Create Tokens from Stored Code and Rules"
+// @Param request body ProjectNameRequest true "Create Tokens from Stored Code and Rules"
 // @Success 200 {object} map[string]string "Tokens successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Lexing failed"
 // @Failure 401 {object} map[string]string "Unauthorized"
@@ -416,7 +416,7 @@ func ReadDFAFromUser(c *gin.Context) {
 // @Tags Lexing
 // @Accept json
 // @Produce json
-// @Param request body IDRequest true "Create Tokens from Stored DFA"
+// @Param request body ProjectNameRequest true "Create Tokens from Stored DFA"
 // @Success 200 {object} map[string]string "Tokens successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Tokenization failed"
 // @Failure 401 {object} map[string]string "Unauthorized"
@@ -502,7 +502,7 @@ func TokensFromDFA(c *gin.Context) {
 // @Tags Lexing
 // @Accept json
 // @Produce json
-// @Param request body IDRequest true "Create Regex from Stored DFA"
+// @Param request body ProjectNameRequest true "Create Regex from Stored DFA"
 // @Success 200 {object} map[string]string "Rules successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
 // @Failure 401 {object} map[string]string "Unauthorized"
@@ -582,7 +582,7 @@ func ConvertDFAToRG(c *gin.Context) {
 // @Tags Lexing
 // @Accept json
 // @Produce json
-// @Param request body IDRequest true "Create NFA from Stored Rules"
+// @Param request body ProjectNameRequest true "Create NFA from Stored Rules"
 // @Success 200 {object} map[string]string "NFA successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
 // @Failure 401 {object} map[string]string "Unauthorized"
@@ -664,7 +664,7 @@ func ConvertRGToNFA(c *gin.Context) {
 // @Tags Lexing
 // @Accept json
 // @Produce json
-// @Param request body IDRequest true "Create DFA from Stored Rules"
+// @Param request body ProjectNameRequest true "Create DFA from Stored Rules"
 // @Success 200 {object} map[string]string "DFA successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
 // @Failure 401 {object} map[string]string "Unauthorized"
@@ -746,7 +746,7 @@ func ConvertRGToDFA(c *gin.Context) {
 // @Tags Lexing
 // @Accept json
 // @Produce json
-// @Param request body IDRequest true "Create DFA from NFA"
+// @Param request body ProjectNameRequest true "Create DFA from NFA"
 // @Success 200 {object} map[string]string "DFA successfully created and stored"
 // @Failure 400 {object} map[string]string "Invalid input/Conversion failed"
 // @Failure 401 {object} map[string]string "Unauthorized"

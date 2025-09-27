@@ -64,6 +64,11 @@ jobs:
           Mongo_username: ${{ secrets.MONGODB_USERNAME }}
           Mongo_password: ${{secrets.MONGODB_PASSWORD}}
           Mongo_URI: ${{secrets.MONGODB_URI}}
+          AUTH0_DOMAIN: ${{secrets.AUTH0_DOMAIN}}
+          CLIENT_ID: ${{secrets.CLIENT_ID}}
+          CLIENT_SECRET: ${{secrets.CLIENT_SECRET}}
+          CUSTOM_API: ${{secrets.CUSTOM_API}}
+          OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
 
       - name: Tests for Backend
         working-directory: ./visual-compiler/backend
@@ -71,6 +76,11 @@ jobs:
           Mongo_username: ${{ secrets.MONGODB_USERNAME }}
           Mongo_password: ${{secrets.MONGODB_PASSWORD}}
           Mongo_URI: ${{secrets.MONGODB_URI}}
+          AUTH0_DOMAIN: ${{secrets.AUTH0_DOMAIN}}
+          CLIENT_ID: ${{secrets.CLIENT_ID}}
+          CLIENT_SECRET: ${{secrets.CLIENT_SECRET}}
+          CUSTOM_API: ${{secrets.CUSTOM_API}}
+          OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
         run: go test -tags=coverage -coverpkg=./... ./... -coverprofile=coverage.out
 
       - name: Upload coverage for backend
@@ -86,6 +96,13 @@ jobs:
         with:
           config: ./visual-compiler/backend/.semgrep-go.yml
 
+  e2e_test:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout main code
+        uses: actions/checkout@v4
+        
       - name: Docker Compose Installation
         run: |
           sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -97,6 +114,11 @@ jobs:
           echo "Mongo_username=${{secrets.MONGODB_USERNAME}}" >> backend.env
           echo "Mongo_password=${{secrets.MONGODB_PASSWORD}}" >> backend.env
           echo "Mongo_URI=${{secrets.MONGODB_URI}}" >> backend.env
+          echo "AUTH0_DOMAIN=${{secrets.AUTH0_DOMAIN}}" >> backend.env
+          echo "CLIENT_ID=${{secrets.CLIENT_ID}}" >> backend.env
+          echo "CLIENT_SECRET=${{secrets.CLIENT_SECRET}}" >> backend.env
+          echo "CUSTOM_API=${{secrets.CUSTOM_API}}" >> backend.env
+          echo "OPENAI_API_KEY=${{secrets.OPENAI_API_KEY}}" >> backend.env
 
       - name: Docker Build and Compose for deployment
         run: docker compose --env-file backend.env up -d --build

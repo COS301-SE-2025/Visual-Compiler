@@ -41,39 +41,38 @@
 			<button class:active={active_tab === 'about'} on:click={() => (active_tab = 'about')}
 				>About The Project</button
 			>
-			<button class:active={active_tab === 'client'} on:click={() => (active_tab = 'client')}
-				>About EPI-USE Labs</button
-			>
 			<button class:active={active_tab === 'team'} on:click={() => (active_tab = 'team')}
 				>Meet The Team</button
+			>
+			<button class:active={active_tab === 'client'} on:click={() => (active_tab = 'client')}
+				>About EPI-USE Labs</button
 			>
 		</div>
 
 		<div class="tab_content">
 			{#if active_tab === 'about'}
 				<div class="content_block">
-					<h3>An Educational Tool for a Complex World</h3>
-					<p>
-						The Visual Compiler is an educational platform designed to demystify the complex world
-						of compilers. The core goal is to provide a visual, block-based system where users can
-						construct their own compilers phase by phase—from lexing and parsing to analysis and
-						translation. By allowing users to see the visual artifacts like syntax trees and tokens
-						at each stage, the platform makes abstract concepts tangible. It removes the need for
-						deep technical skill, letting students experiment and learn in a high-level, intuitive
-						environment.
-					</p>
+					<h3>Visual Compiler</h3>
+					<div class="new_info">
+						<p>
+							Visual Compiler is an educational platform that demonstrates the four main phases of compilation, specifically lexical analysis, syntax analysis, semantic analysis and code generation.
+						</p>
+						<p>
+							Through integrated simulators, visualisers and tutorials, this web application fosters a constructive environment for computer science students to bridge theoretical concepts and practical application.
+						</p>
+					</div>
 				</div>
 			{:else if active_tab === 'client'}
 				<div class="content_block">
 					<h3>Value Through Innovation</h3>
-					<p>
-						EPI-USE Labs is a global software company that partners with clients to optimize the
-						performance, management, and security of their SAP® and SAP SuccessFactors® systems.
-						With over four decades of experience, they create innovative, well-engineered solutions
-						to help clients navigate complex challenges. As part of 'Group Elephant', EPI-USE Labs
-						is also committed to going 'Beyond Corporate Purpose' by contributing 1% of its revenue
-						to the preservation of at-risk elephants and rhinos through community upliftment.
-					</p>
+					<div class="new_info">
+						<p>
+							EPI-USE Labs is a global software company that partners with clients to create innovative, well-engineered solutions that optimise the performance, management, and security of their SAP® and SAP SuccessFactors® systems.
+						</p>
+						<p>
+							As part of Group Elephant, EPI-USE Labs is also committed to going beyond corporate purpose by contributing 1% of its revenue to the preservation of elephants and rhinos through community upliftment.
+						</p>
+					</div>
 				</div>
 			{:else if active_tab === 'team'}
 				<div class="content_block team_grid">
@@ -101,6 +100,11 @@
 	.info_container {
 		max-width: 1200px;
 		margin: 0 auto;
+	}
+
+	.new_info {
+		margin-top: 2rem;
+		margin-bottom: 1rem;
 	}
 
 	.tab_nav {
