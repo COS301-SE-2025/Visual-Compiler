@@ -609,12 +609,14 @@
 
 	.inspector-container {
 		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-		padding: 1.5rem;
-		font-family: var(--font-sans);
-		background-color: var(--bg-primary);
-		color: var(--text-primary);
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        font-family: var(--font-sans);
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        height: 100%;
+        overflow-y: auto;
 	}
 
 	.header-container {
@@ -1162,6 +1164,50 @@
 		color: #6c757d;
 		transform: none;
 	}
+
+	
+    .inspector-container::-webkit-scrollbar {
+        width: 11px;
+    }
+    
+    .inspector-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .inspector-container::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 10px;
+    }
+    
+    .inspector-container::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Firefox scrollbar */
+    .inspector-container {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
+
+    :global(html.dark-mode) .inspector-container {
+        background: #1a2a4a;
+        scrollbar-color: #4a5568 #2d3748;
+    }
+
+    /* Dark mode scrollbar styles */
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-track {
+        background: #2d3748;
+    }
+
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-thumb {
+        background-color: #4a5568;
+        border-color: #2d3748;
+    }
+
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-thumb:hover {
+        background: #616e80;
+    }
+
 
 	
 	
