@@ -1578,10 +1578,9 @@
 
 
 	.analyser-heading {
-		color: #001a6e;
+		color: black;
 		text-align: center;
 		margin-top: 0;
-		font-family: 'Times New Roman';
 		margin-bottom: 0;
 		font-size: 2rem;
 		font-weight: bold;
