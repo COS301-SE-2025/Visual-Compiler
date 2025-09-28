@@ -628,6 +628,8 @@
                 `Failed to generate syntax tree: ${error.message}. Please ensure tokens and grammar are valid.`,
                 'error'
             );
+        } finally {
+            isGeneratingTree = false;
         }
     }
 
