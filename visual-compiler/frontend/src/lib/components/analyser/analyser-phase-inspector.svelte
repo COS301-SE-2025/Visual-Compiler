@@ -1196,7 +1196,6 @@
 		border: none;
 		border-radius: 8px;
 		font-size: 0.875rem;
-		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.2s ease;
 		position: relative;
@@ -1210,11 +1209,12 @@
 	}
 
 	.example-btn {
-		background: #1e40af;
+		background: #BED2E6;
+		color: black;
 	}
 
 	.example-btn:hover {
-		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
 	}
 
 	.option-btn:hover {
@@ -1459,7 +1459,8 @@
 		transform: none;
 	}
 	:global(html.dark-mode) .example-btn {
-		background: linear-gradient(135deg, #1d4ed8, #2563eb);
+		background: #BED2E6;
+		color: black;
 	}
 
 	::-webkit-scrollbar {

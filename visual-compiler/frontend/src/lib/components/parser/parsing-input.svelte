@@ -909,7 +909,6 @@
 		border: none;
 		border-radius: 8px;
 		font-size: 0.875rem;
-		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.2s ease;
 		position: relative;
@@ -920,12 +919,14 @@
 		min-width: 140px;
 		justify-content: center;
 		margin-left: 1rem;
-	}	.example-btn {
-		background: #1e40af;
+	}
+	.example-btn {
+		background: #BED2E6;
+		color: black;
 	}
 
 	.example-btn:hover {
-		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
 	}
 
 	.option-btn:hover {

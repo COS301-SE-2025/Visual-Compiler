@@ -664,14 +664,13 @@
 	}
 
 	.example-btn {
-		background: #1e40af;	
+		background: #BED2E6;
+		color: black;
 	}
 
 	.example-btn:hover {
-		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
-	}
-
-	.separator {
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
+	}	.separator {
 		display: flex;
 		align-items: center;
 		color: #64748b;
@@ -980,7 +979,8 @@
 	}
 
 	:global(html.dark-mode) .example-btn {
-		background: linear-gradient(135deg, #1d4ed8, #2563eb);
+		background: #BED2E6;
+		color: black;
 	}
 
 	:global(html.dark-mode) .project-label {
