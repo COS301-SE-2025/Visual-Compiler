@@ -1,4 +1,6 @@
 import { writable } from 'svelte/store';
+import { get } from 'svelte/store';
+import { projectName } from './project';
 
 interface TranslationRule {
     tokenSequence: string;
@@ -17,19 +19,19 @@ interface TranslatorState {
     translationError: string | null;
 }
 
-const initialState: TranslatorState = {
+// Define initial state as a constant
+const INITIAL_TRANSLATOR_STATE: TranslatorState = {
     rules: [{ tokenSequence: '', lines: [''] }],
-    show_default_rules: false,
     isSubmitted: false,
-    translationSuccessful: false,
-    hasUnsavedChanges: false,
-    // ADD: Artifact fields
     translatedCode: [],
     hasTranslatedCode: false,
-    translationError: null
+    translationSuccessful: false,
+    translationError: null,
+    hasUnsavedChanges: false
 };
 
-export const translatorState = writable<TranslatorState>(initialState);
+// Create store with initial state
+export const translatorState = writable<TranslatorState>(INITIAL_TRANSLATOR_STATE);
 
 // Helper functions
 export const updateTranslatorInputs = (data: Partial<TranslatorState>) => {
@@ -48,8 +50,10 @@ export const markTranslatorSubmitted = () => {
     }));
 };
 
+// FIX: Proper reset function
 export const resetTranslatorState = () => {
-    translatorState.set(initialState);
+    translatorState.set(JSON.parse(JSON.stringify(INITIAL_TRANSLATOR_STATE)));
+    console.log('=== TRANSLATOR STATE RESET COMPLETE ===');
 };
 
 // ADD: Function to update artifacts
@@ -65,7 +69,11 @@ export const updateTranslatorArtifacts = (translatedCode: string[], error: strin
 
 // Project loading function
 export const updateTranslatorStateFromProject = (projectData: any) => {
+    console.log('Updating translator state from project data:', projectData?.translating);
     if (!projectData?.translating) return;
+
+    const currentProject = get(projectName);
+    if (!currentProject) return;
 
     const updates: Partial<TranslatorState> = {};
 
@@ -77,12 +85,14 @@ export const updateTranslatorStateFromProject = (projectData: any) => {
         }));
     }
 
-    // Handle artifacts - translated code
+    // FIX: Handle artifacts - translated code
     if (projectData.translating.code && Array.isArray(projectData.translating.code)) {
         updates.translatedCode = [...projectData.translating.code];
         updates.hasTranslatedCode = true;
         updates.translationSuccessful = true;
         updates.translationError = null;
+        
+        console.log('Loaded translated code with', updates.translatedCode.length, 'lines');
     }
 
     // Handle translation errors
@@ -98,6 +108,7 @@ export const updateTranslatorStateFromProject = (projectData: any) => {
     }
 
     if (Object.keys(updates).length > 0) {
+        console.log('Updating translator state with:', updates);
         translatorState.update(state => ({
             ...state,
             ...updates

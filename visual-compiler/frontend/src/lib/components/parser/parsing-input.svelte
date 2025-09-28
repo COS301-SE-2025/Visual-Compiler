@@ -11,6 +11,9 @@
 
     const dispatch = createEventDispatcher();
 
+    let parseTree = null;
+    let hasParseTree = false;
+
     // FIX: Data structure to use productions consistently
     interface Rule {
         id: number;
@@ -147,13 +150,20 @@
 
     // handleGrammarChange
     let hasInitialized = false;
+    let currentProjectName = '';
 
-    let parseTree = null;
-    let hasParseTree = false;
+    // FIX: Simplify project change detection
+    $: if ($projectName !== currentProjectName) {
+        console.log('Parser: Project changed from', currentProjectName, 'to', $projectName);
+        hasInitialized = false;
+        currentProjectName = $projectName;
+    }
 
-    // UPDATE: Store subscription to better handle empty states
-    $: if ($parserState && !hasInitialized) {
-        // FIX: Only set grammar_rules if there are actual rules in the store
+    // FIX: Initialize from store when project name is set and store has data
+    $: if ($parserState && $projectName && (!hasInitialized || $projectName !== currentProjectName)) {
+        console.log('Parser component initializing with project:', $projectName, 'and state:', $parserState);
+        
+        // Convert from store format to component format
         if ($parserState.grammar_rules && $parserState.grammar_rules.length > 0) {
             grammar_rules = $parserState.grammar_rules.map(rule => ({
                 id: rule.id,
@@ -161,26 +171,34 @@
                 productions: rule.translations.map(t => t.value).join(', ')
             }));
         } else {
-            // If no rules in store, start with one empty rule
             grammar_rules = [{ id: 1, nonTerminal: '', productions: '' }];
             rule_id_counter = 1;
         }
         
-        variables_string = $parserState.variables_string;
-        terminals_string = $parserState.terminals_string;
-        rule_id_counter = $parserState.rule_id_counter;
-        translation_id_counter = $parserState.translation_id_counter; 
-        show_default_grammar = $parserState.show_default_grammar;
-        is_grammar_submitted = $parserState.is_grammar_submitted;
+        variables_string = $parserState.variables_string || '';
+        terminals_string = $parserState.terminals_string || '';
+        rule_id_counter = $parserState.rule_id_counter || 1;
+        translation_id_counter = $parserState.translation_id_counter || 1;
+        show_default_grammar = $parserState.show_default_grammar || false;
+        is_grammar_submitted = $parserState.is_grammar_submitted || false;
         
-        if ($parserState.hasParseTree) {
+        // Handle parse tree artifacts
+        if ($parserState.hasParseTree && $parserState.parseTree) {
             parseTree = $parserState.parseTree;
             hasParseTree = true;
             dispatch('treereceived', parseTree);
+        } else {
+            parseTree = null;
+            hasParseTree = false;
         }
         
         hasInitialized = true;
-    }
+        console.log('Parser component initialized with:', { 
+            grammar_rules: grammar_rules.length, 
+            hasParseTree,
+            is_grammar_submitted
+        });
+    }   
 
     // FIX: Only update store if there are meaningful changes
     function handleGrammarChange() {

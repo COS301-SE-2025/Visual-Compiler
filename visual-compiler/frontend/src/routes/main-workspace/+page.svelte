@@ -221,8 +221,9 @@
 			}
 		}
 
-		// ADD: Listen for project artifact loading events
+		// FIX: Update event listeners to be more robust
 		const handleProjectTokensLoaded = (event: CustomEvent) => {
+			console.log('Project tokens loaded event received:', event.detail);
 			if (event.detail?.tokens) {
 				tokens = event.detail.tokens;
 				show_tokens = true;
@@ -231,6 +232,7 @@
 		};
 
 		const handleProjectTreeLoaded = (event: CustomEvent) => {
+			console.log('Project tree loaded event received:', event.detail);
 			if (event.detail?.tree) {
 				syntaxTreeData = event.detail.tree;
 				artifactData = event.detail.tree;
@@ -239,6 +241,7 @@
 		};
 
 		const handleProjectSymbolsLoaded = (event: CustomEvent) => {
+			console.log('Project symbols loaded event received:', event.detail);
 			if (event.detail?.symbols) {
 				const symbols = event.detail.symbols.map((s: any) => ({
 					name: s.Name || s.name || 'unknown',
@@ -252,6 +255,7 @@
 		};
 
 		const handleProjectTranslationLoaded = (event: CustomEvent) => {
+			console.log('Project translation loaded event received:', event.detail);
 			if (event.detail?.code) {
 				translated_code = event.detail.code;
 				handleTranslationReceived({ detail: event.detail.code });
@@ -588,7 +592,7 @@
 						invalid_connections.push(conn);
 					}
 					showInvalidConnection();
-					is_invalid = true;;
+					is_invalid = true;
 				}
 				// Check for physical connection between source and lexer
 				if (!hasPhysicalConnection('source', 'lexer')) {
@@ -614,7 +618,7 @@
 						invalid_connections.push(conn);
 					}
 					showInvalidConnection();
-					is_invalid = true;;
+					is_invalid = true;
 				}
 				if (hasPhysicalConnection('lexer', 'translator')) {
 					let conn;
@@ -1126,7 +1130,6 @@
 	let tokens: Token[] = [];
 	let unexpected_tokens: string[] = [];
 	let translated_code: string[] = [];
-
 	let artifactData: SyntaxTree | null = null;
 	let parsing_error: boolean=false;
 	let parsing_error_details: string="";

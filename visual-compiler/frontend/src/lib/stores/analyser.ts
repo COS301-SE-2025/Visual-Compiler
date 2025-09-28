@@ -1,4 +1,6 @@
 import { writable } from 'svelte/store';
+import { get } from 'svelte/store';
+import { projectName } from './project';
 
 interface ScopeRule {
     id: number;
@@ -45,7 +47,8 @@ interface AnalyserState {
     analyserErrorDetails: string | null;
 }
 
-const initialState: AnalyserState = {
+// Define initial state as a constant
+const INITIAL_ANALYSER_STATE: AnalyserState = {
     scope_rules: [{ id: 0, Start: '', End: '' }],
     type_rules: [{ id: 0, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }],
     grammar_rules: {
@@ -57,8 +60,8 @@ const initialState: AnalyserState = {
         OperatorRule: '',
         TermRule: ''
     },
-    submitted_scope_rules: [],
-    submitted_type_rules: [],
+    submitted_scope_rules: [{ id: 0, Start: '', End: '' }],
+    submitted_type_rules: [{ id: 0, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }],
     submitted_grammar_rules: {
         VariableRule: '',
         TypeRule: '',
@@ -72,16 +75,16 @@ const initialState: AnalyserState = {
     next_type_id: 1,
     show_default_rules: false,
     rules_submitted: false,
-    show_symbol_table: false,
-    hasUnsavedChanges: false,
-    // ADD: Artifact fields
     symbolTable: [],
     hasSymbolTable: false,
+    show_symbol_table: false,
     analyserError: null,
-    analyserErrorDetails: null
+    analyserErrorDetails: null,
+    hasUnsavedChanges: false
 };
 
-export const analyserState = writable<AnalyserState>(initialState);
+// Create store with initial state
+export const analyserState = writable<AnalyserState>(INITIAL_ANALYSER_STATE);
 
 // Helper functions
 export const updateAnalyserInputs = (data: Partial<AnalyserState>) => {
@@ -100,8 +103,10 @@ export const markAnalyserSubmitted = () => {
     }));
 };
 
+// FIX: Proper reset function
 export const resetAnalyserState = () => {
-    analyserState.set(initialState);
+    analyserState.set(JSON.parse(JSON.stringify(INITIAL_ANALYSER_STATE)));
+    console.log('=== ANALYSER STATE RESET COMPLETE ===');
 };
 
 // ADD: Function to update artifacts
@@ -118,7 +123,11 @@ export const updateAnalyserArtifacts = (symbolTable: any[], error: string | null
 
 // Project loading function
 export const updateAnalyserStateFromProject = (projectData: any) => {
+    console.log('Updating analyser state from project data:', projectData?.analysing);
     if (!projectData?.analysing) return;
+
+    const currentProject = get(projectName);
+    if (!currentProject) return;
 
     const updates: Partial<AnalyserState> = {};
 
@@ -162,18 +171,27 @@ export const updateAnalyserStateFromProject = (projectData: any) => {
         updates.submitted_grammar_rules = { ...updates.grammar_rules };
     }
 
-    // Handle artifacts - symbol table
+    // FIX: Handle artifacts - symbol table
     if (projectData.analysing.symbol_table_artefact?.symbolscopes) {
         const symbols = projectData.analysing.symbol_table_artefact.symbolscopes.map((s: any) => ({
             name: s.Name || s.name || 'unknown',
             type: s.Type || s.type || 'unknown', 
             scope: s.Scope || s.scope || 0
         }));
+        
         updates.symbolTable = symbols;
         updates.hasSymbolTable = true;
         updates.show_symbol_table = true;
         updates.analyserError = null;
         updates.analyserErrorDetails = null;
+        
+        console.log('Loaded symbol table with', symbols.length, 'symbols');
+    }
+
+    // Handle errors if they exist
+    if (projectData.analysing.error) {
+        updates.analyserError = projectData.analysing.error;
+        updates.analyserErrorDetails = projectData.analysing.details || null;
     }
 
     // Mark as submitted if there's data
@@ -183,6 +201,7 @@ export const updateAnalyserStateFromProject = (projectData: any) => {
     }
 
     if (Object.keys(updates).length > 0) {
+        console.log('Updating analyser state with:', updates);
         analyserState.update(state => ({
             ...state,
             ...updates

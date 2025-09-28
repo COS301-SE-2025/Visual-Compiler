@@ -1,5 +1,7 @@
 // lib/stores/parser.ts
 import { writable } from 'svelte/store';
+import { get } from 'svelte/store';
+import { projectName } from './project';
 
 interface Translation {
     id: number;
@@ -27,7 +29,8 @@ interface ParserState {
     parsingError: string | null;
 }
 
-const initialState: ParserState = {
+// Define initial state as a constant
+const INITIAL_PARSER_STATE: ParserState = {
     grammar_rules: [{ id: 1, nonTerminal: '', translations: [{ id: 1, value: '' }] }],
     variables_string: '',
     terminals_string: '',
@@ -35,14 +38,14 @@ const initialState: ParserState = {
     translation_id_counter: 1,
     show_default_grammar: false,
     is_grammar_submitted: false,
-    hasUnsavedChanges: false,
-    // ADD: Artifact fields
     parseTree: null,
     hasParseTree: false,
-    parsingError: null
+    parsingError: null,
+    hasUnsavedChanges: false
 };
 
-export const parserState = writable<ParserState>(initialState);
+// Create store with initial state
+export const parserState = writable<ParserState>(INITIAL_PARSER_STATE);
 
 export const updateParserInputs = (data: Partial<ParserState>) => {
     parserState.update(state => ({
@@ -60,8 +63,10 @@ export const markParserSubmitted = () => {
     }));
 };
 
+// FIX: Proper reset function
 export const resetParserState = () => {
-    parserState.set(initialState);
+    parserState.set(JSON.parse(JSON.stringify(INITIAL_PARSER_STATE))); // Deep copy
+    console.log('Parser state reset to:', INITIAL_PARSER_STATE);
 };
 
 // ADD: Function to update artifacts
@@ -77,6 +82,9 @@ export const updateParserArtifacts = (parseTree: any, error: string | null = nul
 // UPDATE: Project loading function to include artifacts
 export const updateParserStateFromProject = (projectData: any) => {
     if (!projectData?.parsing) return;
+
+    const currentProject = get(projectName);
+    if (!currentProject) return;
 
     const updates: Partial<ParserState> = {};
 

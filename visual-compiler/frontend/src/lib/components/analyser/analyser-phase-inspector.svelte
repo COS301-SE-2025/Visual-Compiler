@@ -48,20 +48,16 @@
     }
 
     // --- STATE ---
-
-    // Scope Rules State
     let scope_rules: ScopeRule[] = [{ id: 0, Start: '', End: '' }];
     let next_scope_id = 1;
     let show_start_tooltip = false;
     let show_end_tooltip = false;
-    let submitted_scope_rules: ScopeRule[] = []; // Renamed for clarity
+    let submitted_scope_rules: ScopeRule[] = [];
 
-    // Type Rules State
     let type_rules: TypeRule[] = [{ id: 0, ResultData: '',Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
     let next_type_id = 1;
     let submitted_type_rules: TypeRule[] = [];
 
-    // Grammar Rules State (single object as per screenshot, user only inputs 1 value for each)
     let grammar_rules: GrammarRule = {
         VariableRule: '',
         TypeRule: '',
@@ -476,8 +472,48 @@
         });
     }
 
-    // REPLACE with proper store subscription:
-    $: if ($analyserState && !hasInitialized) {
+    // FIX: Add project change tracking
+    let currentProjectName = '';
+
+    // FIX: Force reinitialization when project changes
+    $: if ($projectName !== currentProjectName) {
+        console.log('Analyser: Project changed from', currentProjectName, 'to', $projectName);
+        
+        // RESET component state immediately when project changes
+        if (currentProjectName !== '' && $projectName !== currentProjectName) {
+            scope_rules = [{ id: 0, Start: '', End: '' }];
+            next_scope_id = 1;
+            submitted_scope_rules = [];
+            
+            type_rules = [{ id: 0, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
+            next_type_id = 1;
+            submitted_type_rules = [];
+            
+            grammar_rules = {
+                VariableRule: '',
+                TypeRule: '',
+                FunctionRule: '',
+                ParameterRule: '',
+                AssignmentRule: '',
+                OperatorRule: '',
+                TermRule: ''
+            };
+            submitted_grammar_rules = { ...grammar_rules };
+            
+            rules_submitted = false;
+            show_default_rules = false;
+            show_symbol_table = false;
+            symbol_table = { symbols: [] };
+        }
+        
+        hasInitialized = false;
+        currentProjectName = $projectName;
+    }
+
+    // FIX: Update store subscription to handle project changes and artifacts
+    $: if ($analyserState && $projectName && (!hasInitialized || $projectName !== currentProjectName)) {
+        console.log('Analyser component initializing/reinitializing with state:', $analyserState);
+        
         scope_rules = [...$analyserState.scope_rules];
         type_rules = [...$analyserState.type_rules];
         grammar_rules = { ...$analyserState.grammar_rules };
@@ -490,13 +526,37 @@
         rules_submitted = $analyserState.rules_submitted;
         show_symbol_table = $analyserState.show_symbol_table;
         
-        // Restore symbol table if it exists
-        if ($analyserState.hasSymbolTable) {
-            symbol_table = [...$analyserState.symbolTable];
+        // FIX: Restore symbol table artifacts and dispatch to parent
+        if ($analyserState.hasSymbolTable && $analyserState.symbolTable) {
+            const symbols = $analyserState.symbolTable.map((s: any) => ({
+                name: s.name || 'unknown',
+                type: s.type || 'unknown',
+                scope: s.scope || 0
+            }));
+            
+            symbol_table = { symbols };
             show_symbol_table = true;
+            
+            // FIX: Dispatch the symbol table to parent component so it displays
+            onGenerateSymbolTable({
+                symbol_table: symbols,
+                analyser_error: $analyserState.analyserError || '',
+                analyser_error_details: $analyserState.analyserErrorDetails || ''
+            });
+            
+            console.log('Restored symbol table with', symbols.length, 'symbols');
+        } else {
+            symbol_table = { symbols: [] };
+            show_symbol_table = false;
         }
         
         hasInitialized = true;
+        console.log('Analyser component initialized with:', { 
+            scope_rules: scope_rules.length, 
+            type_rules: type_rules.length,
+            hasSymbolTable: $analyserState.hasSymbolTable,
+            symbolCount: $analyserState.hasSymbolTable ? $analyserState.symbolTable?.length : 0
+        });
     }
 
     // Add event listener for AI-generated analyser configuration

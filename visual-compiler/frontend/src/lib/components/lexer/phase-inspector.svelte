@@ -15,6 +15,10 @@
 		unexpected_tokens: string[];
 	}) => void = () => {};
 
+	let tokens: Token[] = [];
+    let show_tokens = false;
+    let isSubmitted = false;
+
 	let inputRows = [{ type: '', regex: '', error: '' }];
 	let userSourceCode = '';
 	let userInputRows = [{ type: '', regex: '', error: '' }];
@@ -30,6 +34,7 @@
 	let expandedVisContainer: HTMLElement; // Container for the expanded view
 	let networkInstance = null; // To hold the active vis-network instance
 
+
 	function addNewRow() {
     if (showDefault) {
         editableDefaultRows = [...editableDefaultRows, { type: '', regex: '', error: '' }];
@@ -39,27 +44,53 @@
 }
 
 	let hasInitialized = false;
+	let currentProjectName = '';
 
-	// Subscribe to lexer state and restore inputs on mount
-	$: if ($lexerState && !hasInitialized) {
-		// Restore regex inputs
-		if ($lexerState.userInputRows.length > 0) {
-			userInputRows = [...$lexerState.userInputRows];
-		}
-		
-		// Restore automata inputs
-		states = $lexerState.automataInputs.states;
-		startState = $lexerState.automataInputs.startState;
-		acceptedStates = $lexerState.automataInputs.acceptedStates;
-		transitions = $lexerState.automataInputs.transitions;
-		
-		// Restore other states
-		selectedType = $lexerState.selectedType;
-		showDefault = $lexerState.showDefault;
-		
-		// Set initialization flag
-		hasInitialized = true;
+	// FIX: Simplify project change detection
+	$: if ($projectName !== currentProjectName) {
+		console.log('Lexer: Project changed from', currentProjectName, 'to', $projectName);
+		hasInitialized = false;
+		currentProjectName = $projectName;
 	}
+
+	// FIX: Initialize from store when project name is set and store has data
+	 $: if ($lexerState && $projectName && (!hasInitialized || $projectName !== currentProjectName)) {
+        console.log('Lexer component initializing with project:', $projectName, 'and state:', $lexerState);
+        
+        // Restore inputs from store
+        selectedType = $lexerState.selectedType || 'REGEX';
+        userInputRows = $lexerState.userInputRows && $lexerState.userInputRows.length > 0 
+            ? [...$lexerState.userInputRows] 
+            : [{ type: '', regex: '', error: '' }];
+        
+        // Restore automata inputs
+        if ($lexerState.automataInputs) {
+            states = $lexerState.automataInputs.states || '';
+            startState = $lexerState.automataInputs.startState || '';
+            acceptedStates = $lexerState.automataInputs.acceptedStates || '';
+            transitions = $lexerState.automataInputs.transitions || '';
+        }
+        
+        // FIX: Restore tokens if they exist
+        if ($lexerState.hasTokens && $lexerState.tokens) {
+            tokens = [...$lexerState.tokens];
+            show_tokens = true;
+        } else {
+            tokens = [];
+            show_tokens = false;
+        }
+        
+        source_code = $lexerState.sourceCode || '';
+        isSubmitted = $lexerState.isSubmitted || false;
+        
+        hasInitialized = true;
+        console.log('Lexer component initialized with:', { 
+            selectedType, 
+            userInputRows: userInputRows.length, 
+            tokens: tokens.length,
+            isSubmitted
+        });
+    }
 
 	function validateRegex(pattern: string): boolean {
 		try {
@@ -1258,7 +1289,35 @@
         AddToast(`All ${selectedType.toLowerCase()} inputs cleared successfully!`, 'success');
     }
 
-
+    let currentProject = '';
+    
+    // Watch for project changes and reset component state
+    $: if ($projectName !== currentProject) {
+        if (currentProject !== '' && $projectName !== currentProject) {
+            // Project changed - reset component state
+            console.log('Project changed from', currentProject, 'to', $projectName);
+            
+            // Reset component state to initial values
+            userInputRows = [{ type: '', regex: '', error: '' }];
+            states = '';
+            startState = '';
+            acceptedStates = '';
+            transitions = '';
+            showDefault = false;
+            showGenerateButton = false;
+            showRegexActionButtons = false;
+            hasInitialized = false;
+            
+            // Reset visualization states
+            showNfaVis = false;
+            showDfaVis = false;
+            showRegexNfaVis = false;
+            showRegexDfaVis = false;
+            showRegexOutput = false;
+            automataDisplay = null;
+        }
+        currentProject = $projectName;
+    }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -1577,7 +1636,7 @@
 				</div>
 				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand NFA visualization from regex to fullscreen">
 					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-						<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
+							<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
 					</svg>
 				</button>
 				<div bind:this={regexNfaContainer} class="vis-graph-area" />
@@ -1590,7 +1649,7 @@
 				</div>
 				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand DFA visualization from regex to fullscreen">
 					<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-						<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
+							<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
 					</svg>
 				</button>
 				<div bind:this={regexDfaContainer} class="vis-graph-area" />

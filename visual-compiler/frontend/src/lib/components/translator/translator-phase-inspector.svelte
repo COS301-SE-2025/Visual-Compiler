@@ -1,24 +1,76 @@
 <script lang="ts">
-	export let source_code: string;
-	import { AddToast } from '$lib/stores/toast';
-	import { createEventDispatcher } from 'svelte';
-	import { projectName } from '$lib/stores/project';
-	import { get } from 'svelte/store'; 
-	import { lexerState } from '$lib/stores/lexer';
-	import { translatorState, updateTranslatorInputs, markTranslatorSubmitted, updateTranslatorArtifacts } from '$lib/stores/translator';
+    export let source_code: string;
+    import { AddToast } from '$lib/stores/toast';
+    import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+    import { projectName } from '$lib/stores/project';
+    import { get } from 'svelte/store'; 
+    import { lexerState } from '$lib/stores/lexer';
+    import { translatorState, updateTranslatorInputs, markTranslatorSubmitted, updateTranslatorArtifacts } from '$lib/stores/translator';
 
-	const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher();
 
-	let rules = [{ tokenSequence: '', lines: [''] }];
-	let isSubmitted = false;
-	let translationSuccessful = false;
-	let show_default_rules = false;
-	let hasInitialized = false;
+    let rules = [{ tokenSequence: '', lines: [''] }];
+    let isSubmitted = false;
+    let translationSuccessful = false;
+    let show_default_rules = false;
 
-	// Force initial rule to be visible
-	$: if (rules.length === 0) {
-		rules = [{ tokenSequence: '', lines: [''] }];
-	}
+    // FIX: Add project change tracking
+    let hasInitialized = false;
+    let currentProjectName = '';
+
+    // FIX: Force reinitialization when project changes
+    $: if ($projectName !== currentProjectName) {
+        console.log('Translator: Project changed from', currentProjectName, 'to', $projectName);
+        
+        // RESET component state immediately when project changes
+        if (currentProjectName !== '' && $projectName !== currentProjectName) {
+            rules = [{ tokenSequence: '', lines: [''] }];
+            isSubmitted = false;
+            translationSuccessful = false;
+            show_default_rules = false;
+        }
+        
+        hasInitialized = false;
+        currentProjectName = $projectName;
+    }
+
+    // FIX: Update store subscription to handle project changes and artifacts
+    $: if ($translatorState && $projectName && (!hasInitialized || $projectName !== currentProjectName)) {
+        console.log('Translator component initializing/reinitializing with state:', $translatorState);
+        
+        rules = [...$translatorState.rules];
+        show_default_rules = $translatorState.show_default_rules || false;
+        isSubmitted = $translatorState.isSubmitted;
+        translationSuccessful = $translatorState.translationSuccessful || false;
+        
+        // Ensure we always have at least one empty rule
+        if (rules.length === 0) {
+            rules = [{ tokenSequence: '', lines: [''] }];
+        }
+        
+        // FIX: Restore translated code artifacts and dispatch to parent
+        if ($translatorState.hasTranslatedCode && $translatorState.translatedCode) {
+            const translatedCode = [...$translatorState.translatedCode];
+            
+            // FIX: Dispatch the translated code to parent component so it displays
+            dispatch('translationreceived', translatedCode);
+            
+            console.log('Restored translated code with', translatedCode.length, 'lines');
+        }
+        
+        hasInitialized = true;
+        console.log('Translator component initialized with:', { 
+            rules: rules.length, 
+            isSubmitted, 
+            hasTranslatedCode: $translatorState.hasTranslatedCode,
+            translatedLines: $translatorState.hasTranslatedCode ? $translatorState.translatedCode?.length : 0
+        });
+    }
+
+    // Force initial rule to be visible
+    $: if (rules.length === 0) {
+        rules = [{ tokenSequence: '', lines: [''] }];
+    }
 
 	// --- DEFAULT RULES DATA ---
 	const DEFAULT_TRANSLATION_RULES = [
@@ -36,7 +88,7 @@
 		}
 	];
 
-	/**
+    /**
 	 * addRule
 	 * @description Adds a new, empty translation rule block to the list.
 	 * @param {void}
@@ -259,36 +311,10 @@
 		}
 	}
 
-	// Add reactive statement for translator rules
-	$: if ($lexerState?.translator_data?.translating_rules && !hasInitialized) {
-		rules = $lexerState.translator_data.translating_rules.map(rule => ({
-			tokenSequence: rule.sequence,
-			lines: rule.translation
-		}));
-		isSubmitted = true;
-		show_default_rules = false;
-		hasInitialized = true;
-	} else if ($lexerState !== undefined && !hasInitialized) {
-		// Ensure rules are initialized with empty rule when no saved data exists
-		rules = [{ tokenSequence: '', lines: [''] }];
-		hasInitialized = true;
-	}
-	
-	// Reset when lexer state is cleared (new project or project switch)
-	$: if (!$lexerState?.translator_data && hasInitialized) {
-		hasInitialized = false;
-		rules = [{ tokenSequence: '', lines: [''] }];
-		isSubmitted = false;
-		show_default_rules = false;
-	}
+    // Add event listener for AI-generated translator rules
+    let aiTranslatorEventListener: (event: CustomEvent) => void;
 
-	// Add event listener for AI-generated translator rules
-	let aiTranslatorEventListener: (event: CustomEvent) => void;
-
-	// Add onMount and onDestroy imports if not already present
-	import { onMount, onDestroy } from 'svelte';
-
-	onMount(() => {
+    onMount(() => {
 		// Ensure we always have at least one empty rule on mount
 		if (rules.length === 0) {
 			rules = [{ tokenSequence: '', lines: [''] }];
@@ -346,16 +372,6 @@
         });
         
         AddToast('All translator inputs cleared successfully!', 'success');
-    }
-
-    // Subscribe to translator state and restore inputs on mount
-    $: if ($translatorState && !hasInitialized) {
-        rules = [...$translatorState.rules];
-        show_default_rules = $translatorState.show_default_rules;
-        isSubmitted = $translatorState.isSubmitted;
-        translationSuccessful = $translatorState.translationSuccessful;
-        
-        hasInitialized = true;
     }
 
     // ADD: Missing input change tracking function
