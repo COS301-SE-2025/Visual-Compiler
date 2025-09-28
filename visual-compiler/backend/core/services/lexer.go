@@ -111,88 +111,54 @@ func ReadRegexRules(input []byte) ([]TypeRegex, error) {
 // Loop through the source code to find all tokens that match the regex rules stored
 func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, error) {
 
-	tokens := []TypeValue{}
-	tokens_unidentified := []string{}
-
 	if source == "" {
 		return nil, nil, fmt.Errorf("source code is empty")
 	}
 
 	if len(rules) == 0 {
-		return nil, nil, fmt.Errorf("no rules specified")
+		return nil, nil, fmt.Errorf("no tokenisation rules specified")
 	}
 
-	var builder strings.Builder
+	tokens := []TypeValue{}
+	leftover := TokensHelper(source, rules, &tokens)
 
-	for i := 0; i < len(source); i++ {
+	var leftovers []string
+	if strings.TrimSpace(leftover) != "" {
+		leftovers = []string{leftover}
+	}
 
-		r := rune(source[i])
+	return tokens, leftovers, nil
+}
 
-		if r == '(' || r == ')' || r == '{' || r == '}' || r == '[' || r == ']' || r == ';' || r == '"' {
+// Name: TokensHelper
+//
+// Parameters: string, []TypeRegex, *[]TypeValue
+//
+// Return: string
+//
+// Recursive helper function to create the token stream from the source code
+func TokensHelper(source string, rules []TypeRegex, tokens *[]TypeValue) string {
 
-			builder.WriteRune(' ')
-			builder.WriteRune(r)
-			builder.WriteRune(' ')
+	source = strings.TrimSpace(source)
+	if source == "" {
+		return ""
+	}
 
-		} else if unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) || r == '-' {
+	for _, rule := range rules {
 
-			builder.WriteRune(r)
+		re := regexp.MustCompile("^" + rule.Regex)
+		location := re.FindStringIndex(source)
 
-		} else {
+		if location != nil && location[0] == 0 {
 
-			builder.WriteRune(' ')
-			builder.WriteRune(r)
+			match := source[location[0]:location[1]]
+			*tokens = append(*tokens, TypeValue{Type: rule.Type, Value: match})
 
-			if i+1 < len(source) {
-
-				i++
-				r = rune(source[i])
-
-				if !(unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) || r == '-') {
-
-					builder.WriteRune(r)
-
-				} else {
-					i--
-				}
-			}
-
-			builder.WriteRune(' ')
+			return TokensHelper(source[location[1]:], rules, tokens)
 		}
 	}
 
-	var words = strings.Fields(builder.String())
-
-	for _, word := range words {
-
-		found := false
-
-		for _, rule := range rules {
-
-			re := regexp.MustCompile("^" + rule.Regex + "$")
-
-			if re.MatchString(word) {
-				found = true
-				tokens = append(tokens, TypeValue{Type: rule.Type, Value: word})
-				break
-			}
-		}
-
-		if !found {
-			tokens_unidentified = append(tokens_unidentified, word)
-		}
-	}
-
-	for current_token := 0; current_token < len(tokens_unidentified); current_token++ {
-		for other_token := current_token + 1; other_token < len(tokens_unidentified); other_token++ {
-			if tokens_unidentified[current_token] == tokens_unidentified[other_token] {
-				tokens_unidentified = append(tokens_unidentified[:other_token], tokens_unidentified[other_token+1:]...)
-				other_token--
-			}
-		}
-	}
-
-	return tokens, tokens_unidentified, nil
+	return source
 }
 
 // Name: CreateTokensFromDFA
