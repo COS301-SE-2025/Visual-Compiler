@@ -3,6 +3,7 @@
 	import type { Writable } from 'svelte/store';
 	import type { NodeType, NodeConnection } from '$lib/types';
 	import { theme } from '../../stores/theme';
+	import { AddToast } from '../../stores/toast';
 
 	interface CanvasNode {
 		id: string;
@@ -93,6 +94,44 @@
 		const targetCanvasNode = displayNodes.find(node => node.id === targetNodeId);
 
 		if (sourceCanvasNode && targetCanvasNode) {
+			// Check if source node already has an outgoing connection
+			const hasOutgoingConnection = nodeConnections.some(conn => 
+				conn.sourceNodeId === sourceCanvasNode.id
+			);
+			
+			// Check if target node already has an incoming connection
+			const hasIncomingConnection = nodeConnections.some(conn => 
+				conn.targetNodeId === targetCanvasNode.id
+			);
+
+			if (hasOutgoingConnection) {
+				AddToast('Connection limit: Each node can only have one outgoing connection', 'error');
+				// Manually remove the invalid connection using DOM manipulation
+				setTimeout(() => {
+					const startAnchor = document.getElementById(event.detail.sourceAnchor.id);
+					const endAnchor = document.getElementById(event.detail.targetAnchor.id);
+					
+					// Simulate disconnection by triggering mouse events
+					startAnchor?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
+					endAnchor?.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }));
+				}, 50); // Small delay to ensure the connection is fully rendered before removing
+				return; // Prevent the connection from being stored
+			}
+
+			if (hasIncomingConnection) {
+				AddToast('Connection limit: Each node can only have one incoming connection', 'error');
+				// Manually remove the invalid connection using DOM manipulation
+				setTimeout(() => {
+					const startAnchor = document.getElementById(event.detail.sourceAnchor.id);
+					const endAnchor = document.getElementById(event.detail.targetAnchor.id);
+					
+					// Simulate disconnection by triggering mouse events
+					startAnchor?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
+					endAnchor?.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }));
+				}, 50); // Small delay to ensure the connection is fully rendered before removing
+				return; // Prevent the connection from being stored
+			}
+
 			const newConnection: NodeConnection = {
 				id: `${sourceNodeId}-${targetNodeId}`,
 				sourceNodeId: sourceCanvasNode.id,
