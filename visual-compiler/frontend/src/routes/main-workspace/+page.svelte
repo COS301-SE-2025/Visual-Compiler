@@ -4,7 +4,6 @@
 	import type { NodeType, Token, SyntaxTree, NodeConnection } from '$lib/types';
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
-	import { projectName } from '$lib/stores/project';
 	import { pipelineStore, setActivePhase} from '$lib/stores/pipeline';
 	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import { aiAssistantOpen } from '$lib/stores/ai-assistant';
@@ -19,7 +18,12 @@
 	import GuestWelcomePopup from '$lib/components/main/guest-welcome-popup.svelte';
 	import { phase_completion_status } from '$lib/stores/pipeline';
 	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial, showCanvasTutorial } from '$lib/stores/tutorial';
-
+	import { projectName, clearProject } from '$lib/stores/project';
+	import { resetLexerState } from '$lib/stores/lexer';
+	import { resetParserState } from '$lib/stores/parser';
+	import { resetAnalyserState } from '$lib/stores/analyser';
+	import { resetTranslatorState } from '$lib/stores/translator';
+	import { resetSourceCode } from '$lib/stores/source-code';
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -1007,36 +1011,106 @@
 		}, 150);
 	}
 
-	function handleClearCanvasConfirm() {
-		// Clear all nodes and connections
-		nodes.set([]);
-		physicalConnections = [];
-		invalid_connections = [];
-		
-		// Reset the pipeline store
-		pipelineStore.update(pipeline => ({
-			...pipeline,
-			nodes: [],
-			connections: []
-		}));
+	    async function handleClearCanvasConfirm() {
+        const userId = sessionStorage.getItem('user_id');
+        const project = get(projectName);
+        const currentNodes = get(nodes);
+        
+        // Check if canvas is completely empty (no nodes)
+        if (currentNodes.length === 0) {
+            console.log('Canvas is already empty, no need to clear project');
+            showClearCanvasModal = false;
+            AddToast('Canvas is already empty!', 'info');
+            return;
+        }
+        
+        // Clear local canvas first
+        clearLocalCanvas();
+        resetAllStores();
+        
+        // If user is logged in and project exists, clear the project on server
+        if (userId && project && !isGuestUser) {
+            try {
+                console.log('Clearing project on server by delete and recreate...');
+                await clearProject(project, userId);
+                
+                AddToast(`Project "${project}" cleared and recreated successfully!`, 'success');
+            } catch (error) {
+                console.error('Error clearing project on server:', error);
+                AddToast(`Failed to clear project on server: ${error.message}. Local canvas cleared only.`, 'warning');
+            }
+        } else {
+            // Just show success for local clearing (guest users or no project)
+            AddToast('Canvas cleared successfully!', 'success');
+        }
+    }
 
-		// Reset node counter
-		node_counter = 0;
+	function clearLocalCanvas() {
+        // Clear all nodes and connections
+        nodes.set([]);
+        physicalConnections = [];
+        invalid_connections = [];
+        
+        // Reset the pipeline store
+        pipelineStore.update(pipeline => ({
+            ...pipeline,
+            nodes: [],
+            connections: []
+        }));
 
-		// Reset the toolbox created nodes (we need to access the Toolbox component's internal state)
-		// We'll trigger a custom event that the Toolbox component will listen to
-		const event = new CustomEvent('resetToolbox');
-		document.dispatchEvent(event);
+        // Reset node counter
+        node_counter = 0;
 
-		// Reset last saved state to reflect the cleared canvas
-		lastSavedState = JSON.stringify({
-			nodes: [],
-			connections: []
-		});
+        // Reset the toolbox created nodes
+        const event = new CustomEvent('resetToolbox');
+        document.dispatchEvent(event);
 
-		showClearCanvasModal = false;
-		AddToast('Canvas cleared successfully!', 'success');
-	}
+        // Reset last saved state to reflect the cleared canvas
+        lastSavedState = JSON.stringify({
+            nodes: [],
+            connections: []
+        });
+
+        showClearCanvasModal = false;
+    }
+
+	function resetAllStores() {
+        console.log('Resetting all phase stores...');
+        
+        // Reset all phase stores
+        resetLexerState();
+        resetParserState(); 
+        resetAnalyserState();
+        resetTranslatorState();
+        resetSourceCode();
+        
+        // Reset phase completion status
+        phase_completion_status.set({
+            source: false,
+            lexer: false,
+            parser: false,
+            analyser: false,
+            translator: false
+        });
+
+        // Reset local artifact variables
+        show_tokens = false;
+        tokens = [];
+        unexpected_tokens = [];
+        syntaxTreeData = null;
+        artifactData = null;
+        parsing_error = false;
+        parsing_error_details = '';
+        show_symbol_table = false;
+        symbol_table = [];
+        analyser_error = false;
+        analyser_error_details = '';
+        translated_code = [];
+        translationError = null;
+        source_code = '';
+        
+        console.log('All stores reset successfully');
+    }
 
 	function handleClearCanvasCancel() {
 		showClearCanvasModal = false;
@@ -1436,6 +1510,8 @@
 	bind:show={showClearCanvasModal} 
 	on:confirm={handleClearCanvasConfirm}
 	on:cancel={handleClearCanvasCancel}
+	hasNodes={$nodes.length > 0}
+    projectName={currentProjectName}
 />
 
 <!-- Guest Welcome Popup -->
