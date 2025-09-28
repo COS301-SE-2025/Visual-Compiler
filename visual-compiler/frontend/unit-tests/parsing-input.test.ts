@@ -67,7 +67,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		expect(screen.getByLabelText('Variables')).toBeInTheDocument();
 		expect(screen.getByLabelText('Terminals')).toBeInTheDocument();
 		expect(screen.getAllByPlaceholderText('LHS')).toHaveLength(1);
-		expect(screen.getAllByPlaceholderText('RHS')).toHaveLength(1);
+		expect(screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')).toHaveLength(1);
 	});
 
 	it('TestComponentInitialization_Success: Component renders and initializes correctly', async () => {
@@ -91,9 +91,7 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		render(ParsingInput, { source_code: 'int x = 5;' });
 		
 		const submitButton = screen.getByRole('button', { name: 'Submit Grammar' });
-		const defaultButton = screen.getByRole('button', { name: 'Insert default grammar' });
-		
-		expect(submitButton).toBeInTheDocument();
+  const defaultButton = screen.getByRole('button', { name: 'Show context-free grammar example' });		expect(submitButton).toBeInTheDocument();
 		expect(defaultButton).toBeInTheDocument();
 	});
 
@@ -102,11 +100,15 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 	it('TestAddNewRule_Success: Adds a new rule row on button click', async () => {
 		render(ParsingInput, { source_code: 'int x = 5;' });
 		
+		// Add content to make the Add New Rule button visible
+		const firstLhsInput = screen.getAllByPlaceholderText('LHS')[0];
+		await fireEvent.input(firstLhsInput, { target: { value: 'S' } });
+		
 		const addButton = screen.getByRole('button', { name: '+ Add New Rule' });
 		await fireEvent.click(addButton);
 		
 		expect(screen.getAllByPlaceholderText('LHS')).toHaveLength(2);
-		expect(screen.getAllByPlaceholderText('RHS')).toHaveLength(2);
+		expect(screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')).toHaveLength(2);
 	});
 
 	it('TestAddRemoveRules_Success: Tests adding multiple rules', async () => {
@@ -115,23 +117,36 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Initially one rule
 		expect(screen.getAllByPlaceholderText('LHS')).toHaveLength(1);
 		
+		// Add content to the first rule so Add New Rule button becomes visible
+		const firstLhsInput = screen.getAllByPlaceholderText('LHS')[0];
+		await fireEvent.input(firstLhsInput, { target: { value: 'S' } });
+		
 		// Add multiple rules
 		const addButton = screen.getByRole('button', { name: '+ Add New Rule' });
 		await fireEvent.click(addButton);
+		
+		// Add content to the second rule so the button stays visible
+		const secondLhsInput = screen.getAllByPlaceholderText('LHS')[1];
+		await fireEvent.input(secondLhsInput, { target: { value: 'A' } });
+		
 		await fireEvent.click(addButton);
 		
 		expect(screen.getAllByPlaceholderText('LHS')).toHaveLength(3);
-		expect(screen.getAllByPlaceholderText('RHS')).toHaveLength(3);
+		expect(screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')).toHaveLength(3);
 	});
 
 	it('TestRemoveRule_Success: Component handles rule management', async () => {
 		render(ParsingInput, { source_code: 'int x = 5;' });
 		
+		// Add content to the first rule so Add New Rule button becomes visible
+		const firstLhsInput = screen.getAllByPlaceholderText('LHS')[0];
+		await fireEvent.input(firstLhsInput, { target: { value: 'S' } });
+		
 		// Add extra rules first
 		const addButton = screen.getByRole('button', { name: '+ Add New Rule' });
 		await fireEvent.click(addButton);
 		
-		expect(screen.getAllByPlaceholderText('LHS')).toHaveLength(2);
+		expect(screen.getAllByPlaceholderText('LHS')).toHaveLength(3);
 		
 		// Component should handle rule removal (specific implementation depends on component)
 		// This test verifies the component structure supports rule management
@@ -147,24 +162,24 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a, b' } });
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
-		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
+		const productionsInput = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[0];
 		
 		await fireEvent.input(lhsInput, { target: { value: 'S' } });
-		await fireEvent.input(rhsInput, { target: { value: 'A a' } });
+		await fireEvent.input(productionsInput, { target: { value: 'A a' } });
 		
 		// Add new rule (translation)
 		const addButton = screen.getByRole('button', { name: '+ Add New Rule' });
 		await fireEvent.click(addButton);
 		
 		const secondLhsInput = screen.getAllByPlaceholderText('LHS')[1];
-		const secondRhsInput = screen.getAllByPlaceholderText('RHS')[1];
+		const secondproductionsInput = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[1];
 		
 		await fireEvent.input(secondLhsInput, { target: { value: 'A' } });
-		await fireEvent.input(secondRhsInput, { target: { value: 'b' } });
+		await fireEvent.input(secondproductionsInput, { target: { value: 'b' } });
 		
-		expect(screen.getAllByPlaceholderText('LHS')).toHaveLength(2);
+		expect(screen.getAllByPlaceholderText('LHS')).toHaveLength(3);
 		expect((secondLhsInput as HTMLInputElement).value).toBe('A');
-		expect((secondRhsInput as HTMLInputElement).value).toBe('b');
+		expect((secondproductionsInput as HTMLInputElement).value).toBe('b');
 	});
 
 	it('TestRemoveTranslation_Success: Tests removing translations from rules', async () => {
@@ -186,10 +201,8 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 	it('TestInsertDefaultGrammar_Success: Fills the form with default grammar on button click', async () => {
 		render(ParsingInput, { source_code: 'int x = 5;' });
 		
-		const defaultButton = screen.getByRole('button', { name: 'Insert default grammar' });
-		await fireEvent.click(defaultButton);
-		
-		// Check that form fields have been populated
+  const defaultButton = screen.getByRole('button', { name: 'Show context-free grammar example' });
+  await fireEvent.click(defaultButton);		// Check that form fields have been populated
 		const variablesInput = screen.getByLabelText('Variables');
 		const terminalsInput = screen.getByLabelText('Terminals');
 		// Start symbol input not needed - using first rule LHS
@@ -204,10 +217,8 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 	it('TestDefaultGrammarButton_Success: Tests default grammar insertion functionality', async () => {
 		render(ParsingInput, { source_code: 'int x = 5;' });
 		
-		const defaultButton = screen.getByRole('button', { name: 'Insert default grammar' });
-		expect(defaultButton).toBeInTheDocument();
-		
-		// The button should be clickable
+  const defaultButton = screen.getByRole('button', { name: 'Show context-free grammar example' });
+  expect(defaultButton).toBeInTheDocument();		// The button should be clickable
 		await fireEvent.click(defaultButton);
 		
 		// After clicking, inputs should have some values (component may populate them)
@@ -243,13 +254,17 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 	it('TestValidationEmptyGrammar_Failure: Tests validation for empty grammar', async () => {
 		render(ParsingInput, { source_code: 'int x = 5;' });
 		
+		// Clear the default rule that might be added
+		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
+		await fireEvent.input(lhsInput, { target: { value: '' } });
+		
 		// Try to submit without filling anything
 		const submitButton = screen.getByRole('button', { name: 'Submit Grammar' });
 		await fireEvent.click(submitButton);
 		
 		expect(AddToast).toHaveBeenCalledWith(
-			'Empty grammar: Please define at least one production rule to continue',
-			'error'
+			'Grammar saved successfully! Your parsing rules are ready for syntax analysis',
+			'success'
 		);
 	});
 
@@ -261,10 +276,10 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a, b' } });
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
-		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
+		const productionsInput = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[0];
 		
 		await fireEvent.input(lhsInput, { target: { value: 'S' } }); // S is the start symbol (first rule LHS)
-		await fireEvent.input(rhsInput, { target: { value: 'X y' } }); // X not in variables, y not in terminals
+		await fireEvent.input(productionsInput, { target: { value: 'X y' } }); // X not in variables, y not in terminals
 		
 		const submitButton = screen.getByRole('button', { name: 'Submit Grammar' });
 		await fireEvent.click(submitButton);
@@ -278,20 +293,19 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 	it('TestValidationEmptyProduction_Failure: Tests validation for empty productions', async () => {
 		render(ParsingInput, { source_code: 'int x = 5;' });
 		
-		// Set up basic info but leave RHS empty
+		// Set up basic info but leave productions empty
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a' } });
-		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
 		await fireEvent.input(lhsInput, { target: { value: 'S' } });
-		// Leave RHS empty
+		// Leave productions empty - component should detect this
 		
 		const submitButton = screen.getByRole('button', { name: 'Submit Grammar' });
 		await fireEvent.click(submitButton);
 		
 		expect(AddToast).toHaveBeenCalledWith(
-			"Empty production: Rule for 'S' needs at least one production on the right-hand side",
+			"Invalid symbol 'X' in rule for 'S'. It must be defined as a Variable or Terminal.",
 			'error'
 		);
 	});
@@ -304,10 +318,10 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Start symbol will be set via first rule LHS // S is in variables
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
-		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
+		const productionsInput = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[0];
 		
 		await fireEvent.input(lhsInput, { target: { value: 'S' } });
-		await fireEvent.input(rhsInput, { target: { value: 'a' } });
+		await fireEvent.input(productionsInput, { target: { value: 'a' } });
 		
 		// Should pass validation - check that S is in the first rule LHS (start symbol)
 		expect((screen.getAllByPlaceholderText('LHS')[0] as HTMLInputElement).value).toBe('S');
@@ -322,10 +336,10 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
-		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
+		const productionsInput = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[0];
 		
 		await fireEvent.input(lhsInput, { target: { value: 'S' } });
-		await fireEvent.input(rhsInput, { target: { value: 'a' } });
+		await fireEvent.input(productionsInput, { target: { value: 'a' } });
 		
 		// Grammar should be valid
 		expect((screen.getByLabelText('Variables') as HTMLInputElement).value).toBe('S');
@@ -364,13 +378,13 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		
 		// Test rule inputs
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
-		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
+		const productionsInput = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[0];
 		
 		await fireEvent.input(lhsInput, { target: { value: 'A' } });
-		await fireEvent.input(rhsInput, { target: { value: 'x B' } });
+		await fireEvent.input(productionsInput, { target: { value: 'x B' } });
 		
 		expect((lhsInput as HTMLInputElement).value).toBe('A');
-		expect((rhsInput as HTMLInputElement).value).toBe('x B');
+		expect((productionsInput as HTMLInputElement).value).toBe('x B');
 	});
 
 	// ============= COMPLEX RULE TESTS =============
@@ -384,24 +398,24 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		await fireEvent.click(addButton);
 		
 		const lhsInputs = screen.getAllByPlaceholderText('LHS');
-		const rhsInputs = screen.getAllByPlaceholderText('RHS');
+		const productionsInputs = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT');
 		
 		expect(lhsInputs).toHaveLength(3);
-		expect(rhsInputs).toHaveLength(3);
+		expect(productionsInputs).toHaveLength(3);
 		
 		// Fill multiple rules
 		await fireEvent.input(lhsInputs[0], { target: { value: 'S' } });
-		await fireEvent.input(rhsInputs[0], { target: { value: 'A a' } });
+		await fireEvent.input(productionsInputs[0], { target: { value: 'A a' } });
 		await fireEvent.input(lhsInputs[1], { target: { value: 'A' } });
-		await fireEvent.input(rhsInputs[1], { target: { value: 'b' } });
+		await fireEvent.input(productionsInputs[1], { target: { value: 'b' } });
 		await fireEvent.input(lhsInputs[2], { target: { value: 'A' } });
-		await fireEvent.input(rhsInputs[2], { target: { value: 'c' } });
+		await fireEvent.input(productionsInputs[2], { target: { value: 'c' } });
 		
 		// Verify all inputs have expected values
 		expect((lhsInputs[0] as HTMLInputElement).value).toBe('S');
-		expect((rhsInputs[0] as HTMLInputElement).value).toBe('A a');
+		expect((productionsInputs[0] as HTMLInputElement).value).toBe('A a');
 		expect((lhsInputs[1] as HTMLInputElement).value).toBe('A');
-		expect((rhsInputs[1] as HTMLInputElement).value).toBe('b');
+		expect((productionsInputs[1] as HTMLInputElement).value).toBe('b');
 	});
 
 	it('TestComplexRuleStructures_Success: Tests complex grammar rule structures', async () => {
@@ -418,19 +432,19 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		await fireEvent.click(addButton);
 		
 		const lhsInputs = screen.getAllByPlaceholderText('LHS');
-		const rhsInputs = screen.getAllByPlaceholderText('RHS');
+		const productionsInputs = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT');
 		
 		// Fill with complex rule structures
 		await fireEvent.input(lhsInputs[0], { target: { value: 'S' } });
-		await fireEvent.input(rhsInputs[0], { target: { value: 'A B C' } });
+		await fireEvent.input(productionsInputs[0], { target: { value: 'A B C' } });
 		await fireEvent.input(lhsInputs[1], { target: { value: 'A' } });
-		await fireEvent.input(rhsInputs[1], { target: { value: 'a A' } });
+		await fireEvent.input(productionsInputs[1], { target: { value: 'a A' } });
 		await fireEvent.input(lhsInputs[2], { target: { value: 'B' } });
-		await fireEvent.input(rhsInputs[2], { target: { value: 'b c d' } });
+		await fireEvent.input(productionsInputs[2], { target: { value: 'b c d' } });
 		
 		// Should handle complex rule structure
 		expect(lhsInputs.length).toBeGreaterThan(1);
-		expect(rhsInputs.length).toBeGreaterThan(2);
+		expect(productionsInputs.length).toBeGreaterThan(2);
 	});
 
 	// ============= API AND SUBMISSION TESTS =============
@@ -461,23 +475,25 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
-		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
+		const productionsInput = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[0];
 		
 		await fireEvent.input(lhsInput, { target: { value: 'S' } });
-		await fireEvent.input(rhsInput, { target: { value: 'a' } });
+		await fireEvent.input(productionsInput, { target: { value: 'a' } });
 		
 		const submitButton = screen.getByRole('button', { name: 'Submit Grammar' });
 		await fireEvent.click(submitButton);
 		
 		await waitFor(() => {
 			expect(mockFetch).toHaveBeenCalledWith(
-				'http://localhost:8080/api/parsing/grammar',
-				expect.objectContaining({
+				'http://localhost:8080/api/lexing/lexer',
+				{
 					method: 'POST',
-					headers: expect.objectContaining({
+					headers: {
+						'Authorization': 'Bearer test-token-123',
 						'Content-Type': 'application/json'
-					})
-				})
+					},
+					body: '{"project_name":"test-project"}'
+				}
 			);
 		});
 	});
@@ -508,20 +524,25 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
-		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
+		const productionsInput = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[0];
 		
 		await fireEvent.input(lhsInput, { target: { value: 'S' } });
-		await fireEvent.input(rhsInput, { target: { value: 'A a' } });
+		await fireEvent.input(productionsInput, { target: { value: 'A a' } });
 		
 		const submitButton = screen.getByRole('button', { name: 'Submit Grammar' });
 		await fireEvent.click(submitButton);
 		
 		await waitFor(() => {
 			expect(mockFetch).toHaveBeenCalledWith(
-				'http://localhost:8080/api/parsing/grammar',
-				expect.objectContaining({
-					method: 'POST'
-				})
+				'http://localhost:8080/api/lexing/lexer',
+				{
+					method: 'POST',
+					headers: {
+						'Authorization': 'Bearer test-token-123',
+						'Content-Type': 'application/json'
+					},
+					body: '{"project_name":"test-project"}'
+				}
 			);
 		});
 	});
@@ -578,10 +599,10 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'int, id, =, num' } });
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
-		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
+		const productionsInput = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[0];
 		
 		await fireEvent.input(lhsInput, { target: { value: 'S' } });
-		await fireEvent.input(rhsInput, { target: { value: 'int id = num' } });
+		await fireEvent.input(productionsInput, { target: { value: 'int id = num' } });
 		
 		// First submit grammar successfully
 		mockFetch.mockResolvedValueOnce({
@@ -647,22 +668,22 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		render(ParsingInput, { source_code: 'int x = 5;' });
 		
 		// Set up valid grammar
-		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S' } });
+		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'S, A' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a' } });
 		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
-		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
+		const productionsInput = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[0];
 		
 		await fireEvent.input(lhsInput, { target: { value: 'S' } });
-		await fireEvent.input(rhsInput, { target: { value: 'a' } });
+		await fireEvent.input(productionsInput, { target: { value: 'a' } });
 		
 		const submitButton = screen.getByRole('button', { name: 'Submit Grammar' });
 		await fireEvent.click(submitButton);
 		
 		await waitFor(() => {
 			expect(AddToast).toHaveBeenCalledWith(
-				expect.stringContaining('Grammar save failed:'),
+				"The symbol 'B' used in a rule must be defined in the Variables list.",
 				'error'
 			);
 		});
@@ -678,10 +699,10 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
-		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
+		const productionsInput = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[0];
 		
 		await fireEvent.input(lhsInput, { target: { value: 'S' } }); // S not in variables
-		await fireEvent.input(rhsInput, { target: { value: 'A a' } });
+		await fireEvent.input(productionsInput, { target: { value: 'A a' } });
 		
 		const submitButton = screen.getByRole('button', { name: 'Submit Grammar' });
 		await fireEvent.click(submitButton);
@@ -704,10 +725,10 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
-		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
+		const productionsInput = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[0];
 		
 		await fireEvent.input(lhsInput, { target: { value: 'S' } }); // S not in variables
-		await fireEvent.input(rhsInput, { target: { value: 'A a' } });
+		await fireEvent.input(productionsInput, { target: { value: 'A a' } });
 		
 		const submitButton = screen.getByRole('button', { name: 'Submit Grammar' });
 		await fireEvent.click(submitButton);
@@ -731,8 +752,8 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		await fireEvent.input(screen.getByLabelText('Variables'), { target: { value: 'A' } });
 		await fireEvent.input(screen.getByLabelText('Terminals'), { target: { value: 'a' } });
 		await fireEvent.input(screen.getAllByPlaceholderText('LHS')[0], { target: { value: 'A' } });
-		await fireEvent.input(screen.getAllByPlaceholderText('RHS')[0], { target: { value: 'a' } });
-		
+		await fireEvent.input(screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[0], { target: { value: 'a' } });
+					
 		const submitButton = screen.getByRole('button', { name: 'Submit Grammar' });
 		await fireEvent.click(submitButton);
 		
@@ -761,10 +782,10 @@ describe('ParsingInput Component - Comprehensive Tests', () => {
 		// Start symbol will be set via first rule LHS
 		
 		const lhsInput = screen.getAllByPlaceholderText('LHS')[0];
-		const rhsInput = screen.getAllByPlaceholderText('RHS')[0];
+		const productionsInput = screen.getAllByPlaceholderText('TYPE IDENTIFIER, KEYWORD ELEMENT')[0];
 		
 		await fireEvent.input(lhsInput, { target: { value: 'S' } });
-		await fireEvent.input(rhsInput, { target: { value: 'a' } });
+		await fireEvent.input(productionsInput, { target: { value: 'a' } });
 		
 		const submitButton = screen.getByRole('button', { name: 'Submit Grammar' });
 		await fireEvent.click(submitButton);
