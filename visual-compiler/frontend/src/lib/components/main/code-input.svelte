@@ -6,6 +6,7 @@
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store';  
 	import { activePhase, setActivePhase } from '$lib/stores/pipeline'; 
+	import { lexerState, updateLexerInputs } from '$lib/stores/lexer'; // FIX: Add lexer store import
 
 	let code_text = '';
 	
@@ -190,65 +191,72 @@
 	}
 
 	async function submitCode() {
-    if (!code_text.trim()) return;
-    const project = get(projectName);
-    
+        if (!code_text.trim()) return;
+        const project = get(projectName);
+        
 		// Check sessionStorage for auth token
 		const accessToken = sessionStorage.getItem('access_token') || 
-					   sessionStorage.getItem('authToken') || 
-					   sessionStorage.getItem('token');    if (!accessToken) {
-        AddToast('Authentication required: Please log in to save source code', 'error');
-        return;
-    }
-    if (!project) {
-        AddToast('No project selected: Please select or create a project first', 'error');
-        return;
-    }
-
-    console.log('Using access token:', accessToken.substring(0, 20) + '...'); // Debug log
-
-    try {
-        const res = await fetch('http://localhost:8080/api/lexing/code', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-            },
-            body: JSON.stringify({
-                project_name: project,
-                source_code: code_text
-            })
-        });
-        
-        if (!res.ok) {
-            const errorData = await res.json();
-            console.error('API Error:', errorData); // Debug log
-            
-            if (res.status === 401) {
-                AddToast('Authentication failed: Please log in again', 'error');
-            } else {
-                AddToast(`Save failed: ${errorData.error || 'Unable to save source code'}`, 'error');
-            }
+						   sessionStorage.getItem('authToken') || 
+						   sessionStorage.getItem('token');
+        if (!accessToken) {
+            AddToast('Authentication required: Please log in to save source code', 'error');
             return;
         }
-        
-        const data = await res.json();
-        console.log('Success response:', data); // Debug log
-        
-        AddToast('Source code saved successfully! Ready to begin lexical analysis', 'success');
-        confirmedSourceCode.set(code_text);
-        isConfirmed = true;
-        
-        // Only call onCodeSubmitted if we should close the window (manual submission)
-        if (shouldCloseWindow) {
-            onCodeSubmitted(code_text);
+        if (!project) {
+            AddToast('No project selected: Please select or create a project first', 'error');
+            return;
         }
-        
-        await tick();
-    } catch (error) {
-        console.error('Request failed:', error); // Debug log
-        AddToast(`Save failed: ${(error as Error).message}. Please check your connection and try again`, 'error');
-    }
+
+        console.log('Using access token:', accessToken.substring(0, 20) + '...'); // Debug log
+
+        try {
+            const res = await fetch('http://localhost:8080/api/lexing/code', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({
+                    project_name: project,
+                    source_code: code_text
+                })
+            });
+            
+            if (!res.ok) {
+                const errorData = await res.json();
+                console.error('API Error:', errorData); // Debug log
+                
+                if (res.status === 401) {
+                    AddToast('Authentication failed: Please log in again', 'error');
+                } else {
+                    AddToast(`Save failed: ${errorData.error || 'Unable to save source code'}`, 'error');
+                }
+                return;
+            }
+            
+            const data = await res.json();
+            console.log('Success response:', data); // Debug log
+            
+            AddToast('Source code saved successfully! Ready to begin lexical analysis', 'success');
+            confirmedSourceCode.set(code_text);
+            isConfirmed = true;
+            
+            // FIX: Update lexer store with the new source code
+            lexerState.update(state => ({
+                ...state,
+                sourceCode: code_text
+            }));
+            
+            // Only call onCodeSubmitted if we should close the window (manual submission)
+            if (shouldCloseWindow) {
+                onCodeSubmitted(code_text);
+            }
+            
+            await tick();
+        } catch (error) {
+            console.error('Request failed:', error); // Debug log
+            AddToast(`Save failed: ${(error as Error).message}. Please check your connection and try again`, 'error');
+        }
 }
 	// --- NEW FUNCTION TO HANDLE PROJECT SELECTION ---
 	async function handleProjectSelect() {

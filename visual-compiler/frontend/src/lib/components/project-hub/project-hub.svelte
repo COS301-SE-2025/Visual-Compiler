@@ -129,8 +129,6 @@
         }
 
         try {
-            // FIX: Don't clear project name first - this was causing the issue
-            // Instead, just reset stores while keeping project context
             console.log('=== LOADING PROJECT:', selectedProjectName, '===');
             
             const response = await fetch(
@@ -155,6 +153,12 @@
                     // Small delay to ensure project name change is processed
                     await new Promise(resolve => setTimeout(resolve, 50));
                     
+                    // FIX: Handle source code FIRST before loading other phase states
+                    if (data.results.lexing?.code) {
+                        console.log('Loading source code:', data.results.lexing.code);
+                        confirmedSourceCode.set(data.results.lexing.code);
+                    }
+                    
                     // Load all phase states from project data
                     console.log('Loading project data into stores...');
                     updateLexerStateFromProject(data.results);
@@ -176,11 +180,6 @@
                         analyser: hasSymbolTable,
                         translator: hasTranslation
                     });
-
-                    // Handle source code if it exists
-                    if (hasCode) {
-                        confirmedSourceCode.set(data.results.lexing.code);
-                    }
 
                     // Handle pipeline data
                     if (data.results && data.results.pipeline) {

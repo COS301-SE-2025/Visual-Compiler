@@ -8,6 +8,7 @@
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
 	import { lexerState, updateLexerInputs, updateAutomataInputs, markLexerSubmitted, updateLexerArtifacts } from '$lib/stores/lexer';
+	import { confirmedSourceCode } from '$lib/stores/source-code';
 
 	export let source_code = '';
 	export let onGenerateTokens: (data: {
@@ -88,7 +89,8 @@
             show_tokens = false;
         }
         
-        source_code = $lexerState.sourceCode || '';
+        source_code = $lexerState.sourceCode || $confirmedSourceCode || '';
+
         if (!hasLocalChanges) {
             isSubmitted = $lexerState.isSubmitted || false;
             
@@ -1404,6 +1406,14 @@
             automataDisplay = null;
         }
         currentProject = $projectName;
+    }
+
+	 $: if ($lexerState?.sourceCode) {
+        source_code = $lexerState.sourceCode;
+
+    }
+	$: if ($confirmedSourceCode) {
+        source_code = $confirmedSourceCode;
     }
 </script>
 
