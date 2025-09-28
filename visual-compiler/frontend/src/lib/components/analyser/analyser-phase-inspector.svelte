@@ -504,6 +504,13 @@
             show_default_rules = false;
             show_symbol_table = false;
             symbol_table = { symbols: [] };
+
+            // FIX: Clear artifacts from parent component by dispatching empty data
+            onGenerateSymbolTable({
+                symbol_table: [],
+                analyser_error: '',
+                analyser_error_details: ''
+            });
         }
         
         hasInitialized = false;
@@ -526,8 +533,8 @@
         rules_submitted = $analyserState.rules_submitted;
         show_symbol_table = $analyserState.show_symbol_table;
         
-        // FIX: Restore symbol table artifacts and dispatch to parent
-        if ($analyserState.hasSymbolTable && $analyserState.symbolTable) {
+        // FIX: Handle artifacts - only show if there are actual symbols
+        if ($analyserState.hasSymbolTable && $analyserState.symbolTable && $analyserState.symbolTable.length > 0) {
             const symbols = $analyserState.symbolTable.map((s: any) => ({
                 name: s.name || 'unknown',
                 type: s.type || 'unknown',
@@ -537,7 +544,7 @@
             symbol_table = { symbols };
             show_symbol_table = true;
             
-            // FIX: Dispatch the symbol table to parent component so it displays
+            // Dispatch the symbol table to parent component
             onGenerateSymbolTable({
                 symbol_table: symbols,
                 analyser_error: $analyserState.analyserError || '',
@@ -546,8 +553,18 @@
             
             console.log('Restored symbol table with', symbols.length, 'symbols');
         } else {
+            // FIX: Explicitly clear artifacts if no symbols exist
             symbol_table = { symbols: [] };
             show_symbol_table = false;
+            
+            // Clear artifacts from parent component
+            onGenerateSymbolTable({
+                symbol_table: [],
+                analyser_error: '',
+                analyser_error_details: ''
+            });
+            
+            console.log('No symbol table to restore - cleared artifacts');
         }
         
         hasInitialized = true;

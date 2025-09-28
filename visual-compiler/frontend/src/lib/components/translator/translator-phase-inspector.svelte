@@ -28,6 +28,9 @@
             isSubmitted = false;
             translationSuccessful = false;
             show_default_rules = false;
+
+            // FIX: Clear artifacts from parent component by dispatching empty data
+            dispatch('translationreceived', []);
         }
         
         hasInitialized = false;
@@ -48,14 +51,19 @@
             rules = [{ tokenSequence: '', lines: [''] }];
         }
         
-        // FIX: Restore translated code artifacts and dispatch to parent
-        if ($translatorState.hasTranslatedCode && $translatorState.translatedCode) {
+        // FIX: Handle artifacts - only show if there is actual translated code
+        if ($translatorState.hasTranslatedCode && $translatorState.translatedCode && $translatorState.translatedCode.length > 0) {
             const translatedCode = [...$translatorState.translatedCode];
             
-            // FIX: Dispatch the translated code to parent component so it displays
+            // Dispatch the translated code to parent component
             dispatch('translationreceived', translatedCode);
             
             console.log('Restored translated code with', translatedCode.length, 'lines');
+        } else {
+            // FIX: Explicitly clear artifacts if no translated code exists
+            dispatch('translationreceived', []);
+            
+            console.log('No translated code to restore - cleared artifacts');
         }
         
         hasInitialized = true;

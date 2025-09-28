@@ -1064,31 +1064,63 @@
 		analyser_error_details = '';
 	}
 
-	function handleSymbolGeneration(data: { symbol_table: Symbol[]; analyser_error?: boolean; analyser_error_details?: string }) {
-		if (data.symbol_table && data.symbol_table.length > 0) {
-			show_symbol_table = true;
-			symbol_table = data.symbol_table;
-			analyser_error = false;
-			analyser_error_details = '';
-			// Mark analyser phase as complete when symbol table is generated successfully
-			phase_completion_status.analyser = true;
-			completion_status.analyser = true;
-		} else {
-			show_symbol_table = false;
-			analyser_error = true;
-			analyser_error_details = data.analyser_error_details || '';
-		}
-	}
+	function handleSymbolGeneration(data: { 
+        symbol_table: any[], 
+        analyser_error?: string, 
+        analyser_error_details?: string 
+    }) {
+        console.log('Symbol table generation received:', data);
+        
+        if (data.symbol_table && data.symbol_table.length > 0) {
+            symbol_table = data.symbol_table;
+            show_symbol_table = true;
+            analyser_error = false;
+            analyser_error_details = '';
+            
+            // Mark analyser phase as complete when symbol table is generated successfully
+            phase_completion_status.update(status => ({
+                ...status,
+                analyser: true
+            }));
+            completion_status.analyser = true;
+            
+            if (data.analyser_error) {
+                AddToast('Semantic analysis completed with warnings. Check results for details.', 'warning');
+            } else {
+                AddToast('Symbol table generated successfully!', 'success');
+            }
+        } else {
+            // FIX: Clear symbol table if empty array is received
+            symbol_table = [];
+            show_symbol_table = false;
+            analyser_error = !!data.analyser_error;
+            analyser_error_details = data.analyser_error_details || '';
+            console.log('Symbol table cleared');
+        }
+    }
 
-	function handleTranslationReceived(event: CustomEvent<string[]>) {
-		translated_code = event.detail;
-		translationError = null;
-		// Mark translator phase as complete when translation is received
-		if (event.detail && event.detail.length > 0) {
-			phase_completion_status.translator = true;
-			completion_status.translator = true;
-		}
-	}
+	function handleTranslationReceived(event: { detail: string[] }) {
+        console.log('Translation received:', event.detail);
+        
+        if (event.detail && event.detail.length > 0) {
+            translated_code = event.detail;
+            translationError = null;
+            
+            // Mark translator phase as complete when translation is received
+            phase_completion_status.update(status => ({
+                ...status,
+                translator: true
+            }));
+            completion_status.translator = true;
+            
+            AddToast('Code translation completed successfully!', 'success');
+        } else {
+            // FIX: Clear translated code if empty array is received
+            translated_code = [];
+            translationError = null;
+            console.log('Translated code cleared');
+        }
+    }
 
 	function returnToCanvas() {
 		selected_phase = null;
