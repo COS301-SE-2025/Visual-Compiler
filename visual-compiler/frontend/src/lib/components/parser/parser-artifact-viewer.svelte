@@ -472,7 +472,7 @@
 
 	/* --- Dark Mode --- */
 	:global(html.dark-mode) .artifact-container {
-		background: #2d3748;
+		 background: #1a2a4a;
 	}
 	:global(html.dark-mode) .artifact-header {
 		border-bottom-color: #4a5568;
