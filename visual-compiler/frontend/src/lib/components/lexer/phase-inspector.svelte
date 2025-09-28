@@ -1446,34 +1446,31 @@
 			>
 				Automata
 			</button>
-
-			<div class="button-group">
-				{#if selectedType && !showDefault}
-				<button
-					class="option-btn example-btn"
-					on:click={insertDefault}
-					type="button"
-					aria-label="Show example code"
-					title="Show example code"
-				>
-					Show Example
-				</button>
-				{/if}
-				{#if selectedType && showDefault}
-					<button
-						class="option-btn example-btn selected"
-						on:click={removeDefault}
-						type="button"
-						aria-label="Restore your input"
-						title="Restore your input"
-					>
-						Restore Input
-					</button>
-				{/if}
-			</div>
 		</div>
 
 		<div class="clear-button-container">
+			{#if selectedType && !showDefault}
+			<button
+				class="option-btn example-btn"
+				on:click={insertDefault}
+				type="button"
+				aria-label="Show example code"
+				title="Show example code"
+			>
+				Show Example
+			</button>
+			{/if}
+			{#if selectedType && showDefault}
+				<button
+					class="option-btn example-btn selected"
+					on:click={removeDefault}
+					type="button"
+					aria-label="Restore your input"
+					title="Restore your input"
+				>
+					Restore Input
+				</button>
+			{/if}
 			{#if selectedType}
 				<button
 					class="clear-toggle-btn"
@@ -2202,6 +2199,7 @@
 		width: 140px;
 		max-width: 140px;
 		justify-content: center;
+		margin-right: 0.5rem;
 	}
 
 	.example-btn {
