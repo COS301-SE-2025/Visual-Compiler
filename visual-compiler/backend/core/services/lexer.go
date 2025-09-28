@@ -111,88 +111,23 @@ func ReadRegexRules(input []byte) ([]TypeRegex, error) {
 // Loop through the source code to find all tokens that match the regex rules stored
 func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, error) {
 
-	tokens := []TypeValue{}
-	tokens_unidentified := []string{}
-
 	if source == "" {
 		return nil, nil, fmt.Errorf("source code is empty")
 	}
 
 	if len(rules) == 0 {
-		return nil, nil, fmt.Errorf("no rules specified")
+		return nil, nil, fmt.Errorf("no tokenisation rules specified")
 	}
 
-	var builder strings.Builder
+	tokens := []TypeValue{}
+	leftover := TokensHelper(source, rules, &tokens)
 
-	for i := 0; i < len(source); i++ {
-
-		r := rune(source[i])
-
-		if r == '(' || r == ')' || r == '{' || r == '}' || r == '[' || r == ']' || r == ';' || r == '"' {
-
-			builder.WriteRune(' ')
-			builder.WriteRune(r)
-			builder.WriteRune(' ')
-
-		} else if unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) || r == '-' {
-
-			builder.WriteRune(r)
-
-		} else {
-
-			builder.WriteRune(' ')
-			builder.WriteRune(r)
-
-			if i+1 < len(source) {
-
-				i++
-				r = rune(source[i])
-
-				if !(unicode.IsLetter(r) || r == '_' || unicode.IsDigit(r) || r == '.' || unicode.IsSpace(r) || r == '-') {
-
-					builder.WriteRune(r)
-
-				} else {
-					i--
-				}
-			}
-
-			builder.WriteRune(' ')
-		}
+	var leftovers []string
+	if strings.TrimSpace(leftover) != "" {
+		leftovers = []string{leftover}
 	}
 
-	var words = strings.Fields(builder.String())
-
-	for _, word := range words {
-
-		found := false
-
-		for _, rule := range rules {
-
-			re := regexp.MustCompile("^" + rule.Regex + "$")
-
-			if re.MatchString(word) {
-				found = true
-				tokens = append(tokens, TypeValue{Type: rule.Type, Value: word})
-				break
-			}
-		}
-
-		if !found {
-			tokens_unidentified = append(tokens_unidentified, word)
-		}
-	}
-
-	for current_token := 0; current_token < len(tokens_unidentified); current_token++ {
-		for other_token := current_token + 1; other_token < len(tokens_unidentified); other_token++ {
-			if tokens_unidentified[current_token] == tokens_unidentified[other_token] {
-				tokens_unidentified = append(tokens_unidentified[:other_token], tokens_unidentified[other_token+1:]...)
-				other_token--
-			}
-		}
-	}
-
-	return tokens, tokens_unidentified, nil
+	return tokens, leftovers, nil
 }
 
 // Name: CreateTokensFromDFA
