@@ -54,7 +54,7 @@
             {#if symbol_table && symbol_table.length > 0}
 
             <div class="artifact-header">
-                    <h3>Symbols</h3>
+                    <h3>Symbol Table</h3>
                 </div>
                 
                 <table class="symbol-table">
