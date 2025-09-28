@@ -3,12 +3,12 @@ import { check, sleep } from 'k6';
 
 export let options = {
     stages: [
-      {duration: '20s', target: 50},
-      {duration: '20s', target: 50},
+      {duration: '20s', target: 10},
+      {duration: '20s', target: 10},
       {duration: '20s', target: 0},
     ],
     thresholds: {
-      http_req_duration: ["p(95)<5000"],
+      http_req_duration: ["p(95)<3000"],
       http_req_failed: ["rate<0.01"],
     },
 }
@@ -17,7 +17,7 @@ export default function () {
 
     let project_name = "guest_project_" + Math.floor(Math.random() * 100000);
 
-    const project_url = "http://localhost:8080/api/users/save";
+    const project_url = "https://www.visual-compiler.co.za/api/users/save";
     const project_data =  JSON.stringify({
         users_id: "68d32088d29390ec2c897f35",
         project_name: project_name
@@ -36,7 +36,7 @@ export default function () {
     });
 
     // SOURCE CODE
-    const source_code_url = "http://localhost:8080/api/lexing/code";
+    const source_code_url = "https://www.visual-compiler.co.za/api/lexing/code";
 
     const source_code_data = JSON.stringify({
             source_code: `int blue = 13;
@@ -93,11 +93,11 @@ for _k range(12)
       "status is 200": (r) => r.status === 200,
     });
 
-    sleep(1);
+    sleep(2);
 
     // LEXER
 
-    const lexer_rules_url = "http://localhost:8080/api/lexing/rules";
+    const lexer_rules_url = "https://www.visual-compiler.co.za/api/lexing/rules";
 
     const lexer_rules_data = JSON.stringify({
         pairs: [
@@ -128,9 +128,9 @@ for _k range(12)
       "status is 200": (r) => r.status === 200,
     });
     
-    sleep(1);
+    sleep(2);
 
-    const lexer_url = "http://localhost:8080/api/lexing/lexer";
+    const lexer_url = "https://www.visual-compiler.co.za/api/lexing/lexer";
 
     const lexer_data = JSON.stringify({
           project_name: project_name
@@ -147,11 +147,11 @@ for _k range(12)
     check(lexer_res, {
       "status is 200": (r) => r.status === 200,
     });
-    sleep(1);
+    sleep(2);
 
     // PARSER
 
-    const grammar_url = "http://localhost:8080/api/parsing/grammar";
+    const grammar_url = "https://www.visual-compiler.co.za/api/parsing/grammar";
 
     const grammar_data = JSON.stringify({
         variables: ["PROGRAM", "STATEMENT", "FUNCTION", "ITERATION", "DECLARATION", "ELEMENT", "TYPE", "EXPRESSION", "FUNCTION_DEFINITION", "FUNCTION_BLOCK", "RETURN", "ITERATION_DEFINITION", "ITERATION_BLOCK", "PARAMETER", "PRINT"],
@@ -194,9 +194,9 @@ for _k range(12)
     });
 
 
-    sleep(1);
+    sleep(2);
 
-    const parser_url = "http://localhost:8080/api/parsing/tree";
+    const parser_url = "https://www.visual-compiler.co.za/api/parsing/tree";
 
     const parser_data = JSON.stringify({
         project_name: project_name
@@ -214,11 +214,11 @@ for _k range(12)
       "status is 200": (r) => r.status === 200,
     });
     
-    sleep(1);
+    sleep(2);
 
     // ANALYSER
 
-     const analyse_url = "http://localhost:8080/api/analysing/analyse";
+     const analyse_url = "https://www.visual-compiler.co.za/api/analysing/analyse";
 
     const analyse_data = JSON.stringify({
        scope_rules: [
@@ -253,9 +253,57 @@ for _k range(12)
       "status is 200": (r) => r.status === 200,
     });
 
-    sleep(1);
+    sleep(2);
 
-    const delete_project_url = "http://localhost:8080/api/users/deleteProject";
+    // TRANSLATOR
+
+    const translator_rule_url = "https://www.visual-compiler.co.za/api/translating/readRules";
+
+    const translator_rule_data = JSON.stringify({
+        translation_rules: [
+            { "sequence": ["KEYWORD", "IDENTIFIER", "ASSIGNMENT", "INTEGER", "DELIMITER"], "translation": ['add     rax, {INTEGER}', 'mov     [{IDENTIFIER}], rax'] },
+            { "sequence": ["KEYWORD", "IDENTIFIER", "OPEN_BRACKET", "KEYWORD", "IDENTIFIER", "CLOSE_BRACKET", "OPEN_SCOPE", "IDENTIFIER", "ASSIGNMENT", "IDENTIFIER", "OPERATOR", "INTEGER", "DELIMITER", "KEYWORD", "IDENTIFIER", "DELIMITER", "CLOSE_SCOPE"], "translation": ['func {IDENTIFIER}:', '     mov     rbx, [{IDENTIFIER}]', '     add     rbx, {INTEGER}', '     mov     [{IDENTIFIER}], rbx', '     return'] },
+            { "sequence": ["CONTROL", "IDENTIFIER", "CONTROL", "OPEN_BRACKET", "INTEGER", "CLOSE_BRACKET", "OPEN_SCOPE", "IDENTIFIER", "ASSIGNMENT", "IDENTIFIER", "OPEN_BRACKET", "IDENTIFIER", "CLOSE_BRACKET", "DELIMITER", "KEYWORD", "OPEN_BRACKET", "IDENTIFIER", "CLOSE_BRACKET", "DELIMITER", "CLOSE_SCOPE"], "translation": ['func {CONTROL}:', '     jump    [{IDENTIFIER}], {INTEGER}', '     param   rcx, [{IDENTIFIER}]', '     call    {IDENTIFIER}', '     print   [{IDENTIFIER}]'] },
+        ],
+        project_name: project_name
+    });
+
+    const translator_rule_params = {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer guestuser"
+        },
+    };
+
+    let translator_rule_res = http.post(translator_rule_url, translator_rule_data, translator_rule_params);
+    check(translator_rule_res, {
+      "status is 200": (r) => r.status === 200,
+    });
+
+
+    sleep(2);
+
+    const translator_url = "https://www.visual-compiler.co.za/api/translating/translate";
+
+    const translator_data = JSON.stringify({
+        project_name: project_name
+    });
+
+    const translator_params = {
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer guestuser"
+        },
+    };
+
+    let translator_res = http.post(translator_url, translator_data, translator_params);
+    check(translator_res, {
+      "status is 200": (r) => r.status === 200,
+    });
+    
+    sleep(2);
+
+    const delete_project_url = "https://www.visual-compiler.co.za/api/users/deleteProject";
             const delete_project_data =  JSON.stringify({
                 users_id: "68d32088d29390ec2c897f35",
                 project_name: project_name
@@ -273,6 +321,6 @@ for _k range(12)
               "status is 200": (r) => r.status === 200,
             });
     
-    sleep(1);
+    sleep(2);
 
 }
