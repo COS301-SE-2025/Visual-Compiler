@@ -705,6 +705,7 @@
 		color: #1a2a4a;
 		font-family: 'Times New Roman';
 		font-weight: 500;
+		text-align: center;
 	}
 	.section {
 		display: flex;
@@ -741,7 +742,8 @@
 		font-family: 'Times New Roman';
 		font-size: 1.25rem;
 		font-weight: 600;
-		text-align: center;
+		text-align: left;
+		margin-left: 0.75rem;
 	}
 
 	.section-heading1 {
@@ -821,9 +823,10 @@
 
 	.rule-header {
 		display: flex;
-		justify-content: flex-end;
+		justify-content: center;
 		align-items: center;
 		margin-bottom: 0.5rem;
+		position: relative;
 	}
 
 	.form-group,
@@ -914,6 +917,8 @@
 		align-items: center;
 		justify-content: center;
 		transition: background-color 0.2s, color 0.2s;
+		position: absolute;
+		right: 0;
 	}
 
 	.remove-btn:hover,
@@ -1220,7 +1225,7 @@
 	.section-header {
 		display: flex;
 		align-items: center;
-		justify-content: center;
+		justify-content: space-between;
 		gap: 1rem;
 		margin-bottom: 1rem;
 		position: relative;
