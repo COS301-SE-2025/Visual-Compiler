@@ -1701,9 +1701,8 @@
 
 	.help-tip {
 		position: absolute;
-		bottom: 20px;
-		left: 50%;
-		transform: translateX(-50%);
+		top: 20px;
+		right: 20px;
 		background-color: rgba(4, 26, 71, 0.95);
 		color: white;
 		padding: 10px 15px 10px 20px;
