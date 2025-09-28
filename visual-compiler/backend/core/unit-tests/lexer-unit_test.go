@@ -155,9 +155,12 @@ func TestCreateTokens_NoTokens(t *testing.T) {
 		"int x = 13;",
 	}
 
-	_, leftovers, err := services.CreateTokens(source_code, rules)
+	tokens, leftovers, err := services.CreateTokens(source_code, rules)
 
 	if err == nil {
+		if len(tokens) != 0 {
+			t.Errorf("Tokenisation incorrect: %v", leftovers[0])
+		}
 		if leftovers[0] != expected_leftovers[0] {
 			t.Errorf("Tokenisation incorrect: %v != %v", leftovers[0], expected_leftovers[0])
 		}
@@ -372,13 +375,41 @@ func TestCreateTokens_PunctuationTokens(t *testing.T) {
 		{Type: "PUNCTUATION", Value: ";"},
 	}
 
-	tokens, _, err := services.CreateTokens(source_code, rules)
+	tokens, leftovers, err := services.CreateTokens(source_code, rules)
 
 	if err == nil {
 		for i, token := range tokens {
 			if token != expected_tokens[i] {
 				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_tokens[i])
 			}
+		}
+		if len(leftovers) != 0 {
+			t.Errorf("Tokenisation incorrect: %v", leftovers[0])
+		}
+	} else {
+		t.Errorf("Error not supposed to occur")
+	}
+}
+
+func TestCreateTokens_StringTokens(t *testing.T) {
+	source_code := "\"Hello World\""
+	rules := []services.TypeRegex{
+		{Type: "STRING", Regex: "\"[a-zA-Z\\s]*\""},
+	}
+	expected_tokens := []services.TypeValue{
+		{Type: "STRING", Value: "\"Hello World\""},
+	}
+
+	tokens, leftovers, err := services.CreateTokens(source_code, rules)
+
+	if err == nil {
+		for i, token := range tokens {
+			if token != expected_tokens[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_tokens[i])
+			}
+		}
+		if len(leftovers) != 0 {
+			t.Errorf("Tokenisation incorrect: %v", leftovers[0])
 		}
 	} else {
 		t.Errorf("Error not supposed to occur")
