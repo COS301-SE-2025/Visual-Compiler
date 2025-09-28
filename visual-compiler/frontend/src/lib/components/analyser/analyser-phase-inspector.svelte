@@ -237,6 +237,38 @@
         rules_submitted = false;
     }
 
+    // ADD: Clear all inputs function
+    function clearAllInputs() {
+        // Reset scope rules
+        scope_rules = [{ id: 0, Start: '', End: '' }];
+        next_scope_id = 1;
+        submitted_scope_rules = [];
+
+        // Reset type rules  
+        type_rules = [{ id: 0, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
+        next_type_id = 1;
+        submitted_type_rules = [];
+
+        // Reset grammar rules
+        grammar_rules = {
+            VariableRule: '',
+            TypeRule: '',
+            FunctionRule: '',
+            ParameterRule: '',
+            AssignmentRule: '',
+            OperatorRule: '',
+            TermRule: ''
+        };
+        submitted_grammar_rules = { ...grammar_rules };
+
+        // Reset states
+        rules_submitted = false;
+        show_default_rules = false;
+        show_symbol_table = false;
+        
+        AddToast('All analyser inputs cleared successfully!', 'success');
+    }
+
     async function handleGenerate() {
     try {
         const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
@@ -564,16 +596,30 @@
         <div class="analyser-box">
             <div class="analyser-box-header">
                 <h2 class="heading2">Scope Rules</h2>
-                <button
-                    class="default-toggle-btn"
-                    class:selected={show_default_rules}
-                    on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
-                    type="button"
-                    aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-                    title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-                >
-                    <span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
-                </button>
+                <div class="button-group">
+                    <!-- Clear button first (to the left) -->
+                    <button
+                        class="clear-toggle-btn"
+                        on:click={clearAllInputs}
+                        type="button"
+                        aria-label="Clear all inputs"
+                        title="Clear all inputs"
+                    >
+                        <span class="icon">🗑️</span>
+                    </button>
+                    
+                    <!-- Default button second (to the right) -->
+                    <button
+                        class="default-toggle-btn"
+                        class:selected={show_default_rules}
+                        on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
+                        type="button"
+                        aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+                        title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+                    >
+                        <span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
+                    </button>
+                </div>
             </div>
             <div class="rules-list">
                 {#each scope_rules as rule, i (rule.id)}
@@ -1029,6 +1075,32 @@
 		color: #001a6e;
 	}
 
+    .button-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .clear-toggle-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #7a8aa3;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.2rem;
+        width: 2.2rem;
+        border-radius: 50%;
+    }
+
+    .clear-toggle-btn:hover {
+        background: #fff5f5;
+        border-color: #7a8aa3;
+    }
+
 	/* --- DARK MODE STYLES --- */
 	:global(html.dark-mode) .analyser-heading,
 	:global(html.dark-mode) .heading2,
@@ -1158,6 +1230,8 @@
 		background: #f5f8fd;
 		border-color: #7da2e3;
 	}
+
+    
 	.icon {
 		font-size: 1.3rem;
 		line-height: 1;
@@ -1222,5 +1296,33 @@
 	:global(html.dark-mode) .analyser-box,
 	:global(html.dark-mode) .source-display {
 		background: #2d3748;
+	}
+
+    :global(html.dark-mode) .clear-toggle-btn {
+        background: transparent;
+		color: #cbd5e1;
+		border-color: #4a5568;
+    }
+
+    :global(html.dark-mode) .clear-toggle-btn:hover {
+        background: rgba(45, 55, 72, 0.5);
+		border-color: #63b3ed;
+    }
+
+    :global(html.dark-mode) .default-toggle-btn {
+		background: transparent;
+		color: #cbd5e1;
+		border-color: #4a5568;
+	}
+
+	:global(html.dark-mode) .default-toggle-btn.selected {
+		background: #2d3748;
+		border-color: #63b3ed;
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .default-toggle-btn:hover {
+		background: rgba(45, 55, 72, 0.5);
+		border-color: #63b3ed;
 	}
 </style>

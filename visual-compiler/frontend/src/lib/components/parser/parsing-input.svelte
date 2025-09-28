@@ -249,10 +249,39 @@
         rule_id_counter = user_rule_id_counter;
         translation_id_counter = user_translation_id_counter;
         
-        // If no user data was saved (fresh start), create empty rule
         if (grammar_rules.length === 0) {
             addNewRule();
         }
+    }
+
+    function clearAllInputs() {
+        // Reset counters first
+        rule_id_counter = 1;
+        translation_id_counter = 1;
+        
+        // Create a completely new rule structure
+        grammar_rules = [{
+            id: 1,
+            nonTerminal: '',
+            translations: [{ id: 1, value: '' }]
+        }];
+        
+        // Reset variables and terminals
+        variables_string = '';
+        terminals_string = '';
+        
+        // Reset user backup data
+        user_grammar_rules = [];
+        user_variables_string = '';
+        user_terminals_string = '';
+        user_rule_id_counter = 1;
+        user_translation_id_counter = 1;
+        
+        // Reset states
+        show_default_grammar = false;
+        is_grammar_submitted = false;
+        
+        AddToast('All grammar inputs cleared successfully!', 'success');
     }
 
     // handleSubmitGrammar
@@ -543,16 +572,30 @@
     <div class="grammar-editor">
         <div class="grammar-header">
             <h3>Context-Free Grammar</h3>
-            <button
-                class="default-toggle-btn"
-                class:selected={show_default_grammar}
-                on:click={show_default_grammar ? removeDefaultGrammar : insertDefaultGrammar}
-                type="button"
-                aria-label={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
-                title={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
-            >
-                <span class="icon">{show_default_grammar ? '🧹' : '🪄'}</span>
-            </button>
+            <div class="button-group">
+                <!-- Clear button first (to the left) -->
+                <button
+                    class="clear-toggle-btn"
+                    on:click={clearAllInputs}
+                    type="button"
+                    aria-label="Clear all inputs"
+                    title="Clear all inputs"
+                >
+                    <span class="icon">🗑️</span>
+                </button>
+                
+                <!-- Default button second (to the right) -->
+                <button
+                    class="default-toggle-btn"
+                    class:selected={show_default_grammar}
+                    on:click={show_default_grammar ? removeDefaultGrammar : insertDefaultGrammar}
+                    type="button"
+                    aria-label={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
+                    title={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
+                >
+                    <span class="icon">{show_default_grammar ? '🧹' : '🪄'}</span>
+                </button>
+            </div>
         </div>
 
         <div class="top-inputs">
@@ -946,24 +989,65 @@
         color: #ffffff;
     }
     :global(html.dark-mode) .default-toggle-btn {
+		background-color: #2d3748;
+		border-color: #4a5568;
+		color: #d1d5db;
+	}
+	:global(html.dark-mode) .default-toggle-btn.selected {
+		background-color: #001a6e;
+		border-color: #60a5fa;
+		color: #e0e7ff;
+	}
+    :global(html.dark-mode) .default-toggle-btn:not(.selected):hover {
+        background-color: #001a6e;
+        border-color: #60a5fa;
+    }
+
+    .grammar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .clear-toggle-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #7da2e3;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.2rem;
+        width: 2.2rem;
+        border-radius: 50%;
+    }
+
+    .clear-toggle-btn:hover {
+        background: #fff5f5;
+        border-color: #7da2e3;
+    }
+
+    /* Dark mode for clear button */
+    :global(html.dark-mode) .clear-toggle-btn {
         background-color: #2d3748;
         border-color: #4a5568;
         color: #d1d5db;
     }
-    :global(html.dark-mode) .default-toggle-btn.selected {
+
+    :global(html.dark-mode) .clear-toggle-btn:hover {
         background-color: #001a6e;
-        border-color: #60a5fa;
-        color: #e0e7ff;
-        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4);
-        font-weight: bold;
-        transform: scale(1.05);
-    }
-    :global(html.dark-mode) .default-toggle-btn:not(.selected):hover {
-        background-color: #374151;
-        border-color: #6b7280;
+		border-color: #60a5fa;
     }
 
-    
     ::-webkit-scrollbar {
         width: 11px;
         height: 7px;

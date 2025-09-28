@@ -499,9 +499,11 @@
 
 		if (type === 'REGEX') {
 			// Use stored inputs if they exist
-			userInputRows = $lexerState.userInputRows.length > 0 
-				? [...$lexerState.userInputRows]
-				: [{ type: '', regex: '', error: '' }];
+			if (userInputRows.length === 0) {
+                userInputRows = $lexerState.userInputRows.length > 0 
+                    ? [...$lexerState.userInputRows]
+                    : [{ type: '', regex: '', error: '' }];
+            }
 		}
 	}
 
@@ -1173,6 +1175,44 @@
         }
     });
 
+	function clearAllInputs() {
+        if (selectedType === 'REGEX') {
+            // Reset regex inputs only
+            userInputRows = [{ type: '', regex: '', error: '' }];
+            editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
+        } else if (selectedType === 'AUTOMATA') {
+            // Reset automata inputs only
+            states = '';
+            startState = '';
+            acceptedStates = '';
+            transitions = '';
+        }
+        
+        // Reset common states
+        showDefault = false;
+        showGenerateButton = false;
+        showRegexActionButtons = false;
+        showRegexVisOnly = false;
+        showRegexNfaVis = false;
+        showRegexDfaVis = false;
+        showNfaVis = false;
+        showDfaVis = false;
+        showRegexOutput = false;
+        automataDisplay = null;
+        currentAutomatonForModal = null;
+        
+        // Update lexer state only for regex
+        if (selectedType === 'REGEX') {
+            lexerState.update(state => ({
+                ...state,
+                userInputRows: [...userInputRows]
+            }));
+        }
+        
+        AddToast(`All ${selectedType.toLowerCase()} inputs cleared successfully!`, 'success');
+    }
+
+
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -1214,28 +1254,42 @@
 			Automata
 		</button>
 
-		{#if selectedType && !showDefault}
-			<button
-				class="default-toggle-btn"
-				on:click={insertDefault}
-				type="button"
-				aria-label="Insert default input"
-				title="Insert default input"
-			>
-				<span class="icon">🪄</span>
-			</button>
-		{/if}
-		{#if selectedType && showDefault}
-			<button
-				class="default-toggle-btn selected"
-				on:click={removeDefault}
-				type="button"
-				aria-label="Remove default input"
-				title="Remove default input"
-			>
-				<span class="icon">🧹</span>
-			</button>
-		{/if}
+		<div class="button-group">
+			{#if selectedType}
+				<button
+					class="clear-toggle-btn"
+					on:click={clearAllInputs}
+					type="button"
+					aria-label="Clear all inputs"
+					title="Clear all inputs"
+				>
+					<span class="icon">🗑️</span>
+				</button>
+			{/if}
+
+			{#if selectedType && !showDefault}
+				<button
+					class="default-toggle-btn"
+					on:click={insertDefault}
+					type="button"
+					aria-label="Insert default input"
+					title="Insert default input"
+				>
+					<span class="icon">🪄</span>
+				</button>
+			{/if}
+			{#if selectedType && showDefault}
+				<button
+					class="default-toggle-btn selected"
+					on:click={removeDefault}
+					type="button"
+					aria-label="Remove default input"
+					title="Remove default input"
+				>
+					<span class="icon">🧹</span>
+				</button>
+			{/if}
+		</div>
 	</div>
 
 	{#if selectedType === 'REGEX'}
@@ -1773,7 +1827,35 @@
 		gap: 0.7rem;
 		margin: 2rem 0 1.5rem 0;
 		align-items: center;
+		justify-content: flex-start;
 	}
+
+	.button-group {
+        display: flex;
+        align-items: center;
+		margin-left: 0.5rem;
+    }
+
+	.clear-toggle-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #7da2e3;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.3rem;
+        width: 2.3rem;
+        border-radius: 50%;
+    }
+
+    .clear-toggle-btn:hover,
+    .clear-toggle-btn:focus {
+        background: #fff5f5;
+        border-color: #7da2e3;
+    }
 
 	.automaton-btn {
 		padding: 0.4rem 1rem;
@@ -2122,6 +2204,17 @@
 		background: rgba(45, 55, 72, 0.5);
 		border-color: #63b3ed;
 	}
+
+	:global(html.dark-mode) .clear-toggle-btn {
+        background: transparent;
+		color: #cbd5e1;
+		border-color: #4a5568;
+    }
+
+    :global(html.dark-mode) .clear-toggle-btn:hover {
+        background: rgba(45, 55, 72, 0.5);
+		border-color: #63b3ed;
+    }
 
 	:global(html.dark-mode) .vis-heading,
 	:global(html.dark-mode) .vis-title {
