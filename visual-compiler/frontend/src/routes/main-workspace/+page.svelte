@@ -1225,7 +1225,7 @@
 				</div>
 			</div>
 		{/if}
-		<DrawerCanvas {nodes} initialConnections={physicalConnections} onPhaseSelect={handlePhaseSelect} onConnectionChange={handleConnectionChange} />
+		<DrawerCanvas {nodes} initialConnections={physicalConnections} {tooltips} onPhaseSelect={handlePhaseSelect} onConnectionChange={handleConnectionChange} />
 
 		<!-- Recenter Loading Overlay -->
 		{#if isRecentering}
