@@ -95,9 +95,56 @@
 
 	// Subscribe to the project name store
 	let currentProjectName = '';
-	projectName.subscribe((value) => {
-		currentProjectName = value;
-	});
+	let previousProjectName = '';
+	let isInitialLoad = true;
+	let projectChangeTimeout: NodeJS.Timeout | null = null;
+	
+	// Use reactive statement for more reliable project change detection
+	$: if ($projectName !== currentProjectName && !isInitialLoad) {
+		// Clear any pending project change
+		if (projectChangeTimeout) {
+			clearTimeout(projectChangeTimeout);
+		}
+		
+		// Debounce project changes to prevent rapid switches
+		projectChangeTimeout = setTimeout(() => {
+			handleProjectChange($projectName, currentProjectName);
+		}, 50);
+	}
+	
+	// Initialize project name tracking
+	$: if (isInitialLoad && $projectName) {
+		currentProjectName = $projectName;
+		previousProjectName = $projectName;
+		isInitialLoad = false;
+		console.log('Initial project loaded:', $projectName);
+	}
+	
+	// Handle project changes with proper timing
+	async function handleProjectChange(newProjectName: string, oldProjectName: string) {
+		if (newProjectName && oldProjectName && newProjectName !== oldProjectName) {
+			console.log('Project changed from', oldProjectName, 'to', newProjectName);
+			
+			// Store the phase state before changing
+			const wasInPhase = selected_phase || show_code_input;
+			
+			if (wasInPhase) {
+				console.log('Returning to canvas due to project change');
+				
+				// Return to canvas immediately
+				returnToCanvas();
+				
+				// Small delay for data loading, then show toast
+				setTimeout(() => {
+					AddToast(`Switched to project: ${newProjectName}`, 'success');
+				}, 200);
+			}
+		}
+		
+		// Update tracking variables
+		previousProjectName = currentProjectName;
+		currentProjectName = newProjectName;
+	}
 
 	// Subscribe to pipeline store changes
 	const unsubscribePipeline = pipelineStore.subscribe(pipeline => {
@@ -293,6 +340,11 @@
 		// Only remove event listener if we're in the browser
 		if (typeof window !== 'undefined') {
 			window.removeEventListener('beforeunload', handleBeforeUnload);
+		}
+		
+		// Clear any pending project change timeout
+		if (projectChangeTimeout) {
+			clearTimeout(projectChangeTimeout);
 		}
 	});
 
