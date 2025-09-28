@@ -19,6 +19,8 @@
 	import GuestWelcomePopup from '$lib/components/main/guest-welcome-popup.svelte';
 	import { phase_completion_status } from '$lib/stores/pipeline';
 	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial } from '$lib/stores/tutorial';
+	import { lexerState, resetLexerState } from '$lib/stores/lexer';
+	import { parserState, resetParserState } from '$lib/stores/parser';
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -636,7 +638,7 @@
 						invalid_connections.push(conn);
 					}
 					showInvalidConnection();
-					is_invalid = true;;
+					is_invalid = true;
 				}
 				if (hasPhysicalConnection('source', 'analyser')) {
 					let conn;
@@ -646,7 +648,7 @@
 						invalid_connections.push(conn);
 					}
 					showInvalidConnection();
-					is_invalid = true;;
+					is_invalid = true;
 				}
 				if (hasPhysicalConnection('source', 'translator')) {
 					let conn;
@@ -656,7 +658,7 @@
 						invalid_connections.push(conn);
 					}
 					showInvalidConnection();
-					is_invalid = true;;
+					is_invalid = true;
 				}
 				// Check for physical connection between source and lexer
 				if (!hasPhysicalConnection('source', 'lexer')) {
@@ -682,7 +684,7 @@
 						invalid_connections.push(conn);
 					}
 					showInvalidConnection();
-					is_invalid = true;;
+					is_invalid = true;
 				}
 				if (hasPhysicalConnection('lexer', 'translator')) {
 					let conn;
@@ -692,7 +694,7 @@
 						invalid_connections.push(conn);
 					}
 					showInvalidConnection();
-					is_invalid = true;;
+					is_invalid = true;
 				}
 				// Check for physical connection between lexer and parser
 				if (!hasPhysicalConnection('lexer', 'parser')) {
@@ -718,7 +720,7 @@
 						invalid_connections.push(conn);
 					}
 					showInvalidConnection();
-					is_invalid = true;;
+					is_invalid = true;
 				}
 				// Check for physical connection between parser and analyser
 				if (!hasPhysicalConnection('parser', 'analyser')) {
@@ -896,8 +898,15 @@
 		// Reset node counter
 		node_counter = 0;
 
-		// Reset the toolbox created nodes (we need to access the Toolbox component's internal state)
-		// We'll trigger a custom event that the Toolbox component will listen to
+		// Reset all phase states
+		resetLexerState();
+		resetParserState();
+		// Add calls to reset other phase states as you implement them
+
+		// Reset phase completion status
+		resetPhaseStatus();
+
+		// Reset the toolbox created nodes
 		const event = new CustomEvent('resetToolbox');
 		document.dispatchEvent(event);
 

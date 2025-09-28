@@ -4,6 +4,7 @@
     import { get } from 'svelte/store';
     import { lexerState } from '$lib/stores/lexer';
     import { onMount, createEventDispatcher, onDestroy } from 'svelte';
+    import { parserState, updateParserInputs, markParserSubmitted } from '$lib/stores/parser';
 
     export let source_code = '';
 
@@ -166,11 +167,39 @@
     }
 
     // handleGrammarChange
+    let hasInitialized = false;
+
+    $: if ($parserState && !hasInitialized) {
+        grammar_rules = [...$parserState.grammar_rules];
+        variables_string = $parserState.variables_string;
+        terminals_string = $parserState.terminals_string;
+        rule_id_counter = $parserState.rule_id_counter;
+        translation_id_counter = $parserState.translation_id_counter;
+        show_default_grammar = $parserState.show_default_grammar;
+        is_grammar_submitted = $parserState.is_grammar_submitted;
+        
+        hasInitialized = true;
+    }
+
     function handleGrammarChange() {
         is_grammar_submitted = false;
         
+        // Save current state as user input when not showing default
         if (!show_default_grammar) {
             saveCurrentAsUserInput();
+        }
+
+        // Update the store
+        if (hasInitialized) {
+            updateParserInputs({
+                grammar_rules: [...grammar_rules],
+                variables_string,
+                terminals_string,
+                rule_id_counter,
+                translation_id_counter,
+                show_default_grammar,
+                is_grammar_submitted: false
+            });
         }
     }
 
@@ -280,6 +309,17 @@
         // Reset states
         show_default_grammar = false;
         is_grammar_submitted = false;
+        
+        // Update store
+        updateParserInputs({
+            grammar_rules: [...grammar_rules],
+            variables_string: '',
+            terminals_string: '',
+            rule_id_counter: 1,
+            translation_id_counter: 1,
+            show_default_grammar: false,
+            is_grammar_submitted: false
+        });
         
         AddToast('All grammar inputs cleared successfully!', 'success');
     }
@@ -400,7 +440,11 @@
 
             const result = await response.json();
             AddToast('Grammar saved successfully! Your parsing rules are ready for syntax analysis', 'success');
+            
+            // Mark as submitted in store
+            markParserSubmitted();
             is_grammar_submitted = true;
+            
         } catch (error) {
             console.error('Submit Grammar Error:', error);
             AddToast('Grammar save failed: ' + String(error), 'error');

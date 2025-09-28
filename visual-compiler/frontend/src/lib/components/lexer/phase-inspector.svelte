@@ -7,7 +7,7 @@
 	import { fade, scale } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
-	import { lexerState } from '$lib/stores/lexer';
+	import { lexerState, updateLexerInputs, updateAutomataInputs, markLexerSubmitted } from '$lib/stores/lexer';
 
 	export let source_code = '';
 	export let onGenerateTokens: (data: {
@@ -36,6 +36,29 @@
         userInputRows = [...userInputRows, { type: '', regex: '', error: '' }];
     }
 }
+
+	let hasInitialized = false;
+
+	// Subscribe to lexer state and restore inputs on mount
+	$: if ($lexerState && !hasInitialized) {
+		// Restore regex inputs
+		if ($lexerState.userInputRows.length > 0) {
+			userInputRows = [...$lexerState.userInputRows];
+		}
+		
+		// Restore automata inputs
+		states = $lexerState.automataInputs.states;
+		startState = $lexerState.automataInputs.startState;
+		acceptedStates = $lexerState.automataInputs.acceptedStates;
+		transitions = $lexerState.automataInputs.transitions;
+		
+		// Restore other states
+		selectedType = $lexerState.selectedType;
+		showDefault = $lexerState.showDefault;
+		
+		// Set initialization flag
+		hasInitialized = true;
+	}
 
 	function validateRegex(pattern: string): boolean {
 		try {
@@ -116,9 +139,13 @@
 					const errorText = await res.text();
 					throw new Error(errorText);
 				}
-				// Replace custom status with AddToast
+				
 				AddToast('Rules stored successfully!', 'success');
 				showRegexActionButtons = true;
+				
+				// Mark as submitted in store
+				markLexerSubmitted();
+				
 			} catch (error) {
 				AddToast('Save failed: Unable to store lexical rules. Please check your connection and try again', 'error');
 			}
@@ -128,6 +155,7 @@
 		// For AUTOMATA type
 		AddToast('Ready for tokenization!', 'success');
 		showGenerateButton = true;
+		markLexerSubmitted();
 	}
 
 	async function generateTokens() {
@@ -290,13 +318,19 @@
 	function handleInputChange() {
 		showGenerateButton = false;
 		showRegexActionButtons = false;
-		// Remove the custom submissionStatus reset since we're using AddToast now
 		
-		// Update the store when inputs change
-		lexerState.update(state => ({
-			...state,
-			userInputRows: [...userInputRows]
-		}));
+		// Update the store with current inputs
+		updateLexerInputs(userInputRows);
+	}
+
+	// Update automata input change handler
+	function handleAutomataInputChange() {
+		updateAutomataInputs({
+			states,
+			startState,
+			acceptedStates,
+			transitions
+		});
 	}
 
 	$: {
@@ -1406,17 +1440,28 @@
 			<div class="automaton-left">
 				<label>
 					States:
-					<input class="automaton-input" bind:value={states} placeholder="e.g. q0,q1,q2" />
+					<input 
+						class="automaton-input" 
+						bind:value={states} 
+						on:input={handleAutomataInputChange}
+						placeholder="e.g. q0,q1,q2" 
+					/>
 				</label>
 				<label>
 					Start State:
-					<input class="automaton-input" bind:value={startState} placeholder="e.g. q0" />
+					<input 
+						class="automaton-input" 
+						bind:value={startState} 
+						on:input={handleAutomataInputChange}
+						placeholder="e.g. q0" 
+					/>
 				</label>
 				<label>
 					Accepted States:
 					<input
 						class="automaton-input"
 						bind:value={acceptedStates}
+						on:input={handleAutomataInputChange}
 						placeholder="e.g. q2->int, q1->string"
 					/>
 				</label>
@@ -1427,6 +1472,7 @@
 					<textarea
 						class="automaton-input automaton-transitions"
 						bind:value={transitions}
+						on:input={handleAutomataInputChange}
 						placeholder="e.g. q0,a->q1&#10;q1,b->q2"
 					></textarea>
 				</label>
@@ -1609,7 +1655,7 @@
 							width="24"
 							height="24"
 							fill="currentColor"
-							viewBox="0 0 16 16"
+							viewBox="0 0 16"
 						>
 							<path
 								d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"
