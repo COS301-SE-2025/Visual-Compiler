@@ -14,6 +14,11 @@
 	let show_default_rules = false;
 	let hasInitialized = false;
 
+	// Force initial rule to be visible
+	$: if (rules.length === 0) {
+		rules = [{ tokenSequence: '', lines: [''] }];
+	}
+
 	// --- DEFAULT RULES DATA ---
 	const DEFAULT_TRANSLATION_RULES = [
 		{
@@ -235,7 +240,7 @@
 		isSubmitted = true;
 		show_default_rules = false;
 		hasInitialized = true;
-	} else if ($lexerState !== undefined && rules.length === 0 && !hasInitialized) {
+	} else if ($lexerState !== undefined && !hasInitialized) {
 		// Ensure rules are initialized with empty rule when no saved data exists
 		rules = [{ tokenSequence: '', lines: [''] }];
 		hasInitialized = true;
@@ -256,6 +261,11 @@
 	import { onMount, onDestroy } from 'svelte';
 
 	onMount(() => {
+		// Ensure we always have at least one empty rule on mount
+		if (rules.length === 0) {
+			rules = [{ tokenSequence: '', lines: [''] }];
+		}
+		
 		// Listen for AI-generated translator rules
 		aiTranslatorEventListener = (event: CustomEvent) => {
 			if (event.detail && event.detail.rules && Array.isArray(event.detail.rules)) {
@@ -327,6 +337,7 @@
 	<div class="section">
 		<div class="section-header">
 			<h2 class="section-heading">Translation Rules</h2>
+
 			<div class="button-group">
 				<button
 					class="clear-toggle-btn"
@@ -348,6 +359,7 @@
 					<span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
 				</button>
 			</div>
+
 		</div>
 		<div class="rules-container">
 			{#each rules as rule, ruleIndex}
@@ -414,17 +426,23 @@
 					<button class="add-line" on:click={() => addLine(ruleIndex)}>+ Add Line</button>
 				</div>
 			{/each}
-			<div>
-				<button class="add-rule-btn" on:click={addRule}>+ Add New Rule</button>
-				<button class="action-btn submit" on:click={handleSubmit}> Submit Rules </button>
+		</div>
+		
+		<div class="button-container">
+			<button class="add-rule-btn" on:click={addRule}>+ Add New Rule</button>
+			<div class="action-buttons">
+				<button class="action-btn submit" on:click={handleSubmit}>Submit Rules</button>
+				<button 
+					class="action-btn submit" 
+					class:disabled={!isSubmitted}
+					disabled={!isSubmitted}
+					on:click={handleTranslate}
+					title={isSubmitted ? "Translate code using submitted rules" : "Submit rules first"}
+				>
+					Translate Code
+				</button>
 			</div>
 		</div>
-	</div>
-
-	<div class="actions">
-		{#if isSubmitted}
-			<button class="action-btn translate" on:click={handleTranslate}> Translate Code </button>
-		{/if}
 	</div>
 </div>
 
@@ -491,6 +509,7 @@
 		transition: color 0.3s ease;
 	}
 
+
 	.default-toggle-btn {
 		right: 0;
 		background: white;
@@ -499,25 +518,40 @@
 		font-size: 1.2rem;
 		cursor: pointer;
 		transition: background 0.2s, border-color 0.2s;
+
 		display: flex;
 		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 100%;
+		max-width: 150px;
 		justify-content: center;
-		height: 2.2rem;
-		width: 2.2rem;
-		border-radius: 50%;
+		margin-left: 1rem;
 	}
-	.default-toggle-btn.selected {
-		background: #d0e2ff;
-		border-color: #003399;
+
+	.example-btn {
+		background: linear-gradient(135deg, #1e40af, #3b82f6);
 	}
-	.default-toggle-btn:hover {
-		background: #f5f8fd;
-		border-color: #7da2e3;
+
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
 	}
-	.icon {
-		font-size: 1.3rem;
-		line-height: 1;
-		pointer-events: none;
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 	}
 
 	.form-label {
@@ -551,6 +585,7 @@
 	.add-line:hover,
 	.add-rule-btn:hover {
 		border-color: #001a6e;
+		transform: translateY(-2px);
 	}
 	.section-heading {
 		color: #001a6e;
@@ -613,6 +648,20 @@
 		gap: 1.5rem;
 	}
 
+	.button-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		margin-top: 1.5rem;
+	}
+
+	.action-buttons {
+		display: flex;
+		justify-content: center;
+		gap: 1rem;
+	}
+
 	.rule-block {
 		background-color: #f5f5f5;
 		border-radius: 0.5rem;
@@ -665,35 +714,42 @@
 	}
 
 	.action-btn {
-		padding: 0.5rem 1rem;
+		padding: 0.6rem 1.5rem;
 		border: none;
-		border-radius: 0.25rem;
+		border-radius: 6px;
 		cursor: pointer;
 		font-size: 0.9rem;
-		font-weight: 600;
-		transition: background-color 0.2s, transform 0.1s;
-		width: 45%;
+		font-weight: 500;
+		transition: background-color 0.2s, transform 0.2s;
+		width: 200px;
+		max-width: 100%;
 	}
 
 	.add-rule-btn {
+		display: flex;
 		justify-content: center;
+		align-items: center;
 		gap: 0.5rem;
 		background-color: #eef2f7;
 		color: #001a6e;
 		border: 1px dashed #c0c7d3;
-		padding: 0.5rem 1rem;
+		padding: 0.6rem 1.5rem;
 		border-radius: 6px;
+		font-size: 0.9rem;
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.2s ease;
-		width: 45%;
-		margin-right: 1rem;
-		margin-left: 0.8rem;
+		width: 200px;
+		max-width: 100%;
 	}
 
 	.action-btn:hover,
 	.submit:hover {
-		background-color: #1a317d;
+		transform: translateY(-2px);
+	}
+
+	.submit:hover {
+		background-color: #a8bdd1;
 	}
 
 	.remove-btn,
@@ -729,34 +785,38 @@
 		background-color: transparent;
 	}
 
-	.actions {
-		display: flex;
-		gap: 1rem;
-		padding-top: 1rem;
-	}
-
 	.submit {
-		background-color: #BED2E6;
-		color: 000000;
+		background: #BED2E6;
+		color: #000000;
+		border: none;
+		border-radius: 6px;
+		font-size: 0.9rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 	}
 
-	.submit:hover {
-		background-color: #a8bdd1;
+	.submit:hover:not(:disabled) {
+		background: #a8bdd1;
 		transform: translateY(-2px);
 	}
 
-	.submit:disabled {
-		background-color: #cccccc;
-		color: #666666;
-		cursor: default;
+	.submit:disabled,
+	.translate:disabled,
+	.translate.disabled {
+		background: #d6d8db;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
 	}
 
-	.translate {
-		background-color: var(--accent-orange);
-		color: white;
-	}
-	.translate:hover {
-		background-color: rgb(98, 102, 109);
+	.submit:disabled:hover,
+	.translate:disabled:hover,
+	.translate.disabled:hover {
+		background: #d6d8db;
+		color: #6c757d;
+		transform: none;
 	}
 
 	.button-group {
@@ -817,6 +877,65 @@
 		color: #60a5fa;
 		background: transparent;
 	}
+	:global(html.dark-mode) .example-btn {
+		background: linear-gradient(135deg, #1d4ed8, #2563eb);
+	}
+	:global(html.dark-mode) .submit,
+	:global(html.dark-mode) .translate {
+		background-color: #001A6E;
+		color: #ffffff;
+	}
+
+	:global(html.dark-mode) .submit:hover:not(:disabled),
+	:global(html.dark-mode) .translate:hover:not(:disabled) {
+		background-color: #002a8e;
+	}
+
+	:global(html.dark-mode) .submit:disabled,
+	:global(html.dark-mode) .translate:disabled,
+	:global(html.dark-mode) .translate.disabled {
+		background-color: #495057;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
+	}
+	:global(html.dark-mode) .clear-toggle-btn {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #d1d5db;
+    }
+
+    :global(html.dark-mode) .clear-toggle-btn:hover {
+        background-color: #001a6e;
+		border-color: #60a5fa;
+    }
+
+	:global(html.dark-mode) .submit:disabled:hover,
+	:global(html.dark-mode) .translate:disabled:hover,
+	:global(html.dark-mode) .translate.disabled:hover {
+		background-color: #495057;
+		color: #6c757d;
+		transform: none;
+	}
+	
+	/* Add section-header style */
+	.section-header {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+		margin-bottom: 1rem;
+		position: relative;
+	}
+
+
+	.section-header .option-btn {
+		position: absolute;
+		right: 0;
+		margin-left: 0;
+	}
+
 	:global(html.dark-mode) .submit {
 		background-color: #001A6E; 
 		color: #ffffff;            
@@ -830,35 +949,5 @@
 		background-color: #2d3748;
 		color: #9ca3af;
 		border-color: #4a5568;
-	}
-	:global(html.dark-mode) .default-toggle-btn {
-		background-color: #2d3748;
-		border-color: #4a5568;
-		color: #d1d5db;
-	}
-	:global(html.dark-mode) .default-toggle-btn.selected {
-		background-color: #001a6e;
-		border-color: #60a5fa;
-		color: #e0e7ff;
-	}
-	:global(html.dark-mode) .clear-toggle-btn {
-        background-color: #2d3748;
-        border-color: #4a5568;
-        color: #d1d5db;
-    }
-
-    :global(html.dark-mode) .clear-toggle-btn:hover {
-        background-color: #001a6e;
-		border-color: #60a5fa;
-    }
-
-	/* Add section-header style */
-	.section-header {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 1rem;
-		margin-bottom: 1rem;
-		position: relative;
 	}
 </style>

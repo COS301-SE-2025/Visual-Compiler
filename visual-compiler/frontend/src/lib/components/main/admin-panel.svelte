@@ -15,7 +15,7 @@
     let editError = '';
     let editSuccess = '';
 
-    let adminId = localStorage.getItem('user_id');
+    let adminId = sessionStorage.getItem('user_id');
 
     interface User {
         users_id: string;

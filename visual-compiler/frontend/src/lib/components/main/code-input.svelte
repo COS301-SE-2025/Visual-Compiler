@@ -35,7 +35,7 @@
 			return;
 		}
 
-		const userId = localStorage.getItem('user_id');
+		const userId = sessionStorage.getItem('user_id');
 		if (!userId) return;
 
 		try {
@@ -190,14 +190,10 @@
     if (!code_text.trim()) return;
     const project = get(projectName);
     
-    // Check sessionStorage first, then localStorage for backward compatibility
-    const accessToken = sessionStorage.getItem('access_token') || 
-                       sessionStorage.getItem('authToken') || 
-                       localStorage.getItem('access_token') || 
-                       localStorage.getItem('authToken') || 
-                       localStorage.getItem('token');
-    
-    if (!accessToken) {
+		// Check sessionStorage for auth token
+		const accessToken = sessionStorage.getItem('access_token') || 
+					   sessionStorage.getItem('authToken') || 
+					   sessionStorage.getItem('token');    if (!accessToken) {
         AddToast('Authentication required: Please log in to save source code', 'error');
         return;
     }
@@ -259,7 +255,7 @@
 			return;
 		}
 
-		const userId = localStorage.getItem('user_id');
+		const userId = sessionStorage.getItem('user_id');
 		if (!userId) {
 			AddToast('Authentication required: Please log in to load project data', 'error');
 			return;

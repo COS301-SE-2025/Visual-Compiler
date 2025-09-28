@@ -18,9 +18,11 @@
 	import CanvasTutorial from '$lib/components/main/canvas-tutorial.svelte';
 	import GuestWelcomePopup from '$lib/components/main/guest-welcome-popup.svelte';
 	import { phase_completion_status } from '$lib/stores/pipeline';
-	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial } from '$lib/stores/tutorial';
+
+	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial, showCanvasTutorial} from '$lib/stores/tutorial';
 	import { lexerState, resetLexerState } from '$lib/stores/lexer';
 	import { parserState, resetParserState } from '$lib/stores/parser';
+
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -63,14 +65,14 @@
 	let isGuestUser = false;
 
 	// --- TUTORIAL STATE ---
-	let showCanvasTutorial = false;
+	let showCanvasTutorialState = false;
 
 	// --- RECENTER STATE ---
 	let isRecentering = false;
 
 	// Subscribe to tutorial store
 	tutorialStore.subscribe(state => {
-		showCanvasTutorial = state.showCanvasTutorial;
+		showCanvasTutorialState = state.showCanvasTutorial;
 	});
 
 	// --- UNSAVED CHANGES TRACKING ---
@@ -173,7 +175,7 @@
 
 		// Setup theme and UI state
 		document.documentElement.classList.toggle('dark-mode', $theme === 'dark');
-		if (!localStorage.getItem('hasSeenDragTip')) {
+		if (!sessionStorage.getItem('hasSeenDragTip')) {
 			show_drag_tip = true;
 		}
 
@@ -251,6 +253,8 @@
 	// Handle guest welcome popup close
 	function handleGuestWelcomeClose() {
 		showGuestWelcomePopup = false;
+		// Show canvas tutorial after guest welcome is closed
+		showCanvasTutorial();
 	}
 
 	// Handle tutorial close
@@ -751,7 +755,7 @@
 
 	// --- SAVE PROJECT FUNCTIONALITY ---
 	async function saveProject() {
-		const user_id = localStorage.getItem('user_id');
+		const user_id = sessionStorage.getItem('user_id');
 		if (!user_id) {
 			AddToast('Please log in to save your project.', 'error');
 			return;
@@ -968,7 +972,7 @@
 	}
 
 	function dismissDragTip() {
-		localStorage.setItem('hasSeenDragTip', 'true');
+		sessionStorage.setItem('hasSeenDragTip', 'true');
 		show_drag_tip = false;
 	}
 
@@ -1306,7 +1310,7 @@
 
 <!-- Canvas Tutorial Modal -->
 <CanvasTutorial 
-	bind:show={showCanvasTutorial} 
+	bind:show={showCanvasTutorialState} 
 	on:close={handleTutorialClose}
 />
 
@@ -1385,6 +1389,24 @@
 	}
 	.save-button:hover {
 		background-color: #eef2f7;
+	}
+	.clear-button {
+		background-color: transparent;
+		color: #dc2626;
+		border: none;
+		border-radius: 50%;
+		width: 32px;
+		height: 32px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: all 0.2s ease;
+	}
+	.clear-button:hover {
+		background-color: #fef2f2;
+		color: #b91c1c;
+		transform: scale(1.1);
 	}
 	   .recenter-button {
 		   position: absolute;
@@ -1659,6 +1681,8 @@
 	}
 	:global(html.dark-mode) .clear-button:hover {
 		background-color: #2d1b1b;
+		color: #fca5a5;
+		transform: scale(1.1);
 	}
 
 	:global(html.dark-mode) .recenter-button {
