@@ -47,10 +47,13 @@
         rules: [
             { nonTerminal: 'PROGRAM', productions: 'STATEMENT FUNCTION STATEMENT ITERATION' },
             { nonTerminal: 'STATEMENT', productions: 'DECLARATION SEPARATOR' },
-            { nonTerminal: 'DECLARATION', productions: 'TYPE IDENTIFIER ASSIGNMENT ELEMENT, IDENTIFIER ASSIGNMENT EXPRESSION, IDENTIFIER ASSIGNMENT IDENTIFIER PARAMETER' },
+            { nonTerminal: 'DECLARATION', productions: 'TYPE IDENTIFIER ASSIGNMENT ELEMENT' },
+            { nonTerminal: 'DECLARATION', productions: 'IDENTIFIER ASSIGNMENT EXPRESSION'},
+            { nonTerminal: 'DECLARATION', productions: 'IDENTIFIER ASSIGNMENT IDENTIFIER PARAMETER' },
             { nonTerminal: 'TYPE', productions: 'KEYWORD' },
             { nonTerminal: 'EXPRESSION', productions: 'ELEMENT OPERATOR ELEMENT' },
-            { nonTerminal: 'ELEMENT', productions: 'INTEGER, IDENTIFIER' },
+            { nonTerminal: 'ELEMENT', productions: 'INTEGER' },
+            { nonTerminal: 'ELEMENT', productions: 'IDENTIFIER' },
             { nonTerminal: 'FUNCTION', productions: 'FUNCTION_DEFINITION FUNCTION_BLOCK' },
             { nonTerminal: 'FUNCTION_DEFINITION', productions: 'TYPE IDENTIFIER PARAMETER' },
             { nonTerminal: 'FUNCTION_BLOCK', productions: 'OPEN_SCOPE STATEMENT RETURN CLOSE_SCOPE' },
@@ -58,7 +61,8 @@
             { nonTerminal: 'ITERATION', productions: 'ITERATION_DEFINITION ITERATION_BLOCK' },
             { nonTerminal: 'ITERATION_DEFINITION', productions: 'CONTROL IDENTIFIER CONTROL PARAMETER' },
             { nonTerminal: 'ITERATION_BLOCK', productions: 'OPEN_SCOPE STATEMENT PRINT CLOSE_SCOPE' },
-            { nonTerminal: 'PARAMETER', productions: 'OPEN_BRACKET ELEMENT CLOSE_BRACKET, OPEN_BRACKET TYPE IDENTIFIER CLOSE_BRACKET' },
+            { nonTerminal: 'PARAMETER', productions: 'OPEN_BRACKET ELEMENT CLOSE_BRACKET' }, 
+            { nonTerminal: 'PARAMETER', productions: 'OPEN_BRACKET TYPE IDENTIFIER CLOSE_BRACKET' },
             { nonTerminal: 'PRINT', productions: 'KEYWORD OPEN_BRACKET ELEMENT CLOSE_BRACKET SEPARATOR' }
         ]
     };
