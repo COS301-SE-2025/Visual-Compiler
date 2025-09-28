@@ -5,7 +5,7 @@
 	import { AddToast } from '$lib/stores/toast';
 	import { theme } from '../../lib/stores/theme';
 	import { projectName } from '$lib/stores/project';
-	import { pipelineStore, setActivePhase } from '$lib/stores/pipeline';
+	import { pipelineStore, setActivePhase} from '$lib/stores/pipeline';
 	import { confirmedSourceCode } from '$lib/stores/source-code';
 	import { aiAssistantOpen } from '$lib/stores/ai-assistant';
 	import NavBar from '$lib/components/main/nav-bar.svelte';
@@ -19,6 +19,7 @@
 	import GuestWelcomePopup from '$lib/components/main/guest-welcome-popup.svelte';
 	import { phase_completion_status } from '$lib/stores/pipeline';
 	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial, showCanvasTutorial } from '$lib/stores/tutorial';
+
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -339,7 +340,18 @@
 			       (conn.sourceNodeId === targetNode.id && conn.targetNodeId === sourceNode.id);
 		});
 	}
-	function getConnection(sourceType: NodeType, targetType: NodeType): NodeConnection|null {
+	function hasPhysicalReceivingConnection(sourceType: NodeType, targetType: NodeType): boolean {
+		return physicalConnections.some(conn => {
+			const sourceNode = findNodeByType(sourceType);
+			const targetNode = findNodeByType(targetType);
+			
+			if (!sourceNode || !targetNode) return false;
+			console.log(conn.sourceNodeId, sourceNode.id)
+			
+			return (conn.sourceNodeId === sourceNode.id && conn.targetNodeId === targetNode.id)
+		});
+	}
+	function getSpecificConnection(sourceType: NodeType, targetType: NodeType): NodeConnection|null {
 		
 			const sourceNode = findNodeByType(sourceType);
 			const targetNode = findNodeByType(targetType);
@@ -349,8 +361,7 @@
 			}
 			
 		return physicalConnections.find(conn => 
-			(conn.sourceNodeId === sourceNode.id && conn.targetNodeId === targetNode.id) ||
-				(conn.sourceNodeId === targetNode.id && conn.targetNodeId === sourceNode.id)
+			(conn.sourceNodeId === sourceNode.id && conn.targetNodeId === targetNode.id)
 		) || null;
 	}
 	function showInvalidConnection() {
@@ -374,6 +385,164 @@
 				}
 			
 		});
+	}
+
+	function checkInvalidConnections(): Boolean {
+		let is_invalid = false;
+
+		if (checkInvalidSourceCodeConnection()) {
+			is_invalid=true;
+		}
+		if (checkInvalidLexerConnection()) {
+			is_invalid=true;
+		}
+		if (checkInvalidParserConnection()) {
+			is_invalid=true;
+		}
+		if (checkInvalidAnalyserConnection()) {
+			is_invalid=true;
+		}
+		
+		return is_invalid;
+	}
+
+	function checkInvalidSourceCodeConnection(): Boolean {
+		let is_invalid = false;
+		if (hasPhysicalConnection('source', 'parser')) {
+					let conn;
+					conn = getSpecificConnection('source','parser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					conn = getSpecificConnection('parser','source');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
+				if (hasPhysicalConnection('source', 'analyser')) {
+					let conn;
+					conn = getSpecificConnection('source','analyser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					conn = getSpecificConnection('analyser','source');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
+				if (hasPhysicalConnection('source', 'translator')) {
+					let conn;
+					conn = getSpecificConnection('source','translator');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					conn = getSpecificConnection('translator','source');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
+		return is_invalid;
+	}
+	function checkInvalidLexerConnection() : Boolean {
+		let is_invalid = false;
+		if (hasPhysicalReceivingConnection('parser', 'lexer')) {
+					let conn;
+					conn = getSpecificConnection('parser','lexer');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
+				if (hasPhysicalConnection('analyser', 'lexer')) {
+					let conn;
+					conn = getSpecificConnection('analyser','lexer');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
+
+			return is_invalid;
+	}
+
+	function checkInvalidParserConnection() : Boolean {
+		let is_invalid = false;
+		if (hasPhysicalConnection('lexer', 'analyser')) {
+					let conn;
+					conn = getSpecificConnection('lexer','analyser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					conn = getSpecificConnection('analyser','lexer');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;;
+				}
+				if (hasPhysicalConnection('lexer', 'translator')) {
+					let conn;
+					conn = getSpecificConnection('lexer','translator');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
+				if (hasPhysicalReceivingConnection('analyser', 'parser')) {
+					let conn;
+					conn = getSpecificConnection('analyser','parser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
+		return is_invalid;
+	}
+	function checkInvalidAnalyserConnection() : Boolean {
+		let is_invalid = false;
+		if (hasPhysicalConnection('parser', 'translator')) {
+					let conn;
+					conn = getSpecificConnection('parser','translator');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
+				if (hasPhysicalReceivingConnection('analyser', 'parser')) {
+					let conn;
+					conn = getSpecificConnection('analyser','parser');
+					if (conn!=null)
+					{
+						invalid_connections.push(conn);
+					}
+					showInvalidConnection();
+					is_invalid = true;
+				}
+		return is_invalid;
 	}
 
 	// --- CONNECTION VALIDATION FUNCTIONS ---
@@ -401,9 +570,13 @@
 		
 		switch (nodeType) {
 			case 'source':
+				checkInvalidConnections();
+				showInvalidConnection();
 				return true; // Source is always accessible
 			
 			case 'lexer':
+				checkInvalidConnections();
+				showInvalidConnection();
 				// Check if source node exists
 				const sourceNode = findNodeByType('source');
 				if (!sourceNode) {
@@ -417,35 +590,11 @@
 				}
 	
 				// Check for physical connection between source and lexer
-				if (hasPhysicalConnection('source', 'parser')) {
-					let conn;
-					conn = getConnection('source','parser');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;
+				if (checkInvalidSourceCodeConnection()) {
+					is_invalid=true;
 				}
-				if (hasPhysicalConnection('source', 'analyser')) {
-					let conn;
-					conn = getConnection('source','analyser');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;
-				}
-				if (hasPhysicalConnection('source', 'translator')) {
-					let conn;
-					conn = getConnection('source','translator');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;
+				if (checkInvalidLexerConnection()) {
+					is_invalid=true;
 				}
 				if (!hasPhysicalConnection('source', 'lexer')) {
 					AddToast('Missing Source Code → Lexer connection: Connect the Source Code node to the Lexer node to establish data flow', 'error');
@@ -456,9 +605,12 @@
 					AddToast('Incorrect connections present (Highlighted in red)', 'error');
 					return false;
 				}
+				
 				return true;
 			
 			case 'parser':
+				checkInvalidConnections();
+				showInvalidConnection();
 				// First check if source node exists
 				const sourceNodeForParser = findNodeByType('source');
 				if (!sourceNodeForParser) {
@@ -476,35 +628,11 @@
 					AddToast('Missing Lexer: Add and complete lexical analysis before parsing your code', 'error');
 					return false;
 				}
-				if (hasPhysicalConnection('source', 'parser')) {
-					let conn;
-					conn = getConnection('source','parser');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;;
+				if (checkInvalidSourceCodeConnection()) {
+					is_invalid=true;
 				}
-				if (hasPhysicalConnection('source', 'analyser')) {
-					let conn;
-					conn = getConnection('source','analyser');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;;
-				}
-				if (hasPhysicalConnection('source', 'translator')) {
-					let conn;
-					conn = getConnection('source','translator');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;;
+				if (checkInvalidLexerConnection()) {
+					is_invalid=true;
 				}
 				// Check for physical connection between source and lexer
 				if (!hasPhysicalConnection('source', 'lexer')) {
@@ -516,25 +644,8 @@
 					AddToast('Lexical analysis incomplete: Complete tokenization in the Lexer before parsing', 'error');
 					return false;
 				}
-				if (hasPhysicalConnection('lexer', 'analyser')) {
-					let conn;
-					conn = getConnection('lexer','analyser');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;;
-				}
-				if (hasPhysicalConnection('lexer', 'translator')) {
-					let conn;
-					conn = getConnection('lexer','translator');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;;
+				if (checkInvalidParserConnection()) {
+					is_invalid=true;
 				}
 				// Check for physical connection between lexer and parser
 				if (!hasPhysicalConnection('lexer', 'parser')) {
@@ -549,6 +660,8 @@
 				return true;
 			
 			case 'analyser':
+				checkInvalidConnections();
+				showInvalidConnection();
 				// First check if source node exists
 				const sourceNodeForAnalyser = findNodeByType('source');
 				if (!sourceNodeForAnalyser) {
@@ -566,35 +679,11 @@
 					AddToast('Missing Lexer: Complete lexical analysis before running semantic analysis', 'error');
 					return false;
 				}
-				if (hasPhysicalConnection('source', 'parser')) {
-					let conn;
-					conn = getConnection('source','parser');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;;
+				if (checkInvalidSourceCodeConnection()) {
+					is_invalid=true;
 				}
-				if (hasPhysicalConnection('source', 'analyser')) {
-					let conn;
-					conn = getConnection('source','analyser');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;;
-				}
-				if (hasPhysicalConnection('source', 'translator')) {
-					let conn;
-					conn = getConnection('source','translator');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;
+				if (checkInvalidLexerConnection()) {
+					is_invalid=true;
 				}
 				// Check for physical connection between source and lexer
 				if (!hasPhysicalConnection('source', 'lexer')) {
@@ -612,25 +701,8 @@
 					AddToast('Missing Parser: Add and complete parsing before semantic analysis', 'error');
 					return false;
 				}
-				if (hasPhysicalConnection('lexer', 'analyser')) {
-					let conn;
-					conn = getConnection('lexer','analyser');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;
-				}
-				if (hasPhysicalConnection('lexer', 'translator')) {
-					let conn;
-					conn = getConnection('lexer','translator');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;
+				if (checkInvalidParserConnection()) {
+					is_invalid=true;
 				}
 				// Check for physical connection between lexer and parser
 				if (!hasPhysicalConnection('lexer', 'parser')) {
@@ -643,15 +715,8 @@
 					return false;
 				}
 				
-				if (hasPhysicalConnection('parser', 'translator')) {
-					let conn;
-					conn = getConnection('parser','translator');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;
+				if (checkInvalidAnalyserConnection()) {
+					is_invalid=true;
 				}
 				// Check for physical connection between parser and analyser
 				if (!hasPhysicalConnection('parser', 'analyser')) {
@@ -666,6 +731,8 @@
 				return true;
 			
 			case 'translator':
+				checkInvalidConnections();
+				showInvalidConnection();
 				// First check if source node exists
 				const sourceNodeForTranslator = findNodeByType('source');
 				if (!sourceNodeForTranslator) {
@@ -683,35 +750,11 @@
 					AddToast('Missing Lexer: Complete lexical analysis before code translation', 'error');
 					return false;
 				}
-				if (hasPhysicalConnection('source', 'parser')) {
-					let conn;
-					conn = getConnection('source','parser');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;
+				if (checkInvalidSourceCodeConnection()) {
+					is_invalid=true;
 				}
-				if (hasPhysicalConnection('source', 'analyser')) {
-					let conn;
-					conn = getConnection('source','analyser');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;
-				}
-				if (hasPhysicalConnection('source', 'translator')) {
-					let conn;
-					conn = getConnection('source','translator');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;
+				if (checkInvalidLexerConnection()) {
+					is_invalid=true;
 				}
 				// Check for physical connection between source and lexer
 				if (!hasPhysicalConnection('source', 'lexer')) {
@@ -729,25 +772,8 @@
 					AddToast('Missing Parser: Complete parsing before code translation', 'error');
 					return false;
 				}
-				if (hasPhysicalConnection('lexer', 'analyser')) {
-					let conn;
-					conn = getConnection('lexer','analyser');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;
-				}
-				if (hasPhysicalConnection('lexer', 'translator')) {
-					let conn;
-					conn = getConnection('lexer','translator');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;
+				if (checkInvalidParserConnection()) {
+					is_invalid=true;
 				}
 				// Check for physical connection between lexer and parser
 				if (!hasPhysicalConnection('lexer', 'parser')) {
@@ -765,15 +791,8 @@
 					AddToast('Missing Analyser: Complete semantic analysis before code translation', 'error');
 					return false;
 				}
-				if (hasPhysicalConnection('parser', 'translator')) {
-					let conn;
-					conn = getConnection('parser','translator');
-					if (conn!=null)
-					{
-						invalid_connections.push(conn);
-					}
-					showInvalidConnection();
-					is_invalid = true;
+				if (checkInvalidAnalyserConnection()) {
+					is_invalid=true;
 				}
 				// Check for physical connection between parser and analyser
 				if (!hasPhysicalConnection('parser', 'analyser')) {
@@ -940,6 +959,7 @@
 		// Clear all nodes and connections
 		nodes.set([]);
 		physicalConnections = [];
+		invalid_connections = [];
 		
 		// Reset the pipeline store
 		pipelineStore.update(pipeline => ({

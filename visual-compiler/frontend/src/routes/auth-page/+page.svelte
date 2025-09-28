@@ -37,7 +37,7 @@
 		event.preventDefault();
 
 		if (reg_password !== reg_confirm_password) {
-			AddToast('🔒 Passwords don\'t match - please make sure both password fields are identical', 'error');
+			AddToast('Passwords don\'t match. Please make sure both password fields are identical', 'error');
 			return;
 		}
 
@@ -82,7 +82,7 @@
 
 			// Success case - backend returns 201 with message "Successfully registered user"
 			if (response.status === 201 && data.message === "Successfully registered user") {
-				AddToast('✅ Account created successfully! Please check your email and verify your account before logging in', 'success');
+				AddToast('Account successfully created! Please check your email and verify your account before logging in.', 'success');
 
 				// Reset the form
 				reg_email = '';
@@ -456,7 +456,7 @@
 							</svg>
 							<span class="guest-text">
 								<span class="guest-title">Continue as Guest</span>
-								<span class="guest-subtitle">Try the Visual Compiler without an account</span>
+								<span class="guest-subtitle">Try Visual Compiler without an account</span>
 							</span>
 						</button>
 					</div>
@@ -568,9 +568,10 @@
 
 		<main class="main-content">
 			<div class="feature-quote">
-				<h1 class="app-title">Visual Compiler</h1>
+				<img src="/visual-compiler.png" alt="Visual Compiler" class="project-image"/>
 			</div>
 		</main>
+
 	</div>
 </div>
 
@@ -967,11 +968,9 @@
 		}
 	}
 
-	.app-title {
-		font-size: 3rem;
-		font-weight: 900;
-		margin: 0 auto;
-		line-height: 1.1;
-		color: #1d3159;
+	.project-image {
+		width: 520px;
+		height: auto;
 	}
+
 </style>

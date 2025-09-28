@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="assets/half-stack.png" width="420" height="auto">
+    <img src="assets/halfstack.png" width="420" height="auto">
     <br>
     <h1 align="center">Visual Compiler</h1>
     <h2 align="center">Capstone Project for <a href="https://www.epiuselabs.com/">EPI-USE Labs</a></h2>
@@ -123,7 +123,7 @@
     </tr>
     <tr>
         <td style="vertical-align: middle; width: auto; border: 0; padding: 10px;">
-            <img src="assets/shinn-ru.jpg" width="600" height="auto" style="object-fit: cover;">
+            <img src="assets/austin.jpg" width="600" height="auto" style="object-fit: cover;">
         </td>
         <td style="vertical-align: middle; width: auto; border: 0; padding: 10px;">
             <h2><b style="font-size: 18px;">Shinn-Ru Hung</b></h2>

@@ -44,7 +44,7 @@
     <div class="tutorial-content">
         <h2>What is Translating?</h2>
         <p class="description">
-            This tool converts your source code (like C-style syntax) into target code (like assembly) using rules you define. Think of it as teaching the computer how to rewrite your code in a different language.
+            This tool converts your source code (like Go) into target code (like Assembly) using rules you define. Think of it as teaching the computer how to rewrite your code in a different language.
         </p>
         <div class="separator"></div>
         <h3>Steps to Follow:</h3>

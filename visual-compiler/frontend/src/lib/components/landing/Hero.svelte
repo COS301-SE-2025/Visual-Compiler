@@ -38,14 +38,18 @@
 
 <section class="hero_section">
 	<div class="logo_container">
-		<img src="/half_stack_phoenix_grey.png" alt="Visual Compiler Logo" class="logo" />
-		<span class="project_title">Visual Compiler</span>
+		<div class="logo">
+			<img src="/half_stack_phoenix_grey.png" alt="Visual Compiler Logo"/>
+		</div>
+		<div class="project_title">
+			<span>Visual Compiler</span>
+		</div>
 	</div>
 
 	<div class="hero_content">
-		<h1 class="main_headline">Demystifying Compilers, One Block at a Time.</h1>
+		<h1 class="main_headline">Demystifying Compilers,<br>One Block at a Time.</h1>
 		<p class="sub_headline">
-			An educational platform to construct, configure, visualise and understand the core phases of compilation.
+			An educational platform to construct, configure, visualise<br>and understand the core phases of compilation.
 		</p>
 		<button class="cta_button" on:click={launch}> Get Started </button>
 	</div>
@@ -73,31 +77,28 @@
 		background-color: #041a47;
 		color: #fafafa;
 		display: flex;
+		flex-direction: column;
 		align-items: center;
-		justify-content: center;
 		text-align: center;
-		height: 100vh;
-		padding: 0 2rem;
-		position: relative;
+		min-height: 100vh;
+		padding: 2rem;
+		gap: 3rem;
 	}
 
 	.logo_container {
-		position: absolute;
-		top: 2rem;
-		left: 50%;
-		transform: translateX(-50%);
 		display: flex;
+		flex-direction: column;
 		align-items: center;
 		gap: 1rem;
 	}
 
-	.logo {
-		height: 50px;
+	.logo img {
+		height: 125px;
 		width: auto;
 	}
 
-	.project_title {
-		font-size: 1.75rem; /* Slightly adjusted size */
+	.project_title span {
+		font-size: 2rem;
 		font-weight: 600;
 	}
 
@@ -106,22 +107,24 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 1.5rem;
+		gap: 1rem;
+		justify-content: center;
 	}
 
 	.main_headline {
-		font-size: 3.5rem;
+		font-size: 3rem;
 		font-weight: 700;
 		line-height: 1.2;
 	}
 
 	.sub_headline {
-		font-size: 1.25rem;
-		max-width: 600px;
+		font-size: 1.5rem;
+		max-width: 700px;
 		opacity: 0.9;
 	}
 
 	.cta_button {
+		margin-top: 2rem;
 		background-color: #fafafa;
 		color: #041a47;
 		border: none;
