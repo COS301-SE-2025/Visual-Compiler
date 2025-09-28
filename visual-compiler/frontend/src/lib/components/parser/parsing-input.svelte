@@ -5,21 +5,28 @@
     import { lexerState } from '$lib/stores/lexer';
     import { onMount, createEventDispatcher, onDestroy } from 'svelte';
     import { parserState, updateParserInputs, markParserSubmitted } from '$lib/stores/parser';
+    import { updateParserArtifacts } from '$lib/stores/parser';
 
     export let source_code = '';
 
     const dispatch = createEventDispatcher();
 
-    // --- DATA STRUCTURE for CFG ---
+    let parseTree = null;
+    let hasParseTree = false;
+
+    // FIX: Data structure to use productions consistently
     interface Rule {
         id: number;
         nonTerminal: string;
-        productions: string; // Now a single comma-separated string
+        productions: string; // Single comma-separated string for multiple productions
     }
 
     // --- STATE MANAGEMENT ---
+    let translation_id_counter = 1;
+    let rule_id_counter = 1;
+
+    // FIX: Start with empty array instead of pre-populated rule
     let grammar_rules: Rule[] = [];
-    let rule_id_counter = 0;
     let variables_string = '';
     let terminals_string = '';
     let show_default_grammar = false;
@@ -58,8 +65,9 @@
 
     let aiParserEventListener: (event: CustomEvent) => void;
 
+    // FIX: Remove the automatic addNewRule call in onMount
     onMount(async () => {
-        addNewRule();
+        // DON'T call addNewRule() here - let store restoration handle it
         await fetchTokens();
 
         // Listen for AI-generated parser grammar
@@ -142,31 +150,90 @@
 
     // handleGrammarChange
     let hasInitialized = false;
+    let currentProjectName = '';
 
-    $: if ($parserState && !hasInitialized) {
-        grammar_rules = [...$parserState.grammar_rules];
-        variables_string = $parserState.variables_string;
-        terminals_string = $parserState.terminals_string;
-        rule_id_counter = $parserState.rule_id_counter;
-        translation_id_counter = $parserState.translation_id_counter;
-        show_default_grammar = $parserState.show_default_grammar;
-        is_grammar_submitted = $parserState.is_grammar_submitted;
-        
-        hasInitialized = true;
+    // FIX: Simplify project change detection
+    $: if ($projectName !== currentProjectName) {
+        console.log('Parser: Project changed from', currentProjectName, 'to', $projectName);
+        hasInitialized = false;
+        currentProjectName = $projectName;
     }
 
+    // FIX: Initialize from store when project name is set and store has data
+    $: if ($parserState && $projectName && (!hasInitialized || $projectName !== currentProjectName)) {
+        console.log('Parser component initializing with project:', $projectName, 'and state:', $parserState);
+        
+        // Convert from store format to component format
+        if ($parserState.grammar_rules && $parserState.grammar_rules.length > 0) {
+            grammar_rules = $parserState.grammar_rules.map(rule => ({
+                id: rule.id,
+                nonTerminal: rule.nonTerminal,
+                productions: rule.translations.map(t => t.value).join(', ')
+            }));
+        } else {
+            grammar_rules = [{ id: 1, nonTerminal: '', productions: '' }];
+            rule_id_counter = 1;
+        }
+        
+        variables_string = $parserState.variables_string || '';
+        terminals_string = $parserState.terminals_string || '';
+        rule_id_counter = $parserState.rule_id_counter || 1;
+        translation_id_counter = $parserState.translation_id_counter || 1;
+        show_default_grammar = $parserState.show_default_grammar || false;
+        is_grammar_submitted = $parserState.is_grammar_submitted || false;
+        
+        // Handle parse tree artifacts
+        if ($parserState.hasParseTree && $parserState.parseTree) {
+            parseTree = $parserState.parseTree;
+            hasParseTree = true;
+            dispatch('treereceived', parseTree);
+        } else {
+            parseTree = null;
+            hasParseTree = false;
+        }
+        
+        hasInitialized = true;
+        console.log('Parser component initialized with:', { 
+            grammar_rules: grammar_rules.length, 
+            hasParseTree,
+            is_grammar_submitted
+        });
+    }   
+
+    // FIX: Only update store if there are meaningful changes
     function handleGrammarChange() {
         is_grammar_submitted = false;
         
-        // Save current state as user input when not showing default
         if (!show_default_grammar) {
             saveCurrentAsUserInput();
         }
 
-        // Update the store
         if (hasInitialized) {
+            // FIX: Filter out completely empty rules before storing
+            const meaningful_rules = grammar_rules.filter(rule => 
+                rule.nonTerminal.trim() !== '' || rule.productions.trim() !== ''
+            );
+            
+            const storeFormatRules = meaningful_rules.map(rule => ({
+                id: rule.id,
+                nonTerminal: rule.nonTerminal,
+                translations: rule.productions.split(',').map((prod, index) => ({
+                    id: index + 1,
+                    value: prod.trim()
+                })).filter(t => t.value !== '')
+            }));
+
+            // Only add empty rule if there are no meaningful rules
+            if (storeFormatRules.length === 0) {
+                storeFormatRules.push({
+                    id: 1,
+                    nonTerminal: '',
+                    translations: [{ id: 1, value: '' }]
+                });
+            }
+
             updateParserInputs({
-                grammar_rules: [...grammar_rules],
+                grammar_rules: storeFormatRules,
                 variables_string,
                 terminals_string,
                 rule_id_counter,
@@ -177,21 +244,24 @@
         }
     }
 
-    // addNewRule
+    // FIX: Only add new rule if the last rule has content
     function addNewRule() {
+        // Check if we should add a rule
+        const last_rule = grammar_rules[grammar_rules.length - 1];
+        if (last_rule && last_rule.nonTerminal.trim() === '' && last_rule.productions.trim() === '') {
+            // Don't add if the last rule is already empty
+            return;
+        }
+
+        rule_id_counter++; 
+        translation_id_counter++;
+        grammar_rules = [...grammar_rules, {
+            id: rule_id_counter,
+            nonTerminal: '',
+            productions: ''
+        }];
         handleGrammarChange();
-        rule_id_counter++;
-        grammar_rules = [
-            ...grammar_rules,
-            {
-                id: rule_id_counter,
-                nonTerminal: '',
-                productions: ''
-            }
-        ];
     }
-
-
 
     // insertDefaultGrammar
     function insertDefaultGrammar() {
@@ -223,14 +293,15 @@
         handleGrammarChange();
         show_default_grammar = false;
         
-        // Restore user input
         grammar_rules = JSON.parse(JSON.stringify(user_grammar_rules));
         variables_string = user_variables_string;
         terminals_string = user_terminals_string;
         rule_id_counter = user_rule_id_counter;
         
+        // FIX: Only add new rule if grammar_rules is completely empty
         if (grammar_rules.length === 0) {
-            addNewRule();
+            grammar_rules = [{ id: 1, nonTerminal: '', productions: '' }];
+            rule_id_counter = 1;
         }
     }
 
@@ -239,38 +310,39 @@
         rule_id_counter = 1;
         translation_id_counter = 1;
         
-        // Create a completely new rule structure
+        // FIX: Create rule with productions
         grammar_rules = [{
             id: 1,
             nonTerminal: '',
-            translations: [{ id: 1, value: '' }]
+            productions: ''
         }];
         
         // Reset variables and terminals
         variables_string = '';
         terminals_string = '';
         
-        // Reset user backup data
-        user_grammar_rules = [];
-        user_variables_string = '';
-        user_terminals_string = '';
-        user_rule_id_counter = 1;
-        user_translation_id_counter = 1;
-        
         // Reset states
         show_default_grammar = false;
         is_grammar_submitted = false;
         
-        // Update store
-        updateParserInputs({
-            grammar_rules: [...grammar_rules],
-            variables_string: '',
-            terminals_string: '',
-            rule_id_counter: 1,
-            translation_id_counter: 1,
-            show_default_grammar: false,
-            is_grammar_submitted: false
-        });
+        // Update store if using it
+        if (hasInitialized) {
+            const storeFormatRules = [{
+                id: 1,
+                nonTerminal: '',
+                translations: [{ id: 1, value: '' }]
+            }];
+
+            updateParserInputs({
+                grammar_rules: storeFormatRules,
+                variables_string: '',
+                terminals_string: '',
+                rule_id_counter: 1,
+                translation_id_counter: 1,
+                show_default_grammar: false,
+                is_grammar_submitted: false
+            });
+        }
         
         AddToast('All grammar inputs cleared successfully!', 'success');
     }
@@ -526,6 +598,7 @@
             }
 
             if (data.tree) {
+                updateParserArtifacts(data.tree);
                 AddToast('Parse tree generated successfully! Your syntax analysis is complete', 'success');
                 dispatch('treereceived', data.tree);
             } else {
@@ -542,25 +615,21 @@
         }
     }
 
-    // Add this reactive statement to handle project data
-    $: if ($lexerState?.parser_data?.grammar) {
+    // FIX: Add this reactive statement to handle project data
+    $: if ($lexerState?.parser_data?.grammar && hasInitialized) {
         const parserData = $lexerState.parser_data.grammar;
         
-        // Safely handle variables and terminals with null checks
         variables_string = parserData.variables ? parserData.variables.join(', ') : '';
         terminals_string = parserData.terminals ? parserData.terminals.join(', ') : '';
         
-        // Safely handle rules
         if (parserData.rules && Array.isArray(parserData.rules)) {
-            grammar_rules = parserData.rules.map((rule, index) => {
-                rule_id_counter = index + 1;
-                return {
-                    id: rule_id_counter,
-                    nonTerminal: rule.input || '',
-                    productions: Array.isArray(rule.output) ? rule.output.join(' ') : ''
-                };
-            });
-
+            grammar_rules = parserData.rules.map((rule, index) => ({
+                id: index + 1,
+                nonTerminal: rule.input || '',
+                productions: Array.isArray(rule.output) ? rule.output.join(' ') : ''
+            }));
+            
+            rule_id_counter = parserData.rules.length;
             show_default_grammar = false;
             is_grammar_submitted = true;
         }
@@ -604,15 +673,15 @@
                 
                 <!-- Default button second (to the right) -->
                 <button
-                    class="default-toggle-btn"
-                    class:selected={show_default_grammar}
-                    on:click={show_default_grammar ? removeDefaultGrammar : insertDefaultGrammar}
-                    type="button"
-                    aria-label={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
-                    title={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
-                >
-                    <span class="icon">{show_default_grammar ? '🧹' : '🪄'}</span>
-                </button>
+                class="option-btn example-btn"
+                class:selected={show_default_grammar}
+                on:click={show_default_grammar ? removeDefaultGrammar : insertDefaultGrammar}
+                type="button"
+                aria-label={show_default_grammar ? 'Restore your input' : 'Show context-free grammar example'}
+                title={show_default_grammar ? 'Restore your input' : 'Show context-free grammar example'}
+            >
+                {show_default_grammar ? 'Restore Input' : 'Show Example'}
+            </button>
             </div>
 
         </div>
@@ -669,7 +738,10 @@
                 </div>
             {/each}
         </div>
-        <button class="add-rule-btn" on:click={addNewRule}>+ Add New Rule</button>
+        <!-- FIX: Only show Add Rule button when the last rule has content -->
+        {#if grammar_rules.length === 0 || (grammar_rules[grammar_rules.length - 1]?.nonTerminal.trim() !== '' || grammar_rules[grammar_rules.length - 1]?.productions.trim() !== '')}
+            <button class="add-rule-btn" on:click={addNewRule}>+ Add New Rule</button>
+        {/if}
     </div>
 
     <div class="button-container">
@@ -765,7 +837,7 @@
         color: #001a6e;
         font-family: 'Times New Roman';
     }
-    .option-btn {
+	.option-btn {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
@@ -782,14 +854,12 @@
 		overflow: hidden;
 		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
 		text-decoration: none;
-		width: 100%;
-		max-width: 150px;
+		width: 140px;
+		min-width: 140px;
 		justify-content: center;
 		margin-left: 1rem;
-	}
-
-	.example-btn {
-		background: linear-gradient(135deg, #1e40af, #3b82f6);
+	}	.example-btn {
+		background: #1e40af;
 	}
 
 	.example-btn:hover {

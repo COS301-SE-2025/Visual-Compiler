@@ -32,10 +32,13 @@
 	async function fetchProjects() {
 		// Skip fetching projects for guest users
 		if (isGuestUser) {
+			console.log('Skipping project fetch - guest user'); // Debug log
 			return;
 		}
 
 		const userId = sessionStorage.getItem('user_id');
+		console.log('Fetching projects for userId:', userId); // Debug log
+		
 		if (!userId) return;
 
 		try {
@@ -405,7 +408,7 @@
 			</label>
 
 			<!-- Import from Project (only for non-guest users) -->
-			{#if !isGuestUser && projects.length > 1}
+			{#if !isGuestUser && projects.length > 0}
 				<!-- OR Separator -->
 				<div class="separator">
 					<span>or</span>
@@ -661,7 +664,7 @@
 	}
 
 	.example-btn {
-		background: linear-gradient(135deg, #1e40af, #3b82f6);
+		background: #1e40af;	
 	}
 
 	.example-btn:hover {
@@ -873,7 +876,7 @@
 		align-items: center;
 		gap: 0.5em;
 		padding: 0.7rem 1rem;
-		background: linear-gradient(135deg, #041a47, #0c2d5e);
+		background: #041a47;
 		color: white;
 		border: none;
 		border-radius: 12px;
@@ -892,7 +895,7 @@
 	}
 
 	.confirm-btn.confirmed {
-		background: linear-gradient(135deg, #10b981, #34d399);
+
 		box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25);
 	}
 

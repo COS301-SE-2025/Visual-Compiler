@@ -18,11 +18,7 @@
 	import CanvasTutorial from '$lib/components/main/canvas-tutorial.svelte';
 	import GuestWelcomePopup from '$lib/components/main/guest-welcome-popup.svelte';
 	import { phase_completion_status } from '$lib/stores/pipeline';
-
-	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial, showCanvasTutorial} from '$lib/stores/tutorial';
-	import { lexerState, resetLexerState } from '$lib/stores/lexer';
-	import { parserState, resetParserState } from '$lib/stores/parser';
-
+	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial, showCanvasTutorial } from '$lib/stores/tutorial';
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -65,14 +61,14 @@
 	let isGuestUser = false;
 
 	// --- TUTORIAL STATE ---
-	let showCanvasTutorialState = false;
+	let canvasTutorialVisible = false;
 
 	// --- RECENTER STATE ---
 	let isRecentering = false;
 
 	// Subscribe to tutorial store
 	tutorialStore.subscribe(state => {
-		showCanvasTutorialState = state.showCanvasTutorial;
+		canvasTutorialVisible = state.showCanvasTutorial;
 	});
 
 	// --- UNSAVED CHANGES TRACKING ---
@@ -225,6 +221,53 @@
 			}
 		}
 
+		// FIX: Update event listeners to be more robust
+		const handleProjectTokensLoaded = (event: CustomEvent) => {
+			console.log('Project tokens loaded event received:', event.detail);
+			if (event.detail?.tokens) {
+				tokens = event.detail.tokens;
+				show_tokens = true;
+				handleTokenGeneration({ tokens: event.detail.tokens, unexpected_tokens: [] });
+			}
+		};
+
+		const handleProjectTreeLoaded = (event: CustomEvent) => {
+			console.log('Project tree loaded event received:', event.detail);
+			if (event.detail?.tree) {
+				syntaxTreeData = event.detail.tree;
+				artifactData = event.detail.tree;
+				handleTreeReceived({ detail: event.detail.tree });
+			}
+		};
+
+		const handleProjectSymbolsLoaded = (event: CustomEvent) => {
+			console.log('Project symbols loaded event received:', event.detail);
+			if (event.detail?.symbols) {
+				const symbols = event.detail.symbols.map((s: any) => ({
+					name: s.Name || s.name || 'unknown',
+					type: s.Type || s.type || 'unknown',
+					scope: s.Scope || s.scope || 0
+				}));
+				symbol_table = symbols;
+				show_symbol_table = true;
+				handleSymbolGeneration({ symbol_table: symbols });
+			}
+		};
+
+		const handleProjectTranslationLoaded = (event: CustomEvent) => {
+			console.log('Project translation loaded event received:', event.detail);
+			if (event.detail?.code) {
+				translated_code = event.detail.code;
+				handleTranslationReceived({ detail: event.detail.code });
+			}
+		};
+
+		// Add event listeners
+		window.addEventListener('project-tokens-loaded', handleProjectTokensLoaded);
+		window.addEventListener('project-tree-loaded', handleProjectTreeLoaded);
+		window.addEventListener('project-symbols-loaded', handleProjectSymbolsLoaded);
+		window.addEventListener('project-translation-loaded', handleProjectTranslationLoaded);
+
 		// Return cleanup function
 		return () => {
 			// Cleanup subscriptions
@@ -234,6 +277,12 @@
 			if (typeof window !== 'undefined') {
 				window.removeEventListener('beforeunload', handleBeforeUnload);
 			}
+
+			// Clean up new event listeners
+			window.removeEventListener('project-tokens-loaded', handleProjectTokensLoaded);
+			window.removeEventListener('project-tree-loaded', handleProjectTreeLoaded);
+			window.removeEventListener('project-symbols-loaded', handleProjectSymbolsLoaded);
+			window.removeEventListener('project-translation-loaded', handleProjectTranslationLoaded);
 		};
 	});
 
@@ -253,7 +302,7 @@
 	// Handle guest welcome popup close
 	function handleGuestWelcomeClose() {
 		showGuestWelcomePopup = false;
-		// Show canvas tutorial after guest welcome is closed
+		// Show canvas tutorial after guest welcome popup is closed
 		showCanvasTutorial();
 	}
 
@@ -545,7 +594,7 @@
 						invalid_connections.push(conn);
 					}
 					showInvalidConnection();
-					is_invalid = true;;
+					is_invalid = true;
 				}
 				// Check for physical connection between source and lexer
 				if (!hasPhysicalConnection('source', 'lexer')) {
@@ -571,7 +620,7 @@
 						invalid_connections.push(conn);
 					}
 					showInvalidConnection();
-					is_invalid = true;;
+					is_invalid = true;
 				}
 				if (hasPhysicalConnection('lexer', 'translator')) {
 					let conn;
@@ -902,15 +951,8 @@
 		// Reset node counter
 		node_counter = 0;
 
-		// Reset all phase states
-		resetLexerState();
-		resetParserState();
-		// Add calls to reset other phase states as you implement them
-
-		// Reset phase completion status
-		resetPhaseStatus();
-
-		// Reset the toolbox created nodes
+		// Reset the toolbox created nodes (we need to access the Toolbox component's internal state)
+		// We'll trigger a custom event that the Toolbox component will listen to
 		const event = new CustomEvent('resetToolbox');
 		document.dispatchEvent(event);
 
@@ -1024,31 +1066,63 @@
 		analyser_error_details = '';
 	}
 
-	function handleSymbolGeneration(data: { symbol_table: Symbol[]; analyser_error?: boolean; analyser_error_details?: string }) {
-		if (data.symbol_table && data.symbol_table.length > 0) {
-			show_symbol_table = true;
-			symbol_table = data.symbol_table;
-			analyser_error = false;
-			analyser_error_details = '';
-			// Mark analyser phase as complete when symbol table is generated successfully
-			phase_completion_status.analyser = true;
-			completion_status.analyser = true;
-		} else {
-			show_symbol_table = false;
-			analyser_error = true;
-			analyser_error_details = data.analyser_error_details || '';
-		}
-	}
+	function handleSymbolGeneration(data: { 
+        symbol_table: any[], 
+        analyser_error?: string, 
+        analyser_error_details?: string 
+    }) {
+        console.log('Symbol table generation received:', data);
+        
+        if (data.symbol_table && data.symbol_table.length > 0) {
+            symbol_table = data.symbol_table;
+            show_symbol_table = true;
+            analyser_error = false;
+            analyser_error_details = '';
+            
+            // Mark analyser phase as complete when symbol table is generated successfully
+            phase_completion_status.update(status => ({
+                ...status,
+                analyser: true
+            }));
+            completion_status.analyser = true;
+            
+            if (data.analyser_error) {
+                AddToast('Semantic analysis completed with warnings. Check results for details.', 'warning');
+            } else {
+                AddToast('Symbol table generated successfully!', 'success');
+            }
+        } else {
+            // FIX: Clear symbol table if empty array is received
+            symbol_table = [];
+            show_symbol_table = false;
+            analyser_error = !!data.analyser_error;
+            analyser_error_details = data.analyser_error_details || '';
+            console.log('Symbol table cleared');
+        }
+    }
 
-	function handleTranslationReceived(event: CustomEvent<string[]>) {
-		translated_code = event.detail;
-		translationError = null;
-		// Mark translator phase as complete when translation is received
-		if (event.detail && event.detail.length > 0) {
-			phase_completion_status.translator = true;
-			completion_status.translator = true;
-		}
-	}
+	function handleTranslationReceived(event: { detail: string[] }) {
+        console.log('Translation received:', event.detail);
+        
+        if (event.detail && event.detail.length > 0) {
+            translated_code = event.detail;
+            translationError = null;
+            
+            // Mark translator phase as complete when translation is received
+            phase_completion_status.update(status => ({
+                ...status,
+                translator: true
+            }));
+            completion_status.translator = true;
+            
+            AddToast('Code translation completed successfully!', 'success');
+        } else {
+            // FIX: Clear translated code if empty array is received
+            translated_code = [];
+            translationError = null;
+            console.log('Translated code cleared');
+        }
+    }
 
 	function returnToCanvas() {
 		selected_phase = null;
@@ -1090,7 +1164,6 @@
 	let tokens: Token[] = [];
 	let unexpected_tokens: string[] = [];
 	let translated_code: string[] = [];
-
 	let artifactData: SyntaxTree | null = null;
 	let parsing_error: boolean=false;
 	let parsing_error_details: string="";
@@ -1154,7 +1227,7 @@
 				</div>
 			</div>
 		{/if}
-		<DrawerCanvas {nodes} initialConnections={physicalConnections} onPhaseSelect={handlePhaseSelect} onConnectionChange={handleConnectionChange} />
+		<DrawerCanvas {nodes} initialConnections={physicalConnections} {tooltips} onPhaseSelect={handlePhaseSelect} onConnectionChange={handleConnectionChange} />
 
 		<!-- Recenter Loading Overlay -->
 		{#if isRecentering}
@@ -1310,7 +1383,7 @@
 
 <!-- Canvas Tutorial Modal -->
 <CanvasTutorial 
-	bind:show={showCanvasTutorialState} 
+	bind:show={canvasTutorialVisible} 
 	on:close={handleTutorialClose}
 />
 
@@ -1628,9 +1701,8 @@
 
 	.help-tip {
 		position: absolute;
-		bottom: 20px;
-		left: 50%;
-		transform: translateX(-50%);
+		top: 20px;
+		right: 20px;
 		background-color: rgba(4, 26, 71, 0.95);
 		color: white;
 		padding: 10px 15px 10px 20px;

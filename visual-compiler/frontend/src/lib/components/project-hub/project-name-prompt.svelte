@@ -9,6 +9,11 @@
 
 	const dispatch = createEventDispatcher();
 
+	// Reset project name when modal opens
+	$: if (show) {
+		projectName = '';
+	}
+
 	function handleConfirm() {
 		if (projectName.trim()) {
 			// Check for duplicates before proceeding

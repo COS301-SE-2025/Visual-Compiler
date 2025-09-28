@@ -1,5 +1,7 @@
 // lib/stores/parser.ts
 import { writable } from 'svelte/store';
+import { get } from 'svelte/store';
+import { projectName } from './project';
 
 interface Translation {
     id: number;
@@ -21,9 +23,14 @@ interface ParserState {
     show_default_grammar: boolean;
     is_grammar_submitted: boolean;
     hasUnsavedChanges: boolean;
+    // ADD: Artifact storage
+    parseTree: any;
+    hasParseTree: boolean;
+    parsingError: string | null;
 }
 
-const initialState: ParserState = {
+// Define initial state as a constant
+const INITIAL_PARSER_STATE: ParserState = {
     grammar_rules: [{ id: 1, nonTerminal: '', translations: [{ id: 1, value: '' }] }],
     variables_string: '',
     terminals_string: '',
@@ -31,10 +38,14 @@ const initialState: ParserState = {
     translation_id_counter: 1,
     show_default_grammar: false,
     is_grammar_submitted: false,
+    parseTree: null,
+    hasParseTree: false,
+    parsingError: null,
     hasUnsavedChanges: false
 };
 
-export const parserState = writable<ParserState>(initialState);
+// Create store with initial state
+export const parserState = writable<ParserState>(INITIAL_PARSER_STATE);
 
 export const updateParserInputs = (data: Partial<ParserState>) => {
     parserState.update(state => ({
@@ -52,6 +63,80 @@ export const markParserSubmitted = () => {
     }));
 };
 
+// FIX: Proper reset function
 export const resetParserState = () => {
-    parserState.set(initialState);
+    parserState.set(JSON.parse(JSON.stringify(INITIAL_PARSER_STATE))); // Deep copy
+    console.log('Parser state reset to:', INITIAL_PARSER_STATE);
+};
+
+// ADD: Function to update artifacts
+export const updateParserArtifacts = (parseTree: any, error: string | null = null) => {
+    parserState.update(state => ({
+        ...state,
+        parseTree,
+        hasParseTree: !!parseTree,
+        parsingError: error
+    }));
+};
+
+// UPDATE: Project loading function to include artifacts
+export const updateParserStateFromProject = (projectData: any) => {
+    if (!projectData?.parsing) return;
+
+    const currentProject = get(projectName);
+    if (!currentProject) return;
+
+    const updates: Partial<ParserState> = {};
+
+    // Handle grammar from project data
+    if (projectData.parsing.grammar) {
+        const grammarData = projectData.parsing.grammar;
+        
+        if (grammarData.rules && Array.isArray(grammarData.rules)) {
+            updates.grammar_rules = grammarData.rules.map((rule: any, index: number) => ({
+                id: index + 1,
+                nonTerminal: rule.input || '',
+                translations: Array.isArray(rule.output) 
+                    ? rule.output.map((output: string, tIndex: number) => ({
+                        id: tIndex + 1,
+                        value: output || ''
+                    }))
+                    : [{ id: 1, value: rule.output || '' }]
+            }));
+            
+            updates.rule_id_counter = grammarData.rules.length + 1;
+        }
+
+        if (grammarData.variables) {
+            updates.variables_string = Array.isArray(grammarData.variables) 
+                ? grammarData.variables.join(', ') 
+                : grammarData.variables || '';
+        }
+        
+        if (grammarData.terminals) {
+            updates.terminals_string = Array.isArray(grammarData.terminals) 
+                ? grammarData.terminals.join(', ') 
+                : grammarData.terminals || '';
+        }
+    }
+
+    // Handle artifacts - parse tree
+    if (projectData.parsing.tree) {
+        updates.parseTree = projectData.parsing.tree;
+        updates.hasParseTree = true;
+        updates.parsingError = null;
+    }
+
+    // Mark as submitted if there's data
+    if (projectData.parsing && Object.keys(projectData.parsing).length > 0) {
+        updates.is_grammar_submitted = true;
+        updates.hasUnsavedChanges = false;
+    }
+
+    if (Object.keys(updates).length > 0) {
+        parserState.update(state => ({
+            ...state,
+            ...updates
+        }));
+    }
 };

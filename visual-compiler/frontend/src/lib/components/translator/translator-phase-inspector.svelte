@@ -1,23 +1,84 @@
 <script lang="ts">
-	export let source_code: string;
-	import { AddToast } from '$lib/stores/toast';
-	import { createEventDispatcher } from 'svelte';
-	import { projectName } from '$lib/stores/project';
-	import { get } from 'svelte/store'; 
-	import { lexerState } from '$lib/stores/lexer';
+    export let source_code: string;
+    import { AddToast } from '$lib/stores/toast';
+    import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+    import { projectName } from '$lib/stores/project';
+    import { get } from 'svelte/store'; 
+    import { lexerState } from '$lib/stores/lexer';
+    import { translatorState, updateTranslatorInputs, markTranslatorSubmitted, updateTranslatorArtifacts } from '$lib/stores/translator';
 
-	const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher();
 
-	let rules = [{ tokenSequence: '', lines: [''] }];
-	let isSubmitted = false;
-	let translationSuccessful = false;
-	let show_default_rules = false;
-	let hasInitialized = false;
+    let rules = [{ tokenSequence: '', lines: [''] }];
+    let isSubmitted = false;
+    let translationSuccessful = false;
+    let show_default_rules = false;
 
-	// Force initial rule to be visible
-	$: if (rules.length === 0) {
-		rules = [{ tokenSequence: '', lines: [''] }];
-	}
+    // FIX: Add project change tracking
+    let hasInitialized = false;
+    let currentProjectName = '';
+
+    // FIX: Force reinitialization when project changes
+    $: if ($projectName !== currentProjectName) {
+        console.log('Translator: Project changed from', currentProjectName, 'to', $projectName);
+        
+        // RESET component state immediately when project changes
+        if (currentProjectName !== '' && $projectName !== currentProjectName) {
+            rules = [{ tokenSequence: '', lines: [''] }];
+            isSubmitted = false;
+            translationSuccessful = false;
+            show_default_rules = false;
+
+            // FIX: Clear artifacts from parent component by dispatching empty data
+            dispatch('translationreceived', []);
+        }
+        
+        hasInitialized = false;
+        currentProjectName = $projectName;
+    }
+
+    // FIX: Update store subscription to handle project changes and artifacts
+    $: if ($translatorState && $projectName && (!hasInitialized || $projectName !== currentProjectName)) {
+        console.log('Translator component initializing/reinitializing with state:', $translatorState);
+        
+        rules = [...$translatorState.rules];
+        show_default_rules = $translatorState.show_default_rules || false;
+        isSubmitted = $translatorState.isSubmitted;
+        translationSuccessful = $translatorState.translationSuccessful || false;
+        
+        // Ensure we always have at least one empty rule
+        if (rules.length === 0) {
+            rules = [{ tokenSequence: '', lines: [''] }];
+        }
+        
+        // FIX: Handle artifacts - only show if there is actual translated code
+        if ($translatorState.hasTranslatedCode && $translatorState.translatedCode && $translatorState.translatedCode.length > 0) {
+            const translatedCode = [...$translatorState.translatedCode];
+            
+            // Dispatch the translated code to parent component
+            dispatch('translationreceived', translatedCode);
+            
+            console.log('Restored translated code with', translatedCode.length, 'lines');
+        } else {
+            // FIX: Explicitly clear artifacts if no translated code exists
+            dispatch('translationreceived', []);
+            
+            console.log('No translated code to restore - cleared artifacts');
+        }
+        
+        hasInitialized = true;
+        console.log('Translator component initialized with:', { 
+            rules: rules.length, 
+            isSubmitted, 
+            hasTranslatedCode: $translatorState.hasTranslatedCode,
+            translatedLines: $translatorState.hasTranslatedCode ? $translatorState.translatedCode?.length : 0
+        });
+    }
+
+    // Force initial rule to be visible
+    $: if (rules.length === 0) {
+        rules = [{ tokenSequence: '', lines: [''] }];
+    }
 
 	// --- DEFAULT RULES DATA ---
 	const DEFAULT_TRANSLATION_RULES = [
@@ -35,7 +96,7 @@
 		}
 	];
 
-	/**
+    /**
 	 * addRule
 	 * @description Adds a new, empty translation rule block to the list.
 	 * @param {void}
@@ -44,6 +105,7 @@
 	function addRule() {
 		rules = [...rules, { tokenSequence: '', lines: [''] }];
 		isSubmitted = false;
+		handleRulesChange();
 	}
 
 	/**
@@ -61,6 +123,7 @@
 			rules = [{ tokenSequence: '', lines: [''] }];
 			isSubmitted = false;
 		}
+		handleRulesChange();
 	}
 
 	/**
@@ -73,6 +136,7 @@
 		rules[ruleIndex].lines = [...rules[ruleIndex].lines, ''];
 		rules = rules;
 		isSubmitted = false;
+		handleRulesChange();
 	}
 
 	/**
@@ -87,6 +151,7 @@
 			rules[ruleIndex].lines = rules[ruleIndex].lines.filter((_, i) => i !== lineIndex);
 			rules = rules;
 			isSubmitted = false;
+			handleRulesChange();
 		}
 	}
 
@@ -100,6 +165,11 @@
 		rules = JSON.parse(JSON.stringify(DEFAULT_TRANSLATION_RULES));
 		show_default_rules = true;
 		isSubmitted = false;
+		updateTranslatorInputs({
+			rules: [...rules],
+			show_default_rules: true,
+			isSubmitted: false
+		});
 	}
 
 	/**
@@ -112,6 +182,11 @@
 		rules = [{ tokenSequence: '', lines: [''] }];
 		show_default_rules = false;
 		isSubmitted = false;
+		updateTranslatorInputs({
+			rules: [...rules],
+			show_default_rules: false,
+			isSubmitted: false
+		});
 	}
 
 	/**
@@ -175,6 +250,13 @@
 			const result = await response.json();
 			AddToast('Translation rules saved successfully! Ready to translate your code', 'success');
 			isSubmitted = true;
+
+			// Mark as submitted in store
+			markTranslatorSubmitted();
+			updateTranslatorInputs({
+				isSubmitted: true
+			});
+			
 		} catch (error: any) {
 			console.error('Rule submission Error:', error);
 			AddToast('Rule submission failed: ' + (error.message || 'Please check your connection and try again'), 'error');
@@ -218,8 +300,14 @@
 			}
 
 			const result = await response.json();
+			updateTranslatorArtifacts(result.code || []);
 			AddToast('Translation complete! Your code has been successfully translated', 'success');
 			translationSuccessful = true;
+
+			// Update store
+			updateTranslatorInputs({
+				translationSuccessful: true
+			});
 
 			// Dispatch the translated code to the parent component
 			dispatch('translationreceived', result.code);
@@ -231,36 +319,10 @@
 		}
 	}
 
-	// Add reactive statement for translator rules
-	$: if ($lexerState?.translator_data?.translating_rules && !hasInitialized) {
-		rules = $lexerState.translator_data.translating_rules.map(rule => ({
-			tokenSequence: rule.sequence,
-			lines: rule.translation
-		}));
-		isSubmitted = true;
-		show_default_rules = false;
-		hasInitialized = true;
-	} else if ($lexerState !== undefined && !hasInitialized) {
-		// Ensure rules are initialized with empty rule when no saved data exists
-		rules = [{ tokenSequence: '', lines: [''] }];
-		hasInitialized = true;
-	}
-	
-	// Reset when lexer state is cleared (new project or project switch)
-	$: if (!$lexerState?.translator_data && hasInitialized) {
-		hasInitialized = false;
-		rules = [{ tokenSequence: '', lines: [''] }];
-		isSubmitted = false;
-		show_default_rules = false;
-	}
+    // Add event listener for AI-generated translator rules
+    let aiTranslatorEventListener: (event: CustomEvent) => void;
 
-	// Add event listener for AI-generated translator rules
-	let aiTranslatorEventListener: (event: CustomEvent) => void;
-
-	// Add onMount and onDestroy imports if not already present
-	import { onMount, onDestroy } from 'svelte';
-
-	onMount(() => {
+    onMount(() => {
 		// Ensure we always have at least one empty rule on mount
 		if (rules.length === 0) {
 			rules = [{ tokenSequence: '', lines: [''] }];
@@ -308,8 +370,35 @@
         isSubmitted = false;
         translationSuccessful = false;
         show_default_rules = false;
+
+        // Update store
+        updateTranslatorInputs({
+            rules: [...rules],
+            show_default_rules: false,
+            isSubmitted: false,
+            translationSuccessful: false
+        });
         
         AddToast('All translator inputs cleared successfully!', 'success');
+    }
+
+    // ADD: Missing input change tracking function
+    function handleRulesChange() {
+        if (hasInitialized) {
+            updateTranslatorInputs({
+                rules: [...rules],
+                isSubmitted: false
+            });
+        }
+        isSubmitted = false;
+    }
+
+    // Add reactive statement to track input changes
+    $: if (hasInitialized) {
+        // Watch for changes in rules and update store
+        updateTranslatorInputs({
+            rules: [...rules]
+        });
     }
 </script>
 
@@ -349,15 +438,15 @@
 					<span class="icon">🗑️</span>
 				</button>
 				<button
-					class="default-toggle-btn"
-					class:selected={show_default_rules}
-					on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
-					type="button"
-					aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-					title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-				>
-					<span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
-				</button>
+				class="option-btn example-btn"
+				class:selected={show_default_rules}
+				on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
+				type="button"
+				aria-label={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
+				title={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
+			>
+				{show_default_rules ? 'Restore Input' : 'Show Example'}
+			</button>
 			</div>
 
 		</div>
@@ -379,6 +468,7 @@
 							class="input-field"
 							id="token-seq-{ruleIndex}"
 							bind:value={rule.tokenSequence}
+							on:input={handleRulesChange}
 							placeholder="Enter token sequence (e.g., KEYWORD, IDENTIFIER)"
 						/>
 					</div>
@@ -393,6 +483,7 @@
 								class="input-field"
 								id="line-{ruleIndex}-{lineIndex}"
 								bind:value={rules[ruleIndex].lines[lineIndex]}
+								on:input={handleRulesChange}
 								placeholder="Line {lineIndex + 1}"
 							/>
 							<button
@@ -653,7 +744,7 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 1rem;
-		margin-top: 1.5rem;
+		margin-top: 0.5rem;
 	}
 
 	.action-buttons {
@@ -741,6 +832,7 @@
 		transition: all 0.2s ease;
 		width: 200px;
 		max-width: 100%;
+		margin-bottom:0.5rem
 	}
 
 	.action-btn:hover,
@@ -826,6 +918,47 @@
         gap: 0.5rem;
         align-items: center;
     }
+
+	.option-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 140px;
+		min-width: 140px;
+		justify-content: center;
+		margin-left: 1rem;
+	}
+
+	.example-btn {
+		background: #1e40af;
+	}
+
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+	}
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+	}
+
+	.option-btn.selected {
+		background: #1e40af;
+	}
+
 
     .clear-toggle-btn {
         background: white;
@@ -918,6 +1051,8 @@
 		color: #6c757d;
 		transform: none;
 	}
+
+	
 	
 	/* Add section-header style */
 	.section-header {
@@ -927,13 +1062,6 @@
 		gap: 1rem;
 		margin-bottom: 1rem;
 		position: relative;
-	}
-
-
-	.section-header .option-btn {
-		position: absolute;
-		right: 0;
-		margin-left: 0;
 	}
 
 	:global(html.dark-mode) .submit {

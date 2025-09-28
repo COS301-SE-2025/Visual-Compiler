@@ -3,6 +3,8 @@
 	import type { Writable } from 'svelte/store';
 	import type { NodeType, NodeConnection } from '$lib/types';
 	import { theme } from '../../stores/theme';
+	import { AddToast } from '../../stores/toast';
+	import { onDestroy } from 'svelte';
 
 	interface CanvasNode {
 		id: string;
@@ -13,15 +15,34 @@
 
 	export let nodes: Writable<CanvasNode[]>;
 	export let initialConnections: NodeConnection[] = [];
+	export let tooltips: Record<NodeType, string> = {};
 
 	export let onPhaseSelect: (type: NodeType) => void = () => {};
 	export let onConnectionChange: (connections: NodeConnection[]) => void = () => {};
 
 	// Track physical connections between nodes
 	let nodeConnections: NodeConnection[] = [...initialConnections];
+	
+	// Track if we're in the initial loading phase
+	let isLoading = true;
+	let hasInitialized = false;
 
 	// Make nodeConnections reactive to changes in initialConnections
-	$: nodeConnections = [...initialConnections];
+	$: {
+		if (!hasInitialized && initialConnections.length > 0) {
+			nodeConnections = [...initialConnections];
+			isLoading = true;
+			// Set a timeout to mark loading as complete after connections are established
+			setTimeout(() => {
+				isLoading = false;
+				hasInitialized = true;
+			}, 500);
+		} else if (initialConnections.length === 0 && !hasInitialized) {
+			// No initial connections, not loading
+			isLoading = false;
+			hasInitialized = true;
+		}
+	}
 
 	// Function to restore nodes to their original saved positions
 	function restoreOriginalPositions(nodesList: CanvasNode[]): CanvasNode[] {
@@ -75,6 +96,97 @@
 	// Avoid recreation when just adding nodes - only recreate when clearing canvas
 	$: canvasKey = displayNodes.length === 0 ? 'empty-canvas' : 'active-canvas';
 
+	// Function to add tooltips to Svelvet nodes
+	function addTooltipsToNodes() {
+		if (typeof document !== 'undefined') {
+			displayNodes.forEach(node => {
+				const nodeId = `N-${node.id}`;
+				// Try multiple selectors
+				let nodeElement = document.querySelector(`g[id="${nodeId}"]`);
+				if (!nodeElement) {
+					nodeElement = document.querySelector(`[id="${nodeId}"]`);
+				}
+				if (!nodeElement) {
+					// Try finding by text content
+					nodeElement = Array.from(document.querySelectorAll('g')).find(g => 
+						g.textContent?.includes(node.label)
+					);
+				}
+				
+				if (nodeElement && tooltips[node.type]) {
+					// Remove existing tooltip listeners
+					nodeElement.removeEventListener('mouseenter', handleNodeMouseEnter);
+					nodeElement.removeEventListener('mouseleave', handleNodeMouseLeave);
+					
+					// Add new tooltip listeners
+					nodeElement.addEventListener('mouseenter', (e) => {
+						handleNodeMouseEnter(e, tooltips[node.type]);
+					});
+					nodeElement.addEventListener('mouseleave', (e) => {
+						handleNodeMouseLeave(e);
+					});
+				}
+			});
+		}
+	}
+
+	// Tooltip element
+	let tooltipElement: HTMLDivElement | null = null;
+
+	function createTooltipElement() {
+		if (tooltipElement) return tooltipElement;
+		
+		tooltipElement = document.createElement('div');
+		tooltipElement.className = 'canvas-node-tooltip';
+		document.body.appendChild(tooltipElement);
+		return tooltipElement;
+	}
+
+	function handleNodeMouseEnter(event: MouseEvent, tooltipText: string) {
+		const tooltip = createTooltipElement();
+		if (!tooltip) return;
+
+		tooltip.textContent = tooltipText;
+		tooltip.style.visibility = 'visible';
+		tooltip.style.opacity = '1';
+
+		// Position tooltip above the mouse cursor
+		const updateTooltipPosition = (e: MouseEvent) => {
+			tooltip.style.left = `${e.pageX - tooltip.offsetWidth / 2}px`;
+			tooltip.style.top = `${e.pageY - tooltip.offsetHeight - 10}px`;
+		};
+
+		updateTooltipPosition(event);
+		
+		// Update position as mouse moves
+		const target = event.currentTarget as Element;
+		const mouseMoveHandler = (e: MouseEvent) => updateTooltipPosition(e);
+		target.addEventListener('mousemove', mouseMoveHandler);
+		
+		// Store handler for cleanup
+		(target as any)._tooltipMouseMoveHandler = mouseMoveHandler;
+	}
+
+	function handleNodeMouseLeave(event: MouseEvent) {
+		if (tooltipElement) {
+			tooltipElement.style.visibility = 'hidden';
+			tooltipElement.style.opacity = '0';
+		}
+		
+		// Clean up mousemove handler
+		const target = event.currentTarget as Element;
+		if ((target as any)._tooltipMouseMoveHandler) {
+			target.removeEventListener('mousemove', (target as any)._tooltipMouseMoveHandler);
+			delete (target as any)._tooltipMouseMoveHandler;
+		}
+	}
+
+	// Add tooltips after nodes are rendered
+	$: if (displayNodes.length > 0 && Object.keys(tooltips).length > 0) {
+		// Use a small delay to ensure nodes are fully rendered
+		setTimeout(() => addTooltipsToNodes(), 300);
+	}
+
 	let canvas_el: any;
 	let last_click = -Infinity;
 	const DOUBLE_CLICK_MILLISECONDS = 300;
@@ -93,6 +205,50 @@
 		const targetCanvasNode = displayNodes.find(node => node.id === targetNodeId);
 
 		if (sourceCanvasNode && targetCanvasNode) {
+			// Skip validation if we're still loading initial connections
+			if (isLoading) {
+				console.log('Skipping validation during initial loading phase');
+				return;
+			}
+			
+			// Check if source node already has an outgoing connection
+			const hasOutgoingConnection = nodeConnections.some(conn => 
+				conn.sourceNodeId === sourceCanvasNode.id
+			);
+			
+			// Check if target node already has an incoming connection
+			const hasIncomingConnection = nodeConnections.some(conn => 
+				conn.targetNodeId === targetCanvasNode.id
+			);
+
+			if (hasOutgoingConnection) {
+				AddToast('Connection limit: Each node can only have one outgoing connection', 'error');
+				// Manually remove the invalid connection using DOM manipulation
+				setTimeout(() => {
+					const startAnchor = document.getElementById(event.detail.sourceAnchor.id);
+					const endAnchor = document.getElementById(event.detail.targetAnchor.id);
+					
+					// Simulate disconnection by triggering mouse events
+					startAnchor?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
+					endAnchor?.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }));
+				}, 50); // Small delay to ensure the connection is fully rendered before removing
+				return; // Prevent the connection from being stored
+			}
+
+			if (hasIncomingConnection) {
+				AddToast('Connection limit: Each node can only have one incoming connection', 'error');
+				// Manually remove the invalid connection using DOM manipulation
+				setTimeout(() => {
+					const startAnchor = document.getElementById(event.detail.sourceAnchor.id);
+					const endAnchor = document.getElementById(event.detail.targetAnchor.id);
+					
+					// Simulate disconnection by triggering mouse events
+					startAnchor?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
+					endAnchor?.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }));
+				}, 50); // Small delay to ensure the connection is fully rendered before removing
+				return; // Prevent the connection from being stored
+			}
+
 			const newConnection: NodeConnection = {
 				id: `${sourceNodeId}-${targetNodeId}`,
 				sourceNodeId: sourceCanvasNode.id,
@@ -150,6 +306,14 @@
 		}
 		last_click = now;
 	}
+
+	// Cleanup tooltip element when component is destroyed
+	onDestroy(() => {
+		if (tooltipElement && document.body.contains(tooltipElement)) {
+			document.body.removeChild(tooltipElement);
+			tooltipElement = null;
+		}
+	});
 </script>
 
 <div class="drawer-canvas">
@@ -257,5 +421,23 @@
 	:global(g[id^='N-source'] .handle-left),
 	:global(g[id^='source'] .handle-left) {
 		display: none !important;
+	}
+
+	/* Canvas Node Tooltip Styling */
+	:global(.canvas-node-tooltip) {
+		position: absolute;
+		visibility: hidden;
+		opacity: 0;
+		background-color: #333;
+		color: #fff;
+		font-size: 0.75rem;
+		padding: 0.4rem 0.8rem;
+		border-radius: 4px;
+		white-space: nowrap;
+		z-index: 1000;
+		transition: opacity 0.2s ease;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		pointer-events: none;
+		font-family: 'Times New Roman', Times, serif;
 	}
 </style>

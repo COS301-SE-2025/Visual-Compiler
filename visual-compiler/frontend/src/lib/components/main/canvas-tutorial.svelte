@@ -61,6 +61,7 @@
 			details: [
 				"Drag from a node's output anchor to another's input",
 				"Follow the sequential order: Source → Lexer → Parser → Analyser → Translator",
+				"Each node can only have one incoming and one outgoing connection",
 				"Connections show how data flows through your compiler",
 				"Invalid connections will be prevented automatically"
 			]
