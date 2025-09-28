@@ -8,6 +8,9 @@
 	import DeleteConfirmPrompt from './delete-confirmation.svelte'; 
 	import { AddToast } from '$lib/stores/toast';
 	import { updateLexerStateFromProject, resetLexerState } from '$lib/stores/lexer';
+	import { updateParserStateFromProject, resetParserState } from '$lib/stores/parser';
+	import { updateAnalyserStateFromProject, resetAnalyserState } from '$lib/stores/analyser';
+	import { updateTranslatorStateFromProject, resetTranslatorState } from '$lib/stores/translator';
 	import { phase_completion_status } from '$lib/stores/pipeline';
 	import { triggerTutorialForNewProject } from '$lib/stores/tutorial';
 
@@ -112,8 +115,11 @@
 			return;
 		}
 
-		// Clear existing state before loading new project
+		// Clear ALL existing states before loading new project
 		resetLexerState();
+		resetParserState();
+		resetAnalyserState();
+		resetTranslatorState();
 		resetSourceCode();
 		
 		try {
@@ -130,37 +136,19 @@
 			}
 
 			const data = await response.json();
-			
-			// Log detailed project data to console
-			console.log('Project Data:', {
-				message: data.message,
-				projectName: selectedProjectName,
-				hasResults: !!data.results,
-				lexingData: data.results?.lexing,
-				hasSourceCode: !!data.results?.lexing?.code,
-				pipelineData: data.results?.pipeline,
-				fullResponse: data
-			});
 
 			if (data.message === "Retrieved users project details") {
 				if (data.results) {
-					updateLexerStateFromProject({
-						lexing: data.results.lexing,
-						parsing: data.results.parsing,
-						analysing: data.results.analysing,
-						translating: {
-							code: data.results.translating?.code || [],
-							translating_rules: data.results.translating?.translating_rules?.map(rule => ({
-								sequence: Array.isArray(rule.sequence) ? rule.sequence : [],
-								translation: Array.isArray(rule.translation) ? rule.translation : []
-							})) || []  
-						}
-					});
+					// UPDATE: Load all phase states from project data
+					updateLexerStateFromProject(data.results);
+					updateParserStateFromProject(data.results);
+					updateAnalyserStateFromProject(data.results);
+					updateTranslatorStateFromProject(data.results);
 
-					// Update phase completion status
+					// FIX: Update phase completion status based on actual artifacts
 					const hasTokens = !!(data.results.lexing?.tokens && data.results.lexing.tokens.length > 0);
 					const hasCode = !!data.results.lexing?.code;
-					const hasTree = !!(data.results.parsing?.tree?.root);
+					const hasTree = !!(data.results.parsing?.tree);
 					const hasSymbolTable = !!(data.results.analysing?.symbol_table_artefact?.symbolscopes);
 					const hasTranslation = !!(data.results.translating?.code && data.results.translating.code.length > 0);
 					
@@ -177,17 +165,42 @@
 						confirmedSourceCode.set(data.results.lexing.code);
 					}
 
-					// Check if there's pipeline data
+					// ADD: Trigger artifact display events after a short delay
+					setTimeout(() => {
+						if (hasTokens) {
+							window.dispatchEvent(new CustomEvent('project-tokens-loaded', {
+								detail: { tokens: data.results.lexing.tokens }
+							}));
+						}
+						
+						if (hasTree) {
+							window.dispatchEvent(new CustomEvent('project-tree-loaded', {
+								detail: { tree: data.results.parsing.tree }
+						}));
+						}
+						
+						if (hasSymbolTable) {
+							window.dispatchEvent(new CustomEvent('project-symbols-loaded', {
+								detail: { symbols: data.results.analysing.symbol_table_artefact.symbolscopes }
+						}));
+						}
+						
+						if (hasTranslation) {
+							window.dispatchEvent(new CustomEvent('project-translation-loaded', {
+								detail: { code: data.results.translating.code }
+						}));
+						}
+					}, 100);
+
+					// Handle pipeline data
 					if (data.results && data.results.pipeline) {
-						// Update the pipeline store with the saved pipeline data
 						pipelineStore.set(data.results.pipeline);
 						console.log('Restored pipeline:', data.results.pipeline);
-						AddToast('Pipeline restored successfully', 'success');
+						AddToast('Project loaded successfully', 'success');
 
 						await tick();
 						connectNode(data.results.pipeline); 
 					} else {
-						// If no pipeline data, initialize with empty state
 						pipelineStore.set({
 							nodes: [],
 							connections: [],
@@ -196,10 +209,7 @@
 						console.log('No saved pipeline found, initialized empty state');
 					}
 
-					// Store the selected project name in the store
 					projectName.set(selectedProjectName);
-					
-					// Close the project hub modal
 					handleClose();
 				}
 			} else {
@@ -207,7 +217,7 @@
 				AddToast('Failed to retrieve project details', 'error');
 			}
 		} catch (error: any) {
-			console.error('Error verifying project selection:', error);
+			console.error('Error loading project:', error);
 			const errorMessage = error.message || 'Unknown error occurred';
 			AddToast(`Error loading project: ${errorMessage}`, 'error');
 		}

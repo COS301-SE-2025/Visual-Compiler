@@ -5,23 +5,25 @@
     import { lexerState } from '$lib/stores/lexer';
     import { onMount, createEventDispatcher, onDestroy } from 'svelte';
     import { parserState, updateParserInputs, markParserSubmitted } from '$lib/stores/parser';
+    import { updateParserArtifacts } from '$lib/stores/parser';
 
     export let source_code = '';
 
     const dispatch = createEventDispatcher();
 
-    // --- DATA STRUCTURE for CFG ---
+    // FIX: Data structure to use productions consistently
     interface Rule {
         id: number;
         nonTerminal: string;
-        productions: string; // Now a single comma-separated string
+        productions: string; // Single comma-separated string for multiple productions
     }
 
     // --- STATE MANAGEMENT ---
     let translation_id_counter = 1;
     let rule_id_counter = 1;
 
-    let grammar_rules: Rule[] = [{ id: 1, nonTerminal: '', translations: [{ id: 1, value: '' }] }];
+    // FIX: Use productions instead of translations
+    let grammar_rules: Rule[] = [{ id: 1, nonTerminal: '', productions: '' }];
     let variables_string = '';
     let terminals_string = '';
     let show_default_grammar = false;
@@ -145,14 +147,30 @@
     // handleGrammarChange
     let hasInitialized = false;
 
+    let parseTree = null;
+    let hasParseTree = false;
+
+    // UPDATE: Store subscription to include artifacts
     $: if ($parserState && !hasInitialized) {
-        grammar_rules = [...$parserState.grammar_rules];
+        grammar_rules = $parserState.grammar_rules.map(rule => ({
+            id: rule.id,
+            nonTerminal: rule.nonTerminal,
+            productions: rule.translations.map(t => t.value).join(', ')
+        }));
+        
         variables_string = $parserState.variables_string;
         terminals_string = $parserState.terminals_string;
         rule_id_counter = $parserState.rule_id_counter;
         translation_id_counter = $parserState.translation_id_counter; 
         show_default_grammar = $parserState.show_default_grammar;
         is_grammar_submitted = $parserState.is_grammar_submitted;
+        
+        if ($parserState.hasParseTree) {
+            parseTree = $parserState.parseTree;
+            hasParseTree = true;
+            // Dispatch the restored parse tree
+            dispatch('treereceived', parseTree);
+        }
         
         hasInitialized = true;
     }
@@ -165,10 +183,19 @@
             saveCurrentAsUserInput();
         }
 
-        // Update the store
+
         if (hasInitialized) {
+            const storeFormatRules = grammar_rules.map(rule => ({
+                id: rule.id,
+                nonTerminal: rule.nonTerminal,
+                translations: rule.productions.split(',').map((prod, index) => ({
+                    id: index + 1,
+                    value: prod.trim()
+                })).filter(t => t.value !== '')
+            }));
+
             updateParserInputs({
-                grammar_rules: [...grammar_rules],
+                grammar_rules: storeFormatRules,
                 variables_string,
                 terminals_string,
                 rule_id_counter,
@@ -186,7 +213,7 @@
         grammar_rules = [...grammar_rules, {
             id: rule_id_counter,
             nonTerminal: '',
-            translations: [{ id: translation_id_counter, value: '' }]
+            productions: '' // Use productions instead of translations
         }];
         handleGrammarChange();
     }
@@ -239,11 +266,11 @@
         rule_id_counter = 1;
         translation_id_counter = 1;
         
-        // Create a completely new rule structure
+        // FIX: Create rule with productions
         grammar_rules = [{
             id: 1,
             nonTerminal: '',
-            translations: [{ id: 1, value: '' }]
+            productions: ''
         }];
         
         // Reset variables and terminals
@@ -256,8 +283,14 @@
         
         // Update store if using it
         if (hasInitialized) {
+            const storeFormatRules = [{
+                id: 1,
+                nonTerminal: '',
+                translations: [{ id: 1, value: '' }]
+            }];
+
             updateParserInputs({
-                grammar_rules: [...grammar_rules],
+                grammar_rules: storeFormatRules,
                 variables_string: '',
                 terminals_string: '',
                 rule_id_counter: 1,
@@ -521,6 +554,7 @@
             }
 
             if (data.tree) {
+                updateParserArtifacts(data.tree);
                 AddToast('Parse tree generated successfully! Your syntax analysis is complete', 'success');
                 dispatch('treereceived', data.tree);
             } else {
@@ -537,7 +571,7 @@
         }
     }
 
-    // Add this reactive statement to handle project data
+    // FIX: Add this reactive statement to handle project data
     $: if ($lexerState?.parser_data?.grammar) {
         const parserData = $lexerState.parser_data.grammar;
         

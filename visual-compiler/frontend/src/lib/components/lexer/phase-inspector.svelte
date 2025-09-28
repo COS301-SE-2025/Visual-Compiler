@@ -7,7 +7,7 @@
 	import { fade, scale } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
-	import { lexerState, updateLexerInputs, updateAutomataInputs, markLexerSubmitted } from '$lib/stores/lexer';
+	import { lexerState, updateLexerInputs, updateAutomataInputs, markLexerSubmitted, updateLexerArtifacts } from '$lib/stores/lexer';
 
 	export let source_code = '';
 	export let onGenerateTokens: (data: {
@@ -203,8 +203,10 @@
 			});
 
 			showGenerateButton = false;
-			// Replace custom status with AddToast
-			AddToast(data.message || 'Tokens generated successfully!', 'success');
+            
+            updateLexerArtifacts(data.tokens, source_code);
+            
+            AddToast(data.message || 'Tokens generated successfully!', 'success');
 		} catch (error) {
 			console.error('Generate tokens error:', error);
 			AddToast('Tokenization failed: Unable to generate tokens from your lexical rules', 'error');
@@ -275,47 +277,51 @@
 	}
 
 	async function handleTokenisation() {
-		const saved = await saveDfaToBackend();
-		if (!saved) return;
+        const saved = await saveDfaToBackend();
+        if (!saved) return;
 
-		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
-		const project = get(projectName); 
+        const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
+        const project = get(projectName); 
 
-		if (!accessToken) {
-			AddToast('Authentication required: Please log in to perform tokenization', 'error');
-			return;
-		}
+        if (!accessToken) {
+            AddToast('Authentication required: Please log in to perform tokenization', 'error');
+            return;
+        }
 
-		if (!project) {
-			AddToast('No project selected: Please select or create a project first', 'error');
-			return;
-		}
+        if (!project) {
+            AddToast('No project selected: Please select or create a project first', 'error');
+            return;
+        }
 
-		const body = { project_name: project };
+        const body = { project_name: project };
 
-		try {
-			const response = await fetch('http://localhost:8080/api/lexing/dfaToTokens', {
-				method: 'POST',
-				headers: { 
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${accessToken}`
-				},
-				body: JSON.stringify(body)
-			});
-			if (!response.ok) {
-				const errorText = await response.text();
-				throw new Error(errorText);
-			}
-			const data = await response.json();
-			onGenerateTokens({
-				tokens: data.tokens,
-				unexpected_tokens: data.tokens_unidentified
-			});
-			AddToast('Tokenization complete! Your source code has been successfully tokenized', 'success');
-		} catch (error) {
-			AddToast('Tokenization failed: ' + error, 'error');
-		}
-	}
+        try {
+            const response = await fetch('http://localhost:8080/api/lexing/dfaToTokens', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(body)
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText);
+            }
+            const data = await response.json();
+			            
+            onGenerateTokens({
+                tokens: data.tokens,
+                unexpected_tokens: data.tokens_unidentified
+            });
+
+            updateLexerArtifacts(data.tokens, source_code);
+            
+            AddToast('Tokenization complete! Your source code has been successfully tokenized', 'success');
+        } catch (error) {
+            AddToast('Tokenization failed: ' + error, 'error');
+        }
+    }
 
 	let previousInputs: typeof userInputRows = [];
 	function handleInputChange() {

@@ -5,6 +5,7 @@
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
 	import { lexerState } from '$lib/stores/lexer';
+	import { translatorState, updateTranslatorInputs, markTranslatorSubmitted, updateTranslatorArtifacts } from '$lib/stores/translator';
 
 	const dispatch = createEventDispatcher();
 
@@ -44,6 +45,7 @@
 	function addRule() {
 		rules = [...rules, { tokenSequence: '', lines: [''] }];
 		isSubmitted = false;
+		handleRulesChange();
 	}
 
 	/**
@@ -61,6 +63,7 @@
 			rules = [{ tokenSequence: '', lines: [''] }];
 			isSubmitted = false;
 		}
+		handleRulesChange();
 	}
 
 	/**
@@ -73,6 +76,7 @@
 		rules[ruleIndex].lines = [...rules[ruleIndex].lines, ''];
 		rules = rules;
 		isSubmitted = false;
+		handleRulesChange();
 	}
 
 	/**
@@ -87,6 +91,7 @@
 			rules[ruleIndex].lines = rules[ruleIndex].lines.filter((_, i) => i !== lineIndex);
 			rules = rules;
 			isSubmitted = false;
+			handleRulesChange();
 		}
 	}
 
@@ -100,6 +105,11 @@
 		rules = JSON.parse(JSON.stringify(DEFAULT_TRANSLATION_RULES));
 		show_default_rules = true;
 		isSubmitted = false;
+		updateTranslatorInputs({
+			rules: [...rules],
+			show_default_rules: true,
+			isSubmitted: false
+		});
 	}
 
 	/**
@@ -112,6 +122,11 @@
 		rules = [{ tokenSequence: '', lines: [''] }];
 		show_default_rules = false;
 		isSubmitted = false;
+		updateTranslatorInputs({
+			rules: [...rules],
+			show_default_rules: false,
+			isSubmitted: false
+		});
 	}
 
 	/**
@@ -175,6 +190,13 @@
 			const result = await response.json();
 			AddToast('Translation rules saved successfully! Ready to translate your code', 'success');
 			isSubmitted = true;
+
+			// Mark as submitted in store
+			markTranslatorSubmitted();
+			updateTranslatorInputs({
+				isSubmitted: true
+			});
+			
 		} catch (error: any) {
 			console.error('Rule submission Error:', error);
 			AddToast('Rule submission failed: ' + (error.message || 'Please check your connection and try again'), 'error');
@@ -218,8 +240,14 @@
 			}
 
 			const result = await response.json();
+			updateTranslatorArtifacts(result.code || []);
 			AddToast('Translation complete! Your code has been successfully translated', 'success');
 			translationSuccessful = true;
+
+			// Update store
+			updateTranslatorInputs({
+				translationSuccessful: true
+			});
 
 			// Dispatch the translated code to the parent component
 			dispatch('translationreceived', result.code);
@@ -308,8 +336,45 @@
         isSubmitted = false;
         translationSuccessful = false;
         show_default_rules = false;
+
+        // Update store
+        updateTranslatorInputs({
+            rules: [...rules],
+            show_default_rules: false,
+            isSubmitted: false,
+            translationSuccessful: false
+        });
         
         AddToast('All translator inputs cleared successfully!', 'success');
+    }
+
+    // Subscribe to translator state and restore inputs on mount
+    $: if ($translatorState && !hasInitialized) {
+        rules = [...$translatorState.rules];
+        show_default_rules = $translatorState.show_default_rules;
+        isSubmitted = $translatorState.isSubmitted;
+        translationSuccessful = $translatorState.translationSuccessful;
+        
+        hasInitialized = true;
+    }
+
+    // ADD: Missing input change tracking function
+    function handleRulesChange() {
+        if (hasInitialized) {
+            updateTranslatorInputs({
+                rules: [...rules],
+                isSubmitted: false
+            });
+        }
+        isSubmitted = false;
+    }
+
+    // Add reactive statement to track input changes
+    $: if (hasInitialized) {
+        // Watch for changes in rules and update store
+        updateTranslatorInputs({
+            rules: [...rules]
+        });
     }
 </script>
 
@@ -379,6 +444,7 @@
 							class="input-field"
 							id="token-seq-{ruleIndex}"
 							bind:value={rule.tokenSequence}
+							on:input={handleRulesChange}
 							placeholder="Enter token sequence (e.g., KEYWORD, IDENTIFIER)"
 						/>
 					</div>
@@ -393,6 +459,7 @@
 								class="input-field"
 								id="line-{ruleIndex}-{lineIndex}"
 								bind:value={rules[ruleIndex].lines[lineIndex]}
+								on:input={handleRulesChange}
 								placeholder="Line {lineIndex + 1}"
 							/>
 							<button
@@ -927,13 +994,6 @@
 		gap: 1rem;
 		margin-bottom: 1rem;
 		position: relative;
-	}
-
-
-	.section-header .option-btn {
-		position: absolute;
-		right: 0;
-		margin-left: 0;
 	}
 
 	:global(html.dark-mode) .submit {
