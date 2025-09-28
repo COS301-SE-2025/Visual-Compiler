@@ -438,15 +438,15 @@
 					<span class="icon">🗑️</span>
 				</button>
 				<button
-				class="option-btn example-btn"
-				class:selected={show_default_rules}
-				on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
-				type="button"
-				aria-label={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
-				title={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
-			>
-				{show_default_rules ? 'Restore Input' : 'Show Example'}
-			</button>
+					class="option-btn example-btn"
+					class:selected={show_default_rules}
+					on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
+					type="button"
+					aria-label={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
+					title={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
+				>
+					{show_default_rules ? 'Restore Input' : 'Show Example'}
+				</button>
 			</div>
 
 		</div>
