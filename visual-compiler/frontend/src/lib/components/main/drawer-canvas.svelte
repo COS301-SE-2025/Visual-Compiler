@@ -20,9 +20,27 @@
 
 	// Track physical connections between nodes
 	let nodeConnections: NodeConnection[] = [...initialConnections];
+	
+	// Track if we're in the initial loading phase
+	let isLoading = true;
+	let hasInitialized = false;
 
 	// Make nodeConnections reactive to changes in initialConnections
-	$: nodeConnections = [...initialConnections];
+	$: {
+		if (!hasInitialized && initialConnections.length > 0) {
+			nodeConnections = [...initialConnections];
+			isLoading = true;
+			// Set a timeout to mark loading as complete after connections are established
+			setTimeout(() => {
+				isLoading = false;
+				hasInitialized = true;
+			}, 500);
+		} else if (initialConnections.length === 0 && !hasInitialized) {
+			// No initial connections, not loading
+			isLoading = false;
+			hasInitialized = true;
+		}
+	}
 
 	// Function to restore nodes to their original saved positions
 	function restoreOriginalPositions(nodesList: CanvasNode[]): CanvasNode[] {
@@ -94,6 +112,12 @@
 		const targetCanvasNode = displayNodes.find(node => node.id === targetNodeId);
 
 		if (sourceCanvasNode && targetCanvasNode) {
+			// Skip validation if we're still loading initial connections
+			if (isLoading) {
+				console.log('Skipping validation during initial loading phase');
+				return;
+			}
+			
 			// Check if source node already has an outgoing connection
 			const hasOutgoingConnection = nodeConnections.some(conn => 
 				conn.sourceNodeId === sourceCanvasNode.id
