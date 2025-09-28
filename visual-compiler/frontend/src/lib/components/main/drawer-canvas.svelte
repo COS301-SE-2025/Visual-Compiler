@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Svelvet, Node } from 'svelvet';
+	import { Svelvet, Node, Anchor } from 'svelvet';
 	import type { Writable } from 'svelte/store';
 	import type { NodeType, NodeConnection } from '$lib/types';
 	import { theme } from '../../stores/theme';
@@ -225,28 +225,21 @@
 				AddToast('Connection limit: Each node can only have one outgoing connection', 'error');
 				// Manually remove the invalid connection using DOM manipulation
 				setTimeout(() => {
+					nodeConnections = nodeConnections.filter(
+						conn => conn.id !== `${sourceNodeId}-${targetNodeId}`
+					);
+					//canvas_el?.cancelEdgeDrag?.();
 					const startAnchor = document.getElementById(event.detail.sourceAnchor.id);
 					const endAnchor = document.getElementById(event.detail.targetAnchor.id);
-					
 					// Simulate disconnection by triggering mouse events
-					startAnchor?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
-					endAnchor?.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }));
+					endAnchor?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
+					startAnchor?.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }));
 				}, 50); // Small delay to ensure the connection is fully rendered before removing
 				return; // Prevent the connection from being stored
 			}
 
 			if (hasIncomingConnection) {
 				AddToast('Connection limit: Each node can only have one incoming connection', 'error');
-				// Manually remove the invalid connection using DOM manipulation
-				setTimeout(() => {
-					const startAnchor = document.getElementById(event.detail.sourceAnchor.id);
-					const endAnchor = document.getElementById(event.detail.targetAnchor.id);
-					
-					// Simulate disconnection by triggering mouse events
-					startAnchor?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
-					endAnchor?.dispatchEvent(new MouseEvent("mouseup", { bubbles: true, button: 0 }));
-				}, 50); // Small delay to ensure the connection is fully rendered before removing
-				return; // Prevent the connection from being stored
 			}
 
 			const newConnection: NodeConnection = {
@@ -349,13 +342,18 @@
 					outputs={node.type !== 'translator' && node.type !== 'optimiser' ? 1 : 0}
 					on:nodeClicked={() => onNodeClick(node.type)}
 				/>
-			{/each}
+				{/each}
+						
 		</Svelvet>
 		{/key}
 	</div>
 </div>
 
 <style>
+	:global(.svelvet-anchor.disabled) {
+		pointer-events: none;   
+	}
+
 	:root[svelvet-theme='custom-theme'] {
 		--background-color: transparent;
 		--dot-color: transparent;
