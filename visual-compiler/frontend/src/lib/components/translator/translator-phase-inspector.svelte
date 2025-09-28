@@ -83,15 +83,15 @@
 	// --- DEFAULT RULES DATA ---
 	const DEFAULT_TRANSLATION_RULES = [
 		{
-			tokenSequence: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, DELIMITER',
+			tokenSequence: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, SEPARATOR',
 			lines: ['add     rax, {INTEGER}', 'mov     [{IDENTIFIER}], rax']
 		},
 		{
-			tokenSequence: 'KEYWORD, IDENTIFIER, OPEN_BRACKET, KEYWORD, IDENTIFIER, CLOSE_BRACKET, OPEN_SCOPE, IDENTIFIER, ASSIGNMENT, IDENTIFIER, OPERATOR, INTEGER, DELIMITER, KEYWORD, IDENTIFIER, DELIMITER, CLOSE_SCOPE',
+			tokenSequence: 'KEYWORD, IDENTIFIER, OPEN_BRACKET, KEYWORD, IDENTIFIER, CLOSE_BRACKET, OPEN_SCOPE, IDENTIFIER, ASSIGNMENT, IDENTIFIER, OPERATOR, INTEGER, SEPARATOR, KEYWORD, IDENTIFIER, SEPARATOR, CLOSE_SCOPE',
 			lines: ['func {IDENTIFIER}:', '     mov     rbx, [{IDENTIFIER}]', '     add     rbx, {INTEGER}', '     mov     [{IDENTIFIER}], rbx', '     return']
 		},
 		{
-			tokenSequence: 'CONTROL, IDENTIFIER, CONTROL, OPEN_BRACKET, INTEGER, CLOSE_BRACKET, OPEN_SCOPE, IDENTIFIER, ASSIGNMENT, IDENTIFIER, OPEN_BRACKET, IDENTIFIER, CLOSE_BRACKET, DELIMITER, KEYWORD, OPEN_BRACKET, IDENTIFIER, CLOSE_BRACKET, DELIMITER, CLOSE_SCOPE',
+			tokenSequence: 'CONTROL, IDENTIFIER, CONTROL, OPEN_BRACKET, INTEGER, CLOSE_BRACKET, OPEN_SCOPE, IDENTIFIER, ASSIGNMENT, IDENTIFIER, OPEN_BRACKET, IDENTIFIER, CLOSE_BRACKET, SEPARATOR, KEYWORD, OPEN_BRACKET, IDENTIFIER, CLOSE_BRACKET, SEPARATOR, CLOSE_SCOPE',
 			lines: ['func {CONTROL}:', '     jump    [{IDENTIFIER}], {INTEGER}', '     param   rcx, [{IDENTIFIER}]', '     call    {IDENTIFIER}', '     print   [{IDENTIFIER}]']
 		}
 	];
@@ -438,15 +438,15 @@
 					<span class="icon">🗑️</span>
 				</button>
 				<button
-				class="option-btn example-btn"
-				class:selected={show_default_rules}
-				on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
-				type="button"
-				aria-label={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
-				title={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
-			>
-				{show_default_rules ? 'Restore Input' : 'Show Example'}
-			</button>
+					class="option-btn example-btn"
+					class:selected={show_default_rules}
+					on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
+					type="button"
+					aria-label={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
+					title={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
+				>
+					{show_default_rules ? 'Restore Input' : 'Show Example'}
+				</button>
 			</div>
 
 		</div>
@@ -469,7 +469,7 @@
 							id="token-seq-{ruleIndex}"
 							bind:value={rule.tokenSequence}
 							on:input={handleRulesChange}
-							placeholder="Enter token sequence (e.g., KEYWORD, IDENTIFIER)"
+							placeholder="KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER..."
 						/>
 					</div>
 					<div style="display: flex; justify-content: center; align-items: center; margin: 0.1rem 0;">
