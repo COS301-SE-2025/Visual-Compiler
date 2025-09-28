@@ -744,7 +744,7 @@
 		flex-direction: column;
 		align-items: center;
 		gap: 1rem;
-		margin-top: 1.5rem;
+		margin-top: 0.5rem;
 	}
 
 	.action-buttons {
@@ -832,6 +832,7 @@
 		transition: all 0.2s ease;
 		width: 200px;
 		max-width: 100%;
+		margin-bottom:0.5rem
 	}
 
 	.action-btn:hover,

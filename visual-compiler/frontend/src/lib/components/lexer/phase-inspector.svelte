@@ -19,6 +19,9 @@
     let show_tokens = false;
     let isSubmitted = false;
 
+    // Make isSubmitted reactive to store changes
+    $: isSubmitted = $lexerState.isSubmitted;
+
 	let inputRows = [{ type: '', regex: '', error: '' }];
 	let userSourceCode = '';
 	let userInputRows = [{ type: '', regex: '', error: '' }];
@@ -1521,19 +1524,29 @@
 				<div class="button-stack">
 
 					<button class="submit-button" on:click={handleSubmit}>Submit</button>
-					{#if showRegexActionButtons}
-						<div class="regex-action-buttons">
-							<button class="generate-button" on:click={generateTokens}>Generate Tokens</button>
-							<button
-								class="generate-button"
-								on:click={handleRegexToNFA}
-								title="Convert Regular Expression to a NFA">NFA</button>
-							<button
-								class="generate-button"
-								on:click={handleRegexToDFA}
-								title="Convert Regular Expression to a DFA">DFA</button>
-						</div>
-					{/if}
+					<div class="regex-action-buttons">
+						<button 
+							class="generate-button" 
+							class:disabled={!isSubmitted}
+							disabled={!isSubmitted}
+							on:click={generateTokens}
+							title={isSubmitted ? "Generate tokens from submitted rules" : "Submit regex rules first"}
+						>Generate Tokens</button>
+						<button
+							class="generate-button"
+							class:disabled={!isSubmitted}
+							disabled={!isSubmitted}
+							on:click={handleRegexToNFA}
+							title={isSubmitted ? "Convert Regular Expression to a NFA" : "Submit regex rules first"}
+						>NFA</button>
+						<button
+							class="generate-button"
+							class:disabled={!isSubmitted}
+							disabled={!isSubmitted}
+							on:click={handleRegexToDFA}
+							title={isSubmitted ? "Convert Regular Expression to a DFA" : "Submit regex rules first"}
+						>DFA</button>
+					</div>
 
 				</div>
 			</div>
@@ -1944,6 +1957,21 @@
 		transform: translateY(-2px);
 	}
 
+	.generate-button:disabled,
+	.generate-button.disabled {
+		background: #d6d8db;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
+	}
+
+	.generate-button:disabled:hover,
+	.generate-button.disabled:hover {
+		background: #d6d8db;
+		color: #6c757d;
+		transform: none;
+	}
 
 	.automaton-btn-row {
 		display: flex;
