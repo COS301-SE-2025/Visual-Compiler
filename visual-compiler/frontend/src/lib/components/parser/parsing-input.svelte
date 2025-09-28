@@ -18,8 +18,10 @@
     }
 
     // --- STATE MANAGEMENT ---
-    let grammar_rules: Rule[] = [];
-    let rule_id_counter = 0;
+    let translation_id_counter = 1;
+    let rule_id_counter = 1;
+
+    let grammar_rules: Rule[] = [{ id: 1, nonTerminal: '', translations: [{ id: 1, value: '' }] }];
     let variables_string = '';
     let terminals_string = '';
     let show_default_grammar = false;
@@ -148,7 +150,7 @@
         variables_string = $parserState.variables_string;
         terminals_string = $parserState.terminals_string;
         rule_id_counter = $parserState.rule_id_counter;
-        translation_id_counter = $parserState.translation_id_counter;
+        translation_id_counter = $parserState.translation_id_counter; 
         show_default_grammar = $parserState.show_default_grammar;
         is_grammar_submitted = $parserState.is_grammar_submitted;
         
@@ -179,16 +181,14 @@
 
     // addNewRule
     function addNewRule() {
+        rule_id_counter++; 
+        translation_id_counter++;
+        grammar_rules = [...grammar_rules, {
+            id: rule_id_counter,
+            nonTerminal: '',
+            translations: [{ id: translation_id_counter, value: '' }]
+        }];
         handleGrammarChange();
-        rule_id_counter++;
-        grammar_rules = [
-            ...grammar_rules,
-            {
-                id: rule_id_counter,
-                nonTerminal: '',
-                productions: ''
-            }
-        ];
     }
 
 
@@ -250,27 +250,22 @@
         variables_string = '';
         terminals_string = '';
         
-        // Reset user backup data
-        user_grammar_rules = [];
-        user_variables_string = '';
-        user_terminals_string = '';
-        user_rule_id_counter = 1;
-        user_translation_id_counter = 1;
-        
         // Reset states
         show_default_grammar = false;
         is_grammar_submitted = false;
         
-        // Update store
-        updateParserInputs({
-            grammar_rules: [...grammar_rules],
-            variables_string: '',
-            terminals_string: '',
-            rule_id_counter: 1,
-            translation_id_counter: 1,
-            show_default_grammar: false,
-            is_grammar_submitted: false
-        });
+        // Update store if using it
+        if (hasInitialized) {
+            updateParserInputs({
+                grammar_rules: [...grammar_rules],
+                variables_string: '',
+                terminals_string: '',
+                rule_id_counter: 1,
+                translation_id_counter: 1,
+                show_default_grammar: false,
+                is_grammar_submitted: false
+            });
+        }
         
         AddToast('All grammar inputs cleared successfully!', 'success');
     }
