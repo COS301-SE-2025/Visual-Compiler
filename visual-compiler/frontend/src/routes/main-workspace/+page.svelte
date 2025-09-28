@@ -18,7 +18,7 @@
 	import CanvasTutorial from '$lib/components/main/canvas-tutorial.svelte';
 	import GuestWelcomePopup from '$lib/components/main/guest-welcome-popup.svelte';
 	import { phase_completion_status } from '$lib/stores/pipeline';
-	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial } from '$lib/stores/tutorial';
+	import { tutorialStore, checkTutorialStatus, hideCanvasTutorial, showCanvasTutorial } from '$lib/stores/tutorial';
 
 	// --- CANVAS STATE ---
 	interface CanvasNode {
@@ -61,14 +61,14 @@
 	let isGuestUser = false;
 
 	// --- TUTORIAL STATE ---
-	let showCanvasTutorial = false;
+	let canvasTutorialVisible = false;
 
 	// --- RECENTER STATE ---
 	let isRecentering = false;
 
 	// Subscribe to tutorial store
 	tutorialStore.subscribe(state => {
-		showCanvasTutorial = state.showCanvasTutorial;
+		canvasTutorialVisible = state.showCanvasTutorial;
 	});
 
 	// --- UNSAVED CHANGES TRACKING ---
@@ -302,6 +302,8 @@
 	// Handle guest welcome popup close
 	function handleGuestWelcomeClose() {
 		showGuestWelcomePopup = false;
+		// Show canvas tutorial after guest welcome popup is closed
+		showCanvasTutorial();
 	}
 
 	// Handle tutorial close
@@ -1381,7 +1383,7 @@
 
 <!-- Canvas Tutorial Modal -->
 <CanvasTutorial 
-	bind:show={showCanvasTutorial} 
+	bind:show={canvasTutorialVisible} 
 	on:close={handleTutorialClose}
 />
 
