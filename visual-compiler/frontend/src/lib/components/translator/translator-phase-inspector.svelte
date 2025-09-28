@@ -299,6 +299,18 @@
 			window.removeEventListener('ai-translator-generated', aiTranslatorEventListener);
 		}
 	});
+
+	function clearAllInputs() {
+        // Reset translation rules
+        rules = [{ tokenSequence: '', lines: [''] }];
+        
+        // Reset states
+        isSubmitted = false;
+        translationSuccessful = false;
+        show_default_rules = false;
+        
+        AddToast('All translator inputs cleared successfully!', 'success');
+    }
 </script>
 
 <div class="inspector-container">
@@ -325,16 +337,29 @@
 	<div class="section">
 		<div class="section-header">
 			<h2 class="section-heading">Translation Rules</h2>
-			<button
-				class="option-btn example-btn"
-				class:selected={show_default_rules}
-				on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
-				type="button"
-				aria-label={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
-				title={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
-			>
-				{show_default_rules ? 'Restore Input' : 'Show Example'}
-			</button>
+
+			<div class="button-group">
+				<button
+					class="clear-toggle-btn"
+					on:click={clearAllInputs}
+					type="button"
+					aria-label="Clear all inputs" 
+					title="Clear all inputs"
+				>
+					<span class="icon">🗑️</span>
+				</button>
+				<button
+					class="default-toggle-btn"
+					class:selected={show_default_rules}
+					on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
+					type="button"
+					aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+					title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+				>
+					<span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
+				</button>
+			</div>
+
 		</div>
 		<div class="rules-container">
 			{#each rules as rule, ruleIndex}
@@ -484,7 +509,16 @@
 		transition: color 0.3s ease;
 	}
 
-	.option-btn {
+
+	.default-toggle-btn {
+		right: 0;
+		background: white;
+		border: 2px solid #e5e7eb;
+		color: #001a6e;
+		font-size: 1.2rem;
+		cursor: pointer;
+		transition: background 0.2s, border-color 0.2s;
+
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
@@ -785,6 +819,34 @@
 		transform: none;
 	}
 
+	.button-group {
+		position: absolute;
+        right: 0;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .clear-toggle-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #7da2e3;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.2rem;
+        width: 2.2rem;
+        border-radius: 50%;
+    }
+
+    .clear-toggle-btn:hover {
+        background: #fff5f5;
+        border-color: #7da2e3;
+    }
+
 	/* --- Dark Mode --- */
 	:global(html.dark-mode) .inspector-container {
 		background: #1a2a4a;
@@ -838,6 +900,16 @@
 		opacity: 0.6;
 		transform: none;
 	}
+	:global(html.dark-mode) .clear-toggle-btn {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #d1d5db;
+    }
+
+    :global(html.dark-mode) .clear-toggle-btn:hover {
+        background-color: #001a6e;
+		border-color: #60a5fa;
+    }
 
 	:global(html.dark-mode) .submit:disabled:hover,
 	:global(html.dark-mode) .translate:disabled:hover,
