@@ -135,7 +135,7 @@ func TestCreateTokens_NoRules(t *testing.T) {
 	_, _, err := services.CreateTokens(source_code, rules)
 
 	if err != nil {
-		if err.Error() != fmt.Errorf("no rules specified").Error() {
+		if err.Error() != fmt.Errorf("no tokenisation rules specified").Error() {
 			t.Errorf("Incorrect error: %v", err)
 		} else {
 			t.Logf("Error sent for empty source code")
@@ -145,430 +145,239 @@ func TestCreateTokens_NoRules(t *testing.T) {
 	}
 }
 
-func TestCreateTokens_UnidentifiedTokensFound(t *testing.T) {
-	source_code := "int x = 3;"
+
+func TestCreateTokens_NoTokens(t *testing.T) {
+	source_code := "int x = 13;"
 	rules := []services.TypeRegex{
-		{Type: "KEYWORD", Regex: "\\b(if|else)\\b"},
+		{Type: "KEYWORD", Regex: "(function|return)"},
 	}
-	expected_res := []string{
-		"int",
-		"x",
-		"=",
-		"3",
-		";",
+	expected_leftovers := []string{
+		"int x = 13;",
 	}
 
-	_, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+	_, leftovers, err := services.CreateTokens(source_code, rules)
 
 	if err == nil {
-		for i, token := range unidentified_tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v,!=,%v", token, expected_res[i])
-			}
+		if leftovers[0] != expected_leftovers[0] {
+			t.Errorf("Tokenisation incorrect: %v != %v", leftovers[0], expected_leftovers[0])
 		}
 	} else {
 		t.Errorf("Error not supposed to occur")
 	}
 }
 
-func TestCreateTokens_KeywordTokensUnidentified(t *testing.T) {
-	source_code := "int x = 3;"
+func TestCreateTokens_KeywordTokens(t *testing.T) {
+	source_code := "int x = 13;"
 	rules := []services.TypeRegex{
-		{Type: "KEYWORD", Regex: "\\b(if|else)\\b"},
+		{Type: "KEYWORD", Regex: "(int|str|bool)"},
 	}
-	expected_res := []services.TypeValue{
+	expected_tokens := []services.TypeValue{
 		{Type: "KEYWORD", Value: "int"},
 	}
-	expected_res_unidentified := []string{
-		"int",
-		"x",
-		"=",
-		"3",
-		";",
+	expected_leftovers := []string{
+		"x = 13;",
 	}
 
-	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+	tokens, leftovers, err := services.CreateTokens(source_code, rules)
 
 	if err == nil {
 		for i, token := range tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			if token != expected_tokens[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_tokens[i])
 			}
 		}
-		for i, token := range unidentified_tokens {
-			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
-			}
+		if leftovers[0] != expected_leftovers[0] {
+			t.Errorf("Tokenisation incorrect: %v != %v", leftovers[0], expected_leftovers[0])
 		}
 	} else {
 		t.Errorf("Error not supposed to occur")
 	}
 }
 
-func TestCreateTokens_KeywordTokensIdentified(t *testing.T) {
-	source_code := "int x = 3;"
+func TestCreateTokens_IdentifierTokens(t *testing.T) {
+	source_code := "int x = 13;"
 	rules := []services.TypeRegex{
-		{Type: "KEYWORD", Regex: "\\b(if|int|else)\\b"},
+		{Type: "IDENTIFIER", Regex: "[a-zA-Z_]+"},
 	}
-	expected_res := []services.TypeValue{
-		{Type: "KEYWORD", Value: "int"},
-	}
-	expected_res_unidentified := []string{
-		"x",
-		"=",
-		"3",
-		";",
-	}
-
-	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
-
-	if err == nil {
-		for i, token := range tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
-			}
-		}
-		for i, token := range unidentified_tokens {
-			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
-			}
-		}
-	} else {
-		t.Errorf("Error not supposed to occur")
-	}
-}
-
-func TestCreateTokens_IdentifierTokensIdentified(t *testing.T) {
-	source_code := "int x = 3;"
-	rules := []services.TypeRegex{
-		{Type: "IDENTIFIER", Regex: "[a-zA-Z_]\\w*"},
-	}
-	expected_res := []services.TypeValue{
+	expected_tokens := []services.TypeValue{
 		{Type: "IDENTIFIER", Value: "int"},
 		{Type: "IDENTIFIER", Value: "x"},
 	}
-	expected_res_unidentified := []string{
-		"=",
-		"3",
-		";",
+	expected_leftovers := []string{
+		"= 13;",
 	}
 
-	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+	tokens, leftovers, err := services.CreateTokens(source_code, rules)
 
 	if err == nil {
 		for i, token := range tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			if token != expected_tokens[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_tokens[i])
 			}
 		}
-		for i, token := range unidentified_tokens {
-			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
-			}
+		if leftovers[0] != expected_leftovers[0] {
+			t.Errorf("Tokenisation incorrect: %v != %v", leftovers[0], expected_leftovers[0])
 		}
 	} else {
 		t.Errorf("Error not supposed to occur")
 	}
 }
-func TestCreateTokens_IdentifierTokensIdentified_Complex(t *testing.T) {
-	source_code := "int x = 3; int x_1 = 5;"
+
+func TestCreateTokens_PositiveIntegerTokens(t *testing.T) {
+	source_code := "12 + 13;"
 	rules := []services.TypeRegex{
-		{Type: "IDENTIFIER", Regex: "[a-zA-Z_]\\w*"},
+		{Type: "INTEGER", Regex: "[1-9][0-9]*"},
 	}
-	expected_res := []services.TypeValue{
-		{Type: "IDENTIFIER", Value: "int"},
-		{Type: "IDENTIFIER", Value: "x"},
-		{Type: "IDENTIFIER", Value: "int"},
-		{Type: "IDENTIFIER", Value: "x_1"},
+	expected_tokens := []services.TypeValue{
+		{Type: "INTEGER", Value: "12"},
 	}
-	expected_res_unidentified := []string{
-		"=",
-		"3",
-		";",
-		"5",
+	expected_leftovers := []string{
+		"+ 13;",
 	}
 
-	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+	tokens, leftovers, err := services.CreateTokens(source_code, rules)
 
 	if err == nil {
 		for i, token := range tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			if token != expected_tokens[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_tokens[i])
 			}
 		}
-		for i, token := range unidentified_tokens {
-			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
-			}
+		if leftovers[0] != expected_leftovers[0] {
+			t.Errorf("Tokenisation incorrect: %v != %v", leftovers[0], expected_leftovers[0])
 		}
 	} else {
 		t.Errorf("Error not supposed to occur")
 	}
 }
 
-func TestCreateTokens_NumberTokensIdentified(t *testing.T) {
-	source_code := "int x = 3;"
+func TestCreateTokens_NegativeIntegerTokens(t *testing.T) {
+	source_code := "-13 + -12;"
 	rules := []services.TypeRegex{
-		{Type: "NUMBER", Regex: "\\d+(\\.\\d+)?"},
+		{Type: "NUMBER", Regex: "[-][1-9][0-9]*"},
 	}
-	expected_res := []services.TypeValue{
-		{Type: "NUMBER", Value: "3"},
+	expected_tokens := []services.TypeValue{
+		{Type: "NUMBER", Value: "-13"},
 	}
-	expected_res_unidentified := []string{
-		"int",
-		"x",
-		"=",
-		";",
+	expected_leftovers := []string{
+		"+ -12;",
 	}
 
-	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+	tokens, leftovers, err := services.CreateTokens(source_code, rules)
 
 	if err == nil {
 		for i, token := range tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			if token != expected_tokens[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_tokens[i])
 			}
 		}
-		for i, token := range unidentified_tokens {
-			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
-			}
+		if leftovers[0] != expected_leftovers[0] {
+			t.Errorf("Tokenisation incorrect: %v != %v", leftovers[0], expected_leftovers[0])
 		}
 	} else {
 		t.Errorf("Error not supposed to occur")
 	}
 }
 
-func TestCreateTokens_NumberTokensNegative(t *testing.T) {
-	source_code := "int x = -3;"
+func TestCreateTokens_PositiveFloatTokens(t *testing.T) {
+	source_code := "1.2 + 1.3;"
 	rules := []services.TypeRegex{
-		{Type: "NUMBER", Regex: "[-][0-9]+"},
+		{Type: "NUMBER", Regex: "[1-9][0-9]*.[0-9]*[1-9]"},
 	}
-	expected_res := []services.TypeValue{
-		{Type: "NUMBER", Value: "-3"},
+	expected_tokens := []services.TypeValue{
+		{Type: "NUMBER", Value: "1.2"},
 	}
-	expected_res_unidentified := []string{
-		"int",
-		"x",
-		"=",
-		";",
+	expected_leftovers := []string{
+		"+ 1.3;",
 	}
 
-	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+	tokens, leftovers, err := services.CreateTokens(source_code, rules)
 
 	if err == nil {
 		for i, token := range tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res[i])
+			if token != expected_tokens[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_tokens[i])
 			}
 		}
-		for i, token := range unidentified_tokens {
-			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res_unidentified[i])
-			}
+		if leftovers[0] != expected_leftovers[0] {
+			t.Errorf("Tokenisation incorrect: %v != %v", leftovers[0], expected_leftovers[0])
 		}
 	} else {
 		t.Errorf("Error not supposed to occur")
 	}
 }
 
-func TestCreateTokens_FloatTokensIdentified(t *testing.T) {
-	source_code := "int x = 3.5;"
+func TestCreateTokens_NegativeFloatTokens(t *testing.T) {
+	source_code := "-1.3 + -1.2;"
 	rules := []services.TypeRegex{
-		{Type: "NUMBER", Regex: "\\d+(\\.\\d+)?"},
+		{Type: "NUMBER", Regex: "[-][1-9][0-9]*.[0-9]*[1-9]"},
 	}
-	expected_res := []services.TypeValue{
-		{Type: "NUMBER", Value: "3.5"},
+	expected_tokens := []services.TypeValue{
+		{Type: "NUMBER", Value: "-1.3"},
 	}
-	expected_res_unidentified := []string{
-		"int",
-		"x",
-		"=",
-		";",
+	expected_leftovers := []string{
+		"+ -1.2;",
 	}
 
-	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+	tokens, leftovers, err := services.CreateTokens(source_code, rules)
 
 	if err == nil {
 		for i, token := range tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			if token != expected_tokens[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_tokens[i])
 			}
 		}
-		for i, token := range unidentified_tokens {
-			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
-			}
+		if leftovers[0] != expected_leftovers[0] {
+			t.Errorf("Tokenisation incorrect: %v != %v", leftovers[0], expected_leftovers[0])
 		}
 	} else {
 		t.Errorf("Error not supposed to occur")
 	}
 }
 
-func TestCreateTokens_FloatTokensNegative(t *testing.T) {
-	source_code := "int x = -3.5;"
+func TestCreateTokens_OperatorTokens(t *testing.T) {
+	source_code := "++i;"
 	rules := []services.TypeRegex{
-		{Type: "NUMBER", Regex: "[-]\\d+(\\.\\d+)?"},
+		{Type: "OPERATOR", Regex: "\\+\\+"},
 	}
-	expected_res := []services.TypeValue{
-		{Type: "NUMBER", Value: "-3.5"},
+	expected_tokens := []services.TypeValue{
+		{Type: "OPERATOR", Value: "++"},
 	}
-	expected_res_unidentified := []string{
-		"int",
-		"x",
-		"=",
-		";",
+	expected_leftovers := []string{
+		"i;",
 	}
 
-	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+	tokens, leftovers, err := services.CreateTokens(source_code, rules)
 
 	if err == nil {
 		for i, token := range tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			if token != expected_tokens[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_tokens[i])
 			}
 		}
-		for i, token := range unidentified_tokens {
-			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
-			}
+		if leftovers[0] != expected_leftovers[0] {
+			t.Errorf("Tokenisation incorrect: %v != %v", leftovers[0], expected_leftovers[0])
 		}
 	} else {
 		t.Errorf("Error not supposed to occur")
 	}
 }
 
-func TestCreateTokens_OperatorTokensIdentified(t *testing.T) {
-	source_code := "int x = 3;"
-	rules := []services.TypeRegex{
-		{Type: "OPERATOR", Regex: "="},
-	}
-	expected_res := []services.TypeValue{
-		{Type: "OPERATOR", Value: "="},
-	}
-	expected_res_unidentified := []string{
-		"int",
-		"x",
-		"3",
-		";",
-	}
-
-	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
-
-	if err == nil {
-		for i, token := range tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
-			}
-		}
-		for i, token := range unidentified_tokens {
-			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
-			}
-		}
-	} else {
-		t.Errorf("Error not supposed to occur")
-	}
-}
-
-func TestCreateTokens_OperatorTokensUnidentified(t *testing.T) {
-	source_code := "int x = 3;"
-	rules := []services.TypeRegex{
-		{Type: "OPERATOR", Regex: "+"},
-	}
-	expected_res := []services.TypeValue{}
-	expected_res_unidentified := []string{
-		"int",
-		"x",
-		"=",
-		"3",
-		";",
-	}
-
-	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
-
-	if err == nil {
-		for i, token := range tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
-			}
-		}
-		for i, token := range unidentified_tokens {
-			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
-			}
-		}
-	} else {
-		t.Errorf("Error not supposed to occur")
-	}
-}
-
-func TestCreateTokens_PunctuationTokensIdentified(t *testing.T) {
-	source_code := "int x = 3;"
-	rules := []services.TypeRegex{
-		{Type: "PUNCTUATION", Regex: ";|,"},
-	}
-	expected_res := []services.TypeValue{
-		{Type: "PUNCTUATION", Value: ";"},
-	}
-	expected_res_unidentified := []string{
-		"int",
-		"x",
-		"=",
-		"3",
-	}
-
-	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
-
-	if err == nil {
-		for i, token := range tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
-			}
-		}
-		for i, token := range unidentified_tokens {
-			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
-			}
-		}
-	} else {
-		t.Errorf("Error not supposed to occur")
-	}
-}
-
-func TestCreateTokens_PunctuationTokensUnidentified(t *testing.T) {
-	source_code := "int x = 3; err,_ := service()"
+func TestCreateTokens_PunctuationTokens(t *testing.T) {
+	source_code := ";"
 	rules := []services.TypeRegex{
 		{Type: "PUNCTUATION", Regex: ";"},
 	}
-	expected_res := []services.TypeValue{
+	expected_tokens := []services.TypeValue{
 		{Type: "PUNCTUATION", Value: ";"},
 	}
-	expected_res_unidentified := []string{
-		"int",
-		"x",
-		"=",
-		"3",
-		"err",
-		",",
-		"_",
-		":=",
-		"service",
-		"(",
-		")",
-	}
 
-	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+	tokens, _, err := services.CreateTokens(source_code, rules)
 
 	if err == nil {
 		for i, token := range tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
-			}
-		}
-		for i, token := range unidentified_tokens {
-			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+			if token != expected_tokens[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_tokens[i])
 			}
 		}
 	} else {
@@ -577,35 +386,32 @@ func TestCreateTokens_PunctuationTokensUnidentified(t *testing.T) {
 }
 
 func TestCreateTokens_Complex(t *testing.T) {
-	source_code := "int x = 3;"
+	source_code := "int x = 13;"
 	rules := []services.TypeRegex{
-		{Type: "KEYWORD", Regex: "\\b(if|int|else)\\b"},
-		{Type: "IDENTIFIER", Regex: "[a-zA-Z_]\\w*"},
+		{Type: "KEYWORD", Regex: "(int|str|bool)"},
+		{Type: "IDENTIFIER", Regex: "[a-zA-Z_]+"},
 		{Type: "OPERATOR", Regex: "="},
-		{Type: "NUMBER", Regex: "\\d+(\\.\\d+)?"},
+		{Type: "INTEGER", Regex: "[1-9][0-9]*"},
 		{Type: "PUNCTUATION", Regex: ";"},
 	}
-	expected_res := []services.TypeValue{
+	expected_tokens := []services.TypeValue{
 		{Type: "KEYWORD", Value: "int"},
 		{Type: "IDENTIFIER", Value: "x"},
 		{Type: "OPERATOR", Value: "="},
-		{Type: "NUMBER", Value: "3"},
+		{Type: "INTEGER", Value: "13"},
 		{Type: "PUNCTUATION", Value: ";"},
 	}
-	expected_res_unidentified := []string{}
 
-	tokens, unidentified_tokens, err := services.CreateTokens(source_code, rules)
+	tokens, leftovers, err := services.CreateTokens(source_code, rules)
 
 	if err == nil {
 		for i, token := range tokens {
-			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+			if token != expected_tokens[i] {
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_tokens[i])
 			}
 		}
-		for i, token := range unidentified_tokens {
-			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
-			}
+		if len(leftovers) != 0 {
+			t.Errorf("Tokenisation incorrect: %v", leftovers[0])
 		}
 	} else {
 		t.Errorf("Error not supposed to occur")
@@ -767,12 +573,12 @@ func TestCreateTokensFromDFA_ValidDFA(t *testing.T) {
 	if err == nil {
 		for i, token := range tokens {
 			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res[i])
 			}
 		}
 		for i, token := range unidentified_tokens {
 			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res_unidentified[i])
 			}
 		}
 	} else {
@@ -818,12 +624,12 @@ func TestCreateTokensFromDFA_SpacedUnidentifiedTokens(t *testing.T) {
 	if err == nil {
 		for i, token := range tokens {
 			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res[i])
 			}
 		}
 		for i, token := range unidentified_tokens {
 			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res_unidentified[i])
 			}
 		}
 	} else {
@@ -884,12 +690,12 @@ func TestCreateTokensFromDFA_ComplexDFAWithSimpleCode(t *testing.T) {
 	if err == nil {
 		for i, token := range tokens {
 			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res[i])
 			}
 		}
 		for i, token := range unidentified_tokens {
 			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res_unidentified[i])
 			}
 		}
 	} else {
@@ -959,12 +765,12 @@ func TestCreateTokensFromDFA_ComplexDFAWithComplexCode(t *testing.T) {
 	if err == nil {
 		for i, token := range tokens {
 			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res[i])
 			}
 		}
 		for i, token := range unidentified_tokens {
 			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res_unidentified[i])
 			}
 		}
 	} else {
@@ -1010,12 +816,12 @@ func TestCreateTokensFromDFA_TestSimilarIDandKey(t *testing.T) {
 	if err == nil {
 		for i, token := range tokens {
 			if token != expected_res[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res[i])
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res[i])
 			}
 		}
 		for i, token := range unidentified_tokens {
 			if token != expected_res_unidentified[i] {
-				t.Errorf("Tokenisation incorrect: %v, != ,%v", token, expected_res_unidentified[i])
+				t.Errorf("Tokenisation incorrect: %v != %v", token, expected_res_unidentified[i])
 			}
 		}
 	} else {
