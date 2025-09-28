@@ -43,10 +43,10 @@
     // --- DEFAULT GRAMMAR DATA ---
     const DEFAULT_GRAMMAR = {
         variables: 'PROGRAM, STATEMENT, FUNCTION, ITERATION, DECLARATION, ELEMENT, TYPE, EXPRESSION, FUNCTION_DEFINITION, FUNCTION_BLOCK, RETURN, ITERATION_DEFINITION, ITERATION_BLOCK, PARAMETER, PRINT',
-        terminals: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, DELIMITER, OPEN_BRACKET, CLOSE_BRACKET, OPEN_SCOPE, CLOSE_SCOPE, CONTROL',
+        terminals: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, SEPARATOR, OPEN_BRACKET, CLOSE_BRACKET, OPEN_SCOPE, CLOSE_SCOPE, CONTROL',
         rules: [
             { nonTerminal: 'PROGRAM', productions: 'STATEMENT FUNCTION STATEMENT ITERATION' },
-            { nonTerminal: 'STATEMENT', productions: 'DECLARATION DELIMITER' },
+            { nonTerminal: 'STATEMENT', productions: 'DECLARATION SEPARATOR' },
             { nonTerminal: 'DECLARATION', productions: 'TYPE IDENTIFIER ASSIGNMENT ELEMENT, IDENTIFIER ASSIGNMENT EXPRESSION, IDENTIFIER ASSIGNMENT IDENTIFIER PARAMETER' },
             { nonTerminal: 'TYPE', productions: 'KEYWORD' },
             { nonTerminal: 'EXPRESSION', productions: 'ELEMENT OPERATOR ELEMENT' },
@@ -54,12 +54,12 @@
             { nonTerminal: 'FUNCTION', productions: 'FUNCTION_DEFINITION FUNCTION_BLOCK' },
             { nonTerminal: 'FUNCTION_DEFINITION', productions: 'TYPE IDENTIFIER PARAMETER' },
             { nonTerminal: 'FUNCTION_BLOCK', productions: 'OPEN_SCOPE STATEMENT RETURN CLOSE_SCOPE' },
-            { nonTerminal: 'RETURN', productions: 'KEYWORD ELEMENT DELIMITER' },
+            { nonTerminal: 'RETURN', productions: 'KEYWORD ELEMENT SEPARATOR' },
             { nonTerminal: 'ITERATION', productions: 'ITERATION_DEFINITION ITERATION_BLOCK' },
             { nonTerminal: 'ITERATION_DEFINITION', productions: 'CONTROL IDENTIFIER CONTROL PARAMETER' },
             { nonTerminal: 'ITERATION_BLOCK', productions: 'OPEN_SCOPE STATEMENT PRINT CLOSE_SCOPE' },
             { nonTerminal: 'PARAMETER', productions: 'OPEN_BRACKET ELEMENT CLOSE_BRACKET, OPEN_BRACKET TYPE IDENTIFIER CLOSE_BRACKET' },
-            { nonTerminal: 'PRINT', productions: 'KEYWORD OPEN_BRACKET ELEMENT CLOSE_BRACKET DELIMITER' }
+            { nonTerminal: 'PRINT', productions: 'KEYWORD OPEN_BRACKET ELEMENT CLOSE_BRACKET SEPARATOR' }
         ]
     };
 
@@ -692,7 +692,7 @@
                 <input
                     id="variables"
                     type="text"
-                    placeholder="S, Y, Z"
+                    placeholder="S, A, B"
                     bind:value={variables_string}
                     on:input={handleGrammarChange}
                 />
@@ -702,7 +702,7 @@
                 <input
                     id="terminals"
                     type="text"
-                    placeholder="a, b, c"
+                    placeholder="x, y, z"
                     bind:value={terminals_string}
                     on:input={handleGrammarChange}
                 />
@@ -720,7 +720,7 @@
                         <input
                             type="text"
                             class="non-terminal-input"
-                            placeholder="LHS"
+                            placeholder="VARIABLE"
                             bind:value={rule.nonTerminal}
                             on:input={handleGrammarChange}
                         />
@@ -728,7 +728,7 @@
                         <div class="productions-container">
                             <textarea
                                 class="productions-textarea"
-                                placeholder="TYPE IDENTIFIER, KEYWORD ELEMENT"
+                                placeholder="VARIABLE TERMINAL VARIABLE TERMINAL..."
                                 bind:value={rule.productions}
                                 on:input={handleGrammarChange}
                                 rows="2"
