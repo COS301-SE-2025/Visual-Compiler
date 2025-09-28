@@ -37,7 +37,7 @@
 		event.preventDefault();
 
 		if (reg_password !== reg_confirm_password) {
-			AddToast('🔒 Passwords don\'t match - please make sure both password fields are identical', 'error');
+			AddToast('Passwords don\'t match. Please make sure both password fields are identical', 'error');
 			return;
 		}
 
@@ -82,7 +82,7 @@
 
 			// Success case - backend returns 201 with message "Successfully registered user"
 			if (response.status === 201 && data.message === "Successfully registered user") {
-				AddToast('✅ Account created successfully! Please check your email and verify your account before logging in', 'success');
+				AddToast('Account successfully created! Please check your email and verify your account before logging in.', 'success');
 
 				// Reset the form
 				reg_email = '';
@@ -138,10 +138,10 @@
 
 			// Success case - backend returns 200 with message, id, is_admin, and projects
 			if (response.status === 200 && data.message && data.id) {
-				// Store user data in localStorage
-				localStorage.setItem('user_id', data.id);
-				localStorage.setItem('users_id', data.id); // Also store as users_id for optimiser compatibility
-				localStorage.setItem('is_admin', data.is_admin ? 'true' : 'false');
+				// Store user data in sessionStorage
+				sessionStorage.setItem('user_id', data.id);
+				sessionStorage.setItem('users_id', data.id); // Also store as users_id for optimiser compatibility
+				sessionStorage.setItem('is_admin', data.is_admin ? 'true' : 'false');
 				
 				// Store the Auth0 access token in sessionStorage (as requested)
 				if (data.auth_token) {
@@ -151,7 +151,7 @@
 				
 				// Store projects if available
 				if (data.projects) {
-					localStorage.setItem('user_projects', JSON.stringify(data.projects));
+					sessionStorage.setItem('user_projects', JSON.stringify(data.projects));
 				}
 
 				console.log('Login successful:', {
@@ -229,13 +229,13 @@
 			sessionStorage.setItem('access_token', 'guestuser');
 			sessionStorage.setItem('authToken', 'guestuser'); // Alternative key for compatibility
 			
-			// Set guest user data in localStorage
-			localStorage.setItem('user_id', '68d32088d29390ec2c897f35');
-			localStorage.setItem('users_id', '68d32088d29390ec2c897f35'); // Also store as users_id for optimiser compatibility
-			localStorage.setItem('is_admin', 'false');
+			// Set guest user data in sessionStorage
+			sessionStorage.setItem('user_id', '68d32088d29390ec2c897f35');
+			sessionStorage.setItem('users_id', '68d32088d29390ec2c897f35'); // Also store as users_id for optimiser compatibility
+			sessionStorage.setItem('is_admin', 'false');
 			
 			// Clear any existing projects for guest user
-			localStorage.removeItem('user_projects');
+			sessionStorage.removeItem('user_projects');
 
 			// Generate random 5-character string for project name
 			const randomChars = Math.random().toString(36).substring(2, 7).toUpperCase();
@@ -251,13 +251,13 @@
 					},
 					body: JSON.stringify({
 						project_name: guestProjectName,
-						users_id: localStorage.getItem('user_id') || '68d32088d29390ec2c897f35'
+						users_id: sessionStorage.getItem('user_id') || '68d32088d29390ec2c897f35'
 					})
 				});
 
 				if (response.ok) {
 					// Store the created project name for the guest session
-					localStorage.setItem('guest_project_name', guestProjectName);
+					sessionStorage.setItem('guest_project_name', guestProjectName);
 					
 					// Set the project name in the store so it displays in the workspace
 					projectName.set(guestProjectName);
@@ -299,7 +299,7 @@
 	async function deleteGuestProject(projectName: string): Promise<void> {
 		try {
 			console.log(`Attempting to delete guest project: ${projectName}`);
-			await deleteProject(projectName, localStorage.getItem('user_id') || '68d32088d29390ec2c897f35');
+			await deleteProject(projectName, sessionStorage.getItem('user_id') || '68d32088d29390ec2c897f35');
 			console.log(`Guest project deleted successfully: ${projectName}`);
 		} catch (error) {
 			console.error(`Error deleting guest project: ${projectName}`, error);
@@ -315,17 +315,17 @@
 
 		// Function to handle cleanup
 		const cleanup = async () => {
-			const userId = localStorage.getItem('user_id');
-			if (userId === (localStorage.getItem('user_id') || '68d32088d29390ec2c897f35')) {
+			const userId = sessionStorage.getItem('user_id');
+			if (userId === (sessionStorage.getItem('user_id') || '68d32088d29390ec2c897f35')) {
 				await deleteGuestProject(projectName);
 				// Clear guest project data
-				localStorage.removeItem('guest_project_name');
+				sessionStorage.removeItem('guest_project_name');
 			}
 		};
 
 		// Handle page unload (browser close, refresh, navigate away)
 		const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-			const userId = localStorage.getItem('user_id') || '68d32088d29390ec2c897f35';
+			const userId = sessionStorage.getItem('user_id') || '68d32088d29390ec2c897f35';
 			const guestId = '68d32088d29390ec2c897f35';
 			if (userId === guestId) {
 				// Use sendBeacon for more reliable cleanup on page unload
@@ -339,7 +339,7 @@
 		// Handle visibility change (tab close, window minimize)
 		const handleVisibilityChange = async () => {
 			if (document.hidden) {
-				const userId = localStorage.getItem('user_id') || '68d32088d29390ec2c897f35';
+				const userId = sessionStorage.getItem('user_id') || '68d32088d29390ec2c897f35';
 				const guestId = '68d32088d29390ec2c897f35';
 				if (userId === guestId) {
 					await cleanup();
@@ -456,7 +456,7 @@
 							</svg>
 							<span class="guest-text">
 								<span class="guest-title">Continue as Guest</span>
-								<span class="guest-subtitle">Try the Visual Compiler without an account</span>
+								<span class="guest-subtitle">Try Visual Compiler without an account</span>
 							</span>
 						</button>
 					</div>
@@ -568,9 +568,10 @@
 
 		<main class="main-content">
 			<div class="feature-quote">
-				<h1 class="app-title">Visual Compiler</h1>
+				<img src="/visual-compiler.png" alt="Visual Compiler" class="project-image"/>
 			</div>
 		</main>
+
 	</div>
 </div>
 
@@ -967,11 +968,9 @@
 		}
 	}
 
-	.app-title {
-		font-size: 3rem;
-		font-weight: 900;
-		margin: 0 auto;
-		line-height: 1.1;
-		color: #1d3159;
+	.project-image {
+		width: 520px;
+		height: auto;
 	}
+
 </style>

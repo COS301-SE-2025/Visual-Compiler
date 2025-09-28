@@ -98,34 +98,46 @@
 	}
 
 	.clear-confirm-button {
-		background-color: #f59e0b;
+		background-color: #001a6e; /* Use the blue theme instead of red */
 		color: white;
 	}
 
 	.clear-confirm-button:hover {
-		background-color: #d97706;
+		background-color: #001454; /* Darker blue on hover */
 	}
 
-	:global(html.dark) .prompt-modal {
-		background: #2d3748;
+	:global(html.dark-mode) .prompt-modal {
+		background: #1f2937; /* Dark gray background instead of white */
 	}
-	:global(html.dark) .prompt-heading {
-		color: #edf2f7;
+
+	:global(html.dark-mode) .prompt-heading {
+		color: #f9fafb; /* White text for heading */
 	}
-	:global(html.dark) .prompt-subheading {
-		color: #a0aec0;
+
+	:global(html.dark-mode) .prompt-subheading {
+		color: #d1d5db; /* Light gray text for subheading */
 	}
-	:global(html.dark) .cancel-button {
-		background-color: #4a5568;
-		color: #e2e8f0;
+
+	:global(html.dark-mode) .cancel-button {
+		background-color: #4a5568; /* Dark gray button */
+		color: #f9fafb; /* White text */
 	}
-	:global(html.dark) .cancel-button:hover {
-		background-color: #2d3748;
+
+	:global(html.dark-mode) .cancel-button:hover {
+		background-color: #2d3748; /* Darker gray on hover */
 	}
-	:global(html.dark) .clear-confirm-button {
-		background-color: #fbbf24;
+
+	:global(html.dark-mode) .clear-confirm-button {
+		background-color: #001a6e; /* Blue background for clear action */
+		color: #ffffff; /* White text */
 	}
-	:global(html.dark) .clear-confirm-button:hover {
-		background-color: #f59e0b;
+
+	:global(html.dark-mode) .clear-confirm-button:hover {
+		background-color: #001454; /* Darker blue on hover */
+	}
+
+	/* ADD: Dark mode backdrop for better contrast */
+	:global(html.dark-mode) .backdrop {
+		background: rgba(0, 0, 0, 0.8); /* Darker backdrop in dark mode */
 	}
 </style>

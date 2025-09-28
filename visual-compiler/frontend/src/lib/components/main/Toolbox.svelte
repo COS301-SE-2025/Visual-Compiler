@@ -97,6 +97,8 @@
 			<button class="phase-btn" class:optimiser-btn={n.id === 'optimiser'} disabled={createdNodeTypes.has(n.id)}>
 				{#if n.id !== 'optimiser'}
 					<span class="button-number-corner">{i + 1}</span>
+				{:else}
+					<span class="button-bonus-corner">BONUS</span>
 				{/if}
 				{n.label}
 				<span class="custom-tooltip">{tooltips[n.id]}</span>
@@ -195,6 +197,19 @@
 		font-weight: 600;
 		line-height: 1;
 		z-index: 2;
+	}
+
+	.button-bonus-corner {
+		position: absolute;
+		top: 6px;
+		left: 6px;
+		color: rgba(4, 26, 71);
+		font-size: 0.55rem;
+		font-weight: 700;
+		line-height: 1;
+		z-index: 2;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
 	}
 
 	.phase-btn:hover {
@@ -325,6 +340,10 @@
 
 	:global(html.dark-mode) .button-number-corner {
 		color: rgba(255, 255, 255, 0.4);
+	}
+
+	:global(html.dark-mode) .button-bonus-corner {
+		color: rgba(255, 255, 255, 0.7);
 	}
 
 	:global(html.dark-mode) .phase-btn:hover {

@@ -139,7 +139,7 @@ func Login(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message":    "Login Successful. Welcome " + db_user.Username,
+		"message":    "Login successful. Welcome " + db_user.Username + "!",
 		"id":         db_user.ID,
 		"is_admin":   db_user.Is_Admin,
 		"projects":   db_user.Projects,

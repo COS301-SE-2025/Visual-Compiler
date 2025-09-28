@@ -29,7 +29,7 @@ export function hideCanvasTutorial() {
 
 // Function to mark canvas tutorial as seen
 export function markCanvasTutorialAsSeen() {
-    localStorage.setItem('hasSeenCanvasTutorial', 'true');
+    sessionStorage.setItem('hasSeenCanvasTutorial', 'true');
     tutorialStore.update(state => ({
         ...state,
         showCanvasTutorial: false,
@@ -39,7 +39,7 @@ export function markCanvasTutorialAsSeen() {
 
 // Function to check if user has seen the tutorial
 export function checkTutorialStatus() {
-    const hasSeenTutorial = localStorage.getItem('hasSeenCanvasTutorial') === 'true';
+    const hasSeenTutorial = sessionStorage.getItem('hasSeenCanvasTutorial') === 'true';
     tutorialStore.update(state => ({
         ...state,
         hasSeenCanvasTutorial: hasSeenTutorial
@@ -49,7 +49,7 @@ export function checkTutorialStatus() {
 
 // Function to reset tutorial (for testing or admin purposes)
 export function resetTutorialStatus() {
-    localStorage.removeItem('hasSeenCanvasTutorial');
+    sessionStorage.removeItem('hasSeenCanvasTutorial');
     tutorialStore.update(state => ({
         ...state,
         showCanvasTutorial: false,

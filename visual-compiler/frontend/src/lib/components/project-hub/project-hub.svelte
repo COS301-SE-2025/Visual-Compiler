@@ -7,8 +7,24 @@
 	import ProjectNamePrompt from './project-name-prompt.svelte';
 	import DeleteConfirmPrompt from './delete-confirmation.svelte'; 
 	import { AddToast } from '$lib/stores/toast';
-	import { updateLexerStateFromProject, resetLexerState } from '$lib/stores/lexer';
-	import { phase_completion_status } from '$lib/stores/pipeline';
+	import { 
+        updateLexerStateFromProject,
+        resetLexerState
+    } from '$lib/stores/lexer';
+    import { 
+        updateParserStateFromProject, 
+        resetParserState 
+    } from '$lib/stores/parser'; 
+    import { 
+        updateAnalyserStateFromProject, 
+        resetAnalyserState 
+    } from '$lib/stores/analyser';
+    import { 
+        updateTranslatorStateFromProject, 
+        resetTranslatorState 
+    } from '$lib/stores/translator';
+    
+    import { phase_completion_status } from '$lib/stores/pipeline';
 	import { triggerTutorialForNewProject } from '$lib/stores/tutorial';
 
 	const dispatch = createEventDispatcher();
@@ -42,7 +58,7 @@
 	}
 
 	async function fetchProjects() {
-		const userId = localStorage.getItem('user_id');
+		const userId = sessionStorage.getItem('user_id');
 		if (!userId) return;
 
 		try {
@@ -106,164 +122,153 @@
 	}
 
 	async function selectProject(selectedProjectName: string) {
-		const userId = localStorage.getItem('user_id');
-		if (!userId) {
-			AddToast('Please log in to select a project', 'error');
-			return;
-		}
+        const userId = sessionStorage.getItem('user_id');
+        if (!userId) {
+            AddToast('Please log in to select a project', 'error');
+            return;
+        }
 
-		// Clear existing state before loading new project
-		resetLexerState();
-		resetSourceCode();
-		
-		try {
-			const response = await fetch(
-				`http://localhost:8080/api/users/getProject?project_name=${selectedProjectName}&users_id=${userId}`, {
-				method: 'GET',
-				headers: {
-					'accept': 'application/json'
-				}
-			});
+        try {
+            // FIX: Don't clear project name first - this was causing the issue
+            // Instead, just reset stores while keeping project context
+            console.log('=== LOADING PROJECT:', selectedProjectName, '===');
+            
+            const response = await fetch(
+                `http://localhost:8080/api/users/getProject?project_name=${selectedProjectName}&users_id=${userId}`, {
+                method: 'GET',
+                headers: {
+                    'accept': 'application/json'
+                }
+            });
 
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-			const data = await response.json();
-			
-			// Log detailed project data to console
-			console.log('Project Data:', {
-				message: data.message,
-				projectName: selectedProjectName,
-				hasResults: !!data.results,
-				lexingData: data.results?.lexing,
-				hasSourceCode: !!data.results?.lexing?.code,
-				pipelineData: data.results?.pipeline,
-				fullResponse: data
-			});
+            const data = await response.json();
 
-			if (data.message === "Retrieved users project details") {
-				if (data.results) {
-					updateLexerStateFromProject({
-						lexing: data.results.lexing,
-						parsing: data.results.parsing,
-						analysing: data.results.analysing,
-						translating: {
-							code: data.results.translating?.code || [],
-							translating_rules: data.results.translating?.translating_rules?.map(rule => ({
-								sequence: Array.isArray(rule.sequence) ? rule.sequence : [],
-								translation: Array.isArray(rule.translation) ? rule.translation : []
-							})) || []  
-						}
-					});
+            if (data.message === "Retrieved users project details") {
+                if (data.results) {
+                    // FIX: Set project name FIRST, then load data
+                    projectName.set(selectedProjectName);
+                    
+                    // Small delay to ensure project name change is processed
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                    
+                    // Load all phase states from project data
+                    console.log('Loading project data into stores...');
+                    updateLexerStateFromProject(data.results);
+                    updateParserStateFromProject(data.results);
+                    updateAnalyserStateFromProject(data.results);
+                    updateTranslatorStateFromProject(data.results);
 
-					// Update phase completion status
-					const hasTokens = !!(data.results.lexing?.tokens && data.results.lexing.tokens.length > 0);
-					const hasCode = !!data.results.lexing?.code;
-					const hasTree = !!(data.results.parsing?.tree?.root);
-					const hasSymbolTable = !!(data.results.analysing?.symbol_table_artefact?.symbolscopes);
-					const hasTranslation = !!(data.results.translating?.code && data.results.translating.code.length > 0);
-					
-					phase_completion_status.set({
-						source: hasCode,
-						lexer: hasTokens,
-						parser: hasTree,
-						analyser: hasSymbolTable,
-						translator: hasTranslation
-					});
+                    // Update phase completion status based on actual artifacts
+                    const hasTokens = !!(data.results.lexing?.tokens && data.results.lexing.tokens.length > 0);
+                    const hasCode = !!data.results.lexing?.code;
+                    const hasTree = !!(data.results.parsing?.tree);
+                    const hasSymbolTable = !!(data.results.analysing?.symbol_table_artefact?.symbolscopes);
+                    const hasTranslation = !!(data.results.translating?.code && data.results.translating.code.length > 0);
+                    
+                    phase_completion_status.set({
+                        source: hasCode,
+                        lexer: hasTokens,
+                        parser: hasTree,
+                        analyser: hasSymbolTable,
+                        translator: hasTranslation
+                    });
 
-					// Handle source code if it exists
-					if (hasCode) {
-						confirmedSourceCode.set(data.results.lexing.code);
-					}
+                    // Handle source code if it exists
+                    if (hasCode) {
+                        confirmedSourceCode.set(data.results.lexing.code);
+                    }
 
-					// Check if there's pipeline data
-					if (data.results && data.results.pipeline) {
-						// Update the pipeline store with the saved pipeline data
-						pipelineStore.set(data.results.pipeline);
-						console.log('Restored pipeline:', data.results.pipeline);
-						AddToast('Pipeline restored successfully', 'success');
+                    // Handle pipeline data
+                    if (data.results && data.results.pipeline) {
+                        pipelineStore.set(data.results.pipeline);
+                        console.log('Restored pipeline:', data.results.pipeline);
+                        
+                        await tick();
+                        connectNode(data.results.pipeline); 
+                    } else {
+                        pipelineStore.set({
+                            nodes: [],
+                            connections: [],
+                            lastSaved: null
+                        });
+                        console.log('No saved pipeline found, initialized empty state');
+                    }
 
-						await tick();
-						connectNode(data.results.pipeline); 
-					} else {
-						// If no pipeline data, initialize with empty state
-						pipelineStore.set({
-							nodes: [],
-							connections: [],
-							lastSaved: null
-						});
-						console.log('No saved pipeline found, initialized empty state');
-					}
-
-					// Store the selected project name in the store
-					projectName.set(selectedProjectName);
-					
-					// Close the project hub modal
-					handleClose();
-				}
-			} else {
-				console.error('Failed to retrieve project details');
-				AddToast('Failed to retrieve project details', 'error');
-			}
-		} catch (error: any) {
-			console.error('Error verifying project selection:', error);
-			const errorMessage = error.message || 'Unknown error occurred';
-			AddToast(`Error loading project: ${errorMessage}`, 'error');
-		}
-	}
+                    console.log('=== PROJECT LOADED SUCCESSFULLY ===');
+                    handleClose();
+                    AddToast('Project loaded successfully', 'success');
+                }
+            } else {
+                console.error('Failed to retrieve project details');
+                AddToast('Failed to retrieve project details', 'error');
+            }
+        } catch (error: any) {
+            console.error('Error loading project:', error);
+            const errorMessage = error.message || 'Unknown error occurred';
+            AddToast(`Error loading project: ${errorMessage}`, 'error');
+        }
+    }
 
 	async function handleProjectNameConfirm(event: CustomEvent<string>) {
 		const newProjectName = event.detail;
-		const userId = localStorage.getItem('user_id');
+		const userId = sessionStorage.getItem('user_id');
 		if (!userId) return;
 
 		try {
-			const response = await fetch('http://localhost:8080/api/users/save', {
-				method: 'POST',
-				headers: {
-					'accept': 'application/json',
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({
-					project_name: newProjectName,
-					users_id: userId
-				})
-			});
+            // IMPORTANT: Reset project name FIRST to trigger component resets
+            projectName.set(''); // Clear project name first
+            
+            // Then reset all stores
+            console.log('=== RESETTING ALL STORES FOR NEW PROJECT ===');
+            resetLexerState();
+            resetParserState();
+            resetAnalyserState();
+            resetTranslatorState();
+            resetSourceCode();
+            resetPipeline();
+            
+            phase_completion_status.set({
+                source: false,
+                lexer: false,
+                parser: false,
+                analyser: false,
+                translator: false
+            });
 
-			if (!response.ok) {
-				throw new Error(`HTTP error! status: ${response.status}`);
-			}
+            const response = await fetch('http://localhost:8080/api/users/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    project_name: newProjectName,
+                    users_id: userId
+                })
+            });
 
-			const data = await response.json();
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
-			// Update UI and close modal
-			projectName.set(newProjectName);
-			resetPipeline(); // Clear the canvas for the new blank project
-			resetLexerState(); // Clear all saved input data for a fresh start
-			resetSourceCode(); // Clear the source code for a fresh start
-			
-			// Reset phase completion status for new project
-			phase_completion_status.set({
-				source: false,
-				lexer: false,
-				parser: false,
-				analyser: false,
-				translator: false
-			});
-			
-			showProjectNamePrompt = false;
-			await fetchProjects(); // Refresh the project list
-			
-			// Trigger tutorial for new projects
-			setTimeout(() => {
-				triggerTutorialForNewProject();
-			}, 500); // Small delay to ensure the workspace is loaded
-			
-			handleClose();
-		} catch (error) {
-			console.error('Error saving project:', error);
-		}
+            // Only AFTER everything is reset and API call succeeds, set the new project name
+            projectName.set(newProjectName);
+            
+            showProjectNamePrompt = false;
+            await fetchProjects();
+            
+            setTimeout(() => {
+                triggerTutorialForNewProject();
+            }, 500);
+            
+            handleClose();
+            console.log('=== NEW PROJECT CREATED WITH CLEAN STATE ===');
+        } catch (error) {
+            console.error('Error saving project:', error);
+        }
 	}
 
 	/**
@@ -284,7 +289,7 @@
 	 */
 	async function confirmDelete() {
 		console.log(`Confirmed deletion of project: ${projectToDelete}`);
-		const userId = localStorage.getItem('user_id');
+		const userId = sessionStorage.getItem('user_id');
 		if (!userId) return;
 
 		try {
@@ -328,7 +333,7 @@
 	}
 
 	onMount(() => {
-		const storedUserId = localStorage.getItem('user_id');
+		const storedUserId = sessionStorage.getItem('user_id');
 		userName = storedUserId || 'Guest';
 		
 		// Check if there's already a project loaded

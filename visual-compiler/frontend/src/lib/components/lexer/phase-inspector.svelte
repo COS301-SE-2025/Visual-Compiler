@@ -7,13 +7,20 @@
 	import { fade, scale } from 'svelte/transition';
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
-	import { lexerState } from '$lib/stores/lexer';
+	import { lexerState, updateLexerInputs, updateAutomataInputs, markLexerSubmitted, updateLexerArtifacts } from '$lib/stores/lexer';
 
 	export let source_code = '';
 	export let onGenerateTokens: (data: {
 		tokens: Token[];
 		unexpected_tokens: string[];
 	}) => void = () => {};
+
+	let tokens: Token[] = [];
+    let show_tokens = false;
+    let isSubmitted = false;
+
+    // Make isSubmitted reactive to store changes
+    $: isSubmitted = $lexerState.isSubmitted;
 
 	let inputRows = [{ type: '', regex: '', error: '' }];
 	let userSourceCode = '';
@@ -22,12 +29,15 @@
 	let submissionStatus = { show: false, success: false, message: '' };
 	let showGenerateButton = false;
 	let showRegexActionButtons = false;
+	let regexRulesSubmitted = false;
+	let showAutomataVisOnly = false;
 
 	// New state for the expandable modal
 	let isExpanded = false;
 	let currentAutomatonForModal = null; // To store the data for the modal
 	let expandedVisContainer: HTMLElement; // Container for the expanded view
 	let networkInstance = null; // To hold the active vis-network instance
+
 
 	function addNewRow() {
     if (showDefault) {
@@ -36,6 +46,55 @@
         userInputRows = [...userInputRows, { type: '', regex: '', error: '' }];
     }
 }
+
+	let hasInitialized = false;
+	let currentProjectName = '';
+
+	// FIX: Simplify project change detection
+	$: if ($projectName !== currentProjectName) {
+		console.log('Lexer: Project changed from', currentProjectName, 'to', $projectName);
+		hasInitialized = false;
+		currentProjectName = $projectName;
+	}
+
+	// FIX: Initialize from store when project name is set and store has data
+	 $: if ($lexerState && $projectName && (!hasInitialized || $projectName !== currentProjectName)) {
+        console.log('Lexer component initializing with project:', $projectName, 'and state:', $lexerState);
+        
+        // Restore inputs from store
+        selectedType = $lexerState.selectedType || 'REGEX';
+        userInputRows = $lexerState.userInputRows && $lexerState.userInputRows.length > 0 
+            ? [...$lexerState.userInputRows] 
+            : [{ type: '', regex: '', error: '' }];
+        
+        // Restore automata inputs
+        if ($lexerState.automataInputs) {
+            states = $lexerState.automataInputs.states || '';
+            startState = $lexerState.automataInputs.startState || '';
+            acceptedStates = $lexerState.automataInputs.acceptedStates || '';
+            transitions = $lexerState.automataInputs.transitions || '';
+        }
+        
+        // FIX: Restore tokens if they exist
+        if ($lexerState.hasTokens && $lexerState.tokens) {
+            tokens = [...$lexerState.tokens];
+            show_tokens = true;
+        } else {
+            tokens = [];
+            show_tokens = false;
+        }
+        
+        source_code = $lexerState.sourceCode || '';
+        isSubmitted = $lexerState.isSubmitted || false;
+        
+        hasInitialized = true;
+        console.log('Lexer component initialized with:', { 
+            selectedType, 
+            userInputRows: userInputRows.length, 
+            tokens: tokens.length,
+            isSubmitted
+        });
+    }
 
 	function validateRegex(pattern: string): boolean {
 		try {
@@ -66,11 +125,8 @@
 		}
 
 		if (rowsToValidate.length === 1 && !rowsToValidate[0].type && !rowsToValidate[0].regex) {
-			submissionStatus = {
-				show: true,
-				success: false,
-				message: 'Please fill in both Type and Regular Expression'
-			};
+			// Replace custom status with AddToast
+			AddToast('Please fill in both Type and Regular Expression', 'error');
 			return;
 		}
 
@@ -81,11 +137,8 @@
 		}
 
 		if (hasErrors) {
-			submissionStatus = {
-				show: true,
-				success: false,
-				message: 'Please fix the errors before submitting'
-			};
+			// Replace custom status with AddToast
+			AddToast('Please fix the errors before submitting', 'error');
 			return;
 		}
 
@@ -122,17 +175,25 @@
 					const errorText = await res.text();
 					throw new Error(errorText);
 				}
-				submissionStatus = { show: true, success: true, message: 'Rules stored successfully!' };
+				
+				AddToast('Rules stored successfully!', 'success');
 				showRegexActionButtons = true;
+
+				
+				// Mark as submitted in store
+				markLexerSubmitted();
+				
+
 			} catch (error) {
 				AddToast('Save failed: Unable to store lexical rules. Please check your connection and try again', 'error');
 			}
 			return;
 		}
 
-		// For AUTOMATA type, we don't need to store source code here since it's already stored from code-input
-		submissionStatus = { show: true, success: true, message: 'Ready for tokenization!' };
+		// For AUTOMATA type
+		AddToast('Ready for tokenization!', 'success');
 		showGenerateButton = true;
+		markLexerSubmitted();
 	}
 
 	async function generateTokens() {
@@ -177,11 +238,10 @@
 			});
 
 			showGenerateButton = false;
-			submissionStatus = {
-				show: true,
-				success: true,
-				message: data.message || 'Tokens generated successfully!'
-			};
+            
+            updateLexerArtifacts(data.tokens, source_code);
+            
+            AddToast(data.message || 'Tokens generated successfully!', 'success');
 		} catch (error) {
 			console.error('Generate tokens error:', error);
 			AddToast('Tokenization failed: Unable to generate tokens from your lexical rules', 'error');
@@ -252,59 +312,70 @@
 	}
 
 	async function handleTokenisation() {
-		const saved = await saveDfaToBackend();
-		if (!saved) return;
+        const saved = await saveDfaToBackend();
+        if (!saved) return;
 
-		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
-		const project = get(projectName); 
+        const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
+        const project = get(projectName); 
 
-		if (!accessToken) {
-			AddToast('Authentication required: Please log in to perform tokenization', 'error');
-			return;
-		}
+        if (!accessToken) {
+            AddToast('Authentication required: Please log in to perform tokenization', 'error');
+            return;
+        }
 
-		if (!project) {
-			AddToast('No project selected: Please select or create a project first', 'error');
-			return;
-		}
+        if (!project) {
+            AddToast('No project selected: Please select or create a project first', 'error');
+            return;
+        }
 
-		const body = { project_name: project };
+        const body = { project_name: project };
 
-		try {
-			const response = await fetch('http://localhost:8080/api/lexing/dfaToTokens', {
-				method: 'POST',
-				headers: { 
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${accessToken}`
-				},
-				body: JSON.stringify(body)
-			});
-			if (!response.ok) {
-				const errorText = await response.text();
-				throw new Error(errorText);
-			}
-			const data = await response.json();
-			onGenerateTokens({
-				tokens: data.tokens,
-				unexpected_tokens: data.tokens_unidentified
-			});
-			AddToast('Tokenization complete! Your source code has been successfully tokenized', 'success');
-		} catch (error) {
-			AddToast('Tokenization failed: ' + error, 'error');
-		}
-	}
+        try {
+            const response = await fetch('http://localhost:8080/api/lexing/dfaToTokens', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(body)
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText);
+            }
+            const data = await response.json();
+			            
+            onGenerateTokens({
+                tokens: data.tokens,
+                unexpected_tokens: data.tokens_unidentified
+            });
+
+            updateLexerArtifacts(data.tokens, source_code);
+            
+            AddToast('Tokenization complete! Your source code has been successfully tokenized', 'success');
+        } catch (error) {
+            AddToast('Tokenization failed: ' + error, 'error');
+        }
+    }
 
 	let previousInputs: typeof userInputRows = [];
 	function handleInputChange() {
 		showGenerateButton = false;
 		showRegexActionButtons = false;
-		submissionStatus = { show: false, success: false, message: '' };
+
 		
-		// Update the store when inputs change
-		lexerState.update(state => ({
-			...state,
-			userInputRows: [...userInputRows]
-		}));
+		// Update the store with current inputs
+		updateLexerInputs(userInputRows);
+	}
+
+	// Update automata input change handler
+	function handleAutomataInputChange() {
+		updateAutomataInputs({
+			states,
+			startState,
+			acceptedStates,
+			transitions
+		});
 	}
 
 	$: {
@@ -320,7 +391,7 @@
 		}
 	}
 
-	let selectedType: 'AUTOMATA' | 'REGEX' | null = null;
+	let selectedType: 'AUTOMATA' | 'REGEX' | null = 'REGEX';
 	let showDefault = false;
 	let states = '';
 	let startState = '';
@@ -495,6 +566,7 @@
 	function selectType(type: 'AUTOMATA' | 'REGEX') {
 		selectedType = type;
 		showRegexActionButtons = false;
+		regexRulesSubmitted = false;
 		
 		// Reset visualization states only
 		showNfaVis = false;
@@ -507,9 +579,11 @@
 
 		if (type === 'REGEX') {
 			// Use stored inputs if they exist
-			userInputRows = $lexerState.userInputRows.length > 0 
-				? [...$lexerState.userInputRows]
-				: [{ type: '', regex: '', error: '' }];
+			if (userInputRows.length === 0) {
+                userInputRows = $lexerState.userInputRows.length > 0 
+                    ? [...$lexerState.userInputRows]
+                    : [{ type: '', regex: '', error: '' }];
+            }
 		}
 	}
 
@@ -520,7 +594,7 @@
 		
 		states = 'S0, S1, S2, S3, S4, S5, S6, S7, S8, S9, S10, S11, S12, S13, S14, S15, S16, S17, S18, S19, S20, S21, S22, S23, S24, S25, S26, S27, S28, S29, S30';
 		startState = 'S0';
-		acceptedStates = 'S1->ASSIGNMENT, S2->DELIMITER, S3->KEYWORD, S4->OPEN_BRACKET, S5->KEYWORD, S6->IDENTIFIER, S7->INTEGER, S8->CLOSE_SCOPE, S9->CONTROL, S10->OPERATOR, S11->CLOSE_BRACKET, S12->OPEN_SCOPE, S13->CONTROL, S14->KEYWORD, S15->KEYWORD, S16->KEYWORD, S17->KEYWORD, S18->KEYWORD, S19->KEYWORD, S20->CONTROL, S21->KEYWORD, S22->KEYWORD, S23->CONTROL, S24->KEYWORD, S25->KEYWORD, S26->CONTROL, S27->KEYWORD, S28->KEYWORD, S29->CONTROL, S30->KEYWORD';
+		acceptedStates = 'S1->ASSIGNMENT, S2->SEPARATOR, S3->KEYWORD, S4->OPEN_BRACKET, S5->KEYWORD, S6->IDENTIFIER, S7->INTEGER, S8->CLOSE_SCOPE, S9->CONTROL, S10->OPERATOR, S11->CLOSE_BRACKET, S12->OPEN_SCOPE, S13->CONTROL, S14->KEYWORD, S15->KEYWORD, S16->KEYWORD, S17->KEYWORD, S18->KEYWORD, S19->KEYWORD, S20->CONTROL, S21->KEYWORD, S22->KEYWORD, S23->CONTROL, S24->KEYWORD, S25->KEYWORD, S26->CONTROL, S27->KEYWORD, S28->KEYWORD, S29->CONTROL, S30->KEYWORD';
 
 		transitions = '';
 		transitions += 'S0,i->S3\n';
@@ -570,7 +644,7 @@
 		{ type: 'INTEGER', regex: '[0-9]+', error: '' },
 		{ type: 'ASSIGNMENT', regex: '=', error: '' },
 		{ type: 'OPERATOR', regex: '[+\\-*/%]', error: '' },
-		{ type: 'DELIMITER', regex: ';', error: '' },
+		{ type: 'SEPARATOR', regex: ';', error: '' },
         { type: 'OPEN_BRACKET', regex: '\\(', error: '' },
         { type: 'CLOSE_BRACKET', regex: '\\)', error: '' },
         { type: 'OPEN_SCOPE', regex: '\{', error: '' },
@@ -605,107 +679,126 @@
 
 	// Show DFA button handler
 	async function handleShowDfa() {
-		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
-		const project = get(projectName); 
+        const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
+        const project = get(projectName); 
 
-		if (!accessToken) {
-			AddToast('Authentication required: Please log in to generate DFA', 'error');
-			return;
-		}
+        if (!accessToken) {
+            AddToast('Authentication required: Please log in to generate DFA', 'error');
+            return;
+        }
 
-		if (!project) {
-			AddToast('No project selected: Please select or create a project first', 'error');
-			return;
-		}
+        if (!project) {
+            AddToast('No project selected: Please select or create a project first', 'error');
+            return;
+        }
 
-		const saved = await saveDfaToBackend();
-		if (!saved) return;
+        const saved = await saveDfaToBackend();
+        if (!saved) return;
 
-		try {
-			// Convert DFA to Regex
-			const regexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
-				method: 'POST',
-				headers: { 
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${accessToken}`
-				},
-				body: JSON.stringify({ project_name: project })
-			});
-			if (!regexRes.ok) {
-				const errorText = await regexRes.text();
-				AddToast('DFA→Regex failed: ' + errorText, 'error');
-				return;
-			}
+        try {
+            // Convert DFA to Regex
+            const regexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ project_name: project })
+            });
+            if (!regexRes.ok) {
+                const errorText = await regexRes.text();
+                AddToast('DFA→Regex failed: ' + errorText, 'error');
+                return;
+            }
 
 			// Convert Regex to DFA
-			const dfaRes = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
-				method: 'POST',
-				headers: { 
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${accessToken}`
-				},
-				body: JSON.stringify({ project_name: project })
-			});
-			if (!dfaRes.ok) {
-				const errorText = await dfaRes.text();
-				AddToast('Regex→DFA failed: ' + errorText, 'error');
-				return;
-			}
-			const dfaData = await dfaRes.json();
-			regexDfa = adaptAutomatonForVis(dfaData.dfa);
-			currentAutomatonForModal = { data: regexDfa, isDfa: true }; 
-			showDfaVis = true;
-			showNfaVis = false;
-			automataDisplay = 'DFA';
-			setTimeout(() => renderRegexAutomatonVis(dfaContainer, regexDfa, true), 0);
-			AddToast('DFA generated from Regex and displayed!', 'success');
-		} catch (error) {
-			AddToast('Failed to generate DFA from Regex: ' + error, 'error');
-		}
-	}
+            const dfaRes = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ project_name: project })
+            });
+
+            if (!dfaRes.ok) {
+                const errorText = await dfaRes.text();
+                AddToast('Regex→DFA failed: ' + errorText, 'error');
+                return;
+            }
+            const dfaData = await dfaRes.json();
+            regexDfa = adaptAutomatonForVis(dfaData.dfa);
+            currentAutomatonForModal = { data: regexDfa, isDfa: true }; 
+            
+            // FIX: Set states to show only visualization like regex section
+            showDfaVis = true;
+            showNfaVis = false;
+            showAutomataVisOnly = true; // This will hide the input and show only visualization
+            automataDisplay = 'DFA'; // Set display type for consistency
+            
+            setTimeout(() => renderAutomatonVis(dfaContainer, regexDfa, true), 0);
+            AddToast('DFA generated from automata and displayed!', 'success');
+        } catch (error) {
+            AddToast('Failed to generate DFA from automata: ' + error, 'error');
+        }
+    }
 
 	let regexRules: { token_type?: string; Type?: string; Regex?: string; regex?: string }[] = [];
 	let showRegexOutput = false;
 
-	async function handleConvertToRegex() {
-		const saved = await saveDfaToBackend();
-		if (!saved) return;
+	 async function handleConvertToRegex() {
+        const saved = await saveDfaToBackend();
+        if (!saved) return;
 
-		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
-		const project = get(projectName); 
+        const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
+        const project = get(projectName); 
 
-		if (!accessToken) {
-			AddToast('Authentication required: Please log in to convert DFA', 'error');
-			return;
-		}
+        if (!accessToken) {
+            AddToast('Authentication required: Please log in to convert DFA', 'error');
+            return;
+        }
 
-		if (!project) {
-			AddToast('No project selected: Please select or create a project first', 'error');
-			return;
-		}
+        if (!project) {
+            AddToast('No project selected: Please select or create a project first', 'error');
+            return;
+        }
 
-		try {
-			const response = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
-				method: 'POST',
-				headers: { 
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${accessToken}`
-				},
-				body: JSON.stringify({ project_name: project })
-			});
-			if (!response.ok) {
-				const errorText = await response.text();
-				AddToast('DFA→Regex failed: Please check your DFA input.','error');
-				return;
-			}
-			const data = await response.json();
-			regexRules = Array.isArray(data.rules) ? data.rules : [];
-			showRegexOutput = true;
-			AddToast('DFA converted to Regex successfully!', 'success');
-		} catch (error) {
-			AddToast('DFA→Regex failed: Please check your internet connection.', 'error');
-		}
+        try {
+            const response = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify({ project_name: project })
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                AddToast('DFA→Regex failed: Please check your DFA input.','error');
+                return;
+            }
+            const data = await response.json();
+            regexRules = Array.isArray(data.rules) ? data.rules : [];
+            
+            // FIX: Set states to show only RE display
+            showRegexOutput = true;
+			 showAutomataVisOnly = true; // This will hide the input and show only RE display
+            automataDisplay = 'RE'; // Set display type for consistency
+            
+            AddToast('DFA converted to Regex successfully!', 'success');
+        } catch (error) {
+            AddToast('DFA→Regex failed: Please check your internet connection.', 'error');
+        }
 	}
+
+	function handleBackFromAutomataVis() {
+        showAutomataVisOnly = false;
+        showDfaVis = false;
+        showNfaVis = false;
+        showRegexOutput = false;
+        automataDisplay = null; // Reset display type
+        currentAutomatonForModal = null; // Clear modal data
+    }
 
 	let regexNfa = null;
 	let regexDfa = null;
@@ -744,9 +837,13 @@
 			const data = await response.json();
 			regexNfa = adaptAutomatonForVis(data.nfa);
 			currentAutomatonForModal = { data: regexNfa, isDfa: false }; 
-			showRegexNfaVis = true;
-			showRegexDfaVis = false;
-			showRegexVisOnly = true;
+            
+            // FIX: Set states to show only visualization like automata section
+            showRegexNfaVis = true;
+            showRegexDfaVis = false;
+            showRegexVisOnly = true; // This will hide the input and show only visualization
+            automataDisplay = 'NFA'; // Set display type for consistency
+            
 			AddToast('Regex converted to NFA!', 'success');
 			setTimeout(() => renderRegexAutomatonVis(regexNfaContainer, regexNfa, false), 0);
 		} catch (error) {
@@ -785,14 +882,103 @@
 			console.log('DFA from backend:', JSON.stringify(data.dfa, null, 2));
 			regexDfa = adaptAutomatonForVis(data.dfa);
 			currentAutomatonForModal = { data: regexDfa, isDfa: true };
-			showRegexDfaVis = true;
-			showRegexNfaVis = false;
-			showRegexVisOnly = true;
+            
+            // FIX: Set states to show only visualization like automata section
+            showRegexDfaVis = true;
+            showRegexNfaVis = false;
+            showRegexVisOnly = true; // This will hide the input and show only visualization
+            automataDisplay = 'DFA'; // Set display type for consistency
+            
 			AddToast('Regex converted to DFA!', 'success');
 			setTimeout(() => renderRegexAutomatonVis(regexDfaContainer, regexDfa, true), 0);
 		} catch (error) {
 			AddToast('Regex→DFA failed: ' + error, 'error');
 		}
+	}
+
+	// FIX: Update the back function to restore the regex input view
+	function handleBackFromRegexVis() {
+		showRegexVisOnly = false;
+		showRegexNfaVis = false;
+		showRegexDfaVis = false;
+		automataDisplay = null; // Reset display type
+		currentAutomatonForModal = null; // Clear modal data
+		
+		// This will show the regex input rows again
+	}
+
+	// Helper function to render the automaton visualization
+	function renderAutomatonVis(container: HTMLElement, automaton: any, isDfa: boolean) {
+		if (!automaton || !container) return;
+
+		if (networkInstance) {
+			networkInstance.destroy();
+			networkInstance = null;
+		}
+
+		const nodeIds: Record<string, string> = {};
+		automaton.states.forEach((state: string) => {
+			nodeIds[state] = state.replace(/[^a-zA-Z0-9_]/g, '_');
+		});
+		const nodes = new DataSet(
+			automaton.states.map((state: string) => ({
+				id: nodeIds[state],
+				label: state,
+				shape: 'circle',
+				color: automaton.acceptedStates.includes(state)
+					? '#D2FFD2'
+					: state === automaton.startState
+					? '#D2E5FF'
+					: '#FFD2D2',
+				borderWidth: automaton.acceptedStates.includes(state) ? 3 : 1
+			}))
+		);
+		const edgesArr: any[] = [];
+		for (const from of automaton.states) {
+			for (const symbol of automaton.alphabet) {
+				const tos = isDfa
+					? [automaton.transitions[from]?.[symbol]].filter(Boolean)
+					: automaton.transitions[from]?.[symbol] || [];
+				for (const to of tos) {
+					edgesArr.push({ from: nodeIds[from], to: nodeIds[to], label: symbol, arrows: 'to' });
+				}
+			}
+		}
+		const START_NODE_ID = '__start__';
+		nodes.add({
+			id: START_NODE_ID,
+			label: '',
+			shape: 'circle',
+			color: 'rgba(0,0,0,0)',
+			borderWidth: 0,
+			size: 1,
+			font: { size: 1 }
+		});
+		edgesArr.push({
+			from: START_NODE_ID,
+			to: nodeIds[automaton.startState],
+			arrows: { to: { enabled: true, scaleFactor: 0.6 } },
+			color: { color: '#222', opacity: 1 },
+			width: 1.75,
+			label: 'start',
+			font: { size: 13, color: '#222', vadjust: -18, align: 'top' },
+			smooth: { enabled: true, type: 'curvedCCW', roundness: 0.18 },
+			length: 1,
+			physics: false
+		});
+		const edges = new DataSet(edgesArr);
+		networkInstance = new Network(
+			container,
+			{ nodes, edges },
+			{
+				nodes: { shape: 'circle', font: { size: 16 }, margin: 10 },
+				edges: {
+					smooth: { enabled: true, type: 'curvedCW', roundness: 0.3 },
+					font: { size: 14, strokeWidth: 0 }
+				},
+				physics: false
+			}
+		);
 	}
 
 	function adaptAutomatonForVis(automaton: any) {
@@ -909,12 +1095,6 @@
 
 	let showRegexVisOnly = false;
 
-	function handleBackFromRegexVis() {
-		showRegexVisOnly = false;
-		showRegexNfaVis = false;
-		showRegexDfaVis = false;
-	}
-
 	const toggleExpand = () => {
 		isExpanded = !isExpanded;
 		if (isExpanded && currentAutomatonForModal) {
@@ -1004,7 +1184,7 @@
 
 	// Add function to update inputs from project data
 	async function updateInputsFromProject() {
-	    const userId = localStorage.getItem('user_id');
+	    const userId = sessionStorage.getItem('user_id');
 	    const project = get(projectName);
 	    
 	    if (!userId || !project) return;
@@ -1072,6 +1252,7 @@
                 
                 // Reset other states
                 showRegexActionButtons = false;
+                regexRulesSubmitted = false;
                 showGenerateButton = false;
                 submissionStatus = { show: false, success: false, message: '' };
                 
@@ -1094,6 +1275,79 @@
         }
     });
 
+	function clearAllInputs() {
+		if (selectedType === 'REGEX') {
+			// Reset regex inputs only
+			userInputRows = [{ type: '', regex: '', error: '' }];
+			editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
+			showRegexVisOnly = false;
+			showRegexNfaVis = false;
+			showRegexDfaVis = false;
+		} else if (selectedType === 'AUTOMATA') {
+			// Reset automata inputs only
+			states = '';
+			startState = '';
+			acceptedStates = '';
+			transitions = '';
+			showAutomataVisOnly = false; // FIX: Reset automata vis only state
+			showDfaVis = false;
+			showNfaVis = false;
+		}
+		
+		 // Reset common states
+        showDefault = false;
+        showGenerateButton = false;
+        showRegexActionButtons = false;
+        showRegexVisOnly = false;
+        showRegexNfaVis = false;
+        showRegexDfaVis = false;
+        showNfaVis = false;
+        showDfaVis = false;
+        showRegexOutput = false;
+        showAutomataVisOnly = false; 
+        automataDisplay = null;
+        currentAutomatonForModal = null;
+        
+        // Update lexer state only for regex
+        if (selectedType === 'REGEX') {
+            lexerState.update(state => ({
+                ...state,
+                userInputRows: [...userInputRows]
+            }));
+        }
+        
+        AddToast(`All ${selectedType.toLowerCase()} inputs cleared successfully!`, 'success');
+    }
+
+    let currentProject = '';
+    
+    // Watch for project changes and reset component state
+    $: if ($projectName !== currentProject) {
+        if (currentProject !== '' && $projectName !== currentProject) {
+            // Project changed - reset component state
+            console.log('Project changed from', currentProject, 'to', $projectName);
+            
+            // Reset component state to initial values
+            userInputRows = [{ type: '', regex: '', error: '' }];
+            states = '';
+            startState = '';
+            acceptedStates = '';
+            transitions = '';
+            showDefault = false;
+            showGenerateButton = false;
+            showRegexActionButtons = false;
+            hasInitialized = false;
+            
+            // Reset visualization states
+            showNfaVis = false;
+            showDfaVis = false;
+            showRegexNfaVis = false;
+            showRegexDfaVis = false;
+            showRegexOutput = false;
+            automataDisplay = null;
+        }
+        currentProject = $projectName;
+    }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -1135,48 +1389,58 @@
 			Automata
 		</button>
 
-		{#if selectedType && !showDefault}
+
+		<div class="button-group">
+			{#if selectedType}
+				<button
+					class="clear-toggle-btn"
+					on:click={clearAllInputs}
+					type="button"
+					aria-label="Clear all inputs"
+					title="Clear all inputs"
+				>
+					<span class="icon">🗑️</span>
+				</button>
+			{/if}
+
+			{#if selectedType && !showDefault}
 			<button
-				class="default-toggle-btn"
+				class="option-btn example-btn"
 				on:click={insertDefault}
 				type="button"
-				aria-label="Insert default input"
-				title="Insert default input"
+				aria-label="Show example code"
+				title="Show example code"
 			>
-				<span class="icon">🪄</span>
+				Show Example
 			</button>
+
 		{/if}
 		{#if selectedType && showDefault}
 			<button
-				class="default-toggle-btn selected"
+				class="option-btn example-btn selected"
 				on:click={removeDefault}
 				type="button"
-				aria-label="Remove default input"
-				title="Remove default input"
+				aria-label="Restore your input"
+				title="Restore your input"
 			>
-				<span class="icon">🧹</span>
+				Restore Input
 			</button>
 		{/if}
+		</div>
+
 	</div>
 
 	{#if selectedType === 'REGEX'}
 		{#if showRegexVisOnly}
+			<!-- Show only NFA or DFA visualization with back button -->
 			{#if showRegexNfaVis && regexNfa}
 				<div class="automata-container pretty-vis-box">
 					<div class="vis-heading">
 						<span class="vis-title">NFA Visualization (from REGEX)</span>
 					</div>
 					<button on:click={toggleExpand} class="expand-btn" title="Expand view">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="16"
-							height="16"
-							fill="currentColor"
-							viewBox="0 0 16 16"
-						>
-							<path
-								d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
-							/>
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+							<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
 						</svg>
 					</button>
 					<div bind:this={regexNfaContainer} class="vis-graph-area"></div>
@@ -1189,22 +1453,15 @@
 					← Back
 				</button>
 			{/if}
+			
 			{#if showRegexDfaVis && regexDfa}
 				<div class="automata-container pretty-vis-box">
 					<div class="vis-heading">
 						<span class="vis-title">DFA Visualization (from REGEX)</span>
 					</div>
 					<button on:click={toggleExpand} class="expand-btn" title="Expand view">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="16"
-							height="16"
-							fill="currentColor"
-							viewBox="0 0 16 16"
-						>
-							<path
-								d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
-							/>
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+							<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
 						</svg>
 					</button>
 					<div bind:this={regexDfaContainer} class="vis-graph-area"></div>
@@ -1218,6 +1475,7 @@
 				</button>
 			{/if}
 		{:else}
+			<!-- Show regex input form -->
 			<div>
 				<div class="shared-block">
 					<div class="block-headers">
@@ -1256,210 +1514,162 @@
 						{/each}
 					</div>
 					{#if (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).type && 
-      (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).regex}
-    
-	<button class="add-rule-btn" on:click={addNewRow}>+ Add New Rule</button>
-
-{/if}
+                        (showDefault ? editableDefaultRows[editableDefaultRows.length - 1] : userInputRows[userInputRows.length - 1]).regex}
+                        <button class="add-rule-btn" on:click={addNewRow}>+ Add New Rule</button>
+                    {/if}
 				</div>
 				{#if formError}
 					<div class="form-error">{formError}</div>
 				{/if}
 				<div class="button-stack">
-					<button class="submit-button" on:click={handleSubmit}> Submit </button>
-					{#if showRegexActionButtons}
-						<div class="regex-action-buttons">
-							<button class="generate-button" on:click={generateTokens}>Generate Tokens</button>
-							<button
-								class="generate-button"
-								on:click={handleRegexToNFA}
-								title="Convert Regular Expression to a NFA">NFA</button
-							>
-							<button
-								class="generate-button"
-								on:click={handleRegexToDFA}
-								title="Convert Regular Expression to a DFA">DFA</button
-							>
-						</div>
-					{/if}
-				</div>
-				{#if submissionStatus.show}
-					<div
-						class="status-message"
-						class:success={submissionStatus.success === true}
-						class:info={submissionStatus.message === 'info'}
-					>
-						{submissionStatus.message}
+
+					<button class="submit-button" on:click={handleSubmit}>Submit</button>
+					<div class="regex-action-buttons">
+						<button 
+							class="generate-button" 
+							class:disabled={!isSubmitted}
+							disabled={!isSubmitted}
+							on:click={generateTokens}
+							title={isSubmitted ? "Generate tokens from submitted rules" : "Submit regex rules first"}
+						>Generate Tokens</button>
+						<button
+							class="generate-button"
+							class:disabled={!isSubmitted}
+							disabled={!isSubmitted}
+							on:click={handleRegexToNFA}
+							title={isSubmitted ? "Convert Regular Expression to a NFA" : "Submit regex rules first"}
+						>NFA</button>
+						<button
+							class="generate-button"
+							class:disabled={!isSubmitted}
+							disabled={!isSubmitted}
+							on:click={handleRegexToDFA}
+							title={isSubmitted ? "Convert Regular Expression to a DFA" : "Submit regex rules first"}
+						>DFA</button>
 					</div>
-				{/if}
+
+				</div>
 			</div>
 		{/if}
 	{:else if selectedType === 'AUTOMATA'}
-		<div class="automaton-section">
-			<div class="automaton-left">
-				<label>
-					States:
-					<input class="automaton-input" bind:value={states} placeholder="e.g. q0,q1,q2" />
-				</label>
-				<label>
-					Start State:
-					<input class="automaton-input" bind:value={startState} placeholder="e.g. q0" />
-				</label>
-				<label>
-					Accepted States:
-					<input
-						class="automaton-input"
-						bind:value={acceptedStates}
-						placeholder="e.g. q2->int, q1->string"
-					/>
-				</label>
-			</div>
-			<div class="automaton-right">
-				<label>
-					Transitions:
-					<textarea
-						class="automaton-input automaton-transitions"
-						bind:value={transitions}
-						placeholder="e.g. q0,a->q1&#10;q1,b->q2"
-					></textarea>
-				</label>
-			</div>
-			<div class="automata-action-row" style="grid-column: span 2;">
-				<button
-					class="action-btn"
-					type="button"
-					on:click={() => {
-						handleShowDfa();
-						automataDisplay = 'DFA';
-					}}>Show Automata</button
-				>
-				<button
-					class="action-btn"
-					type="button"
-					on:click={() => {
-						handleTokenisation();
-						automataDisplay = null;
-					}}>Tokenisation</button
-				>
-				<button
-					class="action-btn"
-					type="button"
-					on:click={() => {
-						handleConvertToRegex();
-						automataDisplay = 'RE';
-					}}
-					title="Convert to Regular Expression">RE</button
-				>
-			</div>
-		</div>
-
-		{#if automataDisplay === 'NFA' && showNfaVis}
-			<div class="automata-container pretty-vis-box">
-				<div class="vis-heading">
-					<span class="vis-title">NFA Visualization</span>
+		{#if showAutomataVisOnly}
+			<!-- Show only DFA visualization or RE display with back button -->
+			{#if automataDisplay === 'DFA' && showDfaVis && regexDfa}
+				<div class="automata-container pretty-vis-box">
+					<div class="vis-heading">
+						<span class="vis-title">DFA Visualization (from Automata)</span>
+					</div>
+					<button on:click={toggleExpand} class="expand-btn" title="Expand view">
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+							<path d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"/>
+						</svg>
+					</button>
+					<div bind:this={dfaContainer} class="vis-graph-area"></div>
 				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand NFA visualization to fullscreen">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						fill="currentColor"
-						viewBox="0 0 16 16"
-					>
-						<path
-							d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
-						/>
-					</svg>
+				<button
+					class="submit-button"
+					style="align-self: flex-start; margin-top: 1.5rem;"
+					on:click={handleBackFromAutomataVis}
+				>
+					← Back
 				</button>
-				<div bind:this={nfaContainer} class="vis-graph-area"></div>
-			</div>
-		{:else if automataDisplay === 'DFA' && showDfaVis}
-			<div class="automata-container pretty-vis-box">
-				<div class="vis-heading">
-					<span class="vis-title">DFA Visualization</span>
-				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand DFA visualization to fullscreen">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						fill="currentColor"
-						viewBox="0 0 16 16"
-					>
-						<path
-							d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
-						/>
-					</svg>
-				</button>
-				<div bind:this={dfaContainer} class="vis-graph-area"></div>
-			</div>
-		{:else if automataDisplay === 'RE' && showRegexOutput && regexRules.length > 0}
-			<div class="regex-display-container pretty-vis-box">
-				<div class="vis-heading">
-					<span class="vis-title">Generated Regular Expressions</span>
-				</div>
-				<table class="regex-table">
-					<thead>
-						<tr>
-							<th>Type</th>
-							<th>Regular Expression</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each regexRules as rule}
+			{:else if automataDisplay === 'RE' && showRegexOutput && regexRules.length > 0}
+				<div class="regex-display-container pretty-vis-box">
+					<div class="vis-heading">
+						<span class="vis-title">Generated Regular Expressions (from Automata)</span>
+					</div>
+					<table class="regex-table">
+						<thead>
 							<tr>
-								<td class="regex-type">{rule.token_type || rule.Type || rule.type || '-'}</td>
-								<td class="regex-pattern"><code>{rule.regex || rule.Regex || '-'}</code></td>
+								<th>Type</th>
+								<th>Regular Expression</th>
 							</tr>
-						{/each}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							{#each regexRules as rule}
+								<tr>
+									<td class="regex-type">{rule.token_type || rule.Type || rule.type || '-'}</td>
+									<td class="regex-pattern"><code>{rule.regex || rule.Regex || '-'}</code></td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				<button
+					class="submit-button"
+					style="align-self: flex-start; margin-top: 1.5rem;"
+					on:click={handleBackFromAutomataVis}
+				>
+					← Back
+				</button>
+			{/if}
+		{:else}
+			<!-- Show automata input form -->
+			<div class="automaton-section">
+				<div class="automaton-left">
+					<label>
+						States:
+						<input 
+							class="automaton-input" 
+							bind:value={states} 
+							on:input={handleAutomataInputChange}
+							placeholder="e.g. q0,q1,q2" 
+						/>
+					</label>
+					<label>
+						Start State:
+						<input 
+							class="automaton-input" 
+							bind:value={startState} 
+							on:input={handleAutomataInputChange}
+							placeholder="e.g. q0" 
+						/>
+					</label>
+					<label>
+						Accepted States:
+						<input
+							class="automaton-input"
+							bind:value={acceptedStates}
+							on:input={handleAutomataInputChange}
+							placeholder="e.g. q2->int, q1->string"
+						/>
+					</label>
+				</div>
+				<div class="automaton-right">
+					<label>
+						Transitions:
+						<textarea
+							class="automaton-input automaton-transitions"
+							bind:value={transitions}
+							on:input={handleAutomataInputChange}
+							placeholder="e.g. q0,a->q1&#10;q1,b->q2"
+						></textarea>
+					</label>
+				</div>
+				<div class="automata-action-row" style="grid-column: span 2;">
+					<button
+						class="action-btn"
+						type="button"
+						on:click={handleShowDfa}>Show Automata</button>
+					<button
+						class="action-btn"
+						type="button"
+						on:click={() => {
+							handleTokenisation();
+							automataDisplay = null;
+						}}>Tokenisation</button>
+					<button
+						class="action-btn"
+						type="button"
+						on:click={handleConvertToRegex}
+						title="Convert to Regular Expression">RE</button>
+				</div>
 			</div>
 		{/if}
 
-		{#if showRegexNfaVis && regexNfa}
-			<div class="automata-container pretty-vis-box">
-				<div class="vis-heading">
-					<span class="vis-title">NFA Visualization (from REGEX)</span>
-				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand NFA visualization from regex to fullscreen">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						fill="currentColor"
-						viewBox="0 0 16 16"
-					>
-						<path
-							d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
-						/>
-					</svg>
-				</button>
-				<div bind:this={regexNfaContainer} class="vis-graph-area" />
-			</div>
-		{/if}
-		{#if showRegexDfaVis && regexDfa}
-			<div class="automata-container pretty-vis-box">
-				<div class="vis-heading">
-					<span class="vis-title">DFA Visualization (from REGEX)</span>
-				</div>
-				<button on:click={toggleExpand} class="expand-btn" title="Expand view" aria-label="Expand DFA visualization from regex to fullscreen">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						width="16"
-						height="16"
-						fill="currentColor"
-						viewBox="0 0 16 16"
-					>
-						<path
-							d="M1.5 1a.5.5 0 0 0-.5.5v4a.5.5 0 0 1-1 0v-4A1.5 1.5 0 0 1 1.5 0h4a.5.5 0 0 1 0 1zM10 .5a.5.5 0 0 1 .5-.5h4A1.5 1.5 0 0 1 16 1.5v4a.5.5 0 0 1-1 0v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 1-.5-.5M.5 10a.5.5 0 0 1 .5.5v4a.5.5 0 0 0 .5.5h4a.5.5 0 0 1 0 1h-4A1.5 1.5 0 0 1 0 14.5v-4a.5.5 0 0 1 .5-.5m15 0a.5.5 0 0 1 .5.5v4a1.5 1.5 0 0 1-1.5 1.5h-4a.5.5 0 0 1 0-1h4a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 1 .5-.5"
-						/>
-					</svg>
-				</button>
-				<div bind:this={regexDfaContainer} class="vis-graph-area" />
-			</div>
-		{/if}
-	{/if}
+		<!-- Remove the old conditional displays that were showing below the input form -->
+		<!-- These blocks are no longer needed since we're using showAutomataVisOnly -->
+{/if}
 </div>
 
 
@@ -1534,7 +1744,7 @@
 							width="24"
 							height="24"
 							fill="currentColor"
-							viewBox="0 0 16 16"
+							viewBox="0 0 16"
 						>
 							<path
 								d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"
@@ -1659,7 +1869,7 @@
 
 	.input-block {
 		flex: 1;
-	}
+		}
 
 	.input-block input {
 		width: 100%;
@@ -1742,39 +1952,25 @@
 		transition: background-color 0.2s ease, transform 0.2s;
 	}
 
-	.generate-button:hover {
+	.generate-button:hover:not(:disabled) {
 		background: #5a6268;
 		transform: translateY(-2px);
 	}
 
-	.status-message {
-		text-align: center;
-		padding: 0.5rem 1rem;
-		margin-top: 1rem;
-		border-radius: 4px;
-		font-size: 0.9rem;
-		background: #dc3545;
-		color: white;
-		opacity: 0;
-		animation: fadeInOut 3s ease-in-out;
+	.generate-button:disabled,
+	.generate-button.disabled {
+		background: #d6d8db;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
 	}
 
-	.status-message.success {
-		background: #28a745;
-	}
-	.status-message.info {
-		background: #0096c7;
-	}
-
-	@keyframes fadeInOut {
-		0%,
-		100% {
-			opacity: 0;
-		}
-		10%,
-		90% {
-			opacity: 1;
-		}
+	.generate-button:disabled:hover,
+	.generate-button.disabled:hover {
+		background: #d6d8db;
+		color: #6c757d;
+		transform: none;
 	}
 
 	.automaton-btn-row {
@@ -1782,7 +1978,35 @@
 		gap: 0.7rem;
 		margin: 2rem 0 1.5rem 0;
 		align-items: center;
+		justify-content: flex-start;
 	}
+
+	.button-group {
+        display: flex;
+        align-items: center;
+		margin-left: 0.5rem;
+    }
+
+	.clear-toggle-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #7da2e3;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.3rem;
+        width: 2.3rem;
+        border-radius: 50%;
+    }
+
+    .clear-toggle-btn:hover,
+    .clear-toggle-btn:focus {
+        background: #fff5f5;
+        border-color: #7da2e3;
+    }
 
 	.automaton-btn {
 		padding: 0.4rem 1rem;
@@ -1808,31 +2032,44 @@
 		background: #f5f8fd;
 	}
 
-	.default-toggle-btn {
-		margin-left: 1.2rem;
-		padding: 0.4rem 0.7rem;
-		border-radius: 50%;
-		border: 2px solid #e5e7eb;
-		background: white;
-		color: #041a47;
-		cursor: pointer;
-		transition: all 0.2s ease;
+	.option-btn {
 		display: flex;
 		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 140px;
+		max-width: 140px;
 		justify-content: center;
-		height: 2.3rem;
-		width: 2.3rem;
+		margin-left: 1rem;
 	}
 
-	.default-toggle-btn.selected {
-		background: #d0e2ff;
-		border-color: #041a47;
+	.example-btn {
+		background: #1e40af;
 	}
 
-	.default-toggle-btn:hover,
-	.default-toggle-btn:focus {
-		background: #f5f8fd;
-		border-color: #7da2e3;
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+	}
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+	}
+
+	.option-btn.selected {
+		background: #1e40af;
 	}
 
 	.icon {
@@ -2093,9 +2330,25 @@
 		color: #ffffff;
 	}
 
-	:global(html.dark-mode) .generate-button:hover,
-	:global(html.dark-mode) .action-btn:hover {
+	:global(html.dark-mode) .generate-button:hover:not(:disabled),
+	:global(html.dark-mode) .action-btn:hover:not(:disabled) {
 		background: #002a8e;
+	}
+
+	:global(html.dark-mode) .generate-button:disabled,
+	:global(html.dark-mode) .generate-button.disabled {
+		background: #495057;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
+	}
+
+	:global(html.dark-mode) .generate-button:disabled:hover,
+	:global(html.dark-mode) .generate-button.disabled:hover {
+		background: #495057;
+		color: #6c757d;
+		transform: none;
 	}
 
 	:global(html.dark-mode) .automaton-btn {
@@ -2115,22 +2368,25 @@
 		background: rgba(45, 55, 72, 0.5);
 	}
 
-	:global(html.dark-mode) .default-toggle-btn {
-		background: transparent;
+	:global(html.dark-mode) .example-btn {
+		background: linear-gradient(135deg, #1d4ed8, #2563eb);
+	}
+
+	:global(html.dark-mode) .option-btn.selected {
+		background: linear-gradient(135deg, #059669, #10b981);
+		border-color: #059669;
+	}
+
+	:global(html.dark-mode) .clear-toggle-btn {
+        background: transparent;
 		color: #cbd5e1;
 		border-color: #4a5568;
-	}
+    }
 
-	:global(html.dark-mode) .default-toggle-btn.selected {
-		background: #2d3748;
+    :global(html.dark-mode) .clear-toggle-btn:hover {
+        background: rgba(45, 55, 72, 0.5);
 		border-color: #63b3ed;
-		color: #e2e8f0;
-	}
-
-	:global(html.dark-mode) .default-toggle-btn:hover {
-		background: rgba(45, 55, 72, 0.5);
-		border-color: #63b3ed;
-	}
+    }
 
 	:global(html.dark-mode) .vis-heading,
 	:global(html.dark-mode) .vis-title {
