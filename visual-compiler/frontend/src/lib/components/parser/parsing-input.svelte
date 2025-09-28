@@ -172,19 +172,33 @@
         
         // Convert from store format to component format
         if ($parserState.grammar_rules && $parserState.grammar_rules.length > 0) {
-            grammar_rules = $parserState.grammar_rules.map(rule => ({
-                id: rule.id,
-                nonTerminal: rule.nonTerminal,
-                productions: rule.translations.map(t => t.value).join(', ')
-            }));
+            // Check if we have meaningful rules (not just empty default)
+            const meaningfulRules = $parserState.grammar_rules.filter(rule => 
+                rule.nonTerminal.trim() !== '' || 
+                (rule.translations && rule.translations.some(t => t.value.trim() !== ''))
+            );
+            
+            if (meaningfulRules.length > 0) {
+                grammar_rules = meaningfulRules.map(rule => ({
+                    id: rule.id,
+                    nonTerminal: rule.nonTerminal,
+                    productions: rule.translations
+                        .filter(t => t.value.trim() !== '')
+                        .map(t => t.value)
+                        .join(', ')
+                }));
+                rule_id_counter = Math.max(...meaningfulRules.map(r => r.id)) + 1;
+            } else {
+                // No meaningful rules, start with empty
+                grammar_rules = [{ id: 1, nonTerminal: '', productions: '' }];
+                rule_id_counter = 1;
+            }
         } else {
             grammar_rules = [{ id: 1, nonTerminal: '', productions: '' }];
             rule_id_counter = 1;
         }
-        
         variables_string = $parserState.variables_string || '';
         terminals_string = $parserState.terminals_string || '';
-        rule_id_counter = $parserState.rule_id_counter || 1;
         translation_id_counter = $parserState.translation_id_counter || 1;
         show_default_grammar = $parserState.show_default_grammar || false;
         is_grammar_submitted = $parserState.is_grammar_submitted || false;
@@ -203,9 +217,10 @@
         console.log('Parser component initialized with:', { 
             grammar_rules: grammar_rules.length, 
             hasParseTree,
-            is_grammar_submitted
+            is_grammar_submitted,
+            meaningfulRules: grammar_rules.filter(r => r.nonTerminal.trim() !== '' || r.productions.trim() !== '').length
         });
-    }   
+    }
 
     // FIX: Only update store if there are meaningful changes
     function handleGrammarChange() {
@@ -499,6 +514,24 @@
             const result = await response.json();
             AddToast('Grammar saved successfully! Your parsing rules are ready for syntax analysis', 'success');
             
+            const submittedRules = grammar_rules.map(rule => ({
+                id: rule.id,
+                nonTerminal: rule.nonTerminal,
+                translations: rule.productions.split(',').map((prod, index) => ({
+                    id: index + 1,
+                    value: prod.trim()
+                })).filter(t => t.value !== '')
+            }));
+
+            updateParserInputs({
+                grammar_rules: submittedRules,
+                variables_string,
+                terminals_string,
+                rule_id_counter,
+                translation_id_counter,
+                show_default_grammar,
+                is_grammar_submitted: true // Mark as submitted
+            });
             // Mark as submitted in store
             markParserSubmitted();
             is_grammar_submitted = true;
@@ -637,25 +670,7 @@
         }
     }
 
-    // FIX: Add this reactive statement to handle project data
-    $: if ($lexerState?.parser_data?.grammar && hasInitialized) {
-        const parserData = $lexerState.parser_data.grammar;
-        
-        variables_string = parserData.variables ? parserData.variables.join(', ') : '';
-        terminals_string = parserData.terminals ? parserData.terminals.join(', ') : '';
-        
-        if (parserData.rules && Array.isArray(parserData.rules)) {
-            grammar_rules = parserData.rules.map((rule, index) => ({
-                id: index + 1,
-                nonTerminal: rule.input || '',
-                productions: Array.isArray(rule.output) ? rule.output.join(' ') : ''
-            }));
-            
-            rule_id_counter = parserData.rules.length;
-            show_default_grammar = false;
-            is_grammar_submitted = true;
-        }
-    }
+    
 </script>
 
 <div class="phase-inspector">

@@ -8,6 +8,7 @@
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
 	import { lexerState, updateLexerInputs, updateAutomataInputs, markLexerSubmitted, updateLexerArtifacts } from '$lib/stores/lexer';
+	import { confirmedSourceCode } from '$lib/stores/source-code';
 
 	export let source_code = '';
 	export let onGenerateTokens: (data: {
@@ -88,7 +89,8 @@
             show_tokens = false;
         }
         
-        source_code = $lexerState.sourceCode || '';
+        source_code = $lexerState.sourceCode || $confirmedSourceCode || '';
+
         if (!hasLocalChanges) {
             isSubmitted = $lexerState.isSubmitted || false;
             
@@ -199,6 +201,7 @@
                 
                 isSubmitted = true;
                 hasLocalChanges = false; 
+				
                 markLexerSubmitted();
 
             } catch (error) {
@@ -1405,6 +1408,14 @@
         }
         currentProject = $projectName;
     }
+
+	 $: if ($lexerState?.sourceCode) {
+        source_code = $lexerState.sourceCode;
+
+    }
+	$: if ($confirmedSourceCode) {
+        source_code = $confirmedSourceCode;
+    }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -1565,7 +1576,6 @@
 										bind:value={row.type}
 										    on:input={() => {
 											hasLocalChanges = true;
-											showRegexActionButtons = false;
 											isSubmitted = false;
 											show_tokens = false;
 											tokens = [];
@@ -1580,7 +1590,6 @@
 										bind:value={row.regex}
 										    on:input={() => {
 											hasLocalChanges = true;
-											showRegexActionButtons = false;
 											isSubmitted = false;
 											show_tokens = false;
 											tokens = [];
@@ -1606,53 +1615,55 @@
 				<div class="button-stack">
 					<!-- Submit button -->
 					<button 
-    class="submit-button" 
-    on:click={handleSubmit}
-    disabled={isSubmittingRules}
->
-    <div class="button-content">
-        {#if isSubmittingRules}
-            <div class="loading-spinner"></div>
-            Submitting...
-        {:else}
-            Submit
-        {/if}
-    </div>
-</button>
+						class="submit-button" 
+						on:click={handleSubmit}
+						disabled={isSubmittingRules}
+					>
+						<div class="button-content">
+							{#if isSubmittingRules}
+								<div class="loading-spinner"></div>
+								Submitting...
+							{:else}
+								Submit
+							{/if}
+						</div>
+					</button>
 
-<!-- FIX: Only show REGEX-specific buttons -->
-<div class="regex-action-buttons">
-    <button 
-        class="generate-button" 
-        class:disabled={!isSubmitted || isGeneratingTokens}
-        disabled={!isSubmitted || isGeneratingTokens}
-        on:click={generateTokens}
-        title={isSubmitted ? "Generate tokens from submitted rules" : "Submit regex rules first"}
-    >
-        <div class="button-content">
-            {#if isGeneratingTokens}
-                <div class="loading-spinner"></div>
-                Generating...
-            {:else}
-                Generate Tokens
-            {/if}
-        </div>
-    </button>
-    <button
-        class="generate-button"
-        class:disabled={!isSubmitted}
-        disabled={!isSubmitted}
-        on:click={handleRegexToNFA}
-        title={isSubmitted ? "Convert Regular Expression to a NFA" : "Submit regex rules first"}
-    >NFA</button>
-    <button
-        class="generate-button"
-        class:disabled={!isSubmitted}
-        disabled={!isSubmitted}
-        on:click={handleRegexToDFA}
-        title={isSubmitted ? "Convert Regular Expression to a DFA" : "Submit regex rules first"}
-    >DFA</button>
-</div>
+					<!-- FIX: Only show REGEX-specific buttons -->
+					 {#if showRegexActionButtons}
+					<div class="regex-action-buttons">
+						<button 
+							class="generate-button" 
+							class:disabled={!isSubmitted || isGeneratingTokens}
+							disabled={!isSubmitted || isGeneratingTokens}
+							on:click={generateTokens}
+							title={isSubmitted ? "Generate tokens from submitted rules" : "Submit regex rules first"}
+						>
+							<div class="button-content">
+								{#if isGeneratingTokens}
+									<div class="loading-spinner"></div>
+									Generating...
+								{:else}
+									Generate Tokens
+								{/if}
+							</div>
+						</button>
+						<button
+							class="generate-button"
+							class:disabled={!isSubmitted}
+							disabled={!isSubmitted}
+							on:click={handleRegexToNFA}
+							title={isSubmitted ? "Convert Regular Expression to a NFA" : "Submit regex rules first"}
+						>NFA</button>
+						<button
+							class="generate-button"
+							class:disabled={!isSubmitted}
+							disabled={!isSubmitted}
+							on:click={handleRegexToDFA}
+							title={isSubmitted ? "Convert Regular Expression to a DFA" : "Submit regex rules first"}
+						>DFA</button>
+					</div>
+					{/if}
 				</div>
 			</div>
 		{/if}
@@ -2438,6 +2449,7 @@
         cursor: wait;
         opacity: 0.8;
         transform: none;
+		pointer-events: none;
     }
 
     .submit-button:disabled:hover,
@@ -2451,6 +2463,10 @@
     .submit-button:disabled .loading-spinner,
     .generate-button:disabled .loading-spinner,
     .action-btn:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+	 .generate-button:disabled .loading-spinner {
         border-top-color: #6c757d;
     }
 
@@ -2488,6 +2504,26 @@
 	:global(html.dark-mode) .source-display {
 		color: #e2e8f0;
 	}
+
+	:global(html.dark-mode) .generate-button:disabled,
+    :global(html.dark-mode) .generate-button.disabled {
+        background: #495057;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .generate-button:disabled:hover,
+    :global(html.dark-mode) .generate-button.disabled:hover {
+        background: #495057;
+        color: #6c757d;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .generate-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
 
 	:global(html.dark-mode) .block-headers {
 		border-bottom-color: #4a5568;

@@ -63,10 +63,11 @@ export const markParserSubmitted = () => {
     }));
 };
 
-// FIX: Proper reset function
+// FIX: Update the resetParserState function
 export const resetParserState = () => {
-    parserState.set(JSON.parse(JSON.stringify(INITIAL_PARSER_STATE))); // Deep copy
-    console.log('Parser state reset to:', INITIAL_PARSER_STATE);
+    const freshState = JSON.parse(JSON.stringify(INITIAL_PARSER_STATE)); // Deep copy
+    parserState.set(freshState);
+    console.log('Parser state reset to:', freshState);
 };
 
 // ADD: Function to update artifacts
@@ -81,7 +82,27 @@ export const updateParserArtifacts = (parseTree: any, error: string | null = nul
 
 // UPDATE: Project loading function to include artifacts
 export const updateParserStateFromProject = (projectData: any) => {
-    if (!projectData?.parsing) return;
+    if (!projectData?.parsing) {
+        // If no parsing data, ensure we start with clean slate
+        const updates: Partial<ParserState> = {
+            grammar_rules: [{ id: 1, nonTerminal: '', translations: [{ id: 1, value: '' }] }],
+            variables_string: '',
+            terminals_string: '',
+            rule_id_counter: 1,
+            translation_id_counter: 1,
+            show_default_grammar: false,
+            is_grammar_submitted: false,
+            parseTree: null,
+            hasParseTree: false,
+            parsingError: null
+        };
+        
+        parserState.update(state => ({
+            ...state,
+            ...updates
+        }));
+        return;
+    }
 
     const currentProject = get(projectName);
     if (!currentProject) return;
@@ -105,6 +126,7 @@ export const updateParserStateFromProject = (projectData: any) => {
             }));
             
             updates.rule_id_counter = grammarData.rules.length + 1;
+            updates.is_grammar_submitted = true; // Mark as submitted if we have grammar data
         }
 
         if (grammarData.variables) {
@@ -127,16 +149,15 @@ export const updateParserStateFromProject = (projectData: any) => {
         updates.parsingError = null;
     }
 
-    // Mark as submitted if there's data
-    if (projectData.parsing && Object.keys(projectData.parsing).length > 0) {
-        updates.is_grammar_submitted = true;
-        updates.hasUnsavedChanges = false;
-    }
+    // Reset unsaved changes flag
+    updates.hasUnsavedChanges = false;
 
     if (Object.keys(updates).length > 0) {
         parserState.update(state => ({
             ...state,
             ...updates
         }));
+        
+        console.log('Parser state updated from project:', updates);
     }
 };
