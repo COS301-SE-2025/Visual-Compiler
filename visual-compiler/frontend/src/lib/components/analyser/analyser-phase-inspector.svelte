@@ -73,6 +73,10 @@
     let rules_submitted = false; // This flag now controls the overall submission state
     let hasInitialized = false; // Flag to prevent reactive statement from re-running
 
+    // FIX: Add loading states for buttons
+    let isSubmittingRules = false;
+    let isGeneratingTable = false;
+
     const DEFAULT_SCOPE_RULES = [
         { id: 0, Start: '{', End: '}' }
     ];
@@ -194,28 +198,42 @@
             return;
         }
 
-        // If validation passes
-        submitted_scope_rules = JSON.parse(JSON.stringify(scope_rules));
-        submitted_type_rules = JSON.parse(JSON.stringify(type_rules));
-        submitted_grammar_rules = JSON.parse(JSON.stringify(grammar_rules));
+        // FIX: Set loading state
+        isSubmittingRules = true;
 
-        rules_submitted = true;
+        try {
+            // FIX: Add 1-second delay before processing
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Update the store
-        updateAnalyserInputs({
-            scope_rules: [...scope_rules],
-            type_rules: [...type_rules],
-            grammar_rules: { ...grammar_rules },
-            submitted_scope_rules: [...submitted_scope_rules],
-            submitted_type_rules: [...submitted_type_rules],
-            submitted_grammar_rules: { ...submitted_grammar_rules },
-            rules_submitted: true
-        });
+            // If validation passes
+            submitted_scope_rules = JSON.parse(JSON.stringify(scope_rules));
+            submitted_type_rules = JSON.parse(JSON.stringify(type_rules));
+            submitted_grammar_rules = JSON.parse(JSON.stringify(grammar_rules));
 
-        // Mark as submitted in store
-        markAnalyserSubmitted();
+            rules_submitted = true;
 
-        AddToast('Semantic rules saved successfully! Ready to generate symbol table and perform analysis', 'success');
+            // Update the store
+            updateAnalyserInputs({
+                scope_rules: [...scope_rules],
+                type_rules: [...type_rules],
+                grammar_rules: { ...grammar_rules },
+                submitted_scope_rules: [...submitted_scope_rules],
+                submitted_type_rules: [...submitted_type_rules],
+                submitted_grammar_rules: { ...submitted_grammar_rules },
+                rules_submitted: true
+            });
+
+            // Mark as submitted in store
+            markAnalyserSubmitted();
+
+            AddToast('Semantic rules saved successfully! Ready to generate symbol table and perform analysis', 'success');
+        } catch (error) {
+            console.error('Submit rules error:', error);
+            AddToast('Failed to submit rules. Please try again.', 'error');
+        } finally {
+            // FIX: Reset loading state
+            isSubmittingRules = false;
+        }
     }
 
     // Universal Reset Logic
@@ -344,7 +362,13 @@
     }
 
     async function handleGenerate() {
+        // FIX: Set loading state
+        isGeneratingTable = true;
+
         try {
+            // FIX: Add 1-second delay before API call
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
             const project = get(projectName);
             
@@ -356,8 +380,6 @@
                 AddToast('No project selected: Please select or create a project first', 'error');
                 return;
             }
-            
-            is_loading = true;
             
             const requestData = {
                 scope_rules: submitted_scope_rules.map(rule => ({
@@ -449,7 +471,8 @@
             console.error('Error generating symbol table:', error);
             AddToast('Analysis failed: Unable to generate symbol table. Please check your connection', 'error');
         } finally {
-            is_loading = false;
+            // FIX: Reset loading state
+            isGeneratingTable = false;
         }
     }
 
@@ -916,21 +939,38 @@
     </div>
     <div class="actions-container">
         <div class="button-container">
-            <button class="submit-button" on:click={handleSubmit} disabled={!overallAllRowsComplete}>
-                Submit Rules
+            <!-- FIX: Add loading state to Submit Rules button -->
+            <button 
+                class="submit-button" 
+                on:click={handleSubmit} 
+                disabled={!overallAllRowsComplete || isSubmittingRules}
+            >
+                <div class="button-content">
+                    {#if isSubmittingRules}
+                        <div class="loading-spinner"></div>
+                        Submitting...
+                    {:else}
+                        Submit Rules
+                    {/if}
+                </div>
             </button>
             <button 
                 class="submit-button generate-button" 
-                class:disabled={!rules_submitted}
-                disabled={!rules_submitted}
+                class:disabled={!rules_submitted || isGeneratingTable}
+                disabled={!rules_submitted || isGeneratingTable}
                 on:click={handleGenerate}
-                title={rules_submitted ? "Generate symbol table from submitted rules" : "Submit rules first"}
+                title={rules_submitted ? 
+                    (isGeneratingTable ? "Generating symbol table..." : "Generate symbol table from submitted rules") : 
+                    "Submit rules first"}
             >
-                {#if is_loading}
-                    Generating...
-                {:else}
-                    Generate Symbol Table
-                {/if}
+                <div class="button-content">
+                    {#if isGeneratingTable}
+                        <div class="loading-spinner"></div>
+                        Generating...
+                    {:else}
+                        Generate Symbol Table
+                    {/if}
+                </div>
             </button>
         </div>
     </div>
@@ -951,6 +991,92 @@
 		padding: 1.5rem 1rem;
 		height: auto;
 	}
+
+    .submit-button,
+    .generate-button {
+        padding: 0.6rem 1.5rem;
+        background: #BED2E6;
+        color: #000000;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+        /* FIX: Add loading cursor style */
+        position: relative;
+        overflow: hidden;
+    }
+
+    .button-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .loading-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .submit-button:hover:not(:disabled),
+    .generate-button:hover:not(:disabled) {
+        background: #a8bdd1;
+        transform: translateY(-2px);
+    }
+
+    /* FIX: Enhanced disabled state to handle loading */
+    .submit-button:disabled,
+    .generate-button:disabled,
+    .generate-button.disabled {
+        background: #d6d8db;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+        pointer-events: none;
+    }
+
+    .submit-button:disabled:hover,
+    .generate-button:disabled:hover,
+    .generate-button.disabled:hover {
+        background: #d6d8db;
+        color: #6c757d;
+        transform: none;
+    }
+
+    .submit-button:disabled {
+        cursor: wait;
+        opacity: 0.8;
+    }
+
+    .generate-button:disabled {
+        cursor: wait;
+        opacity: 0.8;
+    }
+
+    /* FIX: Loading spinner color for disabled buttons */
+    .submit-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+    .generate-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
 
     .instructions-section {
 		margin: 1.5rem 0 2rem 0;
@@ -1363,6 +1489,51 @@
 		background: #616e80;
 	}
 
+    :global(html.dark-mode) .submit-button,
+    :global(html.dark-mode) .generate-button {
+        background-color: #001A6E;
+        color: #ffffff;
+    }
+
+    :global(html.dark-mode) .submit-button:hover:not(:disabled),
+    :global(html.dark-mode) .generate-button:hover:not(:disabled) {
+        background-color: #002a8e;
+        transform: translateY(-2px);
+    }
+
+    :global(html.dark-mode) .submit-button:disabled,
+    :global(html.dark-mode) .generate-button:disabled,
+    :global(html.dark-mode) .generate-button.disabled {
+        background: #495057;
+        color: #6c757d;
+        cursor: wait;
+        opacity: 0.8;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .submit-button:disabled:hover,
+    :global(html.dark-mode) .generate-button:disabled:hover,
+    :global(html.dark-mode) .generate-button.disabled:hover {
+        background: #495057;
+        color: #6c757d;
+        transform: none;
+    }
+
+     :global(html.dark-mode) .submit-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+    :global(html.dark-mode) .generate-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+    :global(html.dark-mode) .submit-button .loading-spinner {
+        border-top-color: #ffffff;
+    }
+
+    :global(html.dark-mode) .generate-button .loading-spinner {
+        border-top-color: #ffffff;
+    }
 
 	.default-toggle-wrapper {
 		position: absolute;

@@ -14,6 +14,9 @@
     let translationSuccessful = false;
     let show_default_rules = false;
 
+    let isSubmittingRules = false;
+    let isTranslating = false;
+
     // FIX: Add project change tracking
     let hasInitialized = false;
     let currentProjectName = '';
@@ -232,7 +235,11 @@
 
 		console.log('Submitting translation input:', JSON.stringify(apiPayload, null, 2));
 
+		isSubmittingRules = true;
+
 		try {
+			await new Promise(resolve => setTimeout(resolve, 1000));
+
 			const response = await fetch('http://localhost:8080/api/translating/readRules', {
 				method: 'POST',
 				headers: { 
@@ -249,7 +256,7 @@
 
 			const result = await response.json();
 			AddToast('Translation rules saved successfully! Ready to translate your code', 'success');
-			isSubmitted = true;
+		 isSubmitted = true;
 
 			// Mark as submitted in store
 			markTranslatorSubmitted();
@@ -260,6 +267,8 @@
 		} catch (error: any) {
 			console.error('Rule submission Error:', error);
 			AddToast('Rule submission failed: ' + (error.message || 'Please check your connection and try again'), 'error');
+		} finally {
+			isSubmittingRules = false;
 		}
 	}
 
@@ -284,7 +293,11 @@
 
 		console.log('Requesting final translation from backend...');
 
+        isTranslating = true;
+
 		try {
+			await new Promise(resolve => setTimeout(resolve, 1000));
+
 			const response = await fetch('http://localhost:8080/api/translating/translate', {
 				method: 'POST',
 				headers: { 
@@ -316,6 +329,8 @@
 			// Dispatch a new event for the error
 			dispatch('translationerror', error);
 			AddToast('Translation failed: ' + (error.message || 'Unable to translate code. Please check your rules and try again'), 'error');
+		} finally {
+            isTranslating = false;
 		}
 	}
 
@@ -537,15 +552,38 @@
 		<div class="button-container">
 			<button class="add-rule-btn" on:click={addRule}>+ Add New Rule</button>
 			<div class="action-buttons">
-				<button class="action-btn submit" on:click={handleSubmit}>Submit Rules</button>
+				<!-- FIX: Add loading state to Submit Rules button -->
 				<button 
 					class="action-btn submit" 
-					class:disabled={!isSubmitted}
-					disabled={!isSubmitted}
+					on:click={handleSubmit}
+					disabled={isSubmittingRules}
+				>
+					<div class="button-content">
+						{#if isSubmittingRules}
+							<div class="loading-spinner"></div>
+							Submitting...
+						{:else}
+							Submit Rules
+						{/if}
+					</div>
+				</button>
+				
+				<!-- FIX: Add loading state to Translate Code button -->
+				<button 
+					class="action-btn submit" 
+					class:disabled={!isSubmitted || isTranslating}
+					disabled={!isSubmitted || isTranslating}
 					on:click={handleTranslate}
 					title={isSubmitted ? "Translate code using submitted rules" : "Submit rules first"}
 				>
-					Translate Code
+					<div class="button-content">
+						{#if isTranslating}
+							<div class="loading-spinner"></div>
+							Translating...
+						{:else}
+							Translate Code
+						{/if}
+					</div>
 				</button>
 			</div>
 		</div>
@@ -901,6 +939,8 @@
 		font-weight: 500;
 		cursor: pointer;
 		transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+		position: relative;
+        overflow: hidden;
 	}
 
 	.submit:hover:not(:disabled) {
@@ -932,6 +972,36 @@
         display: flex;
         gap: 0.5rem;
         align-items: center;
+    }
+
+	.button-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+	.loading-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+	.submit:hover:not(:disabled) {
+        background: #a8bdd1;
+        transform: translateY(-2px);
     }
 
 	.option-btn {
@@ -993,6 +1063,32 @@
     .clear-toggle-btn:hover {
         background: #fff5f5;
         border-color: #ef4444;
+    }
+
+	.submit:disabled,
+    .translate:disabled,
+    .translate.disabled {
+        background: #d6d8db;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+        pointer-events: none;
+    }
+
+    .submit:disabled:hover,
+    .translate:disabled:hover,
+    .translate.disabled:hover {
+        background: #d6d8db;
+        color: #6c757d;
+        transform: none;
+    }
+	.submit:disabled {
+        cursor: wait;
+        opacity: 0.8;
+    }
+	.submit:disabled .loading-spinner {
+        border-top-color: #6c757d;
     }
 
 	/* --- Dark Mode --- */
@@ -1088,9 +1184,26 @@
 		background-color: #002a8e;
 	}
 
-	:global(html.dark-mode) .submit:disabled {
-		background-color: #2d3748;
-		color: #9ca3af;
-		border-color: #4a5568;
-	}
+	 :global(html.dark-mode) .submit:disabled {
+        background-color: #2d3748;
+        color: #9ca3af;
+        border-color: #4a5568;
+        cursor: wait;
+        opacity: 0.8;
+    }
+
+    :global(html.dark-mode) .submit:disabled:hover {
+        background-color: #2d3748;
+        color: #9ca3af;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .submit:disabled .loading-spinner {
+        border-top-color: #9ca3af;
+    }
+
+    :global(html.dark-mode) .submit .loading-spinner {
+        border-top-color: #ffffff;
+    }
+
 </style>
