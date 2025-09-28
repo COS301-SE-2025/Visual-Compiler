@@ -944,6 +944,16 @@
 		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
 	}
 
+    :global(html.dark-mode) .example-btn {
+        background: #001A6E;
+        color: #ffffff;
+    }
+
+    :global(html.dark-mode) .example-btn:hover {
+        background: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
+    }
+
 	.option-btn:hover {
 		transform: translateY(-2px);
 		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);

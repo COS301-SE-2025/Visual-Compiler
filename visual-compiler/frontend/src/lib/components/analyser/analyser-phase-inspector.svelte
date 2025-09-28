@@ -1459,9 +1459,14 @@
 		transform: none;
 	}
 	:global(html.dark-mode) .example-btn {
-		background: #BED2E6;
-		color: black;
-	}
+        background: #001A6E;
+        color: #ffffff;
+    }
+
+    :global(html.dark-mode) .example-btn:hover {
+        background: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
+    }
 
     :global(html.dark-mode) .instructions-section {
 		background: #2d3748;
