@@ -10,33 +10,48 @@
 		{
 			question: 'How do I add a new node to the canvas?',
 			answer:
-				'Simply click on one of the blocks in the "Blocks" panel on the left. This will add a new node of that type to the workspace.'
+				'Click on a block in the "Blocks" panel on the left. This will add a new node of that type to your workspace.'
 		},
 		{
 			question: 'How do I move a node?',
 			answer:
-				'For the smoothest experience, click a node once to select it (it will be highlighted), and then click and drag it to a new position.'
+				'Click a node to select it (it will be highlighted), then drag it to a new position.'
 		},
 		{
 			question: 'How do I connect two nodes?',
 			answer:
-				'Click and hold on an output anchor (the grey circle on the right side of a node) and drag the line to an input anchor (the circle on the left side of another node).'
-		},
-		{
-			question: 'How do I delete a node?',
-			answer:
-				'To delete a node, right-click on it to open its configuration modal, where you will find a delete option. To delete a connection, click and drag one of its connection points away from its anchor and release it onto the empty canvas.'
+				'Click and hold on an output anchor (the grey circle on the right of a node) and drag to an input anchor (the circle on the left of another node).'
 		},
 		{
 			question: 'How do I delete a connection?',
 			answer:
-				'To delete a connection, click and drag one of its connection points away from its anchor and release it onto the empty canvas.'
+				'Click and drag one of its connection points away from its anchor and release it onto the empty canvas.'
 		},
 		{
-			question: 'Why can’t I configure a node',
+			question: 'How do I import code from a saved project?',
 			answer:
-				'You must first complete the previous phases of the compiler before you can configure the subsequent phases.'
-		}
+				'Use the "Import from saved project" dropdown in the code input area.'
+		},
+		{
+			question: 'How do I upload code from a file?',
+			answer:
+				'Click the "Upload File" button in the code input area and select a .txt file from your computer.'
+		},
+		{
+			question: 'How do I use the AI Assistant?',
+			answer:
+				'Click the purple AI button in the bottom-right corner. You can ask questions about compiler concepts or generate input for any phase.'
+		},
+		{
+			question: 'Why can’t I enter a node or phase?',
+			answer:
+				'You must complete the previous phases of the compiler before you can enter the next phase.'
+		},
+		{
+			question: 'How do I get a code example?',
+			answer:
+				'Click the "Show Example" button in the code input area to insert a sample code snippet.'
+		},
 	];
 
 	function toggleQuestion(index: number) {

@@ -28,8 +28,8 @@
 	// Handles logout for both regular users and guests, cleaning up guest projects if necessary.
 	async function logout() {
 		// Check if user is a guest and clean up their project
-		const userId = localStorage.getItem('user_id') || '68d32088d29390ec2c897f35';
-		const guestProjectName = localStorage.getItem('guest_project_name');
+		const userId = sessionStorage.getItem('user_id') || '68d32088d29390ec2c897f35';
+		const guestProjectName = sessionStorage.getItem('guest_project_name');
 		const guestId = '68d32088d29390ec2c897f35';
 		
 		if (userId === guestId && guestProjectName) {
@@ -41,12 +41,11 @@
 				console.error(`Error deleting guest project on logout: ${guestProjectName}`, error);
 			}
 			
-			// Clear guest project data from localStorage
-			localStorage.removeItem('guest_project_name');
+			// Clear guest project data from sessionStorage
+			sessionStorage.removeItem('guest_project_name');
 		}
 		
 		// Clear all user data
-		localStorage.clear();
 		sessionStorage.clear();
 		
 		// Navigate to auth page
@@ -68,7 +67,7 @@
 	}
 
 	onMount(() => {
-		is_admin = localStorage.getItem('is_admin') === 'true';
+		is_admin = sessionStorage.getItem('is_admin') === 'true';
 		
 		// Check if user is a guest
 		const accessToken = sessionStorage.getItem('access_token');

@@ -51,8 +51,8 @@ const sessionStorageMock = (() => {
 	};
 })();
 
-// Mock localStorage
-const localStorageMock = (() => {
+// Mock sessionStorage
+const sessionStorageMock = (() => {
 	let store: { [key: string]: string } = {};
 	return {
 		getItem(key: string) {
@@ -71,8 +71,8 @@ Object.defineProperty(window, 'sessionStorage', {
 	value: sessionStorageMock
 });
 
-Object.defineProperty(window, 'localStorage', {
-	value: localStorageMock
+Object.defineProperty(window, 'sessionStorage', {
+	value: sessionStorageMock
 });
 
 describe('CodeInput Component', () => {
@@ -80,7 +80,7 @@ describe('CodeInput Component', () => {
 		// Clear mocks and set tokens/user data before each test
 		vi.clearAllMocks();
 		window.sessionStorage.setItem('access_token', 'test-token-123');
-		window.localStorage.setItem('user_id', 'test-user-123');
+		window.sessionStorage.setItem('user_id', 'test-user-123');
 	});
 
 	it('TestEmptyState_Success: Renders with the confirm button disabled', () => {

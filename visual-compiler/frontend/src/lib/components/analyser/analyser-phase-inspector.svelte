@@ -237,6 +237,38 @@
         rules_submitted = false;
     }
 
+    // ADD: Clear all inputs function
+    function clearAllInputs() {
+        // Reset scope rules
+        scope_rules = [{ id: 0, Start: '', End: '' }];
+        next_scope_id = 1;
+        submitted_scope_rules = [];
+
+        // Reset type rules  
+        type_rules = [{ id: 0, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
+        next_type_id = 1;
+        submitted_type_rules = [];
+
+        // Reset grammar rules
+        grammar_rules = {
+            VariableRule: '',
+            TypeRule: '',
+            FunctionRule: '',
+            ParameterRule: '',
+            AssignmentRule: '',
+            OperatorRule: '',
+            TermRule: ''
+        };
+        submitted_grammar_rules = { ...grammar_rules };
+
+        // Reset states
+        rules_submitted = false;
+        show_default_rules = false;
+        show_symbol_table = false;
+        
+        AddToast('All analyser inputs cleared successfully!', 'success');
+    }
+
     async function handleGenerate() {
     try {
         const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
@@ -564,16 +596,32 @@
         <div class="analyser-box">
             <div class="analyser-box-header">
                 <h2 class="heading2">Scope Rules</h2>
-                <button
-                    class="default-toggle-btn"
-                    class:selected={show_default_rules}
-                    on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
-                    type="button"
-                    aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-                    title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-                >
-                    <span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
-                </button>
+
+                <div class="button-group">
+                    <!-- Clear button first (to the left) -->
+                    <button
+                        class="clear-toggle-btn"
+                        on:click={clearAllInputs}
+                        type="button"
+                        aria-label="Clear all inputs"
+                        title="Clear all inputs"
+                    >
+                        <span class="icon">🗑️</span>
+                    </button>
+                    
+                    <!-- Default button second (to the right) -->
+                    <button
+                        class="default-toggle-btn"
+                        class:selected={show_default_rules}
+                        on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
+                        type="button"
+                        aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+                        title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+                    >
+                        <span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
+                    </button>
+                </div>
+
             </div>
             <div class="rules-list">
                 {#each scope_rules as rule, i (rule.id)}
@@ -739,25 +787,24 @@
         </div>
     </div>
     <div class="actions-container">
-        {#if !rules_submitted}
+        <div class="button-container">
             <button class="submit-button" on:click={handleSubmit} disabled={!overallAllRowsComplete}>
-                Submit All Rules
+                Submit Rules
             </button>
-        {:else}
-            <div class="generate-wrapper" transition:slide|local={{ duration: 250 }}>
-                <button 
-                    class="generate-button" 
-                    on:click={handleGenerate} 
-                    disabled={is_loading}
-                >
-                    {#if is_loading}
-                        Generating...
-                    {:else}
-                        Generate Symbol Table
-                    {/if}
-                </button>
-            </div>
-        {/if}
+            <button 
+                class="submit-button generate-button" 
+                class:disabled={!rules_submitted}
+                disabled={!rules_submitted}
+                on:click={handleGenerate}
+                title={rules_submitted ? "Generate symbol table from submitted rules" : "Submit rules first"}
+            >
+                {#if is_loading}
+                    Generating...
+                {:else}
+                    Generate Symbol Table
+                {/if}
+            </button>
+        </div>
     </div>
 </div>
 
@@ -775,11 +822,6 @@
 		flex-direction: column;
 		padding: 1.5rem 1rem;
 		height: auto;
-	}
-
-	.header {
-		position: relative;
-		flex-shrink: 0; /* Prevents header from shrinking */
 	}
 
     .instructions-section {
@@ -817,7 +859,6 @@
         overflow-y: visible;
         padding-right: 0;
         margin-right: 0;
-        padding-bottom: 1rem;
 	}
 
 	/* Rules List (for Scope & Type rules) */
@@ -891,6 +932,44 @@
 		padding-right: 0.5rem;
 	}
 
+    .option-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 100%;
+		max-width: 150px;
+		justify-content: center;
+		margin-left: 1rem;
+	}
+
+	.example-btn {
+		background: linear-gradient(135deg, #1e40af, #3b82f6);
+	}
+
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+	}
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+	}
+
+
+
 	/* Icon Button Styles (existing) */
 	.icon-button {
 		display: flex;
@@ -946,8 +1025,15 @@
 		gap: 0.75rem;
 		flex-shrink: 0; /* Prevents action container from shrinking */
 	}
-	.add-button-wrapper,
-	.generate-wrapper {
+
+	.button-container {
+		display: flex;
+		justify-content: center;
+		gap: 1rem;
+		margin-top: 1rem;
+	}
+
+	.add-button-wrapper {
 		display: flex;
 		justify-content: center;
 	}
@@ -972,62 +1058,66 @@
 	}
 	.submit-button,
 	.generate-button {
-		width: 100%;
-		padding: 0.7rem 1rem;
-		font-size: 0.9rem;
-		font-weight: 600;
+		padding: 0.6rem 1.5rem;
+		background: #BED2E6;
+		color: #000000;
 		border: none;
 		border-radius: 6px;
+		font-size: 0.9rem;
+		font-weight: 500;
 		cursor: pointer;
-		transition:
-			background-color 0.2s ease,
-			opacity 0.2s ease;
+		transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 	}
-	.submit-button {
-		background-color: #BED2E6;
-		color: #000000;
+
+	.submit-button:hover:not(:disabled),
+	.generate-button:hover:not(:disabled) {
+		background: #a8bdd1;
+		transform: translateY(-2px);
 	}
-	.submit-button:hover:not(:disabled) {
-		background-color: #a8bdd1;
-        transform: translateY(-2px);
-	}
-	.submit-button:disabled {
-		opacity: 0.5;
+
+	.submit-button:disabled,
+	.generate-button:disabled,
+	.generate-button.disabled {
+		background: #d6d8db;
+		color: #6c757d;
 		cursor: not-allowed;
-	}
-	.generate-button {
-		background-color: #6c757d;
-		color: white;
-	}
-	.generate-button:hover {
-		background-color: #565e64;
+		opacity: 0.6;
+		transform: none;
 	}
 
-	.reset-wrapper {
-		position: absolute;
-		top: 0.5rem;
-		right: 0.5rem;
-		z-index: 10;
+	.submit-button:disabled:hover,
+	.generate-button:disabled:hover,
+	.generate-button.disabled:hover {
+		background: #d6d8db;
+		color: #6c757d;
+		transform: none;
 	}
 
-	.reset-button {
-		background: none;
-		border: none;
-		padding: 0;
-		margin: 0;
-		cursor: pointer;
-		color: #7a8aa3;
-		transition: color 0.2s ease;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 32px;
-		height: 32px;
-	}
+    .button-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
 
-	.reset-button:hover {
-		color: #001a6e;
-	}
+    .clear-toggle-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #7a8aa3;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.2rem;
+        width: 2.2rem;
+        border-radius: 50%;
+    }
+
+    .clear-toggle-btn:hover {
+        background: #fff5f5;
+        border-color: #7a8aa3;
+    }
 
 	/* --- DARK MODE STYLES --- */
 	:global(html.dark-mode) .analyser-heading,
@@ -1089,14 +1179,32 @@
 		background-color: #001A6E;
 		color: #ffffff;
 	}
-    :global(html.dark-mode) .submit-button:hover:not(:disabled) {
-        background-color: #002a8e;
-    }
-	:global(html.dark-mode) .reset-button {
-		color: #9ca3af;
+
+	:global(html.dark-mode) .submit-button:hover:not(:disabled),
+	:global(html.dark-mode) .generate-button:hover:not(:disabled) {
+		background-color: #002a8e;
+		transform: translateY(-2px);
 	}
-	:global(html.dark-mode) .reset-button:hover {
-		color: #e0e8f0;
+
+	:global(html.dark-mode) .submit-button:disabled,
+	:global(html.dark-mode) .generate-button:disabled,
+	:global(html.dark-mode) .generate-button.disabled {
+		background: #495057;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
+	}
+
+	:global(html.dark-mode) .submit-button:disabled:hover,
+	:global(html.dark-mode) .generate-button:disabled:hover,
+	:global(html.dark-mode) .generate-button.disabled:hover {
+		background: #495057;
+		color: #6c757d;
+		transform: none;
+	}
+	:global(html.dark-mode) .example-btn {
+		background: linear-gradient(135deg, #1d4ed8, #2563eb);
 	}
 
 	::-webkit-scrollbar {
@@ -1125,6 +1233,7 @@
 	:global(html.dark-mode) ::-webkit-scrollbar-thumb:hover {
 		background: #616e80;
 	}
+
 
 	.default-toggle-wrapper {
 		position: absolute;
@@ -1158,11 +1267,14 @@
 		background: #f5f8fd;
 		border-color: #7da2e3;
 	}
+
+    
 	.icon {
 		font-size: 1.3rem;
 		line-height: 1;
 		pointer-events: none;
 	}
+
 
 	.analyser-heading {
 		color: #001a6e;
@@ -1222,5 +1334,33 @@
 	:global(html.dark-mode) .analyser-box,
 	:global(html.dark-mode) .source-display {
 		background: #2d3748;
+	}
+
+    :global(html.dark-mode) .clear-toggle-btn {
+        background: transparent;
+		color: #cbd5e1;
+		border-color: #4a5568;
+    }
+
+    :global(html.dark-mode) .clear-toggle-btn:hover {
+        background: rgba(45, 55, 72, 0.5);
+		border-color: #63b3ed;
+    }
+
+    :global(html.dark-mode) .default-toggle-btn {
+		background: transparent;
+		color: #cbd5e1;
+		border-color: #4a5568;
+	}
+
+	:global(html.dark-mode) .default-toggle-btn.selected {
+		background: #2d3748;
+		border-color: #63b3ed;
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .default-toggle-btn:hover {
+		background: rgba(45, 55, 72, 0.5);
+		border-color: #63b3ed;
 	}
 </style>

@@ -4,27 +4,22 @@
     import { get } from 'svelte/store';
     import { lexerState } from '$lib/stores/lexer';
     import { onMount, createEventDispatcher, onDestroy } from 'svelte';
+    import { parserState, updateParserInputs, markParserSubmitted } from '$lib/stores/parser';
 
     export let source_code = '';
 
     const dispatch = createEventDispatcher();
 
     // --- DATA STRUCTURE for CFG ---
-    interface Translation {
-        id: number;
-        value: string;
-    }
-
     interface Rule {
         id: number;
         nonTerminal: string;
-        translations: Translation[];
+        productions: string; // Now a single comma-separated string
     }
 
     // --- STATE MANAGEMENT ---
     let grammar_rules: Rule[] = [];
     let rule_id_counter = 0;
-    let translation_id_counter = 0;
     let variables_string = '';
     let terminals_string = '';
     let show_default_grammar = false;
@@ -37,32 +32,27 @@
     let user_variables_string = '';
     let user_terminals_string = '';
     let user_rule_id_counter = 0;
-    let user_translation_id_counter = 0;
 
     // --- DEFAULT GRAMMAR DATA ---
     const DEFAULT_GRAMMAR = {
         variables: 'PROGRAM, STATEMENT, FUNCTION, ITERATION, DECLARATION, ELEMENT, TYPE, EXPRESSION, FUNCTION_DEFINITION, FUNCTION_BLOCK, RETURN, ITERATION_DEFINITION, ITERATION_BLOCK, PARAMETER, PRINT',
         terminals: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, DELIMITER, OPEN_BRACKET, CLOSE_BRACKET, OPEN_SCOPE, CLOSE_SCOPE, CONTROL',
         rules: [
-            { nonTerminal: 'PROGRAM', translations: ['STATEMENT', 'FUNCTION', 'STATEMENT', 'ITERATION'] },
-            { nonTerminal: 'STATEMENT', translations: ['DECLARATION', 'DELIMITER'] },
-            { nonTerminal: 'DECLARATION', translations: ['TYPE', 'IDENTIFIER', 'ASSIGNMENT', 'ELEMENT'] },
-            { nonTerminal: 'DECLARATION', translations: ['IDENTIFIER', 'ASSIGNMENT', 'EXPRESSION'] },
-            { nonTerminal: 'DECLARATION', translations: ['IDENTIFIER', 'ASSIGNMENT', 'IDENTIFIER', 'PARAMETER'] },
-            { nonTerminal: 'TYPE', translations: ['KEYWORD'] },
-            { nonTerminal: 'EXPRESSION', translations: ['ELEMENT', 'OPERATOR', 'ELEMENT'] },
-            { nonTerminal: 'ELEMENT', translations: ['INTEGER'] },
-            { nonTerminal: 'ELEMENT', translations: ['IDENTIFIER'] },
-            { nonTerminal: 'FUNCTION', translations: ['FUNCTION_DEFINITION', 'FUNCTION_BLOCK'] },
-            { nonTerminal: 'FUNCTION_DEFINITION', translations: ['TYPE', 'IDENTIFIER', 'PARAMETER'] },
-            { nonTerminal: 'FUNCTION_BLOCK', translations: ['OPEN_SCOPE', 'STATEMENT', 'RETURN', 'CLOSE_SCOPE'] },
-            { nonTerminal: 'RETURN', translations: ['KEYWORD', 'ELEMENT', 'DELIMITER'] },
-            { nonTerminal: 'ITERATION', translations: ['ITERATION_DEFINITION', 'ITERATION_BLOCK'] },
-            { nonTerminal: 'ITERATION_DEFINITION', translations: ['CONTROL', 'IDENTIFIER', 'CONTROL', 'PARAMETER'] },
-            { nonTerminal: 'ITERATION_BLOCK', translations: ['OPEN_SCOPE', 'STATEMENT', 'PRINT', 'CLOSE_SCOPE'] },
-            { nonTerminal: 'PARAMETER', translations: ['OPEN_BRACKET', 'ELEMENT', 'CLOSE_BRACKET'] },
-            { nonTerminal: 'PARAMETER', translations: ['OPEN_BRACKET', 'TYPE', 'IDENTIFIER', 'CLOSE_BRACKET'] },
-            { nonTerminal: 'PRINT', translations: ['KEYWORD', 'OPEN_BRACKET', 'ELEMENT', 'CLOSE_BRACKET', 'DELIMITER'] }
+            { nonTerminal: 'PROGRAM', productions: 'STATEMENT FUNCTION STATEMENT ITERATION' },
+            { nonTerminal: 'STATEMENT', productions: 'DECLARATION DELIMITER' },
+            { nonTerminal: 'DECLARATION', productions: 'TYPE IDENTIFIER ASSIGNMENT ELEMENT, IDENTIFIER ASSIGNMENT EXPRESSION, IDENTIFIER ASSIGNMENT IDENTIFIER PARAMETER' },
+            { nonTerminal: 'TYPE', productions: 'KEYWORD' },
+            { nonTerminal: 'EXPRESSION', productions: 'ELEMENT OPERATOR ELEMENT' },
+            { nonTerminal: 'ELEMENT', productions: 'INTEGER, IDENTIFIER' },
+            { nonTerminal: 'FUNCTION', productions: 'FUNCTION_DEFINITION FUNCTION_BLOCK' },
+            { nonTerminal: 'FUNCTION_DEFINITION', productions: 'TYPE IDENTIFIER PARAMETER' },
+            { nonTerminal: 'FUNCTION_BLOCK', productions: 'OPEN_SCOPE STATEMENT RETURN CLOSE_SCOPE' },
+            { nonTerminal: 'RETURN', productions: 'KEYWORD ELEMENT DELIMITER' },
+            { nonTerminal: 'ITERATION', productions: 'ITERATION_DEFINITION ITERATION_BLOCK' },
+            { nonTerminal: 'ITERATION_DEFINITION', productions: 'CONTROL IDENTIFIER CONTROL PARAMETER' },
+            { nonTerminal: 'ITERATION_BLOCK', productions: 'OPEN_SCOPE STATEMENT PRINT CLOSE_SCOPE' },
+            { nonTerminal: 'PARAMETER', productions: 'OPEN_BRACKET ELEMENT CLOSE_BRACKET, OPEN_BRACKET TYPE IDENTIFIER CLOSE_BRACKET' },
+            { nonTerminal: 'PRINT', productions: 'KEYWORD OPEN_BRACKET ELEMENT CLOSE_BRACKET DELIMITER' }
         ]
     };
 
@@ -95,31 +85,19 @@
                 
                 // Handle rules
                 if (grammar.rules && Array.isArray(grammar.rules)) {
-                    grammar_rules = grammar.rules.map((rule, index) => {
+                    grammar_rules = grammar.rules.map((rule) => {
                         rule_id_counter++;
                         
-                        // Each rule should have exactly one translation per output array
-                        const translations = [];
+                        // Convert output array to comma-separated string
+                        let productions_string = '';
                         if (Array.isArray(rule.output) && rule.output.length > 0) {
-                            // Join the output array into a single string for the translation
-                            translation_id_counter++;
-                            translations.push({
-                                id: translation_id_counter,
-                                value: rule.output.join(' ')
-                            });
-                        } else {
-                            // Fallback: empty translation
-                            translation_id_counter++;
-                            translations.push({
-                                id: translation_id_counter,
-                                value: ''
-                            });
+                            productions_string = rule.output.join(' ');
                         }
                         
                         return {
                             id: rule_id_counter,
                             nonTerminal: rule.input || '',
-                            translations: translations
+                            productions: productions_string
                         };
                     });
                 }
@@ -133,7 +111,7 @@
                 is_grammar_submitted = false;
                 
                 // Force reactivity update
-                grammar_rules = grammar_rules;
+                grammar_rules = [...grammar_rules];
                 variables_string = variables_string;
                 terminals_string = terminals_string;
                 
@@ -160,15 +138,42 @@
         user_variables_string = variables_string;
         user_terminals_string = terminals_string;
         user_rule_id_counter = rule_id_counter;
-        user_translation_id_counter = translation_id_counter;
     }
 
     // handleGrammarChange
+    let hasInitialized = false;
+
+    $: if ($parserState && !hasInitialized) {
+        grammar_rules = [...$parserState.grammar_rules];
+        variables_string = $parserState.variables_string;
+        terminals_string = $parserState.terminals_string;
+        rule_id_counter = $parserState.rule_id_counter;
+        translation_id_counter = $parserState.translation_id_counter;
+        show_default_grammar = $parserState.show_default_grammar;
+        is_grammar_submitted = $parserState.is_grammar_submitted;
+        
+        hasInitialized = true;
+    }
+
     function handleGrammarChange() {
         is_grammar_submitted = false;
         
+        // Save current state as user input when not showing default
         if (!show_default_grammar) {
             saveCurrentAsUserInput();
+        }
+
+        // Update the store
+        if (hasInitialized) {
+            updateParserInputs({
+                grammar_rules: [...grammar_rules],
+                variables_string,
+                terminals_string,
+                rule_id_counter,
+                translation_id_counter,
+                show_default_grammar,
+                is_grammar_submitted: false
+            });
         }
     }
 
@@ -176,31 +181,17 @@
     function addNewRule() {
         handleGrammarChange();
         rule_id_counter++;
-        translation_id_counter++;
         grammar_rules = [
             ...grammar_rules,
             {
                 id: rule_id_counter,
                 nonTerminal: '',
-                translations: [{ id: translation_id_counter, value: '' }]
+                productions: ''
             }
         ];
     }
 
-    // addTranslation
-    function addTranslation(rule_id: number) {
-        handleGrammarChange();
-        translation_id_counter++;
-        grammar_rules = grammar_rules.map((rule) => {
-            if (rule.id === rule_id) {
-                return {
-                    ...rule,
-                    translations: [...rule.translations, { id: translation_id_counter, value: '' }]
-                };
-            }
-            return rule;
-        });
-    }
+
 
     // insertDefaultGrammar
     function insertDefaultGrammar() {
@@ -215,24 +206,16 @@
         terminals_string = DEFAULT_GRAMMAR.terminals;
 
         let new_rule_id = 0;
-        let new_translation_id = 0;
 
         grammar_rules = DEFAULT_GRAMMAR.rules.map((r) => {
             new_rule_id++;
             return {
                 id: new_rule_id,
                 nonTerminal: r.nonTerminal,
-                translations: r.translations.map((t) => {
-                    new_translation_id++;
-                    return {
-                        id: new_translation_id,
-                        value: t
-                    };
-                })
+                productions: r.productions
             };
         });
         rule_id_counter = new_rule_id;
-        translation_id_counter = new_translation_id;
     }
 
     // removeDefaultGrammar
@@ -245,12 +228,51 @@
         variables_string = user_variables_string;
         terminals_string = user_terminals_string;
         rule_id_counter = user_rule_id_counter;
-        translation_id_counter = user_translation_id_counter;
         
-        // If no user data was saved (fresh start), create empty rule
         if (grammar_rules.length === 0) {
             addNewRule();
         }
+    }
+
+    function clearAllInputs() {
+        // Reset counters first
+        rule_id_counter = 1;
+        translation_id_counter = 1;
+        
+        // Create a completely new rule structure
+        grammar_rules = [{
+            id: 1,
+            nonTerminal: '',
+            translations: [{ id: 1, value: '' }]
+        }];
+        
+        // Reset variables and terminals
+        variables_string = '';
+        terminals_string = '';
+        
+        // Reset user backup data
+        user_grammar_rules = [];
+        user_variables_string = '';
+        user_terminals_string = '';
+        user_rule_id_counter = 1;
+        user_translation_id_counter = 1;
+        
+        // Reset states
+        show_default_grammar = false;
+        is_grammar_submitted = false;
+        
+        // Update store
+        updateParserInputs({
+            grammar_rules: [...grammar_rules],
+            variables_string: '',
+            terminals_string: '',
+            rule_id_counter: 1,
+            translation_id_counter: 1,
+            show_default_grammar: false,
+            is_grammar_submitted: false
+        });
+        
+        AddToast('All grammar inputs cleared successfully!', 'success');
     }
 
     // handleSubmitGrammar
@@ -315,16 +337,17 @@
                 return;
             }
 
-            const has_at_least_one_production = rule.translations.some((t) => t.value.trim() !== '');
+            const has_at_least_one_production = rule.productions.trim() !== '';
             if (!has_at_least_one_production) {
                 AddToast(`Empty production: Rule for '${non_terminal}' needs at least one production on the right-hand side`, 'error');
                 return;
             }
 
-            const output_array = rule.translations
-                .flatMap((t) => t.value.trim().split(' '))
-                .filter((v) => v);
-            for (const symbol of output_array) {
+            // Parse productions: split by comma first, then by spaces
+            const production_alternatives = rule.productions.split(',').map(p => p.trim()).filter(p => p);
+            const all_symbols = production_alternatives.flatMap(prod => prod.split(' ').map(s => s.trim()).filter(s => s));
+            
+            for (const symbol of all_symbols) {
                 if (symbol && !defined_symbols.has(symbol)) {
                     AddToast(
                         `Invalid symbol '${symbol}' in rule for '${non_terminal}'. It must be defined as a Variable or Terminal.`,
@@ -336,12 +359,34 @@
         }
 
         const formatted_rules = cleaned_rules
-            .map((rule) => ({
-                input: rule.nonTerminal.trim(),
-                output: rule.translations
-                    .flatMap((t) => t.value.trim().split(' '))
-                    .filter((v) => v)
-            }))
+            .flatMap((rule) => {
+                // Split by comma to get separate production alternatives
+                const productions = rule.productions.split(',').map(p => p.trim()).filter(p => p !== '');
+                
+                // If no productions, create one with empty string (epsilon production)
+                if (productions.length === 0) {
+                    return [{
+                        input: rule.nonTerminal.trim(),
+                        output: [""]
+                    }];
+                }
+                
+                // Create a separate rule for each production alternative
+                return productions.map(production => {
+                    // Handle empty production (epsilon)
+                    if (production.trim() === '') {
+                        return {
+                            input: rule.nonTerminal.trim(),
+                            output: [""]
+                        };
+                    }
+                    
+                    return {
+                        input: rule.nonTerminal.trim(),
+                        output: production.split(' ').map(s => s.trim()).filter(s => s)
+                    };
+                });
+            })
             .filter((rule) => rule.input && rule.output.length > 0);
 
         const final_json_output = {
@@ -351,6 +396,8 @@
             start: start_variable,
             rules: formatted_rules
         };
+
+        console.log('Sending grammar data to backend:', JSON.stringify(final_json_output, null, 2));
 
         try {
             const response = await fetch('http://localhost:8080/api/parsing/grammar', {
@@ -369,7 +416,11 @@
 
             const result = await response.json();
             AddToast('Grammar saved successfully! Your parsing rules are ready for syntax analysis', 'success');
+            
+            // Mark as submitted in store
+            markParserSubmitted();
             is_grammar_submitted = true;
+            
         } catch (error) {
             console.error('Submit Grammar Error:', error);
             AddToast('Grammar save failed: ' + String(error), 'error');
@@ -506,10 +557,7 @@
                 return {
                     id: rule_id_counter,
                     nonTerminal: rule.input || '',
-                    translations: Array.isArray(rule.output) ? rule.output.map((output, tIndex) => ({
-                        id: ++translation_id_counter,
-                        value: output
-                    })) : []
+                    productions: Array.isArray(rule.output) ? rule.output.join(' ') : ''
                 };
             });
 
@@ -541,16 +589,32 @@
     <div class="grammar-editor">
         <div class="grammar-header">
             <h3>Context-Free Grammar</h3>
-            <button
-                class="default-toggle-btn"
-                class:selected={show_default_grammar}
-                on:click={show_default_grammar ? removeDefaultGrammar : insertDefaultGrammar}
-                type="button"
-                aria-label={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
-                title={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
-            >
-                <span class="icon">{show_default_grammar ? '🧹' : '🪄'}</span>
-            </button>
+
+            <div class="button-group">
+                <!-- Clear button first (to the left) -->
+                <button
+                    class="clear-toggle-btn"
+                    on:click={clearAllInputs}
+                    type="button"
+                    aria-label="Clear all inputs"
+                    title="Clear all inputs"
+                >
+                    <span class="icon">🗑️</span>
+                </button>
+                
+                <!-- Default button second (to the right) -->
+                <button
+                    class="default-toggle-btn"
+                    class:selected={show_default_grammar}
+                    on:click={show_default_grammar ? removeDefaultGrammar : insertDefaultGrammar}
+                    type="button"
+                    aria-label={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
+                    title={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
+                >
+                    <span class="icon">{show_default_grammar ? '🧹' : '🪄'}</span>
+                </button>
+            </div>
+
         </div>
 
         <div class="top-inputs">
@@ -576,15 +640,13 @@
             </div>
         </div>
 
+        <div class="start-label-container">
+            <span class="start-label">Start</span>
+        </div>
+
         <div class="rules-container">
             {#each grammar_rules as rule, i (rule.id)}
                 <div class="rule-row">
-                    <div class="rule-label">
-                        {#if i === 0}
-                            <span class="start-label">Start</span>
-                        {/if}
-                    </div>
-
                     <div class="rule-inputs">
                         <input
                             type="text"
@@ -594,25 +656,14 @@
                             on:input={handleGrammarChange}
                         />
                         <span class="arrow">→</span>
-                        <div class="translations-container">
-                            {#each rule.translations as translation (translation.id)}
-                                <div class="translation-wrapper">
-                                    <input
-                                        type="text"
-                                        class="translation-input"
-                                        placeholder="RHS"
-                                        bind:value={translation.value}
-                                        on:input={handleGrammarChange}
-                                    />
-                                </div>
-                            {/each}
-                            <button
-                                class="add-translation-btn"
-                                title="Add translation"
-                                on:click={() => addTranslation(rule.id)}
-                            >
-                                +
-                            </button>
+                        <div class="productions-container">
+                            <textarea
+                                class="productions-textarea"
+                                placeholder="TYPE IDENTIFIER, KEYWORD ELEMENT"
+                                bind:value={rule.productions}
+                                on:input={handleGrammarChange}
+                                rows="2"
+                            ></textarea>
                         </div>
                     </div>
                 </div>
@@ -623,9 +674,15 @@
 
     <div class="button-container">
         <button class="submit-button" on:click={handleSubmitGrammar}>Submit Grammar</button>
-        {#if is_grammar_submitted}
-            <button class="submit-button" on:click={generateSyntaxTree}>Generate Syntax Tree</button>
-        {/if}
+        <button 
+            class="submit-button generate-button" 
+            class:disabled={!is_grammar_submitted}
+            disabled={!is_grammar_submitted}
+            on:click={generateSyntaxTree}
+            title={is_grammar_submitted ? "Generate syntax tree from submitted grammar" : "Submit grammar first"}
+        >
+            Generate Syntax Tree
+        </button>
     </div>
 </div>
 
@@ -708,38 +765,43 @@
         color: #001a6e;
         font-family: 'Times New Roman';
     }
-    .default-toggle-btn {
-        background: white;
-        border: 2px solid #e5e7eb;
-        color: #001a6e;
-        font-size: 1.2rem;
-        cursor: pointer;
-        transition:
-            background 0.2s,
-            border-color 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 2.2rem;
-        width: 2.2rem;
-        border-radius: 50%;
-    }
-    .default-toggle-btn.selected {
-        background: #d0e2ff;
-        border-color: #003399;
-        box-shadow: 0 0 0 2px rgba(0, 51, 153, 0.3);
-        font-weight: bold;
-        transform: scale(1.05);
-    }
-    .default-toggle-btn:hover {
-        background: #f5f8fd;
-        border-color: #7da2e3;
-    }
-    .icon {
-        font-size: 1.3rem;
-        line-height: 1;
-        pointer-events: none;
-    }
+    .option-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 100%;
+		max-width: 150px;
+		justify-content: center;
+		margin-left: 1rem;
+	}
+
+	.example-btn {
+		background: linear-gradient(135deg, #1e40af, #3b82f6);
+	}
+
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+	}
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+	}
+
+	
 
     .top-inputs {
         display: flex;
@@ -776,29 +838,32 @@
         flex-direction: column;
         gap: 1rem;
     }
+
+    .start-label-container {
+        margin-bottom: 0.5rem;
+        padding-left: 0.25rem;
+    }
+
     .rule-row {
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
-    .rule-label {
-        width: 60px;
-        flex-shrink: 0;
-        text-align: right;
-        padding-right: 0.75rem;
-    }
+    
     .start-label {
         font-weight: bold;
         color: #001a6e;
         font-family: monospace;
         font-size: 1rem;
     }
+    
     .rule-inputs {
         display: flex;
         align-items: center;
         gap: 0.75rem;
         flex-grow: 1;
         overflow: hidden;
+        width: 100%;
     }
     .non-terminal-input {
         flex: 0 0 120px;
@@ -820,49 +885,32 @@
         color: #555;
         font-weight: bold;
     }
-    .translations-container {
+    .productions-container {
         display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        align-items: flex-start;
         flex: 1;
-        overflow-x: auto;
-        padding-bottom: 0.5rem;
+        overflow: hidden;
     }
-    .translation-wrapper {
-        position: relative;
-        display: flex;
-    }
-    .translation-input {
+    .productions-textarea {
         padding: 0.6rem;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-family: monospace;
-        min-width: 100px;
+        width: 100%;
+        flex: 1;
+        height: 38px;
+        resize: none;
+        overflow-y: hidden;
+        overflow-x: auto;
+        word-wrap: break-word;
+        white-space: nowrap;
         transition: border-color 0.2s, box-shadow 0.2s;
-        width: 140px;
+        line-height: 1.4;
     }
-    .translation-input:focus {
+    .productions-textarea:focus {
         outline: none;
         border-color: #007bff;
         box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
-    }
-    .add-translation-btn {
-        background: #e0e0e0;
-        color: #333;
-        border: none;
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 1.2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.2s;
-        flex-shrink: 0;
-    }
-    .add-translation-btn:hover {
-        background-color: #ccc;
     }
 
     .add-rule-btn {
@@ -882,20 +930,42 @@
         gap: 1rem;
         margin-top: 1rem;
     }
-    .submit-button {
+    .submit-button,
+    .generate-button {
         padding: 0.6rem 1.5rem;
         background: #BED2E6;
-        color: 000000;
+        color: #000000;
         border: none;
         border-radius: 6px;
         font-size: 0.9rem;
         font-weight: 500;
         cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+        margin-top: 1rem;
     }
 
-    .submit-button:hover {
+    .submit-button:hover:not(:disabled),
+    .generate-button:hover:not(:disabled) {
         background: #a8bdd1;
         transform: translateY(-2px);
+    }
+
+    .submit-button:disabled,
+    .generate-button:disabled,
+    .generate-button.disabled {
+        background: #d6d8db;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+    }
+
+    .submit-button:disabled:hover,
+    .generate-button:disabled:hover,
+    .generate-button.disabled:hover {
+        background: #d6d8db;
+        color: #6c757d;
+        transform: none;
     }
 
     /* Dark Mode Styles */
@@ -916,14 +986,14 @@
 
     :global(html.dark-mode) .input-group input,
     :global(html.dark-mode) .non-terminal-input,
-    :global(html.dark-mode) .translation-input {
+    :global(html.dark-mode) .productions-textarea {
         background-color: #2d3748;
         border-color: #4b5563;
         color: #f0f0f0;
     }
     :global(html.dark-mode) .input-group input:focus,
     :global(html.dark-mode) .non-terminal-input:focus,
-    :global(html.dark-mode) .translation-input:focus {
+    :global(html.dark-mode) .productions-textarea:focus {
         border-color: #60a5fa;
         box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4); 
     }
@@ -931,37 +1001,78 @@
     :global(html.dark-mode) .arrow {
         color: #9ca3af;
     }
-    :global(html.dark-mode) .add-translation-btn {
-        background-color: #4b5563;
-        color: #f0f0f0;
-    }
+
     :global(html.dark-mode) .add-rule-btn {
         border-color: #60a5fa;
         color: #60a5fa;
     }
-    :global(html.dark-mode) .submit-button {
+    :global(html.dark-mode) .submit-button,
+    :global(html.dark-mode) .generate-button {
         background-color: #001A6E;
         color: #ffffff;
     }
+
     :global(html.dark-mode) .default-toggle-btn {
+		background-color: #2d3748;
+		border-color: #4a5568;
+		color: #d1d5db;
+	}
+	:global(html.dark-mode) .default-toggle-btn.selected {
+		background-color: #001a6e;
+		border-color: #60a5fa;
+		color: #e0e7ff;
+	}
+    :global(html.dark-mode) .default-toggle-btn:not(.selected):hover {
+        background-color: #001a6e;
+        border-color: #60a5fa;
+    }
+
+    .grammar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .clear-toggle-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #7da2e3;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.2rem;
+        width: 2.2rem;
+        border-radius: 50%;
+    }
+
+    .clear-toggle-btn:hover {
+        background: #fff5f5;
+        border-color: #7da2e3;
+    }
+
+    /* Dark mode for clear button */
+    :global(html.dark-mode) .clear-toggle-btn {
         background-color: #2d3748;
         border-color: #4a5568;
         color: #d1d5db;
     }
-    :global(html.dark-mode) .default-toggle-btn.selected {
+
+    :global(html.dark-mode) .clear-toggle-btn:hover {
         background-color: #001a6e;
-        border-color: #60a5fa;
-        color: #e0e7ff;
-        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4);
-        font-weight: bold;
-        transform: scale(1.05);
-    }
-    :global(html.dark-mode) .default-toggle-btn:not(.selected):hover {
-        background-color: #374151;
-        border-color: #6b7280;
+		border-color: #60a5fa;
+
     }
 
-    
     ::-webkit-scrollbar {
         width: 11px;
         height: 7px;

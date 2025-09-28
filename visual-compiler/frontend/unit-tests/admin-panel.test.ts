@@ -2,14 +2,14 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import AdminPanel from '../src/lib/components/main/admin-panel.svelte';
 
-// Mock localStorage
-const mockLocalStorage = {
+// Mock sessionStorage
+const mocksessionStorage = {
 	getItem: vi.fn(),
 	setItem: vi.fn(),
 	removeItem: vi.fn(),
 	clear: vi.fn(),
 };
-Object.defineProperty(window, 'localStorage', { value: mockLocalStorage });
+Object.defineProperty(window, 'sessionStorage', { value: mocksessionStorage });
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -33,7 +33,7 @@ describe('AdminPanel Component', () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
-		mockLocalStorage.getItem.mockReturnValue('admin-123');
+		mocksessionStorage.getItem.mockReturnValue('admin-123');
 		
 		// Mock successful fetch by default
 		mockFetch.mockResolvedValue({
@@ -164,11 +164,11 @@ describe('AdminPanel Component', () => {
 		);
 	});
 
-	it('TestLocalStorageAccess_Success: Accesses admin ID from localStorage', async () => {
+	it('TestsessionStorageAccess_Success: Accesses admin ID from sessionStorage', async () => {
 		render(AdminPanel);
 
 		await waitFor(() => {
-			expect(mockLocalStorage.getItem).toHaveBeenCalledWith('user_id');
+			expect(mocksessionStorage.getItem).toHaveBeenCalledWith('user_id');
 		});
 	});
 
@@ -376,7 +376,7 @@ describe('AdminPanel Component', () => {
 
 	it('TestSaveEdit_NoAdmin: Requires admin privileges', async () => {
 		// Mock no admin ID
-		mockLocalStorage.getItem.mockReturnValue(null);
+		mocksessionStorage.getItem.mockReturnValue(null);
 
 		render(AdminPanel);
 
@@ -505,7 +505,7 @@ describe('AdminPanel Component', () => {
 
 	it('TestDeleteUser_NoAdmin: Requires admin privileges for deletion', async () => {
 		// Mock no admin ID
-		mockLocalStorage.getItem.mockReturnValue(null);
+		mocksessionStorage.getItem.mockReturnValue(null);
 
 		render(AdminPanel);
 
