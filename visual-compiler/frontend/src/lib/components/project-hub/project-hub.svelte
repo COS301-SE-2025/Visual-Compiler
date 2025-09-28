@@ -793,117 +793,340 @@
 
 	/* Dark Mode Styles */
 	:global(html.dark-mode) .backdrop {
-		background: rgba(0, 0, 0, 0.7);
+		background: rgba(0, 0, 0, 0.8);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
 	}
 
 	:global(html.dark-mode) .modal {
-		background-color: #1a2a4a;
-		color: #f0f0f0;
+		background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+		border: 1px solid #334155;
+		color: #f1f5f9;
 		box-shadow:
-			0 10px 15px -3px rgba(0, 0, 0, 0.3),
-			0 4px 6px -2px rgba(0, 0, 0, 0.2);
+			0 25px 50px -12px rgba(0, 0, 0, 0.5),
+			0 0 0 1px rgba(148, 163, 184, 0.1);
+	}
+
+	:global(html.dark-mode) .close-button {
+		background-color: rgba(51, 65, 85, 0.3);
+		border: 1px solid rgba(148, 163, 184, 0.2);
+		border-radius: 8px;
+		transition: all 0.2s ease;
 	}
 
 	:global(html.dark-mode) .close-button:hover {
-		background-color: rgba(74, 85, 104, 0.2);
+		background-color: rgba(239, 68, 68, 0.2);
+		border-color: rgba(239, 68, 68, 0.3);
+		transform: scale(1.05);
 	}
 
 	:global(html.dark-mode) .close-icon {
-		color: #a0aec0;
+		color: #cbd5e1;
+		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 	}
 
-	:global(html.dark-mode) .greeting-header,
-	:global(html.dark-mode) .default-project-text,
-	:global(html.dark-mode) .project-name {
-		color: #ebeef1;
+	:global(html.dark-mode) .close-button:hover .close-icon {
+		color: #fca5a5;
 	}
 
-	:global(html.dark-mode) .section-heading,
-	:global(html.dark-mode) .button-label,
-	:global(html.dark-mode) .project-date {
-		color: #a0aec0;
+	:global(html.dark-mode) .greeting-header {
+		color: #f8fafc;
+		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+	}
+
+	:global(html.dark-mode) .section-heading {
+		color: #e2e8f0;
+		font-weight: 700;
+		text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+		border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+		padding-bottom: 0.5rem;
 	}
 
 	:global(html.dark-mode) .project-button {
-		background-color: #041a47;
-		border: 2px solid #041a47;
+		background: linear-gradient(145deg, #1e40af 0%, #1e3a8a 100%);
+		border: 2px solid #3b82f6;
 		color: #ffffff;
-		box-shadow: 0 2px 8px rgba(0, 26, 110, 0.3);
+		box-shadow: 
+			0 4px 12px rgba(30, 64, 175, 0.3),
+			0 2px 4px rgba(0, 0, 0, 0.1);
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
 	:global(html.dark-mode) .project-button:hover {
-		background-color: #002a8e;
-		border-color: #	;
-		box-shadow: 0 4px 12px rgba(0, 26, 110, 0.4);
-		transform: translateY(-1px);
+		background: linear-gradient(145deg, #2563eb 0%, #1d4ed8 100%);
+		border-color: #60a5fa;
+		box-shadow: 
+			0 8px 25px rgba(37, 99, 235, 0.4),
+			0 4px 12px rgba(0, 0, 0, 0.15);
+		transform: translateY(-2px) scale(1.02);
+	}
+
+	:global(html.dark-mode) .project-button:active {
+		transform: translateY(-1px) scale(1.01);
+		box-shadow: 
+			0 4px 12px rgba(30, 64, 175, 0.3),
+			0 2px 4px rgba(0, 0, 0, 0.1);
 	}
 
 	:global(html.dark-mode) .plus-icon {
 		color: #ffffff;
+		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+	}
+
+	:global(html.dark-mode) .button-label {
+		color: #f1f5f9;
+		font-weight: 600;
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+	}
+
+	:global(html.dark-mode) .default-project-text {
+		color: #f8fafc;
+		text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+	}
+
+	/* Enhanced Search Bar */
+	:global(html.dark-mode) .search-bar-container::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(145deg, rgba(51, 65, 85, 0.5), rgba(15, 23, 42, 0.5));
+		border-radius: 0.5rem;
+		z-index: -1;
+		filter: blur(0.5px);
 	}
 
 	:global(html.dark-mode) .search-input {
-		background-color: #374151;
+		background: linear-gradient(145deg, #374151 0%, #1f2937 100%);
 		border: 2px solid #4b5563;
-		color: #ffffff;
+		color: #f9fafb;
 		font-weight: 500;
+		font-size: 0.95rem;
+		box-shadow: 
+			inset 0 2px 4px rgba(0, 0, 0, 0.1),
+			0 1px 3px rgba(0, 0, 0, 0.1);
+		transition: all 0.3s ease;
 	}
 
 	:global(html.dark-mode) .search-input::placeholder {
 		color: #9ca3af;
-		opacity: 1;
+		opacity: 0.8;
+		font-style: italic;
 	}
 
 	:global(html.dark-mode) .search-input:focus {
-		border-color: #001A6E;
-		background-color: #4b5563;
-		box-shadow: 0 0 0 3px rgba(0, 26, 110, 0.2);
+		background: linear-gradient(145deg, #4b5563 0%, #374151 100%);
+		border-color: #3b82f6;
+		color: #ffffff;
+		box-shadow: 
+			0 0 0 4px rgba(59, 130, 246, 0.15),
+			inset 0 2px 4px rgba(0, 0, 0, 0.1),
+			0 4px 12px rgba(59, 130, 246, 0.1);
+		outline: none;
 	}
 
 	:global(html.dark-mode) .search-icon {
-		color: #d1d5db;
+		color: #e5e7eb;
+		filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
 	}
 
 	:global(html.dark-mode) .clear-search-btn {
-		color: #d1d5db;
+		background: rgba(75, 85, 99, 0.3);
+		border: 1px solid rgba(156, 163, 175, 0.2);
+		border-radius: 6px;
+		transition: all 0.2s ease;
 	}
 
 	:global(html.dark-mode) .clear-search-btn:hover {
-		background-color: #6b7280;
-		color: #ffffff;
+		background: rgba(239, 68, 68, 0.2);
+		border-color: rgba(239, 68, 68, 0.3);
+		transform: scale(1.1);
 	}
 
+	:global(html.dark-mode) .clear-search-btn svg {
+		color: #d1d5db;
+		transition: color 0.2s ease;
+	}
+
+	:global(html.dark-mode) .clear-search-btn:hover svg {
+		color: #fca5a5;
+	}
+
+	/* Enhanced Project Blocks */
 	:global(html.dark-mode) .project-block {
-		background-color: #374151;
+		background: linear-gradient(145deg, #374151 0%, #1f2937 100%);
 		border: 2px solid #4b5563;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+		box-shadow: 
+			0 4px 12px rgba(0, 0, 0, 0.2),
+			0 2px 4px rgba(0, 0, 0, 0.1);
+		transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		position: relative;
+		overflow: hidden;
+	}
+
+	/* Add subtle gradient overlay for project blocks */
+	:global(html.dark-mode) .project-block::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 2px;
+		background: linear-gradient(90deg, 
+			transparent 0%, 
+			rgba(59, 130, 246, 0.5) 50%, 
+			transparent 100%);
+		opacity: 0;
+		transition: opacity 0.3s ease;
 	}
 
 	:global(html.dark-mode) .project-block:hover {
-		background-color: #4b5563;
+		background: linear-gradient(145deg, #4b5563 0%, #374151 100%);
 		border-color: #6b7280;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-		transform: translateY(-1px);
+		box-shadow: 
+			0 8px 25px rgba(0, 0, 0, 0.3),
+			0 4px 12px rgba(59, 130, 246, 0.1),
+			inset 0 1px 0 rgba(148, 163, 184, 0.1);
+		transform: translateY(-3px) scale(1.02);
 	}
 
+	:global(html.dark-mode) .project-block:hover::before {
+		opacity: 1;
+	}
+
+	:global(html.dark-mode) .project-name {
+		color: #f8fafc;
+		font-weight: 700;
+		text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+		transition: color 0.2s ease;
+	}
+
+	:global(html.dark-mode) .project-block:hover .project-name {
+		color: #ffffff;
+	}
+
+	:global(html.dark-mode) .project-date {
+		color: #cbd5e1;
+		font-weight: 500;
+		opacity: 0.8;
+		transition: all 0.2s ease;
+	}
+
+	:global(html.dark-mode) .project-block:hover .project-date {
+		color: #e2e8f0;
+		opacity: 1;
+	}
+
+	/* Enhanced Delete Button */
 	:global(html.dark-mode) .delete-button {
-		color: #9ca3af;
+		background: rgba(51, 65, 85, 0.3);
+		border: 1px solid rgba(239, 68, 68, 0.2);
+		border-radius: 8px;
+		color: #cbd5e1;
+		backdrop-filter: blur(4px);
+		transition: all 0.3s ease;
+	}
+
+	:global(html.dark-mode) .project-block:hover .delete-button {
+		opacity: 1;
+		background: rgba(51, 65, 85, 0.8);
+		border-color: rgba(239, 68, 68, 0.3);
 	}
 
 	:global(html.dark-mode) .delete-button:hover {
-		background-color: #4a5568;
-		color: #f87171;
+		background: rgba(239, 68, 68, 0.2);
+		border-color: rgba(239, 68, 68, 0.5);
+		color: #fca5a5;
+		transform: scale(1.1);
+		box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
 	}
 
-	:global(html.dark-mode) .no-results-content h4 {
-		color: #ebeef1;
+	/* Enhanced No Results Section */
+	:global(html.dark-mode) .no-results {
+		background: rgba(30, 41, 59, 0.3);
+		border-radius: 1rem;
+		border: 1px solid rgba(71, 85, 105, 0.3);
 	}
 
-	:global(html.dark-mode) .no-results-content p {
-		color: #a0aec0;
+	:global(html.dark-mode) .no-results-content {
+		padding: 2rem;
 	}
 
 	:global(html.dark-mode) .no-results-icon {
-		color: #718096;
+		color: #64748b;
+		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+	}
+
+	:global(html.dark-mode) .no-results-content h4 {
+		color: #f1f5f9;
+		font-weight: 700;
+		text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+	}
+
+	:global(html.dark-mode) .no-results-content p {
+		color: #cbd5e1;
+		opacity: 0.9;
+		line-height: 1.6;
+	}
+
+	/* Enhanced Scrollbar for Dark Mode */
+	:global(html.dark-mode) .project-list-container {
+		scrollbar-width: thin;
+		scrollbar-color: #475569 #1e293b;
+	}
+
+	:global(html.dark-mode) .project-list-container::-webkit-scrollbar {
+		width: 8px;
+	}
+
+	:global(html.dark-mode) .project-list-container::-webkit-scrollbar-track {
+		background: #1e293b;
+		border-radius: 4px;
+	}
+
+	:global(html.dark-mode) .project-list-container::-webkit-scrollbar-thumb {
+		background: linear-gradient(180deg, #475569 0%, #334155 100%);
+		border-radius: 4px;
+		border: 1px solid #1e293b;
+	}
+
+	:global(html.dark-mode) .project-list-container::-webkit-scrollbar-thumb:hover {
+		background: linear-gradient(180deg, #64748b 0%, #475569 100%);
+	}
+
+	/* Add subtle animations and transitions */
+	:global(html.dark-mode) .modal * {
+		transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+	}
+
+	/* Media queries for better responsiveness in dark mode */
+	@media (max-width: 640px) {
+		:global(html.dark-mode) .modal {
+			margin: 1rem;
+			padding: 1.5rem;
+		}
+		
+		:global(html.dark-mode) .project-button {
+			width: 6rem;
+			height: 6rem;
+		}
+		
+		:global(html.dark-mode) .plus-icon {
+			height: 2rem;
+			width: 2rem;
+		}
+	}
+
+	/* Add focus states for accessibility */
+	:global(html.dark-mode) .project-button:focus,
+	:global(html.dark-mode) .project-block:focus {
+		outline: 3px solid rgba(59, 130, 246, 0.5);
+		outline-offset: 2px;
+	}
+
+	:global(html.dark-mode) .delete-button:focus,
+	:global(html.dark-mode) .close-button:focus,
+	:global(html.dark-mode) .clear-search-btn:focus {
+		outline: 2px solid rgba(59, 130, 246, 0.6);
+		outline-offset: 2px;
 	}
 </style>
