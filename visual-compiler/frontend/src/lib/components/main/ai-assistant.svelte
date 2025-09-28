@@ -1784,7 +1784,86 @@
         margin-bottom: 0.1rem;
     }
 
-    /* Removed test buttons CSS - no longer needed */
+    .messages-container::-webkit-scrollbar {
+        width: 11px;
+    }
+    
+    .messages-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .messages-container::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 10px;
+    }
+    
+    .messages-container::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Firefox scrollbar */
+    .messages-container {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
+
+    /* Generate container scrollbar styles */
+    .generate-container::-webkit-scrollbar {
+        width: 11px;
+    }
+    
+    .generate-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .generate-container::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 10px;
+    }
+    
+    .generate-container::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Firefox scrollbar */
+    .generate-container {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
+
+     :global(html.dark-mode) .messages-container {
+        scrollbar-color: #4a5568 #2d3748;
+    }
+
+    :global(html.dark-mode) .messages-container::-webkit-scrollbar-track {
+        background: #2d3748;
+    }
+
+    :global(html.dark-mode) .messages-container::-webkit-scrollbar-thumb {
+        background-color: #4a5568;
+        border-color: #2d3748;
+    }
+
+    :global(html.dark-mode) .messages-container::-webkit-scrollbar-thumb:hover {
+        background: #616e80;
+    }
+
+    :global(html.dark-mode) .generate-container {
+        scrollbar-color: #4a5568 #2d3748;
+    }
+
+    :global(html.dark-mode) .generate-container::-webkit-scrollbar-track {
+        background: #2d3748;
+    }
+
+    :global(html.dark-mode) .generate-container::-webkit-scrollbar-thumb {
+        background-color: #4a5568;
+        border-color: #2d3748;
+    }
+
+    :global(html.dark-mode) .generate-container::-webkit-scrollbar-thumb:hover {
+        background: #616e80;
+    }
 
 
 

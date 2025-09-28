@@ -609,12 +609,14 @@
 
 	.inspector-container {
 		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-		padding: 1.5rem;
-		font-family: var(--font-sans);
-		background-color: var(--bg-primary);
-		color: var(--text-primary);
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        font-family: var(--font-sans);
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        height: 100%;
+        overflow-y: auto;
 	}
 
 	.header-container {
@@ -703,6 +705,7 @@
 		color: #1a2a4a;
 		font-family: 'Times New Roman';
 		font-weight: 500;
+		text-align: center;
 	}
 	.section {
 		display: flex;
@@ -739,7 +742,8 @@
 		font-family: 'Times New Roman';
 		font-size: 1.25rem;
 		font-weight: 600;
-		text-align: center;
+		text-align: left;
+		margin-left: 0.75rem;
 	}
 
 	.section-heading1 {
@@ -819,9 +823,10 @@
 
 	.rule-header {
 		display: flex;
-		justify-content: flex-end;
+		justify-content: center;
 		align-items: center;
 		margin-bottom: 0.5rem;
+		position: relative;
 	}
 
 	.form-group,
@@ -912,6 +917,8 @@
 		align-items: center;
 		justify-content: center;
 		transition: background-color 0.2s, color 0.2s;
+		position: absolute;
+		right: 0;
 	}
 
 	.remove-btn:hover,
@@ -1121,9 +1128,14 @@
 		background: transparent;
 	}
 	:global(html.dark-mode) .example-btn {
-		background: #BED2E6;
-		color: black;
-	}
+        background: #001A6E;
+        color: #ffffff;
+    }
+
+    :global(html.dark-mode) .example-btn:hover {
+        background: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
+    }
 	:global(html.dark-mode) .submit,
 	:global(html.dark-mode) .translate {
 		background-color: #001A6E;
@@ -1164,12 +1176,56 @@
 	}
 
 	
+    .inspector-container::-webkit-scrollbar {
+        width: 11px;
+    }
+    
+    .inspector-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .inspector-container::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 10px;
+    }
+    
+    .inspector-container::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Firefox scrollbar */
+    .inspector-container {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
+
+    :global(html.dark-mode) .inspector-container {
+        background: #1a2a4a;
+        scrollbar-color: #4a5568 #2d3748;
+    }
+
+    /* Dark mode scrollbar styles */
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-track {
+        background: #2d3748;
+    }
+
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-thumb {
+        background-color: #4a5568;
+        border-color: #2d3748;
+    }
+
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-thumb:hover {
+        background: #616e80;
+    }
+
+
+	
 	
 	/* Add section-header style */
 	.section-header {
 		display: flex;
 		align-items: center;
-		justify-content: center;
+		justify-content: space-between;
 		gap: 1rem;
 		margin-bottom: 1rem;
 		position: relative;
@@ -1205,5 +1261,18 @@
     :global(html.dark-mode) .submit .loading-spinner {
         border-top-color: #ffffff;
     }
+
+	:global(html.dark-mode) .instructions-section {
+		background: #2d3748;
+		border-left-color: #4da9ff;
+	}
+
+	:global(html.dark-mode) .instructions-header {
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .instructions-text {
+		color: #cbd5e0;
+	}
 
 </style>

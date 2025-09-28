@@ -944,6 +944,16 @@
 		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
 	}
 
+    :global(html.dark-mode) .example-btn {
+        background: #001A6E;
+        color: #ffffff;
+    }
+
+    :global(html.dark-mode) .example-btn:hover {
+        background: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
+    }
+
 	.option-btn:hover {
 		transform: translateY(-2px);
 		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
@@ -1258,6 +1268,19 @@
         background-color: #001a6e;
         border-color: #60a5fa;
     }
+
+    :global(html.dark-mode) .instructions-section {
+		background: #2d3748;
+		border-left-color: #4da9ff;
+	}
+
+	:global(html.dark-mode) .instructions-header {
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .instructions-text {
+		color: #cbd5e0;
+	}
 
     .grammar-header {
         display: flex;

@@ -2602,19 +2602,18 @@
 	}
 
 	:global(html.dark-mode) .automaton-btn:not(.selected):hover {
-		border-color: #63b3ed;
-		background: rgba(45, 55, 72, 0.5);
+		background: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
 	}
 
 	:global(html.dark-mode) .example-btn {
-		background: #BED2E6;
-		color: black;
+		background: #001A6E;
+        color: #ffffff;
 	}
-
-	:global(html.dark-mode) .option-btn.selected {
-		background: linear-gradient(135deg, #059669, #10b981);
-		border-color: #059669;
-	}
+	:global(html.dark-mode) .example-btn:hover {
+        background: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
+    }
 
 	:global(html.dark-mode) .clear-toggle-btn {
         background: transparent;
