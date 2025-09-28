@@ -450,6 +450,7 @@
                 // FIX: Use symbols and null instead of undefined variables
                 updateAnalyserArtifacts(symbols, null, null);
                 
+                AddToast('Semantic analysis complete! Symbol table generated successfully', 'success');
                 dispatch('generate', {
                     symbol_table: symbols
                 });

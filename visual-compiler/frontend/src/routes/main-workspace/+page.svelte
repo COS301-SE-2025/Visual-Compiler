@@ -1106,11 +1106,6 @@
             }));
             completion_status.analyser = true;
             
-            if (data.analyser_error) {
-                AddToast('Semantic analysis completed with warnings. Check results for details.', 'warning');
-            } else {
-                AddToast('Symbol table generated successfully!', 'success');
-            }
         } else {
             // FIX: Clear symbol table if empty array is received
             symbol_table = [];
@@ -1135,7 +1130,6 @@
             }));
             completion_status.translator = true;
             
-            AddToast('Code translation completed successfully!', 'success');
         } else {
             // FIX: Clear translated code if empty array is received
             translated_code = [];
