@@ -1,4 +1,6 @@
 import { writable } from 'svelte/store';
+import { get } from 'svelte/store';
+import { projectName } from './project';
 
 interface LexerInputRow {
     type: string;
@@ -18,9 +20,15 @@ interface LexerState {
     showDefault: boolean;
     isSubmitted: boolean;
     hasUnsavedChanges: boolean;
+    // ADD: Artifact storage
+    tokens: any[];
+    hasTokens: boolean;
+    sourceCode: string;
 }
 
-const initialState: LexerState = {
+// Define initial state as a constant
+const INITIAL_LEXER_STATE: LexerState = {
+    selectedType: 'REGEX',
     userInputRows: [{ type: '', regex: '', error: '' }],
     automataInputs: {
         states: '',
@@ -28,13 +36,16 @@ const initialState: LexerState = {
         acceptedStates: '',
         transitions: ''
     },
-    selectedType: 'REGEX',
-    showDefault: false,
+    showDefault: false,  
+    tokens: [],
+    hasTokens: false,
+    sourceCode: '',
     isSubmitted: false,
     hasUnsavedChanges: false
 };
 
-export const lexerState = writable<LexerState>(initialState);
+// Create store with initial state
+export const lexerState = writable<LexerState>(INITIAL_LEXER_STATE);
 
 // Helper functions
 export const updateLexerInputs = (inputs: LexerInputRow[]) => {
@@ -61,50 +72,77 @@ export const markLexerSubmitted = () => {
     }));
 };
 
+// ADD: Export all reset functions
 export const resetLexerState = () => {
-    lexerState.set(initialState);
+    lexerState.set(JSON.parse(JSON.stringify(INITIAL_LEXER_STATE))); // Deep copy
+    console.log('Lexer state reset to:', INITIAL_LEXER_STATE);
 };
 
+export const updateLexerArtifacts = (tokens: any[], sourceCode: string = '') => {
+    lexerState.update(state => ({
+        ...state,
+        tokens: [...tokens],
+        hasTokens: tokens.length > 0,
+        sourceCode
+    }));
+};
 
+// UPDATE: Project loading function to include artifacts
 export const updateLexerStateFromProject = (projectData: any) => {
-    if (!projectData) return;
+    console.log('Updating lexer state from project data:', projectData?.lexing);
+    if (!projectData?.lexing) return;
 
     const updates: Partial<LexerState> = {};
-
-    // Handle regex rules from project data
-    if (projectData.lexer_data?.regex_rules) {
-        updates.userInputRows = projectData.lexer_data.regex_rules.map((rule: any) => ({
-            type: rule.Type || rule.type || '',
-            regex: rule.Regex || rule.regex || '',
-            error: ''
-        }));
-    }
-
-    // Handle automata data from project data
-    if (projectData.lexer_data?.automata) {
+    
+    // Handle automata data
+    if (projectData.lexing.automata) {
+        const automataData = projectData.lexing.automata;
         updates.automataInputs = {
-            states: projectData.lexer_data.automata.states || '',
-            startState: projectData.lexer_data.automata.start_state || '',
-            acceptedStates: projectData.lexer_data.automata.accepted_states || '',
-            transitions: projectData.lexer_data.automata.transitions || ''
+            states: automataData.states?.join(', ') || '',
+            startState: automataData.start_state || '',
+            acceptedStates: automataData.accepted_states?.join(', ') || '',
+            transitions: Array.isArray(automataData.transitions) 
+                ? automataData.transitions.map(t => `${t.from || ''}-${t.symbol || ''}-${t.to || ''}`).join(', ')
+                : automataData.transitions || ''
         };
-    }
-
-    // Set selected type based on what data is available
-    if (projectData.lexer_data?.regex_rules && projectData.lexer_data.regex_rules.length > 0) {
-        updates.selectedType = 'REGEX';
-    } else if (projectData.lexer_data?.automata) {
         updates.selectedType = 'AUTOMATA';
     }
 
+    // Handle regex rules
+    if (projectData.lexing.regex_rules && Array.isArray(projectData.lexing.regex_rules)) {
+        updates.userInputRows = projectData.lexing.regex_rules.map((rule: any) => ({
+            type: rule.token_type || rule.type || '',
+            regex: rule.regex_pattern || rule.regex || '',
+            error: ''
+        }));
+        updates.selectedType = 'REGEX';
+    }
+
+    // Handle artifacts - tokens
+    if (projectData.lexing.tokens && Array.isArray(projectData.lexing.tokens)) {
+        updates.tokens = projectData.lexing.tokens.map((token: any) => ({
+            value: token.Value || token.value || '',
+            type: token.Type || token.type || 'UNKNOWN'
+        }));
+        updates.hasTokens = true;
+    }
+
+    // Handle source code
+    if (projectData.lexing.code) {
+        updates.sourceCode = projectData.lexing.code;
+    }
+
     // Mark as submitted if there's data
-    if (projectData.lexer_data) {
+    if (projectData.lexing && Object.keys(projectData.lexing).length > 0) {
         updates.isSubmitted = true;
         updates.hasUnsavedChanges = false;
     }
 
-    lexerState.update(state => ({
-        ...state,
-        ...updates
-    }));
+    if (Object.keys(updates).length > 0) {
+        console.log('Updating lexer state with:', updates);
+        lexerState.update(state => ({
+            ...state,
+            ...updates
+        }));
+    }
 };
