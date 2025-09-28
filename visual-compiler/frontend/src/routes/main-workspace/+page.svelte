@@ -1509,7 +1509,7 @@
 		position: absolute;
 		bottom: 1rem;
 		left: 1rem;
-		background: linear-gradient(135deg, #001A6E 0%, #041a47 100%);
+		background: #001A6E;
 		color: white;
 		border: none;
 		padding: 0.75rem 1rem;
@@ -1528,7 +1528,7 @@
 	.recenter-button:hover {
 		transform: translateY(-1px);
 		box-shadow: 0 4px 12px rgba(4, 26, 71, 0.25);
-		background: linear-gradient(135deg, #002a8e 0%, #052560 100%);
+		background: #001A6E;
 	}
 
 	.recenter-button svg {
@@ -1701,8 +1701,9 @@
 
 	.help-tip {
 		position: absolute;
-		top: 20px;
-		right: 20px;
+		bottom: 20px;
+		left: 50%;
+		transform: translateX(-50%);
 		background-color: rgba(4, 26, 71, 0.95);
 		color: white;
 		padding: 10px 15px 10px 20px;
@@ -1758,7 +1759,7 @@
 	}
 
 	:global(html.dark-mode) .recenter-button {
-		background: linear-gradient(135deg, #1a2a4a 0%, #0a1a3a 100%);
+		background: #1a2a4a;
 		color: #e2e8f0;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 	}

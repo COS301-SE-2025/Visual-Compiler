@@ -711,18 +711,7 @@
                 <h2 class="heading2">Scope Rules</h2>
 
                 <div class="button-group">
-                    <!-- Clear button first (to the left) -->
-                    <button
-                        class="clear-toggle-btn"
-                        on:click={clearAllInputs}
-                        type="button"
-                        aria-label="Clear all inputs"
-                        title="Clear all inputs"
-                    >
-                        <span class="icon">🗑️</span>
-                    </button>
-                    
-                    <!-- Default button second (to the right) -->
+                    <!-- Show example button first (to the left) -->
                     <button
                     class="option-btn example-btn"
                     class:selected={show_default_rules}
@@ -733,6 +722,32 @@
                 >
                     {show_default_rules ? 'Restore Input' : 'Show Example'}
                 </button>
+                    
+                    <!-- Clear button second (to the right) -->
+                    <button
+                        class="clear-toggle-btn"
+                        on:click={clearAllInputs}
+                        type="button"
+                        aria-label="Clear all inputs"
+                        title="Clear all inputs"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="m19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c0-1 1-2 2-2v2" />
+                            <line x1="10" y1="11" x2="10" y2="17" />
+                            <line x1="14" y1="11" x2="14" y2="17" />
+                        </svg>
+                    </button>
                 </div>
 
             </div>
@@ -1215,10 +1230,10 @@
     .clear-toggle-btn {
         background: white;
         border: 2px solid #e5e7eb;
-        color: #7a8aa3;
+        color: #ef4444;
         font-size: 1.2rem;
         cursor: pointer;
-        transition: background 0.2s, border-color 0.2s;
+        transition: all 0.2s ease;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1227,9 +1242,10 @@
         border-radius: 50%;
     }
 
-    .clear-toggle-btn:hover {
+    .clear-toggle-btn:hover,
+    .clear-toggle-btn:focus {
         background: #fff5f5;
-        border-color: #7a8aa3;
+        border-color: #ef4444;
     }
 
 	/* --- DARK MODE STYLES --- */
@@ -1451,13 +1467,14 @@
 
     :global(html.dark-mode) .clear-toggle-btn {
         background: transparent;
-		color: #cbd5e1;
+		color: #ef4444;
 		border-color: #4a5568;
     }
 
-    :global(html.dark-mode) .clear-toggle-btn:hover {
+    :global(html.dark-mode) .clear-toggle-btn:hover,
+    :global(html.dark-mode) .clear-toggle-btn:focus {
         background: rgba(45, 55, 72, 0.5);
-		border-color: #63b3ed;
+		border-color: #ef4444;
     }
 
     :global(html.dark-mode) .default-toggle-btn {

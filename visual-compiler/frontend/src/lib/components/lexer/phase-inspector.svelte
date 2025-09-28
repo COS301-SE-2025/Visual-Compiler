@@ -1371,26 +1371,52 @@
 	</div>
 
 	<div class="automaton-btn-row">
-		<button
-			class="automaton-btn {selectedType === 'REGEX' ? 'selected' : ''}"
-			on:click={() => selectType('REGEX')}
-			type="button"
-		>
-			Regular Expression
-		</button>
-		<button
-			class="automaton-btn {selectedType === 'AUTOMATA' ? 'selected' : ''}"
-			on:click={() => {
-				selectType('AUTOMATA');
-				automataDisplay = null;
-			}}
-			type="button"
-		>
-			Automata
-		</button>
+		<div class="tabs-and-example-group">
+			<button
+				class="automaton-btn {selectedType === 'REGEX' ? 'selected' : ''}"
+				on:click={() => selectType('REGEX')}
+				type="button"
+			>
+				Regular Expression
+			</button>
+			<button
+				class="automaton-btn {selectedType === 'AUTOMATA' ? 'selected' : ''}"
+				on:click={() => {
+					selectType('AUTOMATA');
+					automataDisplay = null;
+				}}
+				type="button"
+			>
+				Automata
+			</button>
 
+			<div class="button-group">
+				{#if selectedType && !showDefault}
+				<button
+					class="option-btn example-btn"
+					on:click={insertDefault}
+					type="button"
+					aria-label="Show example code"
+					title="Show example code"
+				>
+					Show Example
+				</button>
+				{/if}
+				{#if selectedType && showDefault}
+					<button
+						class="option-btn example-btn selected"
+						on:click={removeDefault}
+						type="button"
+						aria-label="Restore your input"
+						title="Restore your input"
+					>
+						Restore Input
+					</button>
+				{/if}
+			</div>
+		</div>
 
-		<div class="button-group">
+		<div class="clear-button-container">
 			{#if selectedType}
 				<button
 					class="clear-toggle-btn"
@@ -1399,35 +1425,25 @@
 					aria-label="Clear all inputs"
 					title="Clear all inputs"
 				>
-					<span class="icon">🗑️</span>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<polyline points="3 6 5 6 21 6" />
+						<path d="m19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c0-1 1-2 2-2v2" />
+						<line x1="10" y1="11" x2="10" y2="17" />
+						<line x1="14" y1="11" x2="14" y2="17" />
+					</svg>
 				</button>
 			{/if}
-
-			{#if selectedType && !showDefault}
-			<button
-				class="option-btn example-btn"
-				on:click={insertDefault}
-				type="button"
-				aria-label="Show example code"
-				title="Show example code"
-			>
-				Show Example
-			</button>
-
-		{/if}
-		{#if selectedType && showDefault}
-			<button
-				class="option-btn example-btn selected"
-				on:click={removeDefault}
-				type="button"
-				aria-label="Restore your input"
-				title="Restore your input"
-			>
-				Restore Input
-			</button>
-		{/if}
 		</div>
-
 	</div>
 
 	{#if selectedType === 'REGEX'}
@@ -1978,7 +1994,18 @@
 		gap: 0.7rem;
 		margin: 2rem 0 1.5rem 0;
 		align-items: center;
-		justify-content: flex-start;
+		justify-content: space-between;
+	}
+
+	.tabs-and-example-group {
+		display: flex;
+		gap: 0.7rem;
+		align-items: center;
+	}
+
+	.clear-button-container {
+		display: flex;
+		align-items: center;
 	}
 
 	.button-group {
@@ -1990,7 +2017,7 @@
 	.clear-toggle-btn {
         background: white;
         border: 2px solid #e5e7eb;
-        color: #7da2e3;
+        color: #ef4444;
         font-size: 1.2rem;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -2005,7 +2032,7 @@
     .clear-toggle-btn:hover,
     .clear-toggle-btn:focus {
         background: #fff5f5;
-        border-color: #7da2e3;
+        border-color: #ef4444;
     }
 
 	.automaton-btn {
@@ -2052,7 +2079,6 @@
 		width: 140px;
 		max-width: 140px;
 		justify-content: center;
-		margin-left: 1rem;
 	}
 
 	.example-btn {
@@ -2379,13 +2405,13 @@
 
 	:global(html.dark-mode) .clear-toggle-btn {
         background: transparent;
-		color: #cbd5e1;
+		color: #ef4444;
 		border-color: #4a5568;
     }
 
     :global(html.dark-mode) .clear-toggle-btn:hover {
-        background: rgba(45, 55, 72, 0.5);
-		border-color: #63b3ed;
+        background: #7f1d1d;
+		border-color: #ef4444;
     }
 
 	:global(html.dark-mode) .vis-heading,
