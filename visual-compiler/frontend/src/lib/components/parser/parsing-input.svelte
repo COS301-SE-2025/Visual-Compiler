@@ -22,8 +22,8 @@
     let translation_id_counter = 1;
     let rule_id_counter = 1;
 
-    // FIX: Use productions instead of translations
-    let grammar_rules: Rule[] = [{ id: 1, nonTerminal: '', productions: '' }];
+    // FIX: Start with empty array instead of pre-populated rule
+    let grammar_rules: Rule[] = [];
     let variables_string = '';
     let terminals_string = '';
     let show_default_grammar = false;
@@ -62,8 +62,9 @@
 
     let aiParserEventListener: (event: CustomEvent) => void;
 
+    // FIX: Remove the automatic addNewRule call in onMount
     onMount(async () => {
-        addNewRule();
+        // DON'T call addNewRule() here - let store restoration handle it
         await fetchTokens();
 
         // Listen for AI-generated parser grammar
@@ -150,13 +151,20 @@
     let parseTree = null;
     let hasParseTree = false;
 
-    // UPDATE: Store subscription to include artifacts
+    // UPDATE: Store subscription to better handle empty states
     $: if ($parserState && !hasInitialized) {
-        grammar_rules = $parserState.grammar_rules.map(rule => ({
-            id: rule.id,
-            nonTerminal: rule.nonTerminal,
-            productions: rule.translations.map(t => t.value).join(', ')
-        }));
+        // FIX: Only set grammar_rules if there are actual rules in the store
+        if ($parserState.grammar_rules && $parserState.grammar_rules.length > 0) {
+            grammar_rules = $parserState.grammar_rules.map(rule => ({
+                id: rule.id,
+                nonTerminal: rule.nonTerminal,
+                productions: rule.translations.map(t => t.value).join(', ')
+            }));
+        } else {
+            // If no rules in store, start with one empty rule
+            grammar_rules = [{ id: 1, nonTerminal: '', productions: '' }];
+            rule_id_counter = 1;
+        }
         
         variables_string = $parserState.variables_string;
         terminals_string = $parserState.terminals_string;
@@ -168,24 +176,27 @@
         if ($parserState.hasParseTree) {
             parseTree = $parserState.parseTree;
             hasParseTree = true;
-            // Dispatch the restored parse tree
             dispatch('treereceived', parseTree);
         }
         
         hasInitialized = true;
     }
 
+    // FIX: Only update store if there are meaningful changes
     function handleGrammarChange() {
         is_grammar_submitted = false;
         
-        // Save current state as user input when not showing default
         if (!show_default_grammar) {
             saveCurrentAsUserInput();
         }
 
-
         if (hasInitialized) {
-            const storeFormatRules = grammar_rules.map(rule => ({
+            // FIX: Filter out completely empty rules before storing
+            const meaningful_rules = grammar_rules.filter(rule => 
+                rule.nonTerminal.trim() !== '' || rule.productions.trim() !== ''
+            );
+            
+            const storeFormatRules = meaningful_rules.map(rule => ({
                 id: rule.id,
                 nonTerminal: rule.nonTerminal,
                 translations: rule.productions.split(',').map((prod, index) => ({
@@ -193,6 +204,15 @@
                     value: prod.trim()
                 })).filter(t => t.value !== '')
             }));
+
+            // Only add empty rule if there are no meaningful rules
+            if (storeFormatRules.length === 0) {
+                storeFormatRules.push({
+                    id: 1,
+                    nonTerminal: '',
+                    translations: [{ id: 1, value: '' }]
+                });
+            }
 
             updateParserInputs({
                 grammar_rules: storeFormatRules,
@@ -206,19 +226,24 @@
         }
     }
 
-    // addNewRule
+    // FIX: Only add new rule if the last rule has content
     function addNewRule() {
+        // Check if we should add a rule
+        const last_rule = grammar_rules[grammar_rules.length - 1];
+        if (last_rule && last_rule.nonTerminal.trim() === '' && last_rule.productions.trim() === '') {
+            // Don't add if the last rule is already empty
+            return;
+        }
+
         rule_id_counter++; 
         translation_id_counter++;
         grammar_rules = [...grammar_rules, {
             id: rule_id_counter,
             nonTerminal: '',
-            productions: '' // Use productions instead of translations
+            productions: ''
         }];
         handleGrammarChange();
     }
-
-
 
     // insertDefaultGrammar
     function insertDefaultGrammar() {
@@ -250,14 +275,15 @@
         handleGrammarChange();
         show_default_grammar = false;
         
-        // Restore user input
         grammar_rules = JSON.parse(JSON.stringify(user_grammar_rules));
         variables_string = user_variables_string;
         terminals_string = user_terminals_string;
         rule_id_counter = user_rule_id_counter;
         
+        // FIX: Only add new rule if grammar_rules is completely empty
         if (grammar_rules.length === 0) {
-            addNewRule();
+            grammar_rules = [{ id: 1, nonTerminal: '', productions: '' }];
+            rule_id_counter = 1;
         }
     }
 
@@ -572,24 +598,20 @@
     }
 
     // FIX: Add this reactive statement to handle project data
-    $: if ($lexerState?.parser_data?.grammar) {
+    $: if ($lexerState?.parser_data?.grammar && hasInitialized) {
         const parserData = $lexerState.parser_data.grammar;
         
-        // Safely handle variables and terminals with null checks
         variables_string = parserData.variables ? parserData.variables.join(', ') : '';
         terminals_string = parserData.terminals ? parserData.terminals.join(', ') : '';
         
-        // Safely handle rules
         if (parserData.rules && Array.isArray(parserData.rules)) {
-            grammar_rules = parserData.rules.map((rule, index) => {
-                rule_id_counter = index + 1;
-                return {
-                    id: rule_id_counter,
-                    nonTerminal: rule.input || '',
-                    productions: Array.isArray(rule.output) ? rule.output.join(' ') : ''
-                };
-            });
-
+            grammar_rules = parserData.rules.map((rule, index) => ({
+                id: index + 1,
+                nonTerminal: rule.input || '',
+                productions: Array.isArray(rule.output) ? rule.output.join(' ') : ''
+            }));
+            
+            rule_id_counter = parserData.rules.length;
             show_default_grammar = false;
             is_grammar_submitted = true;
         }
@@ -698,7 +720,10 @@
                 </div>
             {/each}
         </div>
-        <button class="add-rule-btn" on:click={addNewRule}>+ Add New Rule</button>
+        <!-- FIX: Only show Add Rule button when the last rule has content -->
+        {#if grammar_rules.length === 0 || (grammar_rules[grammar_rules.length - 1]?.nonTerminal.trim() !== '' || grammar_rules[grammar_rules.length - 1]?.productions.trim() !== '')}
+            <button class="add-rule-btn" on:click={addNewRule}>+ Add New Rule</button>
+        {/if}
     </div>
 
     <div class="button-container">
