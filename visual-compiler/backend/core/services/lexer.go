@@ -130,6 +130,37 @@ func CreateTokens(source string, rules []TypeRegex) ([]TypeValue, []string, erro
 	return tokens, leftovers, nil
 }
 
+// Name: TokensHelper
+//
+// Parameters: string, []TypeRegex, *[]TypeValue
+//
+// Return: string
+//
+// Recursive helper function to create the token stream from the source code
+func TokensHelper(source string, rules []TypeRegex, tokens *[]TypeValue) string {
+
+	source = strings.TrimSpace(source)
+	if source == "" {
+		return ""
+	}
+
+	for _, rule := range rules {
+
+		re := regexp.MustCompile("^" + rule.Regex)
+		location := re.FindStringIndex(source)
+
+		if location != nil && location[0] == 0 {
+
+			match := source[location[0]:location[1]]
+			*tokens = append(*tokens, TypeValue{Type: rule.Type, Value: match})
+
+			return TokensHelper(source[location[1]:], rules, tokens)
+		}
+	}
+
+	return source
+}
+
 // Name: CreateTokensFromDFA
 //
 // Parameters: string, Automata
