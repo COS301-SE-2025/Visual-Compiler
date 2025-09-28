@@ -673,15 +673,15 @@
                 
                 <!-- Default button second (to the right) -->
                 <button
-                    class="default-toggle-btn"
-                    class:selected={show_default_grammar}
-                    on:click={show_default_grammar ? removeDefaultGrammar : insertDefaultGrammar}
-                    type="button"
-                    aria-label={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
-                    title={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
-                >
-                    <span class="icon">{show_default_grammar ? '🧹' : '🪄'}</span>
-                </button>
+                class="option-btn example-btn"
+                class:selected={show_default_grammar}
+                on:click={show_default_grammar ? removeDefaultGrammar : insertDefaultGrammar}
+                type="button"
+                aria-label={show_default_grammar ? 'Restore your input' : 'Show context-free grammar example'}
+                title={show_default_grammar ? 'Restore your input' : 'Show context-free grammar example'}
+            >
+                {show_default_grammar ? 'Restore Input' : 'Show Example'}
+            </button>
             </div>
 
         </div>
@@ -837,7 +837,7 @@
         color: #001a6e;
         font-family: 'Times New Roman';
     }
-    .option-btn {
+	.option-btn {
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
@@ -854,14 +854,12 @@
 		overflow: hidden;
 		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
 		text-decoration: none;
-		width: 100%;
-		max-width: 150px;
+		width: 140px;
+		min-width: 140px;
 		justify-content: center;
 		margin-left: 1rem;
-	}
-
-	.example-btn {
-		background: linear-gradient(135deg, #1e40af, #3b82f6);
+	}	.example-btn {
+		background: #1e40af;
 	}
 
 	.example-btn:hover {

@@ -1401,27 +1401,28 @@
 			{/if}
 
 			{#if selectedType && !showDefault}
-				<button
-					class="default-toggle-btn"
-					on:click={insertDefault}
-					type="button"
-					aria-label="Insert default input"
-					title="Insert default input"
-				>
-					<span class="icon">🪄</span>
-				</button>
-			{/if}
-			{#if selectedType && showDefault}
-				<button
-					class="default-toggle-btn selected"
-					on:click={removeDefault}
-					type="button"
-					aria-label="Remove default input"
-					title="Remove default input"
-				>
-					<span class="icon">🧹</span>
-				</button>
-			{/if}
+			<button
+				class="option-btn example-btn"
+				on:click={insertDefault}
+				type="button"
+				aria-label="Show example code"
+				title="Show example code"
+			>
+				Show Example
+			</button>
+
+		{/if}
+		{#if selectedType && showDefault}
+			<button
+				class="option-btn example-btn selected"
+				on:click={removeDefault}
+				type="button"
+				aria-label="Restore your input"
+				title="Restore your input"
+			>
+				Restore Input
+			</button>
+		{/if}
 		</div>
 
 	</div>
@@ -2020,14 +2021,14 @@
 		overflow: hidden;
 		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
 		text-decoration: none;
-		width: 100%;
-		max-width: 150px;
+		width: 140px;
+		max-width: 140px;
 		justify-content: center;
 		margin-left: 1rem;
 	}
 
 	.example-btn {
-		background: linear-gradient(135deg, #1e40af, #3b82f6);
+		background: #1e40af;
 	}
 
 	.example-btn:hover {
@@ -2040,7 +2041,7 @@
 	}
 
 	.option-btn.selected {
-		background: linear-gradient(135deg, #1e40af, #3b82f6);
+		background: #1e40af;
 	}
 
 	.icon {

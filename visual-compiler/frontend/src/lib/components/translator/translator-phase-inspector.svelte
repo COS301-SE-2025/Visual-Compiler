@@ -438,15 +438,15 @@
 					<span class="icon">🗑️</span>
 				</button>
 				<button
-					class="default-toggle-btn"
-					class:selected={show_default_rules}
-					on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
-					type="button"
-					aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-					title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-				>
-					<span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
-				</button>
+				class="option-btn example-btn"
+				class:selected={show_default_rules}
+				on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
+				type="button"
+				aria-label={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
+				title={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
+			>
+				{show_default_rules ? 'Restore Input' : 'Show Example'}
+			</button>
 			</div>
 
 		</div>
@@ -918,6 +918,47 @@
         align-items: center;
     }
 
+	.option-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 140px;
+		min-width: 140px;
+		justify-content: center;
+		margin-left: 1rem;
+	}
+
+	.example-btn {
+		background: #1e40af;
+	}
+
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+	}
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+	}
+
+	.option-btn.selected {
+		background: #1e40af;
+	}
+
+
     .clear-toggle-btn {
         background: white;
         border: 2px solid #e5e7eb;
@@ -1009,6 +1050,8 @@
 		color: #6c757d;
 		transform: none;
 	}
+
+	
 	
 	/* Add section-header style */
 	.section-header {

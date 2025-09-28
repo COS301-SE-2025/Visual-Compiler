@@ -423,8 +423,8 @@ func nothing() (int) {
         overflow: hidden;
         box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
         text-decoration: none;
-        width: 150px;
-        min-width: 150px;
+        width: 140px;
+        min-width: 140px;
         justify-content: center;
         margin-left: 1rem;
     }

@@ -724,15 +724,15 @@
                     
                     <!-- Default button second (to the right) -->
                     <button
-                        class="default-toggle-btn"
-                        class:selected={show_default_rules}
-                        on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
-                        type="button"
-                        aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-                        title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-                    >
-                        <span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
-                    </button>
+                    class="option-btn example-btn"
+                    class:selected={show_default_rules}
+                    on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
+                    type="button"
+                    aria-label={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
+                    title={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
+                >
+                    {show_default_rules ? 'Restore Input' : 'Show Example'}
+                </button>
                 </div>
 
             </div>
@@ -1062,14 +1062,14 @@
 		overflow: hidden;
 		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
 		text-decoration: none;
-		width: 100%;
-		max-width: 150px;
+		width: 140px;
+		max-width: 140px;
 		justify-content: center;
 		margin-left: 1rem;
 	}
 
 	.example-btn {
-		background: linear-gradient(135deg, #1e40af, #3b82f6);
+		background: #1e40af;
 	}
 
 	.example-btn:hover {
