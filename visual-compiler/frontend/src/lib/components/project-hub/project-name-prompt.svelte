@@ -92,7 +92,7 @@
     }
 
     .prompt-modal {
-        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        background: linear-gradient(145deg, #ffffff 0%, #fdfdfd 100%);
         border-radius: 0.75rem;
         padding: 2rem;
         width: 100%;
@@ -111,11 +111,7 @@
         font-weight: 700;
         color: #1f2937;
         margin-bottom: 0.5rem;
-        background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
 
     .prompt-subheading {
@@ -140,10 +136,10 @@
         box-sizing: border-box;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         font-weight: 500;
-        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+        background: linear-gradient(145deg, #ffffff 0%, #fefefe 100%);
         color: #1f2937;
         box-shadow: 
-            inset 0 2px 4px rgba(0, 0, 0, 0.05),
+            inset 0 1px 2px rgba(0, 0, 0, 0.05),
             0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
@@ -157,13 +153,13 @@
     .project-name-input:focus {
         outline: none;
         border-color: #3b82f6;
-        background: linear-gradient(145deg, #f8fafc 0%, #ffffff 100%);
+        background: linear-gradient(145deg, #fefefe 0%, #ffffff 100%);
         color: #111827;
         box-shadow: 
             0 0 0 4px rgba(59, 130, 246, 0.15),
-            inset 0 2px 4px rgba(0, 0, 0, 0.05),
+            inset 0 1px 2px rgba(0, 0, 0, 0.05),
             0 4px 12px rgba(59, 130, 246, 0.1);
-        transform: translateY(-2px);
+        transform: translateY(-1px);
     }
 
     .button-container {
@@ -186,14 +182,14 @@
     }
 
     .cancel-button {
-        background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%);
+        background: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
         color: #475569;
         border: 2px solid #cbd5e1;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .cancel-button:hover {
-        background: linear-gradient(145deg, #e2e8f0 0%, #cbd5e1 100%);
+        background: linear-gradient(145deg, #f1f5f9 0%, #e2e8f0 100%);
         border-color: #94a3b8;
         color: #334155;
         transform: translateY(-2px);
@@ -219,7 +215,7 @@
     }
 
     .create-button:hover:not(:disabled) {
-        background: linear-gradient(145deg, #2563eb 0%, #1d4ed8 100%);
+        background: linear-gradient(145deg, #2563eb 0%, #1e40af 100%);
         border-color: #1e40af;
         transform: translateY(-2px);
         box-shadow: 
@@ -235,7 +231,7 @@
     }
 
     .create-button:disabled {
-        background: linear-gradient(145deg, #d1d5db 0%, #9ca3af 100%);
+        background: linear-gradient(145deg, #d1d5db 0%, #c4c4c4 100%);
         border-color: #9ca3af;
         color: #6b7280;
         cursor: not-allowed;
@@ -275,29 +271,7 @@
         }
     }
 
-    /* Add subtle pulsing animation for the create button when enabled */
-    .create-button:not(:disabled) {
-        animation: subtle-pulse-light 2s infinite;
-    }
-
-    @keyframes subtle-pulse-light {
-        0%, 100% {
-            box-shadow: 
-                0 4px 12px rgba(59, 130, 246, 0.3),
-                0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        50% {
-            box-shadow: 
-                0 4px 12px rgba(59, 130, 246, 0.4),
-                0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-    }
-
-    .create-button:hover:not(:disabled) {
-        animation: none; /* Stop pulsing on hover */
-    }
-
-    /* Enhanced Dark Mode Styles */
+    /* Enhanced Dark Mode Styles - Reduced gradients */
     :global(html.dark-mode) .backdrop {
         background: rgba(0, 0, 0, 0.8);
         backdrop-filter: blur(8px);
@@ -305,7 +279,7 @@
     }
 
     :global(html.dark-mode) .prompt-modal {
-        background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+        background: linear-gradient(145deg, #1e293b 0%, #1a202c 100%);
         border: 1px solid #334155;
         color: #f1f5f9;
         box-shadow:
@@ -316,10 +290,6 @@
     :global(html.dark-mode) .prompt-heading {
         color: #f8fafc;
         text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
     }
 
     :global(html.dark-mode) .prompt-subheading {
@@ -329,12 +299,12 @@
     }
 
     :global(html.dark-mode) .project-name-input {
-        background: linear-gradient(145deg, #374151 0%, #1f2937 100%);
+        background: linear-gradient(145deg, #374151 0%, #2d3748 100%);
         border: 2px solid #4b5563;
         color: #f9fafb;
         font-weight: 600;
         box-shadow: 
-            inset 0 2px 4px rgba(0, 0, 0, 0.1),
+            inset 0 1px 2px rgba(0, 0, 0, 0.1),
             0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
@@ -350,14 +320,14 @@
         color: #ffffff;
         box-shadow: 
             0 0 0 4px rgba(59, 130, 246, 0.15),
-            inset 0 2px 4px rgba(0, 0, 0, 0.1),
+            inset 0 1px 2px rgba(0, 0, 0, 0.1),
             0 4px 12px rgba(59, 130, 246, 0.1);
         outline: none;
-        transform: translateY(-2px);
+        transform: translateY(-1px);
     }
 
     :global(html.dark-mode) .cancel-button {
-        background: linear-gradient(145deg, #475569 0%, #334155 100%);
+        background: linear-gradient(145deg, #475569 0%, #3f4754 100%);
         border: 2px solid #64748b;
         color: #f1f5f9;
         font-weight: 600;
@@ -365,7 +335,7 @@
     }
 
     :global(html.dark-mode) .cancel-button:hover {
-        background: linear-gradient(145deg, #64748b 0%, #475569 100%);
+        background: linear-gradient(145deg, #64748b 0%, #546070 100%);
         border-color: #94a3b8;
         color: #ffffff;
         transform: translateY(-2px);
@@ -375,7 +345,7 @@
     }
 
     :global(html.dark-mode) .create-button {
-        background: linear-gradient(145deg, #1e40af 0%, #1e3a8a 100%);
+        background: linear-gradient(145deg, #1e40af 0%, #1a365d 100%);
         border: 2px solid #3b82f6;
         color: #ffffff;
         font-weight: 700;
@@ -386,7 +356,7 @@
     }
 
     :global(html.dark-mode) .create-button:hover:not(:disabled) {
-        background: linear-gradient(145deg, #2563eb 0%, #1d4ed8 100%);
+        background: linear-gradient(145deg, #2563eb 0%, #2b77e7 100%);
         border-color: #60a5fa;
         transform: translateY(-2px);
         box-shadow: 
@@ -395,7 +365,7 @@
     }
 
     :global(html.dark-mode) .create-button:disabled {
-        background: linear-gradient(145deg, #6b7280 0%, #4b5563 100%);
+        background: linear-gradient(145deg, #6b7280 0%, #5a6173 100%);
         border-color: #6b7280;
         color: #9ca3af;
         cursor: not-allowed;
@@ -421,50 +391,5 @@
     :global(html.dark-mode) .create-button:focus {
         outline: 3px solid rgba(59, 130, 246, 0.5);
         outline-offset: 2px;
-    }
-
-    /* Mobile responsiveness */
-    @media (max-width: 640px) {
-        :global(html.dark-mode) .prompt-modal {
-            margin: 1rem;
-            padding: 1.5rem;
-        }
-        
-        :global(html.dark-mode) .button-container {
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        
-        :global(html.dark-mode) .cancel-button,
-        :global(html.dark-mode) .create-button {
-            width: 100%;
-            padding: 0.75rem 1rem;
-        }
-        
-        :global(html.dark-mode) .project-name-input {
-            font-size: 16px; /* Prevents zoom on iOS */
-        }
-    }
-
-    /* Add subtle pulsing animation for the create button when enabled */
-    :global(html.dark-mode) .create-button:not(:disabled) {
-        animation: subtle-pulse 2s infinite;
-    }
-
-    @keyframes subtle-pulse {
-        0%, 100% {
-            box-shadow: 
-                0 4px 12px rgba(30, 64, 175, 0.3),
-                0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        50% {
-            box-shadow: 
-                0 4px 12px rgba(30, 64, 175, 0.4),
-                0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-    }
-
-    :global(html.dark-mode) .create-button:hover:not(:disabled) {
-        animation: none; /* Stop pulsing on hover */
     }
 </style>
