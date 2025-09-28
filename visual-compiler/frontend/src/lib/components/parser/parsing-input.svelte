@@ -131,11 +131,13 @@
             }
         };
 
-        window.addEventListener('ai-parser-generated', aiParserEventListener);
+        if (typeof window !== 'undefined') {
+            window.addEventListener('ai-parser-generated', aiParserEventListener);
+        }
     });
 
     onDestroy(() => {
-        if (aiParserEventListener) {
+        if (aiParserEventListener && typeof window !== 'undefined') {
             window.removeEventListener('ai-parser-generated', aiParserEventListener);
         }
     });
