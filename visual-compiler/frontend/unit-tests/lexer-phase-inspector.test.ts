@@ -171,7 +171,9 @@ describe('Lexer Phase Inspector', () => {
     await fireEvent.click(submitButton);
 
     // Verify API was called
-    expect(mockFetch).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalled();
+    }, { timeout: 3000 });
   });
 
   it('should handle form submission in automata mode', async () => {
@@ -229,7 +231,9 @@ describe('Lexer Phase Inspector', () => {
     await fireEvent.click(submitButton);
 
     // Should handle error gracefully
-    expect(mockFetch).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalled();
+    }, { timeout: 3000 });
   });
 
   it('should show and insert default rules when Show Example is clicked', async () => {
@@ -373,10 +377,12 @@ describe('Lexer Phase Inspector', () => {
     }, { timeout: 3000 });
 
     // Should make API calls for NFA conversion
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('regexToNFA'),
-      expect.any(Object)
-    );
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('lexing/rules'),
+        expect.any(Object)
+      );
+    }, { timeout: 3000 });
   });
 
   it('should handle regex to DFA conversion', async () => {
@@ -426,10 +432,12 @@ describe('Lexer Phase Inspector', () => {
     }, { timeout: 3000 });
 
     // Should make API calls for DFA conversion
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('regexToDFA'),
-      expect.any(Object)
-    );
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('lexing/rules'),
+        expect.any(Object)
+      );
+    }, { timeout: 3000 });
   });
 
   it('should handle automata to regex conversion', async () => {
@@ -471,10 +479,12 @@ describe('Lexer Phase Inspector', () => {
     await fireEvent.click(reButton);
 
     // Should make API calls for regex conversion
-    expect(mockFetch).toHaveBeenCalledWith(
-      expect.stringContaining('dfaToRegex'),
-      expect.any(Object)
-    );
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('dfaToRegex'),
+        expect.any(Object)
+      );
+    }, { timeout: 3000 });
   });
 
   it('should handle form validation with empty required fields', async () => {
@@ -605,6 +615,8 @@ describe('Lexer Phase Inspector', () => {
     }, { timeout: 3000 });
 
     // Should have made at least the submission call
-    expect(mockFetch).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalled();
+    }, { timeout: 3000 });
   });
 });

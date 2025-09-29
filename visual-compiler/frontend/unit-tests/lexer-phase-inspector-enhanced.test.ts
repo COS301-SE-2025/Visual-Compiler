@@ -166,8 +166,10 @@ describe('Lexer PhaseInspector Enhanced Coverage Tests', () => {
 		const submitButton = screen.getByRole('button', { name: 'Submit' });
 		await fireEvent.click(submitButton);
 
-		// Verify that fetch was called (indicates form submission)
-		expect(mockFetch).toHaveBeenCalled();
+		// Wait for async submission to complete
+		await waitFor(() => {
+			expect(mockFetch).toHaveBeenCalled();
+		}, { timeout: 3000 });
 	});
 
 	it('TestTokenGeneration_Success: Should handle token generation', async () => {
@@ -208,14 +210,18 @@ describe('Lexer PhaseInspector Enhanced Coverage Tests', () => {
 		const submitButton = screen.getByRole('button', { name: 'Submit' });
 		await fireEvent.click(submitButton);
 
+		// Wait for async submission to complete, then try to click generate button
+		await waitFor(() => {
+			expect(mockFetch).toHaveBeenCalled();
+		}, { timeout: 3000 });
+
+		// Look for generate button after successful submission
 		await waitFor(() => {
 			const generateButton = screen.queryByRole('button', { name: 'Generate Tokens' });
 			if (generateButton) {
 				fireEvent.click(generateButton);
 			}
-		});
-
-		expect(mockFetch).toHaveBeenCalled();
+		}, { timeout: 1000 });
 	});
 
 	it('TestErrorHandling_Success: Should handle API errors gracefully', async () => {
@@ -241,8 +247,10 @@ describe('Lexer PhaseInspector Enhanced Coverage Tests', () => {
 		const submitButton = screen.getByRole('button', { name: 'Submit' });
 		await fireEvent.click(submitButton);
 
-		// Should handle the error - verify API call was made
-		expect(mockFetch).toHaveBeenCalled();
+		// Wait for async submission to complete - should handle the error
+		await waitFor(() => {
+			expect(mockFetch).toHaveBeenCalled();
+		}, { timeout: 3000 });
 	});
 
 	it('TestFormModeSwitch_Success: Should switch between regex and automata modes', async () => {

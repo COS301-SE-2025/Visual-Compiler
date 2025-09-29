@@ -268,7 +268,8 @@ describe('AnalyserPhaseInspector Component', () => {
 	it('TestLoadingState_Success: Shows loading state during operations', async () => {
 		render(AnalyserPhaseInspector);
 
-		const submitButton = screen.getByText('Submit Rules');
+		// Get the actual button element, not the text content
+		const submitButton = screen.getByRole('button', { name: /submit rules/i });
 		
 		// Initially submit button is disabled because no rules are configured
 		expect(submitButton).toBeDisabled();
