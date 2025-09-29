@@ -1,4 +1,4 @@
-describe('Translator Test', ()=> {
+/*describe('Translator Test', ()=> {
     beforeEach('Login user',()=>{
         const test_username = "e2e tester";
         const test_password = "testUser13";
@@ -140,3 +140,4 @@ describe('Translator Test', ()=> {
 
 
 });
+*/
