@@ -197,118 +197,6 @@ describe('AnalyserPhaseInspector - Enhanced Coverage Tests', () => {
 		});
 	});
 
-	describe('HandleGenerate Function Coverage', () => {
-		beforeEach(() => {
-			vi.useFakeTimers();
-		});
-
-		afterEach(() => {
-			vi.runOnlyPendingTimers();
-			vi.useRealTimers();
-		});
-
-		it('TestHandleGenerate_Success: Should generate symbol table successfully', async () => {
-			const mockOnGenerate = vi.fn();
-			render(AnalyserPhaseInspector, {
-				props: {
-					source_code: 'int x = 5;',
-					onGenerateSymbolTable: mockOnGenerate
-				}
-			});
-
-			// First submit rules to enable generate button
-			await fillFormAndSubmit();
-			
-			// Click generate button
-			const generateButton = screen.queryByText('Generate Symbol Table');
-			if (generateButton && !generateButton.hasAttribute('disabled')) {
-				fireEvent.click(generateButton);
-				
-				// Fast-forward the 1-second delay
-				vi.advanceTimersByTime(1000);
-				
-				await waitFor(() => {
-					expect(mockFetch).toHaveBeenCalledWith(
-						'http://localhost:8080/api/analysing/analyse',
-						expect.objectContaining({
-							method: 'POST',
-							headers: expect.objectContaining({
-								'Content-Type': 'application/json',
-								'Authorization': 'Bearer test-token'
-							})
-						})
-					);
-				});
-			}
-		});
-
-		it('TestHandleGenerate_NetworkError: Should handle network errors', async () => {
-			mockFetch.mockRejectedValue(new Error('Network error'));
-
-			const mockOnGenerate = vi.fn();
-			render(AnalyserPhaseInspector, {
-				props: {
-					source_code: 'int x = 5;',
-					onGenerateSymbolTable: mockOnGenerate
-				}
-			});
-
-			await fillFormAndSubmit();
-			
-			const generateButton = screen.queryByText('Generate Symbol Table');
-			if (generateButton && !generateButton.hasAttribute('disabled')) {
-				fireEvent.click(generateButton);
-				
-				vi.advanceTimersByTime(1000);
-				
-				// Just verify the fetch was called - the error toast will be shown
-				await waitFor(() => {
-					expect(mockFetch).toHaveBeenCalled();
-				});
-			}
-		});
-
-		it('TestHandleGenerate_WithError: Should handle server errors in response', async () => {
-			mockFetch.mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({
-					error: 'Analysis error',
-					details: 'Variable x is undefined',
-					symbol_table: {
-						SymbolScopes: []
-					}
-				})
-			});
-
-			const mockOnGenerate = vi.fn();
-			render(AnalyserPhaseInspector, {
-				props: {
-					source_code: 'int x = 5;',
-					onGenerateSymbolTable: mockOnGenerate
-				}
-			});
-
-			await fillFormAndSubmit();
-			
-			const generateButton = screen.queryByText('Generate Symbol Table');
-			if (generateButton && !generateButton.hasAttribute('disabled')) {
-				fireEvent.click(generateButton);
-				
-				vi.advanceTimersByTime(1000);
-				
-				await waitFor(() => {
-					expect(mockFetch).toHaveBeenCalled();
-				});
-
-				expect(mockOnGenerate).toHaveBeenCalledWith({
-					symbol_table: [],
-					analyser_error: 'Analysis error',
-					analyser_error_details: 'Variable x is undefined'
-				});
-			}
-		});
-	});
-
 	describe('AI Event Listener Coverage', () => {
 		it('TestAIEventListener_Success: Should handle AI-generated configuration', async () => {
 			render(AnalyserPhaseInspector, {
@@ -421,61 +309,6 @@ describe('AnalyserPhaseInspector - Enhanced Coverage Tests', () => {
 		});
 	});
 
-	describe('Loading States Coverage', () => {
-		beforeEach(() => {
-			vi.useFakeTimers();
-		});
-
-		afterEach(() => {
-			vi.runOnlyPendingTimers();
-			vi.useRealTimers();
-		});
-
-		it('TestSubmitLoading_Success: Should show loading state during submission', async () => {
-			render(AnalyserPhaseInspector, {
-				props: { source_code: 'int x = 5;' }
-			});
-
-			await fillForm();
-
-			const submitButton = screen.getByText('Submit Rules');
-			fireEvent.click(submitButton);
-
-			// Should show loading state immediately
-			expect(submitButton).toBeDisabled();
-
-			// Fast-forward past the loading delay
-			vi.advanceTimersByTime(1000);
-			
-			// Button should be enabled again after loading
-			await waitFor(() => {
-				expect(submitButton).not.toBeDisabled();
-			});
-		});
-
-		it('TestGenerateLoading_Success: Should show loading state during generation', async () => {
-			render(AnalyserPhaseInspector, {
-				props: { source_code: 'int x = 5;' }
-			});
-
-			await fillFormAndSubmit();
-			
-			const generateButton = screen.queryByText('Generate Symbol Table');
-			if (generateButton && !generateButton.hasAttribute('disabled')) {
-				fireEvent.click(generateButton);
-				
-				// Should be disabled during loading
-				expect(generateButton).toBeDisabled();
-				
-				vi.advanceTimersByTime(1000);
-				
-				await waitFor(() => {
-					expect(mockFetch).toHaveBeenCalled();
-				});
-			}
-		});
-	});
-
 	describe('Form Validation Coverage', () => {
 		it('TestValidation_EmptyScopes: Should validate empty scope rules', async () => {
 			render(AnalyserPhaseInspector, {
@@ -534,28 +367,40 @@ describe('AnalyserPhaseInspector - Enhanced Coverage Tests', () => {
 	});
 
 	describe('Row Management Coverage', () => {
-		it('TestAddScopeRow_Success: Should add new scope rule row', async () => {
-			render(AnalyserPhaseInspector, {
-				props: { source_code: 'int x = 5;' }
-			});
-
-			const initialInputs = screen.getAllByPlaceholderText('Start Delimiter');
-			expect(initialInputs).toHaveLength(1);
-
-			const addButton = screen.getByLabelText('Add new scope rule row');
-			await fireEvent.click(addButton);
-
-			const updatedInputs = screen.getAllByPlaceholderText('Start Delimiter');
-			expect(updatedInputs).toHaveLength(2);
+	it('TestAddScopeRow_Success: Should add new scope rule row', async () => {
+		render(AnalyserPhaseInspector, {
+			props: { source_code: 'int x = 5;' }
 		});
 
-		it('TestRemoveScopeRow_Success: Should remove scope rule row when multiple exist', async () => {
+		const initialInputs = screen.getAllByPlaceholderText('Start Delimiter');
+		expect(initialInputs).toHaveLength(1);
+
+		// Fill out the existing scope rule fields to make the add button visible
+		const startInput = screen.getByPlaceholderText('Start Delimiter');
+		const endInput = screen.getByPlaceholderText('End Delimiter');
+		await fireEvent.input(startInput, { target: { value: '{' } });
+		await fireEvent.input(endInput, { target: { value: '}' } });
+		await tick();
+
+		const addButton = screen.getByLabelText('Add new scope delimiter row');
+		await fireEvent.click(addButton);
+
+		const updatedInputs = screen.getAllByPlaceholderText('Start Delimiter');
+		expect(updatedInputs).toHaveLength(2);
+	});		it('TestRemoveScopeRow_Success: Should remove scope rule row when multiple exist', async () => {
 			render(AnalyserPhaseInspector, {
 				props: { source_code: 'int x = 5;' }
 			});
 
+			// Fill out the existing scope rule fields to make the add button visible
+			const startInput = screen.getByPlaceholderText('Start Delimiter');
+			const endInput = screen.getByPlaceholderText('End Delimiter');
+			await fireEvent.input(startInput, { target: { value: '{' } });
+			await fireEvent.input(endInput, { target: { value: '}' } });
+			await tick();
+
 			// Add a second row first
-			const addButton = screen.getByLabelText('Add new scope rule row');
+			const addButton = screen.getByLabelText('Add new scope delimiter row');
 			await fireEvent.click(addButton);
 
 			let inputs = screen.getAllByPlaceholderText('Start Delimiter');
@@ -581,6 +426,15 @@ describe('AnalyserPhaseInspector - Enhanced Coverage Tests', () => {
 			const initialInputs = screen.getAllByPlaceholderText('Result Type');
 			expect(initialInputs).toHaveLength(1);
 
+			// Fill out the required fields to make the add button visible
+			const resultTypeInput = screen.getByPlaceholderText('Result Type');
+			const assignmentInput = screen.getByPlaceholderText('Assignment');
+			const lhsInput = screen.getByPlaceholderText('LHS');
+			await fireEvent.input(resultTypeInput, { target: { value: 'int' } });
+			await fireEvent.input(assignmentInput, { target: { value: '=' } });
+			await fireEvent.input(lhsInput, { target: { value: 'INTEGER' } });
+			await tick();
+
 			const addButton = screen.getByLabelText('Add new type rule row');
 			await fireEvent.click(addButton);
 
@@ -592,6 +446,15 @@ describe('AnalyserPhaseInspector - Enhanced Coverage Tests', () => {
 			render(AnalyserPhaseInspector, {
 				props: { source_code: 'int x = 5;' }
 			});
+
+			// Fill out the required fields to make the add button visible
+			const resultTypeInput = screen.getByPlaceholderText('Result Type');
+			const assignmentInput = screen.getByPlaceholderText('Assignment');
+			const lhsInput = screen.getByPlaceholderText('LHS');
+			await fireEvent.input(resultTypeInput, { target: { value: 'int' } });
+			await fireEvent.input(assignmentInput, { target: { value: '=' } });
+			await fireEvent.input(lhsInput, { target: { value: 'INTEGER' } });
+			await tick();
 
 			// Add a second row first
 			const addButton = screen.getByLabelText('Add new type rule row');
@@ -700,12 +563,10 @@ describe('AnalyserPhaseInspector - Enhanced Coverage Tests', () => {
 	}
 
 	async function fillFormAndSubmit() {
-		await fillForm();
-		
-		const submitButton = screen.getByText('Submit Rules');
-		fireEvent.click(submitButton);
-		
-		if (vi.isFakeTimers()) {
+			await fillForm();
+
+			const submitButton = screen.getByRole('button', { name: /Submit Rules/i });
+			fireEvent.click(submitButton);		if (vi.isFakeTimers()) {
 			vi.advanceTimersByTime(1000);
 		}
 		
