@@ -57,7 +57,7 @@ describe('Parser Test', ()=> {
         cy.get('.canvas-container').contains('Source Code').dblclick();
         cy.wait(500);
         cy.get('.code-input-container').should('contain', 'Source Code Input');
-        cy.get('.code-input-header-row button').click();
+        cy.get('button').contains('Show Example').click();
         cy.get('.confirm-btn').contains('Confirm Code');
         cy.get('.confirm-btn').click();
         cy.contains('Source code saved');
@@ -68,29 +68,32 @@ describe('Parser Test', ()=> {
         cy.get('.canvas-container').should('contain','Lexer');
         cy.get('#A-1\\/N-source-1').trigger('mousedown', { which: 1, force: true });
         cy.get('#A-1\\/N-lexer-2').trigger('mousemove', { force: true }).trigger('mouseup', { force: true });
-        cy.get('.canvas-container').contains('Lexer').dblclick();
-        cy.wait(500);
-        cy.get('.phase-inspector').should('contain','LEXING');
-        cy.get('.automaton-btn').contains('Regular Expression').click();
-        cy.get('.default-toggle-btn').click();
-        cy.get('.submit-button').contains('Submit').click();
-        cy.get('.generate-button').contains('Generate Tokens').click();
-        cy.get('.return-button').click();
 
         //parser node
         cy.get('button').should('contain', 'Parser');
         cy.get('button').contains('Parser').click();
+        cy.wait(500);
         cy.get('#A-1\\/N-source-1').trigger('mousedown', { which: 1, force: true });
         cy.get('#A-1\\/N-lexer-2').trigger('mousemove', { force: true }).trigger('mouseup', { force: true });
         cy.wait(500);
         cy.get('#A-2\\/N-lexer-2').trigger('mousedown', {which: 1, force: true});
         cy.get('#A-1\\/N-parser-3').trigger('mousemove', {force: true}).trigger('mouseup', {force: true});
+
         cy.wait(500);
+        cy.get('.canvas-container').contains('Lexer').dblclick();
+        cy.wait(500);
+        cy.get('.phase-inspector').should('contain','LEXING');
+        cy.get('.automaton-btn').contains('Regular Expression').click();
+        cy.get('button').contains('Show Example').click();
+        cy.get('.submit-button').contains('Submit').click();
+        cy.get('.generate-button').contains('Generate Tokens').click();
+        cy.get('.return-button').click();
+        cy.wait(1000);
         cy.get('.canvas-container').contains('Parser').dblclick();
         cy.wait(500);
         cy.get('.phase-inspector').should('contain','PARSING');
         cy.get('.grammar-header').should('contain','Context-Free Grammar');
-        cy.get('.default-toggle-btn').click();
+        cy.get('button').contains('Show Example').click();
 
         cy.get('.submit-button').contains('Submit Grammar').click();
         cy.get('.submit-button').contains('Generate Syntax Tree').click();

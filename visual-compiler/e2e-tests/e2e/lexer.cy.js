@@ -57,7 +57,7 @@ describe('Lexer Test', ()=> {
         cy.get('.canvas-container').contains('Source Code').dblclick();
         cy.wait(500);
         cy.get('.code-input-container').should('contain', 'Source Code Input');
-        cy.get('.code-input-header-row button').click();
+        cy.get('button').contains('Show Example').click();
         cy.get('.confirm-btn').contains('Confirm Code');
         cy.get('.confirm-btn').click();
         cy.contains('Source code saved');
@@ -73,7 +73,7 @@ describe('Lexer Test', ()=> {
 
         cy.get('.phase-inspector').should('contain','LEXING');
         cy.get('.automaton-btn').contains('Regular Expression').click();
-        cy.get('.default-toggle-btn').click();
+        cy.get('button').contains('Show Example').click();
 
         cy.get('.submit-button').contains('Submit').click();
         cy.get('.generate-button').contains('Generate Tokens').click();
@@ -94,7 +94,7 @@ describe('Lexer Test', ()=> {
         cy.get('.token-table').should('contain','13');
         cy.get('.token-table').should('contain','1');
         cy.get('.token-table').should('contain','12');
-        cy.get('.token-table').should('contain','DELIMITER');
+        cy.get('.token-table').should('contain','SEPARATOR');
         cy.get('.token-table').should('contain',';');
         cy.get('.token-table').should('contain','OPEN_BRACKET');
         cy.get('.token-table').should('contain','(');
@@ -145,7 +145,7 @@ describe('Lexer Test', ()=> {
         cy.get('.canvas-container').contains('Source Code').dblclick();
         cy.wait(500);
         cy.get('.code-input-container').should('contain', 'Source Code Input');
-        cy.get('.code-input-header-row button').click();
+        cy.get('button').contains('Show Example').click();
         cy.get('.confirm-btn').contains('Confirm Code');
         cy.get('.confirm-btn').click();
         cy.contains('Source code saved');
@@ -161,7 +161,7 @@ describe('Lexer Test', ()=> {
 
         cy.get('.phase-inspector').should('contain','LEXING');
         cy.get('.automaton-btn').contains('Automata').click();
-        cy.get('.default-toggle-btn').click();
+        cy.get('button').contains('Show Example').click();
 
         cy.get('.action-btn').contains('Tokenisation').click();
 
@@ -181,7 +181,7 @@ describe('Lexer Test', ()=> {
         cy.get('.token-table').should('contain','13');
         cy.get('.token-table').should('contain','1');
         cy.get('.token-table').should('contain','12');
-        cy.get('.token-table').should('contain','DELIMITER');
+        cy.get('.token-table').should('contain','SEPARATOR');
         cy.get('.token-table').should('contain',';');
         cy.get('.token-table').should('contain','OPEN_BRACKET');
         cy.get('.token-table').should('contain','(');

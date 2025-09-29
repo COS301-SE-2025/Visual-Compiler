@@ -56,7 +56,7 @@ describe('Optimiser Test', ()=> {
         cy.get('button').contains('Optimiser').click();
         cy.get('.canvas-container').should('contain','Optimiser');
         cy.get('.canvas-container').contains('Optimiser').dblclick();
-        cy.get('.default-toggle-btn').click();
+        cy.get('button').contains('Show Example').click();
 
         cy.get('.submit-button').contains('Optimise Code').click();
   
