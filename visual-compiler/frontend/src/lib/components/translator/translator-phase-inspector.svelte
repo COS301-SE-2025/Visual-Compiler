@@ -240,7 +240,7 @@
 		try {
 			await new Promise(resolve => setTimeout(resolve, 1000));
 
-			const response = await fetch('http://localhost:8080/api/translating/readRules', {
+			const response = await fetch('https://www.visual-compiler.co.za/api/translating/readRules', {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
@@ -298,7 +298,7 @@
 		try {
 			await new Promise(resolve => setTimeout(resolve, 1000));
 
-			const response = await fetch('http://localhost:8080/api/translating/translate', {
+			const response = await fetch('https://www.visual-compiler.co.za/api/translating/translate', {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',

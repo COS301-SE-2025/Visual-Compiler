@@ -180,7 +180,7 @@
                 // FIX: Add 1-second delay before API call
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
-                const res = await fetch('http://localhost:8080/api/lexing/rules', {
+                const res = await fetch('https://www.visual-compiler.co.za/api/lexing/rules', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -256,7 +256,7 @@
                 project_name: project
             };
 
-            const response = await fetch('http://localhost:8080/api/lexing/lexer', {
+            const response = await fetch('https://www.visual-compiler.co.za/api/lexing/lexer', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -381,7 +381,7 @@
 			
             const body = { project_name: project };
 
-            const response = await fetch('http://localhost:8080/api/lexing/dfaToTokens', {
+            const response = await fetch('https://www.visual-compiler.co.za/api/lexing/dfaToTokens', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -754,7 +754,7 @@
 
         try {
             // Convert DFA to Regex
-            const regexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
+            const regexRes = await fetch('https://www.visual-compiler.co.za/api/lexing/dfaToRegex', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -769,7 +769,7 @@
             }
 
 			// Convert Regex to DFA
-            const dfaRes = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
+            const dfaRes = await fetch('https://www.visual-compiler.co.za/api/lexing/regexToDFA', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -821,7 +821,7 @@
         }
 
         try {
-            const response = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
+            const response = await fetch('https://www.visual-compiler.co.za/api/lexing/dfaToRegex', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',

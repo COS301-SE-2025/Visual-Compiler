@@ -210,7 +210,7 @@
         console.log('Using access token:', accessToken.substring(0, 20) + '...'); // Debug log
 
         try {
-            const res = await fetch('http://localhost:8080/api/lexing/code', {
+            const res = await fetch('https://www.visual-compiler.co.za/api/lexing/code', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
