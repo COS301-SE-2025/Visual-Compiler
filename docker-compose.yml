@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    mem_limit: 512m
+    mem_limit: 256m
     cpus: 0.5
 
   backend:
