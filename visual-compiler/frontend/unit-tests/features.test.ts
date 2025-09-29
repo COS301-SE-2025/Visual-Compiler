@@ -17,13 +17,13 @@ describe('Features Component', () => {
 		expect(screen.getByText('Block-Based Construction')).toBeInTheDocument();
 		expect(screen.getByText(/Build compilers step-by-step using intuitive/)).toBeInTheDocument();
 
-		// Test Visualize Artifacts feature
-		expect(screen.getByText('Visualize Artifacts')).toBeInTheDocument();
-		expect(screen.getByText(/See the outputs of each compilation phase/)).toBeInTheDocument();
+		// Test Visualise Artefacts feature (British spelling)
+		expect(screen.getByText('Visualise Artefacts')).toBeInTheDocument();
+		expect(screen.getByText(/See the outputs of each phase like token streams/)).toBeInTheDocument();
 
 		// Test Interactive Learning feature
 		expect(screen.getByText('Interactive Learning')).toBeInTheDocument();
-		expect(screen.getByText(/Experiment with formal concepts like RegEx/)).toBeInTheDocument();
+		expect(screen.getByText(/Experiment with formal models like RegEx/)).toBeInTheDocument();
 	});
 
 	it('TestFeatureCount_Success: Renders exactly 3 feature cards', () => {
@@ -37,7 +37,7 @@ describe('Features Component', () => {
 		render(Features);
 
 		expect(screen.getByRole('heading', { name: 'Block-Based Construction' })).toBeInTheDocument();
-		expect(screen.getByRole('heading', { name: 'Visualize Artifacts' })).toBeInTheDocument();
+		expect(screen.getByRole('heading', { name: 'Visualise Artefacts' })).toBeInTheDocument();
 		expect(screen.getByRole('heading', { name: 'Interactive Learning' })).toBeInTheDocument();
 	});
 
@@ -45,8 +45,8 @@ describe('Features Component', () => {
 		render(Features);
 
 		expect(screen.getByText(/Build compilers step-by-step using intuitive, connectable blocks/)).toBeInTheDocument();
-		expect(screen.getByText(/See the outputs of each compilation phase, such as token streams/)).toBeInTheDocument();
-		expect(screen.getByText(/Experiment with formal concepts like RegEx, CFGs, and Automata/)).toBeInTheDocument();
+		expect(screen.getByText(/See the outputs of each phase like token streams/)).toBeInTheDocument();
+		expect(screen.getByText(/Experiment with formal models like RegEx, Automata, and CFG/)).toBeInTheDocument();
 	});
 
 	it('TestSectionStructure_Success: Has proper semantic structure', () => {
