@@ -30,8 +30,8 @@ vi.mock('../src/lib/components/project-hub/delete-confirmation.svelte', () => ({
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
-// Mock localStorage
-const localStorageMock = {
+// Mock sessionStorage
+const sessionStorageMock = {
 	getItem: vi.fn(),
 	setItem: vi.fn(),
 	removeItem: vi.fn(),
@@ -39,12 +39,12 @@ const localStorageMock = {
 	length: 0,
 	key: vi.fn()
 };
-global.localStorage = localStorageMock as any;
+global.sessionStorage = sessionStorageMock as any;
 
 describe('ProjectHub Component', () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-		localStorageMock.getItem.mockReturnValue('test-user-id');
+		sessionStorageMock.getItem.mockReturnValue('test-user-id');
 		mockFetch.mockResolvedValue({
 			ok: true,
 			json: async () => ({ all_projects: ['Project 1', 'Project 2', 'Project 3'] })
@@ -228,7 +228,7 @@ describe('ProjectHub Component', () => {
 	});
 
 	it('TestNoUserId_Success: Handles missing user ID gracefully', async () => {
-		localStorageMock.getItem.mockReturnValue(null);
+		sessionStorageMock.getItem.mockReturnValue(null);
 
 		render(ProjectHub, { show: true });
 
@@ -314,7 +314,7 @@ describe('ProjectHub Component', () => {
 	// Enhanced Coverage Tests for Project Hub
 	it('TestFetchProjects_ErrorHandling: Handles fetch errors and resets projects', async () => {
 		// Override the default mock return value for this test
-		localStorageMock.getItem.mockReturnValue('123');
+		sessionStorageMock.getItem.mockReturnValue('123');
 		
 		// Mock fetch to reject
 		mockFetch.mockRejectedValueOnce(new Error('Network error'));
@@ -333,7 +333,7 @@ describe('ProjectHub Component', () => {
 	});
 
 	it('TestFetchProjects_HTTPError: Handles non-ok HTTP responses', async () => {
-		localStorageMock.setItem('user_id', '123');
+		sessionStorageMock.setItem('user_id', '123');
 		
 		// Mock fetch to return error response
 		mockFetch.mockResolvedValueOnce({
@@ -350,7 +350,7 @@ describe('ProjectHub Component', () => {
 	});
 
 	it('TestHandleProjectNameConfirm_Success: Creates new project successfully', async () => {
-		localStorageMock.setItem('user_id', '123');
+		sessionStorageMock.setItem('user_id', '123');
 		
 		// Mock successful project creation
 		mockFetch.mockResolvedValueOnce({
@@ -385,7 +385,7 @@ describe('ProjectHub Component', () => {
 	});
 
 	it('TestHandleProjectNameConfirm_Error: Handles project creation errors', async () => {
-		localStorageMock.setItem('user_id', '123');
+		sessionStorageMock.setItem('user_id', '123');
 		
 		// Mock failed project creation
 		mockFetch.mockRejectedValueOnce(new Error('Creation failed'));
@@ -405,7 +405,7 @@ describe('ProjectHub Component', () => {
 	});
 
 	it('TestHandleDeleteClick_Success: Initiates project deletion flow', async () => {
-		localStorageMock.setItem('user_id', '123');
+		sessionStorageMock.setItem('user_id', '123');
 		
 		// Mock successful projects fetch
 		mockFetch.mockResolvedValueOnce({
@@ -429,7 +429,7 @@ describe('ProjectHub Component', () => {
 	});
 
 	it('TestConfirmDelete_Success: Successfully deletes project', async () => {
-		localStorageMock.setItem('user_id', '123');
+		sessionStorageMock.setItem('user_id', '123');
 		
 		// Mock successful project deletion
 		mockFetch.mockResolvedValueOnce({
@@ -447,7 +447,7 @@ describe('ProjectHub Component', () => {
 	});
 
 	it('TestConfirmDelete_Error: Handles deletion errors gracefully', async () => {
-		localStorageMock.setItem('user_id', '123');
+		sessionStorageMock.setItem('user_id', '123');
 		
 		// Mock failed deletion
 		mockFetch.mockRejectedValueOnce(new Error('Deletion failed'));
@@ -459,7 +459,7 @@ describe('ProjectHub Component', () => {
 	});
 
 	it('TestConfirmDelete_HTTPError: Handles deletion HTTP errors', async () => {
-		localStorageMock.setItem('user_id', '123');
+		sessionStorageMock.setItem('user_id', '123');
 		
 		// Mock HTTP error response for deletion
 		mockFetch.mockResolvedValueOnce({
@@ -502,7 +502,7 @@ describe('ProjectHub Component', () => {
 	});
 
 	it('TestProjectSelection_InvalidResponse: Handles invalid API response', async () => {
-		localStorageMock.setItem('user_id', '123');
+		sessionStorageMock.setItem('user_id', '123');
 		
 		// Mock initial projects fetch
 		mockFetch.mockResolvedValueOnce({
@@ -553,7 +553,7 @@ describe('ProjectHub Component', () => {
 	});
 
 	it('TestRecentProjects_EmptyState: Handles empty projects list', async () => {
-		localStorageMock.setItem('user_id', '123');
+		sessionStorageMock.setItem('user_id', '123');
 		
 		// Mock empty projects response
 		mockFetch.mockResolvedValueOnce({
@@ -574,7 +574,7 @@ describe('ProjectHub Component', () => {
 	});
 
 	it('TestRecentProjects_NullResponse: Handles null projects response', async () => {
-		localStorageMock.setItem('user_id', '123');
+		sessionStorageMock.setItem('user_id', '123');
 		
 		// Mock null projects response
 		mockFetch.mockResolvedValueOnce({
@@ -591,13 +591,13 @@ describe('ProjectHub Component', () => {
 		});
 	});
 
-	it('TestUserName_LocalStorage: Correctly retrieves user name from localStorage', () => {
-		localStorageMock.setItem('user_id', 'test_user_123');
+	it('TestUserName_SessionStorage: Correctly retrieves user name from sessionStorage', () => {
+		sessionStorageMock.setItem('user_id', 'test_user_123');
 		
 		render(ProjectHub, { show: true });
 		
-		// Component should use the user_id from localStorage
-		expect(localStorageMock.getItem).toHaveBeenCalledWith('user_id');
+		// Component should use the user_id from sessionStorage
+		expect(sessionStorageMock.getItem).toHaveBeenCalledWith('user_id');
 	});
 
 	it('TestUserName_GuestFallback: Falls back to Guest when no user ID', () => {

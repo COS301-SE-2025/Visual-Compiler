@@ -272,30 +272,18 @@ func nothing() (int) {
     <div class="technique-section">
         <div class="technique-header">
             <h3 class="section-heading">Optimising Techniques</h3>
-            <div class="default-section">
-                {#if !showDefault}
+                <div class="default-section">
                     <button
-                        class="default-toggle-btn"
-                        on:click={insertDefault}
+                        class="option-btn example-btn"
+                        class:selected={showDefault}
+                        on:click={showDefault ? removeDefault : insertDefault}
                         type="button"
-                        aria-label="Insert default input"
-                        title="Insert default input"
+                        aria-label={showDefault ? 'Restore Input' : 'Show Example'}
+                        title={showDefault ? 'Restore your input' : 'Show example code'}
                     >
-                        <span class="icon">🪄</span>
+                        {showDefault ? 'Restore Input' : 'Show Example'}
                     </button>
-                {/if}
-                {#if showDefault}
-                    <button
-                        class="default-toggle-btn selected"
-                        on:click={removeDefault}
-                        type="button"
-                        aria-label="Remove default input"
-                        title="Remove default input"
-                    >
-                        <span class="icon">🧹</span>
-                    </button>
-                {/if}
-            </div>
+                </div>
         </div>
         <div class="technique-buttons">
             {#each techniques as technique}
@@ -418,32 +406,43 @@ func nothing() (int) {
         align-items: center;
     }
 
-    .default-toggle-btn {
-        padding: 0.4rem 0.7rem;
-        border-radius: 50%;
-        border: 2px solid #AFA2D7;
-        background: white;
-        color: #8451C7;
-        cursor: pointer;
-        transition: all 0.2s ease;
+    .option-btn {
         display: flex;
         align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1rem;
+        background: linear-gradient(135deg, #64748b, #748299);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+        text-decoration: none;
+        width: 140px;
+        min-width: 140px;
         justify-content: center;
-        height: 2.3rem;
-        width: 2.3rem;
+        margin-left: 1rem;
     }
 
-    .default-toggle-btn.selected {
-        background: #F3E8FF;
-        border-color: #8451C7;
+    .example-btn {
+        background: linear-gradient(135deg, #8451C7, #AFA2D7);
+        box-shadow: 0 2px 8px rgba(132, 81, 199, 0.2);
     }
 
-    .default-toggle-btn:hover,
-    .default-toggle-btn:focus {
-        background: #F3E8FF;
-        border-color: #8451C7;
-        transform: scale(1.05);
+    .example-btn:hover {
+        box-shadow: 0 4px 12px rgba(132, 81, 199, 0.3);
     }
+
+    .option-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+    }
+
 
     /* Input Section */
     .input-section {
@@ -526,9 +525,46 @@ func nothing() (int) {
         box-shadow: none;
     }
 
+     .inspector-container::-webkit-scrollbar {
+        width: 11px;
+    }
+    
+    .inspector-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .inspector-container::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 10px;
+    }
+    
+    .inspector-container::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Firefox scrollbar */
+    .inspector-container {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
+
     /* Dark Mode Styles */
     :global(html.dark-mode) .inspector-container {
         background: #1a2a4a;
+        scrollbar-color: #4a5568 #2d3748;
+    }
+
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-track {
+        background: #2d3748;
+    }
+
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-thumb {
+        background-color: #4a5568;
+        border-color: #2d3748;
+    }
+
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-thumb:hover {
+        background: #616e80;
     }
 
     :global(html.dark-mode) .inspector-title {
@@ -574,21 +610,8 @@ func nothing() (int) {
         color: #9CA3AF;
     }
 
-    :global(html.dark-mode) .default-toggle-btn {
-        background: transparent;
-        color: #AFA2D7;
-        border-color: #4a5568;
-    }
-
-    :global(html.dark-mode) .default-toggle-btn.selected {
-        background: #2d3748;
-        border-color: #8451C7;
-        color: #AFA2D7;
-    }
-
-    :global(html.dark-mode) .default-toggle-btn:hover {
-        background: rgba(45, 55, 72, 0.5);
-        border-color: #8451C7;
+    :global(html.dark-mode) .example-btn {
+        background: linear-gradient(135deg, #8451C7, #AFA2D7);
     }
 
       .instructions-section {

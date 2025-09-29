@@ -8,16 +8,16 @@
 				'Build compilers step-by-step using intuitive, connectable blocks that represent each phase of compilation.'
 		},
 		{
-			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
-			title: 'Visualize Artifacts',
-			description:
-				'See the outputs of each compilation phase, such as token streams, syntax trees, and intermediate code, in a clear, visual format.'
-		},
-		{
 			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14v8"></path><path d="M12 2v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="M17.66 17.66l1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>`,
 			title: 'Interactive Learning',
 			description:
-				'Experiment with formal concepts like RegEx, CFGs, and Automata with integrated tools and tutorials to guide you.'
+				'Experiment with formal models like RegEx, Automata, and CFG with integrated tutorials to guide you.'
+		},
+		{
+			icon: `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
+			title: 'Visualise Artefacts',
+			description:
+				'See the outputs of each phase like token streams, syntax trees, and symbol tables, in a clear, visual format.'
 		}
 	];
 </script>

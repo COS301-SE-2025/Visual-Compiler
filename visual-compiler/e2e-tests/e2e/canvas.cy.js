@@ -54,7 +54,7 @@ describe('Canvas Test', ()=> {
         cy.get('.canvas-container').should('contain','Source Code');
         cy.get('.canvas-container').contains('Source Code').dblclick();
         cy.get('.code-input-container').should('contain', 'Source Code Input');
-        cy.get('.code-input-header-row button').click();
+        cy.get('button').contains('Show Example').click();
         cy.get('.confirm-btn').contains('Confirm Code');
         cy.get('.confirm-btn').click();
         cy.contains('Source code saved');;

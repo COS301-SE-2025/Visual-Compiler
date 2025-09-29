@@ -5,8 +5,8 @@ import * as matchers from '@testing-library/jest-dom/matchers';
 
 expect.extend(matchers);
 
-// Mock localStorage with proper vitest functions
-const localStorageMock = {
+// Mock sessionStorage with proper vitest functions
+const sessionStorageMock = {
 	getItem: vi.fn(),
 	setItem: vi.fn(),
 	removeItem: vi.fn(),
@@ -15,8 +15,8 @@ const localStorageMock = {
 	length: 0
 };
 
-Object.defineProperty(window, 'localStorage', {
-	value: localStorageMock,
+Object.defineProperty(window, 'sessionStorage', {
+	value: sessionStorageMock,
 	writable: true,
 	enumerable: true,
 	configurable: true

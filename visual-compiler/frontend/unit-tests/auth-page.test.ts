@@ -413,18 +413,7 @@ describe('login page advanced', () => {
 		
 		global.fetch = vi.fn().mockResolvedValue(mockLoginResponse);
 		
-		// Mock localStorage
-		const localStorageMock = {
-			setItem: vi.fn(),
-			getItem: vi.fn(),
-			removeItem: vi.fn(),
-			clear: vi.fn()
-		};
-		Object.defineProperty(window, 'localStorage', {
-			value: localStorageMock
-		});
-
-		// Mock sessionStorage  
+		// Mock sessionStorage
 		const sessionStorageMock = {
 			setItem: vi.fn(),
 			getItem: vi.fn(),
@@ -446,9 +435,9 @@ describe('login page advanced', () => {
 		await fireEvent.submit(login_form!);
 
 		await waitFor(() => {
-			// Should store user data in localStorage
-			expect(localStorageMock.setItem).toHaveBeenCalledWith('user_id', 'user123');
-			expect(localStorageMock.setItem).toHaveBeenCalledWith('is_admin', 'true');
+			// Should store user data in sessionStorage
+			expect(sessionStorageMock.setItem).toHaveBeenCalledWith('user_id', 'user123');
+			expect(sessionStorageMock.setItem).toHaveBeenCalledWith('is_admin', 'true');
 			// Should set welcome overlay flag in sessionStorage
 			expect(sessionStorageMock.setItem).toHaveBeenCalledWith('showWelcomeOverlay', 'true');
 		});
@@ -473,15 +462,15 @@ describe('login page advanced', () => {
 		
 		global.fetch = vi.fn().mockResolvedValue(mockLoginResponse);
 		
-		// Mock localStorage
-		const localStorageMock = {
+		// Mock sessionStorage
+		const sessionStorageMock = {
 			setItem: vi.fn(),
 			getItem: vi.fn(),
 			removeItem: vi.fn(),
 			clear: vi.fn()
 		};
-		Object.defineProperty(window, 'localStorage', {
-			value: localStorageMock
+		Object.defineProperty(window, 'sessionStorage', {
+			value: sessionStorageMock
 		});
 		
 		render(page_comp);
@@ -496,7 +485,7 @@ describe('login page advanced', () => {
 
 		await waitFor(() => {
 			// Should store is_admin as 'false'
-			expect(localStorageMock.setItem).toHaveBeenCalledWith('is_admin', 'false');
+			expect(sessionStorageMock.setItem).toHaveBeenCalledWith('is_admin', 'false');
 		});
 	});
 

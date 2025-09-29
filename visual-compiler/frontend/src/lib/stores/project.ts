@@ -82,3 +82,29 @@ export const deleteProject = async (name: string, userId: string) => {
         throw error;
     }
 };
+
+// FIX: Add new function to clear project by deleting and recreating
+export const clearProject = async (name: string, userId: string) => {
+    try {
+        console.log(`Clearing project "${name}" by delete and recreate...`);
+        
+        // Step 1: Delete the existing project
+        await deleteProject(name, userId);
+        
+        // Step 2: Wait a moment to ensure deletion is complete
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Step 3: Create a new project with the same name
+        const created = await saveProject(name, userId);
+        
+        if (created) {
+            console.log(`Project "${name}" cleared and recreated successfully`);
+            return true;
+        } else {
+            throw new Error('Failed to recreate project after deletion');
+        }
+    } catch (error) {
+        console.error('Error clearing project:', error);
+        throw error;
+    }
+};

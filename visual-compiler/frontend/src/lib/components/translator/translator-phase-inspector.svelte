@@ -1,36 +1,105 @@
 <script lang="ts">
-	export let source_code: string;
-	import { AddToast } from '$lib/stores/toast';
-	import { createEventDispatcher } from 'svelte';
-	import { projectName } from '$lib/stores/project';
-	import { get } from 'svelte/store'; 
-	import { lexerState } from '$lib/stores/lexer';
+    export let source_code: string;
+    import { AddToast } from '$lib/stores/toast';
+    import { createEventDispatcher, onMount, onDestroy } from 'svelte';
+    import { projectName } from '$lib/stores/project';
+    import { get } from 'svelte/store'; 
+    import { lexerState } from '$lib/stores/lexer';
+    import { translatorState, updateTranslatorInputs, markTranslatorSubmitted, updateTranslatorArtifacts } from '$lib/stores/translator';
 
-	const dispatch = createEventDispatcher();
+    const dispatch = createEventDispatcher();
 
-	let rules = [{ tokenSequence: '', lines: [''] }];
-	let isSubmitted = false;
-	let translationSuccessful = false;
-	let show_default_rules = false;
-	let hasInitialized = false;
+    let rules = [{ tokenSequence: '', lines: [''] }];
+    let isSubmitted = false;
+    let translationSuccessful = false;
+    let show_default_rules = false;
+
+    let isSubmittingRules = false;
+    let isTranslating = false;
+
+    // FIX: Add project change tracking
+    let hasInitialized = false;
+    let currentProjectName = '';
+
+    // FIX: Force reinitialization when project changes
+    $: if ($projectName !== currentProjectName) {
+        console.log('Translator: Project changed from', currentProjectName, 'to', $projectName);
+        
+        // RESET component state immediately when project changes
+        if (currentProjectName !== '' && $projectName !== currentProjectName) {
+            rules = [{ tokenSequence: '', lines: [''] }];
+            isSubmitted = false;
+            translationSuccessful = false;
+            show_default_rules = false;
+
+            // FIX: Clear artifacts from parent component by dispatching empty data
+            dispatch('translationreceived', []);
+        }
+        
+        hasInitialized = false;
+        currentProjectName = $projectName;
+    }
+
+    // FIX: Update store subscription to handle project changes and artifacts
+    $: if ($translatorState && $projectName && (!hasInitialized || $projectName !== currentProjectName)) {
+        console.log('Translator component initializing/reinitializing with state:', $translatorState);
+        
+        rules = [...$translatorState.rules];
+        show_default_rules = $translatorState.show_default_rules || false;
+        isSubmitted = $translatorState.isSubmitted;
+        translationSuccessful = $translatorState.translationSuccessful || false;
+        
+        // Ensure we always have at least one empty rule
+        if (rules.length === 0) {
+            rules = [{ tokenSequence: '', lines: [''] }];
+        }
+        
+        // FIX: Handle artifacts - only show if there is actual translated code
+        if ($translatorState.hasTranslatedCode && $translatorState.translatedCode && $translatorState.translatedCode.length > 0) {
+            const translatedCode = [...$translatorState.translatedCode];
+            
+            // Dispatch the translated code to parent component
+            dispatch('translationreceived', translatedCode);
+            
+            console.log('Restored translated code with', translatedCode.length, 'lines');
+        } else {
+            // FIX: Explicitly clear artifacts if no translated code exists
+            dispatch('translationreceived', []);
+            
+            console.log('No translated code to restore - cleared artifacts');
+        }
+        
+        hasInitialized = true;
+        console.log('Translator component initialized with:', { 
+            rules: rules.length, 
+            isSubmitted, 
+            hasTranslatedCode: $translatorState.hasTranslatedCode,
+            translatedLines: $translatorState.hasTranslatedCode ? $translatorState.translatedCode?.length : 0
+        });
+    }
+
+    // Force initial rule to be visible
+    $: if (rules.length === 0) {
+        rules = [{ tokenSequence: '', lines: [''] }];
+    }
 
 	// --- DEFAULT RULES DATA ---
 	const DEFAULT_TRANSLATION_RULES = [
 		{
-			tokenSequence: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, DELIMITER',
+			tokenSequence: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, SEPARATOR',
 			lines: ['add     rax, {INTEGER}', 'mov     [{IDENTIFIER}], rax']
 		},
 		{
-			tokenSequence: 'KEYWORD, IDENTIFIER, OPEN_BRACKET, KEYWORD, IDENTIFIER, CLOSE_BRACKET, OPEN_SCOPE, IDENTIFIER, ASSIGNMENT, IDENTIFIER, OPERATOR, INTEGER, DELIMITER, KEYWORD, IDENTIFIER, DELIMITER, CLOSE_SCOPE',
+			tokenSequence: 'KEYWORD, IDENTIFIER, OPEN_BRACKET, KEYWORD, IDENTIFIER, CLOSE_BRACKET, OPEN_SCOPE, IDENTIFIER, ASSIGNMENT, IDENTIFIER, OPERATOR, INTEGER, SEPARATOR, KEYWORD, IDENTIFIER, SEPARATOR, CLOSE_SCOPE',
 			lines: ['func {IDENTIFIER}:', '     mov     rbx, [{IDENTIFIER}]', '     add     rbx, {INTEGER}', '     mov     [{IDENTIFIER}], rbx', '     return']
 		},
 		{
-			tokenSequence: 'CONTROL, IDENTIFIER, CONTROL, OPEN_BRACKET, INTEGER, CLOSE_BRACKET, OPEN_SCOPE, IDENTIFIER, ASSIGNMENT, IDENTIFIER, OPEN_BRACKET, IDENTIFIER, CLOSE_BRACKET, DELIMITER, KEYWORD, OPEN_BRACKET, IDENTIFIER, CLOSE_BRACKET, DELIMITER, CLOSE_SCOPE',
+			tokenSequence: 'CONTROL, IDENTIFIER, CONTROL, OPEN_BRACKET, INTEGER, CLOSE_BRACKET, OPEN_SCOPE, IDENTIFIER, ASSIGNMENT, IDENTIFIER, OPEN_BRACKET, IDENTIFIER, CLOSE_BRACKET, SEPARATOR, KEYWORD, OPEN_BRACKET, IDENTIFIER, CLOSE_BRACKET, SEPARATOR, CLOSE_SCOPE',
 			lines: ['func {CONTROL}:', '     jump    [{IDENTIFIER}], {INTEGER}', '     param   rcx, [{IDENTIFIER}]', '     call    {IDENTIFIER}', '     print   [{IDENTIFIER}]']
 		}
 	];
 
-	/**
+    /**
 	 * addRule
 	 * @description Adds a new, empty translation rule block to the list.
 	 * @param {void}
@@ -39,6 +108,7 @@
 	function addRule() {
 		rules = [...rules, { tokenSequence: '', lines: [''] }];
 		isSubmitted = false;
+		handleRulesChange();
 	}
 
 	/**
@@ -56,6 +126,7 @@
 			rules = [{ tokenSequence: '', lines: [''] }];
 			isSubmitted = false;
 		}
+		handleRulesChange();
 	}
 
 	/**
@@ -68,6 +139,7 @@
 		rules[ruleIndex].lines = [...rules[ruleIndex].lines, ''];
 		rules = rules;
 		isSubmitted = false;
+		handleRulesChange();
 	}
 
 	/**
@@ -82,6 +154,7 @@
 			rules[ruleIndex].lines = rules[ruleIndex].lines.filter((_, i) => i !== lineIndex);
 			rules = rules;
 			isSubmitted = false;
+			handleRulesChange();
 		}
 	}
 
@@ -95,6 +168,11 @@
 		rules = JSON.parse(JSON.stringify(DEFAULT_TRANSLATION_RULES));
 		show_default_rules = true;
 		isSubmitted = false;
+		updateTranslatorInputs({
+			rules: [...rules],
+			show_default_rules: true,
+			isSubmitted: false
+		});
 	}
 
 	/**
@@ -107,6 +185,11 @@
 		rules = [{ tokenSequence: '', lines: [''] }];
 		show_default_rules = false;
 		isSubmitted = false;
+		updateTranslatorInputs({
+			rules: [...rules],
+			show_default_rules: false,
+			isSubmitted: false
+		});
 	}
 
 	/**
@@ -152,8 +235,12 @@
 
 		console.log('Submitting translation input:', JSON.stringify(apiPayload, null, 2));
 
+		isSubmittingRules = true;
+
 		try {
-			const response = await fetch('https://www.visual-compiler.co.za/api/translating/readRules', {
+			await new Promise(resolve => setTimeout(resolve, 1000));
+
+			const response = await fetch('http://localhost:8080/api/translating/readRules', {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
@@ -169,10 +256,19 @@
 
 			const result = await response.json();
 			AddToast('Translation rules saved successfully! Ready to translate your code', 'success');
-			isSubmitted = true;
+		 isSubmitted = true;
+
+			// Mark as submitted in store
+			markTranslatorSubmitted();
+			updateTranslatorInputs({
+				isSubmitted: true
+			});
+			
 		} catch (error: any) {
 			console.error('Rule submission Error:', error);
 			AddToast('Rule submission failed: ' + (error.message || 'Please check your connection and try again'), 'error');
+		} finally {
+			isSubmittingRules = false;
 		}
 	}
 
@@ -197,8 +293,12 @@
 
 		console.log('Requesting final translation from backend...');
 
+        isTranslating = true;
+
 		try {
-			const response = await fetch('https://www.visual-compiler.co.za/api/translating/translate', {
+			await new Promise(resolve => setTimeout(resolve, 1000));
+
+			const response = await fetch('http://localhost:8080/api/translating/translate', {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
@@ -213,8 +313,14 @@
 			}
 
 			const result = await response.json();
+			updateTranslatorArtifacts(result.code || []);
 			AddToast('Translation complete! Your code has been successfully translated', 'success');
 			translationSuccessful = true;
+
+			// Update store
+			updateTranslatorInputs({
+				translationSuccessful: true
+			});
 
 			// Dispatch the translated code to the parent component
 			dispatch('translationreceived', result.code);
@@ -223,39 +329,20 @@
 			// Dispatch a new event for the error
 			dispatch('translationerror', error);
 			AddToast('Translation failed: ' + (error.message || 'Unable to translate code. Please check your rules and try again'), 'error');
+		} finally {
+            isTranslating = false;
 		}
 	}
 
-	// Add reactive statement for translator rules
-	$: if ($lexerState?.translator_data?.translating_rules && !hasInitialized) {
-		rules = $lexerState.translator_data.translating_rules.map(rule => ({
-			tokenSequence: rule.sequence,
-			lines: rule.translation
-		}));
-		isSubmitted = true;
-		show_default_rules = false;
-		hasInitialized = true;
-	} else if ($lexerState !== undefined && rules.length === 0 && !hasInitialized) {
-		// Ensure rules are initialized with empty rule when no saved data exists
-		rules = [{ tokenSequence: '', lines: [''] }];
-		hasInitialized = true;
-	}
-	
-	// Reset when lexer state is cleared (new project or project switch)
-	$: if (!$lexerState?.translator_data && hasInitialized) {
-		hasInitialized = false;
-		rules = [{ tokenSequence: '', lines: [''] }];
-		isSubmitted = false;
-		show_default_rules = false;
-	}
+    // Add event listener for AI-generated translator rules
+    let aiTranslatorEventListener: (event: CustomEvent) => void;
 
-	// Add event listener for AI-generated translator rules
-	let aiTranslatorEventListener: (event: CustomEvent) => void;
-
-	// Add onMount and onDestroy imports if not already present
-	import { onMount, onDestroy } from 'svelte';
-
-	onMount(() => {
+    onMount(() => {
+		// Ensure we always have at least one empty rule on mount
+		if (rules.length === 0) {
+			rules = [{ tokenSequence: '', lines: [''] }];
+		}
+		
 		// Listen for AI-generated translator rules
 		aiTranslatorEventListener = (event: CustomEvent) => {
 			if (event.detail && event.detail.rules && Array.isArray(event.detail.rules)) {
@@ -289,6 +376,45 @@
 			window.removeEventListener('ai-translator-generated', aiTranslatorEventListener);
 		}
 	});
+
+	function clearAllInputs() {
+        // Reset translation rules
+        rules = [{ tokenSequence: '', lines: [''] }];
+        
+        // Reset states
+        isSubmitted = false;
+        translationSuccessful = false;
+        show_default_rules = false;
+
+        // Update store
+        updateTranslatorInputs({
+            rules: [...rules],
+            show_default_rules: false,
+            isSubmitted: false,
+            translationSuccessful: false
+        });
+        
+        AddToast('All translator inputs cleared successfully!', 'success');
+    }
+
+    // ADD: Missing input change tracking function
+    function handleRulesChange() {
+        if (hasInitialized) {
+            updateTranslatorInputs({
+                rules: [...rules],
+                isSubmitted: false
+            });
+        }
+        isSubmitted = false;
+    }
+
+    // Add reactive statement to track input changes
+    $: if (hasInitialized) {
+        // Watch for changes in rules and update store
+        updateTranslatorInputs({
+            rules: [...rules]
+        });
+    }
 </script>
 
 <div class="inspector-container">
@@ -315,16 +441,44 @@
 	<div class="section">
 		<div class="section-header">
 			<h2 class="section-heading">Translation Rules</h2>
-			<button
-				class="default-toggle-btn"
-				class:selected={show_default_rules}
-				on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
-				type="button"
-				aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-				title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-			>
-				<span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
+
+			<div class="button-group">
+				<button
+					class="option-btn example-btn"
+					class:selected={show_default_rules}
+					on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
+					type="button"
+					aria-label={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
+					title={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
+				>
+					{show_default_rules ? 'Restore Input' : 'Show Example'}
 			</button>
+				<button
+					class="clear-toggle-btn"
+					on:click={clearAllInputs}
+					type="button"
+					aria-label="Clear all inputs" 
+					title="Clear all inputs"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<polyline points="3 6 5 6 21 6" />
+						<path d="m19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c0-1 1-2 2-2v2" />
+						<line x1="10" y1="11" x2="10" y2="17" />
+						<line x1="14" y1="11" x2="14" y2="17" />
+					</svg>
+					</button>
+			</div>
+
 		</div>
 		<div class="rules-container">
 			{#each rules as rule, ruleIndex}
@@ -344,7 +498,8 @@
 							class="input-field"
 							id="token-seq-{ruleIndex}"
 							bind:value={rule.tokenSequence}
-							placeholder="Enter token sequence (e.g., KEYWORD, IDENTIFIER)"
+							on:input={handleRulesChange}
+							placeholder="KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER..."
 						/>
 					</div>
 					<div style="display: flex; justify-content: center; align-items: center; margin: 0.1rem 0;">
@@ -358,6 +513,7 @@
 								class="input-field"
 								id="line-{ruleIndex}-{lineIndex}"
 								bind:value={rules[ruleIndex].lines[lineIndex]}
+								on:input={handleRulesChange}
 								placeholder="Line {lineIndex + 1}"
 							/>
 							<button
@@ -391,17 +547,46 @@
 					<button class="add-line" on:click={() => addLine(ruleIndex)}>+ Add Line</button>
 				</div>
 			{/each}
-			<div>
-				<button class="add-rule-btn" on:click={addRule}>+ Add New Rule</button>
-				<button class="action-btn submit" on:click={handleSubmit}> Submit Rules </button>
+		</div>
+		
+		<div class="button-container">
+			<button class="add-rule-btn" on:click={addRule}>+ Add New Rule</button>
+			<div class="action-buttons">
+				<!-- FIX: Add loading state to Submit Rules button -->
+				<button 
+					class="action-btn submit" 
+					on:click={handleSubmit}
+					disabled={isSubmittingRules}
+				>
+					<div class="button-content">
+						{#if isSubmittingRules}
+							<div class="loading-spinner"></div>
+							Submitting...
+						{:else}
+							Submit Rules
+						{/if}
+					</div>
+				</button>
+				
+				<!-- FIX: Add loading state to Translate Code button -->
+				<button 
+					class="action-btn submit" 
+					class:disabled={!isSubmitted || isTranslating}
+					disabled={!isSubmitted || isTranslating}
+					on:click={handleTranslate}
+					title={isSubmitted ? "Translate code using submitted rules" : "Submit rules first"}
+				>
+					<div class="button-content">
+						{#if isTranslating}
+							<div class="loading-spinner"></div>
+							Translating...
+						{:else}
+							Translate Code
+						{/if}
+					</div>
+				</button>
 			</div>
 		</div>
-	</div>
-
-	<div class="actions">
-		{#if isSubmitted}
-			<button class="action-btn translate" on:click={handleTranslate}> Translate Code </button>
-		{/if}
 	</div>
 </div>
 
@@ -424,12 +609,14 @@
 
 	.inspector-container {
 		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-		padding: 1.5rem;
-		font-family: var(--font-sans);
-		background-color: var(--bg-primary);
-		color: var(--text-primary);
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        font-family: var(--font-sans);
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        height: 100%;
+        overflow-y: auto;
 	}
 
 	.header-container {
@@ -468,8 +655,8 @@
 		transition: color 0.3s ease;
 	}
 
+
 	.default-toggle-btn {
-		position: absolute;
 		right: 0;
 		background: white;
 		border: 2px solid #e5e7eb;
@@ -477,31 +664,48 @@
 		font-size: 1.2rem;
 		cursor: pointer;
 		transition: background 0.2s, border-color 0.2s;
+
 		display: flex;
 		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 100%;
+		max-width: 150px;
 		justify-content: center;
-		height: 2.2rem;
-		width: 2.2rem;
-		border-radius: 50%;
+		margin-left: 1rem;
 	}
-	.default-toggle-btn.selected {
-		background: #d0e2ff;
-		border-color: #003399;
+
+	.example-btn {
+		background: #BED2E6;
+		color: black;
 	}
-	.default-toggle-btn:hover {
-		background: #f5f8fd;
-		border-color: #7da2e3;
+
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
 	}
-	.icon {
-		font-size: 1.3rem;
-		line-height: 1;
-		pointer-events: none;
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 	}
 
 	.form-label {
 		color: #1a2a4a;
 		font-family: 'Times New Roman';
 		font-weight: 500;
+		text-align: center;
 	}
 	.section {
 		display: flex;
@@ -529,6 +733,7 @@
 	.add-line:hover,
 	.add-rule-btn:hover {
 		border-color: #001a6e;
+		transform: translateY(-2px);
 	}
 	.section-heading {
 		color: #001a6e;
@@ -537,7 +742,8 @@
 		font-family: 'Times New Roman';
 		font-size: 1.25rem;
 		font-weight: 600;
-		text-align: center;
+		text-align: left;
+		margin-left: 0.75rem;
 	}
 
 	.section-heading1 {
@@ -591,6 +797,20 @@
 		gap: 1.5rem;
 	}
 
+	.button-container {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		margin-top: 0.5rem;
+	}
+
+	.action-buttons {
+		display: flex;
+		justify-content: center;
+		gap: 1rem;
+	}
+
 	.rule-block {
 		background-color: #f5f5f5;
 		border-radius: 0.5rem;
@@ -603,9 +823,10 @@
 
 	.rule-header {
 		display: flex;
-		justify-content: flex-end;
+		justify-content: center;
 		align-items: center;
 		margin-bottom: 0.5rem;
+		position: relative;
 	}
 
 	.form-group,
@@ -643,35 +864,43 @@
 	}
 
 	.action-btn {
-		padding: 0.5rem 1rem;
+		padding: 0.6rem 1.5rem;
 		border: none;
-		border-radius: 0.25rem;
+		border-radius: 6px;
 		cursor: pointer;
 		font-size: 0.9rem;
-		font-weight: 600;
-		transition: background-color 0.2s, transform 0.1s;
-		width: 45%;
+		font-weight: 500;
+		transition: background-color 0.2s, transform 0.2s;
+		width: 200px;
+		max-width: 100%;
 	}
 
 	.add-rule-btn {
+		display: flex;
 		justify-content: center;
+		align-items: center;
 		gap: 0.5rem;
 		background-color: #eef2f7;
 		color: #001a6e;
 		border: 1px dashed #c0c7d3;
-		padding: 0.5rem 1rem;
+		padding: 0.6rem 1.5rem;
 		border-radius: 6px;
+		font-size: 0.9rem;
 		font-weight: 500;
 		cursor: pointer;
 		transition: all 0.2s ease;
-		width: 45%;
-		margin-right: 1rem;
-		margin-left: 0.8rem;
+		width: 200px;
+		max-width: 100%;
+		margin-bottom:0.5rem
 	}
 
 	.action-btn:hover,
 	.submit:hover {
-		background-color: #1a317d;
+		transform: translateY(-2px);
+	}
+
+	.submit:hover {
+		background-color: #a8bdd1;
 	}
 
 	.remove-btn,
@@ -688,6 +917,8 @@
 		align-items: center;
 		justify-content: center;
 		transition: background-color 0.2s, color 0.2s;
+		position: absolute;
+		right: 0;
 	}
 
 	.remove-btn:hover,
@@ -707,35 +938,164 @@
 		background-color: transparent;
 	}
 
-	.actions {
-		display: flex;
-		gap: 1rem;
-		padding-top: 1rem;
-	}
-
 	.submit {
-		background-color: #BED2E6;
-		color: 000000;
+		background: #BED2E6;
+		color: #000000;
+		border: none;
+		border-radius: 6px;
+		font-size: 0.9rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+		position: relative;
+        overflow: hidden;
 	}
 
-	.submit:hover {
-		background-color: #a8bdd1;
+	.submit:hover:not(:disabled) {
+		background: #a8bdd1;
 		transform: translateY(-2px);
 	}
 
-	.submit:disabled {
-		background-color: #cccccc;
-		color: #666666;
-		cursor: default;
+	.submit:disabled,
+	.translate:disabled,
+	.translate.disabled {
+		background: #d6d8db;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
 	}
 
-	.translate {
-		background-color: var(--accent-orange);
+	.submit:disabled:hover,
+	.translate:disabled:hover,
+	.translate.disabled:hover {
+		background: #d6d8db;
+		color: #6c757d;
+		transform: none;
+	}
+
+	.button-group {
+		position: absolute;
+        right: 0;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+	.button-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+	.loading-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+	.submit:hover:not(:disabled) {
+        background: #a8bdd1;
+        transform: translateY(-2px);
+
+    }
+
+	.option-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
 		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 140px;
+		min-width: 140px;
+		justify-content: center;
+		margin-left: 1rem;
 	}
-	.translate:hover {
-		background-color: rgb(98, 102, 109);
+
+	.example-btn {
+		background: #BED2E6;
+				color: black;
 	}
+
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
+	}
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+	}
+
+
+
+    .clear-toggle-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #ef4444;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.2rem;
+        width: 2.2rem;
+        border-radius: 50%;
+    }
+
+    .clear-toggle-btn:hover {
+        background: #fff5f5;
+        border-color: #ef4444;
+    }
+
+	.submit:disabled,
+    .translate:disabled,
+    .translate.disabled {
+        background: #d6d8db;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+        pointer-events: none;
+    }
+
+    .submit:disabled:hover,
+    .translate:disabled:hover,
+    .translate.disabled:hover {
+        background: #d6d8db;
+        color: #6c757d;
+        transform: none;
+    }
+	.submit:disabled {
+        cursor: wait;
+        opacity: 0.8;
+    }
+	.submit:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
 
 	/* --- Dark Mode --- */
 	:global(html.dark-mode) .inspector-container {
@@ -767,6 +1127,110 @@
 		color: #60a5fa;
 		background: transparent;
 	}
+	:global(html.dark-mode) .example-btn {
+        background: #001A6E;
+        color: #ffffff;
+    }
+
+    :global(html.dark-mode) .example-btn:hover {
+        background: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
+    }
+	:global(html.dark-mode) .submit,
+	:global(html.dark-mode) .translate {
+		background-color: #001A6E;
+		color: #ffffff;
+	}
+
+	:global(html.dark-mode) .submit:hover:not(:disabled),
+	:global(html.dark-mode) .translate:hover:not(:disabled) {
+		background-color: #002a8e;
+	}
+
+	:global(html.dark-mode) .submit:disabled,
+	:global(html.dark-mode) .translate:disabled,
+	:global(html.dark-mode) .translate.disabled {
+		background-color: #495057;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
+	}
+	:global(html.dark-mode) .clear-toggle-btn {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #ef4444;
+    }
+
+    :global(html.dark-mode) .clear-toggle-btn:hover {
+        background-color: #7f1d1d;
+		border-color: #ef4444;
+    }
+
+	:global(html.dark-mode) .submit:disabled:hover,
+	:global(html.dark-mode) .translate:disabled:hover,
+	:global(html.dark-mode) .translate.disabled:hover {
+		background-color: #495057;
+		color: #6c757d;
+		transform: none;
+	}
+
+	
+    .inspector-container::-webkit-scrollbar {
+        width: 11px;
+    }
+    
+    .inspector-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .inspector-container::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 10px;
+    }
+    
+    .inspector-container::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Firefox scrollbar */
+    .inspector-container {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
+
+    :global(html.dark-mode) .inspector-container {
+        background: #1a2a4a;
+        scrollbar-color: #4a5568 #2d3748;
+    }
+
+    /* Dark mode scrollbar styles */
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-track {
+        background: #2d3748;
+    }
+
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-thumb {
+        background-color: #4a5568;
+        border-color: #2d3748;
+    }
+
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-thumb:hover {
+        background: #616e80;
+    }
+
+
+	
+	
+	/* Add section-header style */
+	.section-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 1rem;
+		position: relative;
+	}
+
 	:global(html.dark-mode) .submit {
 		background-color: #001A6E; 
 		color: #ffffff;            
@@ -776,29 +1240,39 @@
 		background-color: #002a8e;
 	}
 
-	:global(html.dark-mode) .submit:disabled {
-		background-color: #2d3748;
-		color: #9ca3af;
-		border-color: #4a5568;
-	}
-	:global(html.dark-mode) .default-toggle-btn {
-		background-color: #2d3748;
-		border-color: #4a5568;
-		color: #d1d5db;
-	}
-	:global(html.dark-mode) .default-toggle-btn.selected {
-		background-color: #001a6e;
-		border-color: #60a5fa;
-		color: #e0e7ff;
+	 :global(html.dark-mode) .submit:disabled {
+        background-color: #2d3748;
+        color: #9ca3af;
+        border-color: #4a5568;
+        cursor: wait;
+        opacity: 0.8;
+    }
+
+    :global(html.dark-mode) .submit:disabled:hover {
+        background-color: #2d3748;
+        color: #9ca3af;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .submit:disabled .loading-spinner {
+        border-top-color: #9ca3af;
+    }
+
+    :global(html.dark-mode) .submit .loading-spinner {
+        border-top-color: #ffffff;
+    }
+
+	:global(html.dark-mode) .instructions-section {
+		background: #2d3748;
+		border-left-color: #4da9ff;
 	}
 
-	/* Add section-header style */
-	.section-header {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 1rem;
-		margin-bottom: 1rem;
-		position: relative;
+	:global(html.dark-mode) .instructions-header {
+		color: #e2e8f0;
 	}
+
+	:global(html.dark-mode) .instructions-text {
+		color: #cbd5e0;
+	}
+
 </style>

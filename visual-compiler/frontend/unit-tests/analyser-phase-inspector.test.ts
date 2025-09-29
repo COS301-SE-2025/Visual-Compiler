@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AnalyserPhaseInspector from '../src/lib/components/analyser/analyser-phase-inspector.svelte';
+import '@testing-library/jest-dom';
 
 // Mock the toast store
 vi.mock('$lib/stores/toast', () => ({
@@ -17,6 +18,75 @@ vi.mock('$lib/stores/project', () => ({
 		set: vi.fn(),
 		update: vi.fn()
 	}
+}));
+
+// Mock analyser store
+vi.mock('$lib/stores/analyser', () => ({
+	analyserState: {
+		subscribe: vi.fn((callback) => {
+			callback({
+				scope_rules: [{ id: 0, Start: '', End: '' }],
+				type_rules: [{ id: 0, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }],
+				grammar_rules: {
+					VariableRule: '',
+					TypeRule: '',
+					FunctionRule: '',
+					ParameterRule: '',
+					AssignmentRule: '',
+					OperatorRule: '',
+					TermRule: ''
+				},
+				submitted_scope_rules: [],
+				submitted_type_rules: [],
+				submitted_grammar_rules: {
+					VariableRule: '',
+					TypeRule: '',
+					FunctionRule: '',
+					ParameterRule: '',
+					AssignmentRule: '',
+					OperatorRule: '',
+					TermRule: ''
+				},
+				next_scope_id: 1,
+				next_type_id: 1,
+				show_default_rules: false,
+				rules_submitted: false,
+				show_symbol_table: false,
+				hasSymbolTable: false,
+				symbolTable: [],
+				analyserError: null,
+				analyserErrorDetails: null
+			});
+			return { unsubscribe: vi.fn() };
+		}),
+		set: vi.fn(),
+		update: vi.fn()
+	},
+	updateAnalyserInputs: vi.fn(),
+	markAnalyserSubmitted: vi.fn(),
+	updateAnalyserArtifacts: vi.fn()
+}));
+
+// Mock lexer store
+vi.mock('$lib/stores/lexer', () => ({
+	lexerState: {
+		subscribe: vi.fn((callback) => {
+			callback({ mode: null, dfa: null, nfa: null });
+			return { unsubscribe: vi.fn() };
+		}),
+		set: vi.fn(),
+		update: vi.fn()
+	}
+}));
+
+// Mock svelte/store
+vi.mock('svelte/store', () => ({
+	get: vi.fn(() => 'test-project'),
+	writable: vi.fn(() => ({
+		subscribe: vi.fn(),
+		set: vi.fn(),
+		update: vi.fn()
+	}))
 }));
 
 // Mock fetch
@@ -97,7 +167,7 @@ describe('AnalyserPhaseInspector Component', () => {
 	it('TestDefaultRulesToggle_Success: Can toggle default rules', async () => {
 		render(AnalyserPhaseInspector);
 
-		const defaultButton = screen.getByTitle('Insert default rules');
+		const defaultButton = screen.getByTitle('Show context-free grammar example');
 		
 		// Button should be present and clickable
 		expect(defaultButton).toBeInTheDocument();
@@ -153,7 +223,7 @@ describe('AnalyserPhaseInspector Component', () => {
 	it('TestSubmitRules_Success: Can submit rules', async () => {
 		render(AnalyserPhaseInspector);
 
-		const submitButton = screen.getByText('Submit All Rules');
+		const submitButton = screen.getByText('Submit Rules');
 		await fireEvent.click(submitButton);
 
 		// Check that the component renders correctly after submission
@@ -163,7 +233,7 @@ describe('AnalyserPhaseInspector Component', () => {
 	it('TestGenerateSymbolTable_Success: Shows generate button after submission', async () => {
 		render(AnalyserPhaseInspector);
 
-		const submitButton = screen.getByText('Submit All Rules');
+		const submitButton = screen.getByText('Submit Rules');
 		await fireEvent.click(submitButton);
 
 		// Check that submission was processed (maybe button becomes enabled or other UI change)
@@ -180,7 +250,7 @@ describe('AnalyserPhaseInspector Component', () => {
 		});
 
 		// Submit rules first
-		const submitButton = screen.getByText('Submit All Rules');
+		const submitButton = screen.getByText('Submit Rules');
 		await fireEvent.click(submitButton);
 		
 		// Check that source code is displayed
@@ -198,7 +268,8 @@ describe('AnalyserPhaseInspector Component', () => {
 	it('TestLoadingState_Success: Shows loading state during operations', async () => {
 		render(AnalyserPhaseInspector);
 
-		const submitButton = screen.getByText('Submit All Rules');
+		// Get the actual button element, not the text content
+		const submitButton = screen.getByRole('button', { name: /submit rules/i });
 		
 		// Initially submit button is disabled because no rules are configured
 		expect(submitButton).toBeDisabled();
@@ -211,7 +282,7 @@ describe('AnalyserPhaseInspector Component', () => {
 		render(AnalyserPhaseInspector);
 
 		// Just verify the component renders with submit button
-		expect(screen.getByText('Submit All Rules')).toBeInTheDocument();
+		expect(screen.getByText('Submit Rules')).toBeInTheDocument();
 	});
 
 	it('TestMultipleScopeRules_Success: Can manage multiple scope rules', async () => {
@@ -242,7 +313,7 @@ describe('AnalyserPhaseInspector Component', () => {
 		await fireEvent.input(startDelimiterInput, { target: { value: '{' } });
 		await fireEvent.input(endDelimiterInput, { target: { value: '}' } });
 
-		const submitButton = screen.getByText('Submit All Rules');
+		const submitButton = screen.getByText('Submit Rules');
 		// Submit button might be disabled until all required fields are properly filled
 		expect(submitButton).toBeInTheDocument();
 	});
@@ -296,8 +367,8 @@ describe('AnalyserPhaseInspector Component', () => {
 		render(AnalyserPhaseInspector);
 
 		// Test default rules button
-		const defaultRulesButton = screen.getByLabelText('Insert default rules');
-		const submitButton = screen.getByText('Submit All Rules');
+		const defaultRulesButton = screen.getByTitle('Show context-free grammar example');
+		const submitButton = screen.getByText('Submit Rules');
 
 		await fireEvent.click(defaultRulesButton);
 		expect(defaultRulesButton).toBeInTheDocument();
@@ -316,9 +387,9 @@ describe('AnalyserPhaseInspector Component', () => {
 		// Source code should persist
 		expect(screen.getByText('int main() { return 0; }')).toBeInTheDocument();
 
-		// Submit All Rules
-		const addButton = screen.getByText('Submit All Rules');
-		await fireEvent.click(addButton);
+		// Submit Rules
+		const submitButton = screen.getByText('Submit Rules');
+		await fireEvent.click(submitButton);
 
 		// Source code should still be there
 		expect(screen.getByText('int main() { return 0; }')).toBeInTheDocument();

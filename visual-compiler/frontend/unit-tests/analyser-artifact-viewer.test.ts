@@ -49,7 +49,7 @@ describe('AnalyserArtifactViewer Component', () => {
 			}
 		});
 
-		expect(screen.getByText('Symbols')).toBeInTheDocument();
+		expect(screen.getByText('Symbol Table')).toBeInTheDocument();
 		expect(screen.getByRole('table')).toBeInTheDocument();
 	});
 
@@ -186,7 +186,7 @@ describe('AnalyserArtifactViewer Component', () => {
 		});
 
 		// Should show both symbols table and error
-		expect(screen.getByText('Symbols')).toBeInTheDocument();
+		expect(screen.getByText('Symbol Table')).toBeInTheDocument();
 		expect(screen.getByRole('table')).toBeInTheDocument();
 	});
 

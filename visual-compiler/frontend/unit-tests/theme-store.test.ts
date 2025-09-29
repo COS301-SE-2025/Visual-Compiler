@@ -3,7 +3,7 @@ import { get } from 'svelte/store';
 import { theme, ToggleTheme } from '../src/lib/stores/theme';
 
 describe('Theme Store', () => {
-    let mockLocalStorage: Record<string, string>;
+    let mockSessionStorage: Record<string, string>;
     let mockDocument: {
         documentElement: {
             classList: {
@@ -15,7 +15,7 @@ describe('Theme Store', () => {
 
     beforeEach(() => {
         // Reset mocks
-        mockLocalStorage = {};
+        mockSessionStorage = {};
         mockDocument = {
             documentElement: {
                 classList: {
@@ -25,18 +25,18 @@ describe('Theme Store', () => {
             }
         };
 
-        // Mock localStorage
-        Object.defineProperty(global, 'localStorage', {
+        // Mock sessionStorage
+        Object.defineProperty(global, 'sessionStorage', {
             value: {
-                getItem: vi.fn((key: string) => mockLocalStorage[key] || null),
+                getItem: vi.fn((key: string) => mockSessionStorage[key] || null),
                 setItem: vi.fn((key: string, value: string) => {
-                    mockLocalStorage[key] = value;
+                    mockSessionStorage[key] = value;
                 }),
                 removeItem: vi.fn((key: string) => {
-                    delete mockLocalStorage[key];
+                    delete mockSessionStorage[key];
                 }),
                 clear: vi.fn(() => {
-                    mockLocalStorage = {};
+                    mockSessionStorage = {};
                 })
             },
             writable: true,
@@ -67,10 +67,10 @@ describe('Theme Store', () => {
         });
 
         it('should initialize with stored dark theme', async () => {
-            // Set up localStorage mock to return 'dark' before module import
-            mockLocalStorage['vc-theme'] = 'dark';
+            // Set up sessionStorage mock to return 'dark' before module import
+            mockSessionStorage['vc-theme'] = 'dark';
             
-            // Re-import the module to test initialization with mocked localStorage
+            // Re-import the module to test initialization with mocked sessionStorage
             vi.resetModules();
             const { theme: freshTheme } = await import('../src/lib/stores/theme.ts');
             
@@ -79,7 +79,7 @@ describe('Theme Store', () => {
         });
 
         it('should initialize with light theme when stored theme is not dark', () => {
-            mockLocalStorage['vc-theme'] = 'light';
+            mockSessionStorage['vc-theme'] = 'light';
             
             // Using imported theme
             
@@ -88,7 +88,7 @@ describe('Theme Store', () => {
         });
 
         it('should initialize with light theme when stored theme is invalid', () => {
-            mockLocalStorage['vc-theme'] = 'invalid-theme';
+            mockSessionStorage['vc-theme'] = 'invalid-theme';
             
             // Using imported theme
             
@@ -111,7 +111,7 @@ describe('Theme Store', () => {
         });
 
         it('should toggle from dark to light theme', () => {
-            mockLocalStorage['vc-theme'] = 'dark';
+            mockSessionStorage['vc-theme'] = 'dark';
             
             // Using imported theme and ToggleTheme
             
@@ -185,9 +185,9 @@ describe('Theme Store', () => {
     });
 
     describe('environment compatibility', () => {
-        it('should handle missing localStorage gracefully', () => {
-            // Mock localStorage as undefined for SSR environment
-            Object.defineProperty(global, 'localStorage', {
+        it('should handle missing sessionStorage gracefully', () => {
+            // Mock sessionStorage as undefined for SSR environment
+            Object.defineProperty(global, 'sessionStorage', {
                 value: undefined,
                 writable: true,
                 configurable: true
