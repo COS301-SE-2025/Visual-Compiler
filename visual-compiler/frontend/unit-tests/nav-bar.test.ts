@@ -32,9 +32,9 @@ describe('NavBar Component', () => {
 		// Reset our mock references before each test
 		vi.clearAllMocks();
 		mockThemeStore.set('light');
-		// Clear localStorage before each test
+		// Clear sessionStorage before each test
 		vi.clearAllMocks();
-		Object.defineProperty(window, 'localStorage', {
+		Object.defineProperty(window, 'sessionStorage', {
 			value: {
 				getItem: vi.fn(),
 				setItem: vi.fn(),
@@ -85,8 +85,8 @@ describe('NavBar Component', () => {
 	});
 
 	it('TestAdminPanelShow_Success: Shows admin panel when user is admin', async () => {
-		// Mock localStorage to return 'true' for is_admin
-		vi.mocked(window.localStorage.getItem).mockReturnValue('true');
+		// Mock sessionStorage to return 'true' for is_admin
+		vi.mocked(window.sessionStorage.getItem).mockReturnValue('true');
 		
 		render(NavBar);
 		await tick(); // Wait for onMount to complete
@@ -104,8 +104,8 @@ describe('NavBar Component', () => {
 	});
 
 	it('TestAdminPanelHide_Success: Hides admin panel when user is not admin', async () => {
-		// Mock localStorage to return null/false for is_admin
-		vi.mocked(window.localStorage.getItem).mockReturnValue(null);
+		// Mock sessionStorage to return null/false for is_admin
+		vi.mocked(window.sessionStorage.getItem).mockReturnValue(null);
 		
 		render(NavBar);
 		await tick(); // Wait for onMount to complete
@@ -173,31 +173,31 @@ describe('NavBar Component', () => {
 		expect(darkLogo).toHaveAttribute('src', '/half_stack_phoenix_grey.png');
 	});
 
-	it('TestLocalStorageAdmin_Success: Correctly reads admin status from localStorage', async () => {
+	it('TestSessionStorageAdmin_Success: Correctly reads admin status from sessionStorage', async () => {
 		// First test: user is NOT an admin (null or false)
-		vi.mocked(window.localStorage.getItem).mockReturnValue(null);
+		vi.mocked(window.sessionStorage.getItem).mockReturnValue(null);
 		
 		const { unmount } = render(NavBar);
 		await tick(); // Wait for onMount
 		
-		expect(window.localStorage.getItem).toHaveBeenCalledWith('is_admin');
+		expect(window.sessionStorage.getItem).toHaveBeenCalledWith('is_admin');
 		expect(screen.queryByRole('button', { name: 'Admin Panel' })).toBeNull();
 		
 		unmount();
 		
 		// Second test: user IS an admin
-		vi.mocked(window.localStorage.getItem).mockReturnValue('true');
+		vi.mocked(window.sessionStorage.getItem).mockReturnValue('true');
 		
 		render(NavBar);
 		await tick(); // Wait for onMount
 		
-		expect(window.localStorage.getItem).toHaveBeenCalledWith('is_admin');
+		expect(window.sessionStorage.getItem).toHaveBeenCalledWith('is_admin');
 		expect(screen.getByRole('button', { name: 'Admin Panel' })).toBeInTheDocument();
 	});
 
 	it('TestAdminPanelToggle_Success: Toggles admin panel visibility', async () => {
-		// Mock localStorage to return 'true' for is_admin
-		vi.mocked(window.localStorage.getItem).mockReturnValue('true');
+		// Mock sessionStorage to return 'true' for is_admin
+		vi.mocked(window.sessionStorage.getItem).mockReturnValue('true');
 		
 		render(NavBar);
 		await tick(); // Wait for onMount
@@ -286,8 +286,8 @@ describe('NavBar Component', () => {
 	});
 
 	it('TestAdminPanelCloseHandler_Success: Tests admin panel close event handler', async () => {
-		// Mock localStorage to show admin panel
-		vi.mocked(window.localStorage.getItem).mockReturnValue('true');
+		// Mock sessionStorage to show admin panel
+		vi.mocked(window.sessionStorage.getItem).mockReturnValue('true');
 		
 		render(NavBar);
 		await tick();
@@ -324,8 +324,8 @@ describe('NavBar Component', () => {
 	});
 
 	it('TestMultipleEventHandlers_Success: Tests all inline arrow functions comprehensively', async () => {
-		// Mock localStorage for admin functionality
-		vi.mocked(window.localStorage.getItem).mockReturnValue('true');
+		// Mock sessionStorage for admin functionality
+		vi.mocked(window.sessionStorage.getItem).mockReturnValue('true');
 		
 		render(NavBar);
 		await tick();
@@ -394,25 +394,25 @@ describe('NavBar Component', () => {
 	});
 
 	it('TestOnMountFunction_Success: Tests onMount function execution', async () => {
-		// Test onMount with different localStorage values
-		vi.mocked(window.localStorage.getItem).mockReturnValue('true');
+		// Test onMount with different sessionStorage values
+		vi.mocked(window.sessionStorage.getItem).mockReturnValue('true');
 		
 		const { unmount } = render(NavBar);
 		await tick();
 		
 		// onMount should have been called and set is_admin to true
-		expect(window.localStorage.getItem).toHaveBeenCalledWith('is_admin');
+		expect(window.sessionStorage.getItem).toHaveBeenCalledWith('is_admin');
 		expect(screen.getByRole('button', { name: 'Admin Panel' })).toBeInTheDocument();
 		
 		unmount();
 		
-		// Test onMount with null localStorage
-		vi.mocked(window.localStorage.getItem).mockReturnValue(null);
+		// Test onMount with null sessionStorage
+		vi.mocked(window.sessionStorage.getItem).mockReturnValue(null);
 		
 		render(NavBar);
 		await tick();
 		
-		expect(window.localStorage.getItem).toHaveBeenCalledWith('is_admin');
+		expect(window.sessionStorage.getItem).toHaveBeenCalledWith('is_admin');
 		expect(screen.queryByRole('button', { name: 'Admin Panel' })).toBeNull();
 	});
 

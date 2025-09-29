@@ -1,9 +1,23 @@
 import { render, screen } from '@testing-library/svelte';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ArtifactViewer from '../src/lib/components/lexer/lexer-artifact-viewer.svelte';
 import type { Token } from '$lib/types';
 
+// Mock the lexer store
+vi.mock('$lib/stores/lexer', () => ({
+	lexerState: {
+		subscribe: vi.fn((callback) => {
+			// Call with empty state initially
+			callback({ tokens: null, tokens_unidentified: null });
+			return vi.fn(); // Return unsubscribe function
+		})
+	}
+}));
+
 describe('ArtifactViewer Component', () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
 	// TestEmptyState_Success
 	// Return type: void
 	// Parameter type(s): none
@@ -13,6 +27,7 @@ describe('ArtifactViewer Component', () => {
 			phase: 'lexer',
 			show_tokens: false
 		});
+		// The component shows this message when phase is lexer but show_tokens is false
 		expect(screen.getByText('Tokens will appear here after generation')).toBeInTheDocument();
 	});
 
@@ -45,7 +60,10 @@ describe('ArtifactViewer Component', () => {
 
 		// FIX: Changed the assertion to look for the correctly capitalized table header "Type".
 		expect(screen.getByText('Type')).toBeInTheDocument();
+		expect(screen.getByText('Value')).toBeInTheDocument();
+		expect(screen.getByText('KEYWORD')).toBeInTheDocument();
 		expect(screen.getByText('if')).toBeInTheDocument();
+		expect(screen.getByText('PUNCTUATION')).toBeInTheDocument();
 		expect(screen.getByText('(')).toBeInTheDocument();
 	});
 

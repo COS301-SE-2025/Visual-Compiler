@@ -17,8 +17,8 @@ describe('LexerPhaseTutorial Component', () => {
 	it('TestInitialStep_Success: Shows step 1 initially', () => {
 		render(LexerPhaseTutorial);
 
-		expect(screen.getByText('1. Source Code Input')).toBeInTheDocument();
-		expect(screen.getByText(/Start by entering your source code in the input box/)).toBeInTheDocument();
+		expect(screen.getByText('1. Regular Expression Basics')).toBeInTheDocument();
+		expect(screen.getByText(/Regular expressions use special characters to match patterns/)).toBeInTheDocument();
 	});
 
 	it('TestStepsToFollow_Success: Shows steps to follow section', () => {
@@ -47,35 +47,25 @@ describe('LexerPhaseTutorial Component', () => {
 			await fireEvent.click(nextButtons[0]);
 			
 			await waitFor(() => {
-				expect(screen.getByText('2.1 Regular Expression Basics')).toBeInTheDocument();
+				expect(screen.getByText('2. Deterministic Finite Automata (DFA)')).toBeInTheDocument();
 			});
 		}
 	});
 
-	it('TestRegexBasics_Success: Shows regex basics in step 2', async () => {
+	it('TestRegexBasics_Success: Shows regex basics in step 1', async () => {
 		render(LexerPhaseTutorial);
 
-		// Navigate to step 2 if possible
-		const nextButtons = screen.getAllByRole('button').filter(btn => 
-			btn.textContent?.includes('Next') || btn.textContent?.includes('→') || btn.textContent?.includes('>')
-		);
-		
-		if (nextButtons.length > 0) {
-			await fireEvent.click(nextButtons[0]);
-			
-			await waitFor(() => {
-				expect(screen.getByText(/Regular expressions use special characters/)).toBeInTheDocument();
-				expect(screen.getByText('Exact Match')).toBeInTheDocument();
-				expect(screen.getByText('Range')).toBeInTheDocument();
-			});
-		}
+		// Step 1 should show regex basics 
+		expect(screen.getByText(/Regular expressions use special characters/)).toBeInTheDocument();
+		expect(screen.getByText('Exact Match')).toBeInTheDocument();
+		expect(screen.getByText('Range')).toBeInTheDocument();
 	});
 
 	it('TestSampleCode_Success: Contains sample code examples', () => {
 		render(LexerPhaseTutorial);
 
-		// Should contain the sample code
-		expect(screen.getByText(/if \(count > 0\)/)).toBeInTheDocument();
+		// Should contain the patterns shown in the tutorial
+		expect(screen.getAllByText(/hello/)[0]).toBeInTheDocument();
 	});
 
 	it('TestRegexExamples_Success: Contains regex pattern examples', () => {
@@ -114,8 +104,8 @@ describe('LexerPhaseTutorial Component', () => {
 	it('TestCodeSample_Success: Shows code sample in tutorial', () => {
 		render(LexerPhaseTutorial);
 
-		// Should show the example code
-		expect(screen.getByText(/return true/)).toBeInTheDocument();
+		// Should show example patterns
+		expect(screen.getAllByText(/Matches/)[0]).toBeInTheDocument();
 	});
 
 	it('TestPatternExamples_Success: Contains pattern matching examples', () => {
@@ -154,7 +144,7 @@ describe('LexerPhaseTutorial Component', () => {
 				await fireEvent.click(prevButtons[0]);
 				
 				await waitFor(() => {
-					expect(screen.getByText('1. Source Code Input')).toBeInTheDocument();
+					expect(screen.getByText('1. Regular Expression Basics')).toBeInTheDocument();
 				});
 			}
 		}
