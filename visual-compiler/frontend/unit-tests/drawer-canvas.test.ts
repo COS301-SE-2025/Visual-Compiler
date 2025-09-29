@@ -3,9 +3,9 @@
 import { render, screen, fireEvent } from '@testing-library/svelte';
 import { tick } from 'svelte'; // Make sure tick is imported
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import DrawerCanvas from '../src/lib/components/main/drawer-canvas.svelte';
-import type { NodeType } from '../src/lib/types';
+import type { NodeType, NodeConnection } from '../src/lib/types';
 
 // The manual mock for svelvet is correct and does not need changes.
 // Vitest will automatically use the file in /tests/__mocks__/svelvet.ts
@@ -461,6 +461,291 @@ describe('DrawerCanvas Component', () => {
 		expect(screen.getByRole('button', { name: 'Filter 1' })).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Filter 2' })).toBeInTheDocument();
 		expect(mockConnectionHandler).toBeDefined();
+	});
+
+	describe('Enhanced Coverage Tests', () => {
+		it('TestInitialConnections_Success: Should handle initial connections properly', () => {
+			const initialConnections = [
+				{
+					id: 'initial-conn-1',
+					sourceNodeId: 'source-1',
+					targetNodeId: 'lexer-1', 
+					sourceType: 'source' as NodeType,
+					targetType: 'lexer' as NodeType,
+					sourceAnchor: 'anchor-1',
+					targetAnchor: 'anchor-2'
+				}
+			];
+
+			const mockNodes = writable([
+				{ id: 'source-1', type: 'source' as NodeType, label: 'Source', position: { x: 0, y: 0 } },
+				{ id: 'lexer-1', type: 'lexer' as NodeType, label: 'Lexer', position: { x: 100, y: 0 } }
+			]);
+
+			const mockConnectionChange = vi.fn();
+			render(DrawerCanvas, {
+				nodes: mockNodes,
+				initialConnections,
+				onPhaseSelect: vi.fn(),
+				onConnectionChange: mockConnectionChange
+			});
+
+			// Should render both nodes
+			expect(screen.getByRole('button', { name: 'Source' })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: 'Lexer' })).toBeInTheDocument();
+		});
+
+		it('TestEmptyInitialConnections_Success: Should handle empty initial connections', () => {
+			const mockNodes = writable([
+				{ id: 'empty-test', type: 'parser' as NodeType, label: 'Empty Test', position: { x: 0, y: 0 } }
+			]);
+
+			render(DrawerCanvas, {
+				nodes: mockNodes,
+				initialConnections: [],
+				onPhaseSelect: vi.fn(),
+				onConnectionChange: vi.fn()
+			});
+
+			expect(screen.getByRole('button', { name: 'Empty Test' })).toBeInTheDocument();
+		});
+
+		it('TestNodeReactivity_Success: Should react to node store changes', async () => {
+			const mockNodes = writable([
+				{ id: 'reactive-1', type: 'lexer' as NodeType, label: 'Original Node', position: { x: 0, y: 0 } }
+			]);
+
+			render(DrawerCanvas, {
+				nodes: mockNodes,
+				onPhaseSelect: vi.fn(),
+				onConnectionChange: vi.fn()
+			});
+
+			expect(screen.getByRole('button', { name: 'Original Node' })).toBeInTheDocument();
+
+			// Update the store
+			mockNodes.set([
+				{ id: 'reactive-1', type: 'lexer' as NodeType, label: 'Updated Node', position: { x: 10, y: 10 } },
+				{ id: 'reactive-2', type: 'parser' as NodeType, label: 'New Node', position: { x: 20, y: 20 } }
+			]);
+
+			await tick();
+
+			expect(screen.getByRole('button', { name: 'Updated Node' })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: 'New Node' })).toBeInTheDocument();
+		});
+
+
+		it('TestTooltipsProp_Success: Should accept tooltips prop', () => {
+			const tooltips = {
+				lexer: 'Lexer tooltip',
+				parser: 'Parser tooltip',
+				source: 'Source tooltip',
+				analyser: 'Analyser tooltip',
+				translator: 'Translator tooltip',
+				optimiser: 'Optimiser tooltip'
+			};
+
+			const mockNodes = writable([
+				{ id: 'tooltip-test', type: 'lexer' as NodeType, label: 'Tooltip Test', position: { x: 0, y: 0 } }
+			]);
+
+			render(DrawerCanvas, {
+				nodes: mockNodes,
+				tooltips,
+				onPhaseSelect: vi.fn(),
+				onConnectionChange: vi.fn()
+			});
+
+			expect(screen.getByRole('button', { name: 'Tooltip Test' })).toBeInTheDocument();
+		});
+
+		it('TestNodeTypes_Success: Should render all node types correctly', () => {
+			const mockNodes = writable([
+				{ id: 'source-test', type: 'source' as NodeType, label: 'Source Node', position: { x: 0, y: 0 } },
+				{ id: 'lexer-test', type: 'lexer' as NodeType, label: 'Lexer Node', position: { x: 50, y: 0 } },
+				{ id: 'parser-test', type: 'parser' as NodeType, label: 'Parser Node', position: { x: 100, y: 0 } },
+				{ id: 'analyser-test', type: 'analyser' as NodeType, label: 'Analyser Node', position: { x: 150, y: 0 } },
+				{ id: 'translator-test', type: 'translator' as NodeType, label: 'Translator Node', position: { x: 200, y: 0 } },
+				{ id: 'optimiser-test', type: 'optimiser' as NodeType, label: 'Optimiser Node', position: { x: 250, y: 0 } }
+			]);
+
+			render(DrawerCanvas, {
+				nodes: mockNodes,
+				onPhaseSelect: vi.fn(),
+				onConnectionChange: vi.fn()
+			});
+
+			// All node types should render
+			expect(screen.getByRole('button', { name: 'Source Node' })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: 'Lexer Node' })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: 'Parser Node' })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: 'Analyser Node' })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: 'Translator Node' })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: 'Optimiser Node' })).toBeInTheDocument();
+		});
+
+
+		
+
+		it('TestLoadingState_Success: Should handle loading state during initialization', () => {
+			const initialConnections = [
+				{
+					id: 'loading-conn',
+					sourceNodeId: 'loading-source',
+					targetNodeId: 'loading-target',
+					sourceType: 'source' as NodeType,
+					targetType: 'lexer' as NodeType,
+					sourceAnchor: 'anchor-1',
+					targetAnchor: 'anchor-2'
+				}
+			];
+
+			const mockNodes = writable([
+				{ id: 'loading-source', type: 'source' as NodeType, label: 'Loading Source', position: { x: 0, y: 0 } },
+				{ id: 'loading-target', type: 'lexer' as NodeType, label: 'Loading Target', position: { x: 100, y: 0 } }
+			]);
+
+			render(DrawerCanvas, {
+				nodes: mockNodes,
+				initialConnections,
+				onPhaseSelect: vi.fn(),
+				onConnectionChange: vi.fn()
+			});
+
+			// During loading, component should still render nodes
+			expect(screen.getByRole('button', { name: 'Loading Source' })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: 'Loading Target' })).toBeInTheDocument();
+		});
+
+		it('TestPositionManagement_Success: Should handle position restoration logic', async () => {
+			const mockNodes = writable([
+				{ id: 'position-test-1', type: 'lexer' as NodeType, label: 'Position 1', position: { x: 25, y: 50 } },
+				{ id: 'position-test-2', type: 'parser' as NodeType, label: 'Position 2', position: { x: 75, y: 125 } }
+			]);
+
+			render(DrawerCanvas, {
+				nodes: mockNodes,
+				onPhaseSelect: vi.fn(),
+				onConnectionChange: vi.fn()
+			});
+
+			// Nodes should render at their specified positions
+			expect(screen.getByRole('button', { name: 'Position 1' })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: 'Position 2' })).toBeInTheDocument();
+
+			// Change positions
+			mockNodes.set([
+				{ id: 'position-test-1', type: 'lexer' as NodeType, label: 'Position 1', position: { x: 100, y: 150 } },
+				{ id: 'position-test-2', type: 'parser' as NodeType, label: 'Position 2', position: { x: 200, y: 250 } }
+			]);
+
+			await tick();
+
+			// Nodes should still be rendered after position changes
+			expect(screen.getByRole('button', { name: 'Position 1' })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: 'Position 2' })).toBeInTheDocument();
+		});
+
+		it('TestMissingNodeHandling_Success: Should handle missing nodes gracefully', async () => {
+			const mockNodes = writable([
+				{ id: 'existing-node', type: 'analyser' as NodeType, label: 'Existing Node', position: { x: 0, y: 0 } }
+			]);
+
+			const { container } = render(DrawerCanvas, {
+				nodes: mockNodes,
+				initialConnections: [],
+				onPhaseSelect: vi.fn(),
+				onConnectionChange: vi.fn()
+			});
+
+			// Simulate move event for non-existent node
+			const nodeMoveEvent = new CustomEvent('nodeMove', {
+				detail: {
+					node: { id: 'N-nonexistent-node' },
+					position: { x: 50, y: 100 }
+				}
+			});
+
+			fireEvent(container, nodeMoveEvent);
+			await tick();
+
+			// Should not crash and existing node should remain
+			expect(screen.getByRole('button', { name: 'Existing Node' })).toBeInTheDocument();
+		});
+
+
+		it('TestMultipleNodeUpdates_Success: Should handle multiple rapid node updates', async () => {
+			const mockNodes = writable([
+				{ id: 'rapid-1', type: 'source' as NodeType, label: 'Rapid 1', position: { x: 0, y: 0 } }
+			]);
+
+			render(DrawerCanvas, {
+				nodes: mockNodes,
+				onPhaseSelect: vi.fn(),
+				onConnectionChange: vi.fn()
+			});
+
+			expect(screen.getByRole('button', { name: 'Rapid 1' })).toBeInTheDocument();
+
+			// Rapid updates
+			mockNodes.set([
+				{ id: 'rapid-1', type: 'source' as NodeType, label: 'Rapid 1 Updated', position: { x: 10, y: 10 } },
+				{ id: 'rapid-2', type: 'lexer' as NodeType, label: 'Rapid 2', position: { x: 20, y: 20 } }
+			]);
+
+			await tick();
+
+			mockNodes.set([
+				{ id: 'rapid-1', type: 'source' as NodeType, label: 'Rapid 1 Final', position: { x: 30, y: 30 } },
+				{ id: 'rapid-2', type: 'lexer' as NodeType, label: 'Rapid 2 Final', position: { x: 40, y: 40 } },
+				{ id: 'rapid-3', type: 'parser' as NodeType, label: 'Rapid 3', position: { x: 50, y: 50 } }
+			]);
+
+			await tick();
+
+			expect(screen.getByRole('button', { name: 'Rapid 1 Final' })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: 'Rapid 2 Final' })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: 'Rapid 3' })).toBeInTheDocument();
+		});
+
+		it('TestComponentProps_Success: Should accept and handle all props correctly', () => {
+			const mockNodes = writable([
+				{ id: 'prop-test', type: 'optimiser' as NodeType, label: 'Props Test', position: { x: 0, y: 0 } }
+			]);
+
+			const mockPhaseSelect = vi.fn();
+			const mockConnectionChange = vi.fn();
+			const tooltips = { optimiser: 'Optimiser tooltip' };
+			const initialConnections: NodeConnection[] = [];
+
+			render(DrawerCanvas, {
+				nodes: mockNodes,
+				onPhaseSelect: mockPhaseSelect,
+				onConnectionChange: mockConnectionChange,
+				tooltips,
+				initialConnections
+			});
+
+			expect(screen.getByRole('button', { name: 'Props Test' })).toBeInTheDocument();
+		});
+
+		it('TestOptimiserNodeSpecialHandling_Success: Should handle optimiser nodes specially', () => {
+			const mockNodes = writable([
+				{ id: 'optimiser-special', type: 'optimiser' as NodeType, label: 'Special Optimiser', position: { x: 0, y: 0 } },
+				{ id: 'regular-node', type: 'lexer' as NodeType, label: 'Regular Node', position: { x: 100, y: 0 } }
+			]);
+
+			render(DrawerCanvas, {
+				nodes: mockNodes,
+				onPhaseSelect: vi.fn(),
+				onConnectionChange: vi.fn()
+			});
+
+			// Both nodes should render, with optimiser having special styling
+			expect(screen.getByRole('button', { name: 'Special Optimiser' })).toBeInTheDocument();
+			expect(screen.getByRole('button', { name: 'Regular Node' })).toBeInTheDocument();
+		});
 	});
 });
 
