@@ -145,6 +145,7 @@
 		padding-bottom: 0;
 		margin-bottom: 1.5rem;
 		text-align: center;
+		color: white
 	}
 
 	.artifact-title {
@@ -235,6 +236,14 @@
 	/* --- Dark Mode --- */
 	:global(html.dark-mode) .artifact-container {
 		 background: #1a2a4a;
+	}
+
+	:global(html.dark-mode) .artifact-header {
+		border-bottom-color: #4a5568;
+	}
+	:global(html.dark-mode) .artifact-title,
+	:global(html.dark-mode) h3 {
+		color: #ebeef1;
 	}
   
 	:global(html.dark-mode) .artifact-header {

@@ -61,6 +61,7 @@
 			details: [
 				"Drag from a node's output anchor to another's input",
 				"Follow the sequential order: Source → Lexer → Parser → Analyser → Translator",
+				"Each node can only have one incoming and one outgoing connection",
 				"Connections show how data flows through your compiler",
 				"Invalid connections will be prevented automatically"
 			]
@@ -128,14 +129,14 @@
 
 	function skipTutorial() {
 		// Mark as completed and close
-		localStorage.setItem('hasSeenCanvasTutorial', 'true');
+		sessionStorage.setItem('hasSeenCanvasTutorial', 'true');
 		closeTutorial();
 	}
 
 	function closeTutorial() {
 		isVisible = false;
 		// Mark as completed
-		localStorage.setItem('hasSeenCanvasTutorial', 'true');
+		sessionStorage.setItem('hasSeenCanvasTutorial', 'true');
 		setTimeout(() => {
 			dispatch('close');
 		}, 300);

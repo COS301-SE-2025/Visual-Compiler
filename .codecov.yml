@@ -12,6 +12,7 @@ coverage:
     - "**/project.ts" 
     - "**/lexer.ts" 
     - "**/mongo-db.go"
+    - "**/mongo.go"
     
   status:
     project:

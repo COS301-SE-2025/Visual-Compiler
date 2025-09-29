@@ -7,6 +7,7 @@
 	import { get } from 'svelte/store'; 
 	import { error } from '@sveltejs/kit';
     import { lexerState } from '$lib/stores/lexer';
+    import { analyserState, updateAnalyserInputs, markAnalyserSubmitted, updateAnalyserArtifacts } from '$lib/stores/analyser';
 
     const dispatch = createEventDispatcher();
 
@@ -47,20 +48,16 @@
     }
 
     // --- STATE ---
-
-    // Scope Rules State
     let scope_rules: ScopeRule[] = [{ id: 0, Start: '', End: '' }];
     let next_scope_id = 1;
     let show_start_tooltip = false;
     let show_end_tooltip = false;
-    let submitted_scope_rules: ScopeRule[] = []; // Renamed for clarity
+    let submitted_scope_rules: ScopeRule[] = [];
 
-    // Type Rules State
     let type_rules: TypeRule[] = [{ id: 0, ResultData: '',Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
     let next_type_id = 1;
     let submitted_type_rules: TypeRule[] = [];
 
-    // Grammar Rules State (single object as per screenshot, user only inputs 1 value for each)
     let grammar_rules: GrammarRule = {
         VariableRule: '',
         TypeRule: '',
@@ -75,6 +72,10 @@
     // Overall Submission State
     let rules_submitted = false; // This flag now controls the overall submission state
     let hasInitialized = false; // Flag to prevent reactive statement from re-running
+
+    // FIX: Add loading states for buttons
+    let isSubmittingRules = false;
+    let isGeneratingTable = false;
 
     const DEFAULT_SCOPE_RULES = [
         { id: 0, Start: '{', End: '}' }
@@ -103,28 +104,50 @@
     function addScopeRow() {
         scope_rules = [...scope_rules, { id: next_scope_id++, Start: '', End: '' }];
         rules_submitted = false;
+        if (hasInitialized) {
+            updateAnalyserInputs({
+                scope_rules: [...scope_rules],
+                next_scope_id,
+                rules_submitted: false
+            });
+        }
     }
 
     function removeScopeRow(index: number) {
         scope_rules.splice(index, 1);
-        scope_rules = scope_rules; // Trigger reactivity
+        scope_rules = scope_rules;
         rules_submitted = false;
-    }
-
-    function handleScopeRuleInput() {
-        rules_submitted = false;
+        if (hasInitialized) {
+            updateAnalyserInputs({
+                scope_rules: [...scope_rules],
+                rules_submitted: false
+            });
+        }
     }
 
     // Type Rules Logic
     function addTypeRow() {
         type_rules = [...type_rules, { id: next_type_id++, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
         rules_submitted = false;
+        if (hasInitialized) {
+            updateAnalyserInputs({
+                type_rules: [...type_rules],
+                next_type_id,
+                rules_submitted: false
+            });
+        }
     }
 
     function removeTypeRow(index: number) {
         type_rules.splice(index, 1);
-        type_rules = type_rules; // Trigger reactivity
+        type_rules = type_rules;
         rules_submitted = false;
+        if (hasInitialized) {
+            updateAnalyserInputs({
+                type_rules: [...type_rules],
+                rules_submitted: false
+            });
+        }
     }
 
     function updateTypeOperator(rule: TypeRule, input: string) {
@@ -140,17 +163,18 @@
         handleTypeRuleInput();
     }
 
-    function handleTypeRuleInput() {
-        rules_submitted = false;
-    }
-
     // Grammar Rules Logic (inputs are directly bound, no add/remove)
     function handleGrammarRuleInput() {
+        if (!hasInitialized) return;
         rules_submitted = false;
+        updateAnalyserInputs({
+            grammar_rules: { ...grammar_rules },
+            rules_submitted: false
+        });
     }
 
     // Universal Submission Logic
-    function handleSubmit() {
+    async function handleSubmit() {
         // Validate Scope Rules
         if (scope_rules.some((rule) => rule.Start.trim() === '' || rule.End.trim() === '')) {
             AddToast('Incomplete scope rules: Please fill in all Start and End fields for scope analysis', 'error');
@@ -174,13 +198,42 @@
             return;
         }
 
-        // If all validations pass
-        submitted_scope_rules = JSON.parse(JSON.stringify(scope_rules));
-        submitted_type_rules = JSON.parse(JSON.stringify(type_rules));
-        submitted_grammar_rules = JSON.parse(JSON.stringify(grammar_rules));
+        // FIX: Set loading state
+        isSubmittingRules = true;
 
-        rules_submitted = true;
-        AddToast('Semantic rules saved successfully! Ready to generate symbol table and perform analysis', 'success');
+        try {
+            // FIX: Add 1-second delay before processing
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // If validation passes
+            submitted_scope_rules = JSON.parse(JSON.stringify(scope_rules));
+            submitted_type_rules = JSON.parse(JSON.stringify(type_rules));
+            submitted_grammar_rules = JSON.parse(JSON.stringify(grammar_rules));
+
+            rules_submitted = true;
+
+            // Update the store
+            updateAnalyserInputs({
+                scope_rules: [...scope_rules],
+                type_rules: [...type_rules],
+                grammar_rules: { ...grammar_rules },
+                submitted_scope_rules: [...submitted_scope_rules],
+                submitted_type_rules: [...submitted_type_rules],
+                submitted_grammar_rules: { ...submitted_grammar_rules },
+                rules_submitted: true
+            });
+
+            // Mark as submitted in store
+            markAnalyserSubmitted();
+
+            AddToast('Semantic rules saved successfully! Ready to generate symbol table and perform analysis', 'success');
+        } catch (error) {
+            console.error('Submit rules error:', error);
+            AddToast('Failed to submit rules. Please try again.', 'error');
+        } finally {
+            // FIX: Reset loading state
+            isSubmittingRules = false;
+        }
     }
 
     // Universal Reset Logic
@@ -217,6 +270,18 @@
         grammar_rules = { ...DEFAULT_GRAMMAR_RULES };
         show_default_rules = true;
         rules_submitted = false;
+        
+        if (hasInitialized) {
+            updateAnalyserInputs({
+                scope_rules: [...scope_rules],
+                type_rules: [...type_rules],
+                grammar_rules: { ...grammar_rules },
+                next_scope_id: 1,
+                next_type_id: 3,
+                show_default_rules: true,
+                rules_submitted: false
+            });
+        }
     }
 
     function removeDefaultRules() {
@@ -235,194 +300,33 @@
         };
         show_default_rules = false;
         rules_submitted = false;
-    }
-
-    async function handleGenerate() {
-    try {
-        const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
-        const project = get(projectName);
         
-        if (!accessToken) {
-            AddToast('Authentication required: Please log in to generate symbol table', 'error');
-            return;
-        }
-        if (!project) {
-            AddToast('No project selected: Please select or create a project first', 'error');
-            return;
-        }
-        
-        is_loading = true;
-        
-        const requestData = {
-            scope_rules: submitted_scope_rules.map(rule => ({
-                start: rule.Start,
-                end: rule.End
-            })),
-            grammar_rules: {
-                variablerule: submitted_grammar_rules.VariableRule,
-                typerule: submitted_grammar_rules.TypeRule,
-                functionrule: submitted_grammar_rules.FunctionRule,
-                parameterrule: submitted_grammar_rules.ParameterRule,
-                assignmentrule: submitted_grammar_rules.AssignmentRule,
-                operatorrule: submitted_grammar_rules.OperatorRule,
-                termrule: submitted_grammar_rules.TermRule
-            },
-            type_rules: submitted_type_rules.map(rule => ({
-                resultdata: rule.ResultData,
-                assignment: rule.Assignment,
-                lhsdata: rule.LHSData,
-                operator: rule.Operator,
-                rhsdata: rule.RHSData
-            })),
-            project_name: project
-        };
-
-        const response = await fetch('http://localhost:8080/api/analysing/analyse', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-            },
-            body: JSON.stringify(requestData)
-        });
-        
-        const result = await response.json();
-        
-        const symbols = result.symbol_table?.SymbolScopes?.map((s: any) => ({
-            name: s.Name || s.name || 'unknown',
-            type: s.Type || s.type || 'unknown',
-            scope: s.Scope || s.scope || 0
-        })) || [];
-
-        onGenerateSymbolTable({
-            symbol_table: symbols,
-            analyser_error: result.error,
-            analyser_error_details: result.details
-        });
-
-        symbol_table = symbols;
-        show_symbol_table = true;
-
-        if (result.error) {
-            AddToast('Semantic error detected! Check the analysis results for details', 'error');
-            dispatch('generate', {
-                symbol_table: symbols,
-                analyser_error: true,
-                analyser_error_details: result.details
-            });
-            console.log(result);
-        } else {
-            AddToast('Semantic analysis complete! Symbol table generated successfully', 'success');
-            dispatch('generate', {
-                symbol_table: symbols
+        if (hasInitialized) {
+            updateAnalyserInputs({
+                scope_rules: [...scope_rules],
+                type_rules: [...type_rules],
+                grammar_rules: { ...grammar_rules },
+                next_scope_id: 1,
+                next_type_id: 1,
+                show_default_rules: false,
+                rules_submitted: false
             });
         }
-    } catch (error) {
-        const err = error as { 
-            response?: { 
-                data?: any; 
-                status?: number 
-            }; 
-            message?: string 
-        };
-        console.error('Error details:', {
-            error: err,
-            response: err.response?.data,
-            status: err.response?.status
-        });
-        console.error('Error generating symbol table:', error);
-        AddToast('Analysis failed: Unable to generate symbol table. Please check your connection', 'error');
-    } finally {
-        is_loading = false;
     }
-}
 
-    // --- REACTIVE STATEMENTS ---
-
-    // Scope Rules Completeness
-    $: lastScopeRowComplete =
-        scope_rules.length > 0 &&
-        scope_rules[scope_rules.length - 1].Start.trim() !== '' &&
-        scope_rules[scope_rules.length - 1].End.trim() !== '';
-
-    $: allScopeRowsComplete = scope_rules.every(
-        (rule) => rule.Start.trim() !== '' && rule.End.trim() !== ''
-    );
-
-    // Type Rules Completeness
-    $: lastTypeRowComplete =
-        type_rules.length > 0 &&
-        type_rules[type_rules.length - 1].ResultData.trim() !== '' &&
-        type_rules[type_rules.length - 1].Assignment.trim() !== '' &&
-        type_rules[type_rules.length - 1].LHSData.trim() !== ''
-
-    $: allTypeRowsComplete = type_rules.every(
-        (rule) =>
-            rule.ResultData.trim() !== '' &&
-            rule.Assignment.trim() !== '' &&
-            rule.LHSData.trim() !== ''
-    );
-
-    // Grammar Rules Completeness
-    $: allGrammarRulesComplete = Object.values(grammar_rules).every(
-        (field) => typeof field === 'string' && field.trim() !== ''
-    );
-
-    // Overall Completeness for Submit Button
-    $: overallAllRowsComplete = allScopeRowsComplete && allTypeRowsComplete && allGrammarRulesComplete;
-
-    // Update rules when project data is loaded
-    $: if ($lexerState?.analyzer_data && !hasInitialized) {
-        const analyzerData = $lexerState.analyzer_data;
-        
-        // Update scope rules
-        scope_rules = analyzerData.scope_rules.map((rule, index) => ({
-            id: index,
-            Start: rule.start,
-            End: rule.end
-        }));
-        next_scope_id = scope_rules.length;
-
-        // Update type rules
-        type_rules = analyzerData.type_rules.map((rule, index) => ({
-            id: index,
-            ResultData: rule.resultdata,
-            Assignment: rule.assignment,
-            LHSData: rule.lhsdata,
-            Operator: rule.operator || [''],
-            RHSData: rule.rhsdata
-        }));
-        next_type_id = type_rules.length;
-
-        // Update grammar rules
-        grammar_rules = {
-            VariableRule: analyzerData.grammar_rules.variablerule,
-            TypeRule: analyzerData.grammar_rules.typerule,
-            FunctionRule: analyzerData.grammar_rules.functionrule,
-            ParameterRule: analyzerData.grammar_rules.parameterrule,
-            AssignmentRule: analyzerData.grammar_rules.assignmentrule,
-            OperatorRule: analyzerData.grammar_rules.operatorrule,
-            TermRule: analyzerData.grammar_rules.termrule
-        };
-
-        // Set submitted state
-        submitted_scope_rules = [...scope_rules];
-        submitted_type_rules = [...type_rules];
-        submitted_grammar_rules = { ...grammar_rules };
-        rules_submitted = true;
-        hasInitialized = true;
-        
-        // Force reactivity by triggering array updates
-        scope_rules = [...scope_rules];
-        type_rules = [...type_rules];
-    }
-    
-    // Reset when lexer state is cleared (new project or project switch)
-    $: if (!$lexerState?.analyzer_data && hasInitialized) {
-        hasInitialized = false;
-        // Reset to default state
+    // ADD: Clear all inputs function
+    function clearAllInputs() {
+        // Reset scope rules
         scope_rules = [{ id: 0, Start: '', End: '' }];
-        type_rules = [{ id: 0, ResultData: '',Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
+        next_scope_id = 1;
+        submitted_scope_rules = [];
+
+        // Reset type rules  
+        type_rules = [{ id: 0, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
+        next_type_id = 1;
+        submitted_type_rules = [];
+
+        // Reset grammar rules
         grammar_rules = {
             VariableRule: '',
             TypeRule: '',
@@ -432,9 +336,267 @@
             OperatorRule: '',
             TermRule: ''
         };
-        next_scope_id = 1;
-        next_type_id = 1;
+        submitted_grammar_rules = { ...grammar_rules };
+
+        // Reset states
         rules_submitted = false;
+        show_default_rules = false;
+        show_symbol_table = false;
+
+        // Update store
+        updateAnalyserInputs({
+            scope_rules: [...scope_rules],
+            type_rules: [...type_rules],
+            grammar_rules: { ...grammar_rules },
+            submitted_scope_rules: [],
+            submitted_type_rules: [],
+            submitted_grammar_rules: { ...grammar_rules },
+            next_scope_id: 1,
+            next_type_id: 1,
+            show_default_rules: false,
+            rules_submitted: false,
+            show_symbol_table: false
+        });
+        
+        AddToast('All analyser inputs cleared successfully!', 'success');
+    }
+
+    async function handleGenerate() {
+        // FIX: Set loading state
+        isGeneratingTable = true;
+
+        try {
+            // FIX: Add 1-second delay before API call
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
+            const project = get(projectName);
+            
+            if (!accessToken) {
+                AddToast('Authentication required: Please log in to generate symbol table', 'error');
+                return;
+            }
+            if (!project) {
+                AddToast('No project selected: Please select or create a project first', 'error');
+                return;
+            }
+            
+            const requestData = {
+                scope_rules: submitted_scope_rules.map(rule => ({
+                    start: rule.Start,
+                    end: rule.End
+                })),
+                grammar_rules: {
+                    variablerule: submitted_grammar_rules.VariableRule,
+                    typerule: submitted_grammar_rules.TypeRule,
+                    functionrule: submitted_grammar_rules.FunctionRule,
+                    parameterrule: submitted_grammar_rules.ParameterRule,
+                    assignmentrule: submitted_grammar_rules.AssignmentRule,
+                    operatorrule: submitted_grammar_rules.OperatorRule,
+                    termrule: submitted_grammar_rules.TermRule
+                },
+                type_rules: submitted_type_rules.map(rule => ({
+                    resultdata: rule.ResultData,
+                    assignment: rule.Assignment,
+                    lhsdata: rule.LHSData,
+                    operator: rule.Operator,
+                    rhsdata: rule.RHSData
+                })),
+                project_name: project
+            };
+
+            const response = await fetch('http://localhost:8080/api/analysing/analyse', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            const result = await response.json();
+            
+            const symbols = result.symbol_table?.SymbolScopes?.map((s: any) => ({
+                name: s.Name || s.name || 'unknown',
+                type: s.Type || s.type || 'unknown',
+                scope: s.Scope || s.scope || 0
+            })) || [];
+
+            onGenerateSymbolTable({
+                symbol_table: symbols,
+                analyser_error: result.error,
+                analyser_error_details: result.details
+            });
+
+            symbol_table = symbols;
+            show_symbol_table = true;
+
+            // Update store with symbol table
+            updateAnalyserInputs({
+                show_symbol_table: true
+            });
+
+            if (result.error) {
+                // FIX: Use symbols and result.error instead of undefined variables
+                updateAnalyserArtifacts(symbols, result.error, result.details);
+                
+                AddToast('Semantic error detected! Check the analysis results for details', 'error');
+                dispatch('generate', {
+                    symbol_table: symbols,
+                    analyser_error: true,
+                    analyser_error_details: result.details
+                });
+            } else {
+                // FIX: Use symbols and null instead of undefined variables
+                updateAnalyserArtifacts(symbols, null, null);
+                
+                AddToast('Semantic analysis complete! Symbol table generated successfully', 'success');
+                dispatch('generate', {
+                    symbol_table: symbols
+                });
+            }
+        } catch (error) {
+            const err = error as { 
+                response?: { 
+                    data?: any; 
+                    status?: number 
+                }; 
+                message?: string 
+            };
+            console.error('Error details:', {
+                error: err,
+                response: err.response?.data,
+                status: err.response?.status
+            });
+            console.error('Error generating symbol table:', error);
+            AddToast('Analysis failed: Unable to generate symbol table. Please check your connection', 'error');
+        } finally {
+            // FIX: Reset loading state
+            isGeneratingTable = false;
+        }
+    }
+
+    // ADD: Missing input change handlers that were missing
+    function handleScopeRuleInput() {
+        if (!hasInitialized) return;
+        rules_submitted = false;
+        updateAnalyserInputs({
+            scope_rules: [...scope_rules],
+            rules_submitted: false
+        });
+    }
+
+    function handleTypeRuleInput() {
+        if (!hasInitialized) return;
+        rules_submitted = false;
+        updateAnalyserInputs({
+            type_rules: [...type_rules],
+            rules_submitted: false
+        });
+    }
+
+    // FIX: Add project change tracking
+    let currentProjectName = '';
+
+    // FIX: Force reinitialization when project changes
+    $: if ($projectName !== currentProjectName) {
+        console.log('Analyser: Project changed from', currentProjectName, 'to', $projectName);
+        
+        // RESET component state immediately when project changes
+        if (currentProjectName !== '' && $projectName !== currentProjectName) {
+            scope_rules = [{ id: 0, Start: '', End: '' }];
+            next_scope_id = 1;
+            submitted_scope_rules = [];
+            
+            type_rules = [{ id: 0, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }];
+            next_type_id = 1;
+            submitted_type_rules = [];
+            
+            grammar_rules = {
+                VariableRule: '',
+                TypeRule: '',
+                FunctionRule: '',
+                ParameterRule: '',
+                AssignmentRule: '',
+                OperatorRule: '',
+                TermRule: ''
+            };
+            submitted_grammar_rules = { ...grammar_rules };
+            
+            rules_submitted = false;
+            show_default_rules = false;
+            show_symbol_table = false;
+            symbol_table = { symbols: [] };
+
+            // FIX: Clear artifacts from parent component by dispatching empty data
+            onGenerateSymbolTable({
+                symbol_table: [],
+                analyser_error: '',
+                analyser_error_details: ''
+            });
+        }
+        
+        hasInitialized = false;
+        currentProjectName = $projectName;
+    }
+
+    // FIX: Update store subscription to handle project changes and artifacts
+    $: if ($analyserState && $projectName && (!hasInitialized || $projectName !== currentProjectName)) {
+        console.log('Analyser component initializing/reinitializing with state:', $analyserState);
+        
+        scope_rules = [...$analyserState.scope_rules];
+        type_rules = [...$analyserState.type_rules];
+        grammar_rules = { ...$analyserState.grammar_rules };
+        submitted_scope_rules = [...$analyserState.submitted_scope_rules];
+        submitted_type_rules = [...$analyserState.submitted_type_rules];
+        submitted_grammar_rules = { ...$analyserState.submitted_grammar_rules };
+        next_scope_id = $analyserState.next_scope_id;
+        next_type_id = $analyserState.next_type_id;
+        show_default_rules = $analyserState.show_default_rules;
+        rules_submitted = $analyserState.rules_submitted;
+        show_symbol_table = $analyserState.show_symbol_table;
+        
+        // FIX: Handle artifacts - only show if there are actual symbols
+        if ($analyserState.hasSymbolTable && $analyserState.symbolTable && $analyserState.symbolTable.length > 0) {
+            const symbols = $analyserState.symbolTable.map((s: any) => ({
+                name: s.name || 'unknown',
+                type: s.type || 'unknown',
+                scope: s.scope || 0
+            }));
+            
+            symbol_table = { symbols };
+            show_symbol_table = true;
+            
+            // Dispatch the symbol table to parent component
+            onGenerateSymbolTable({
+                symbol_table: symbols,
+                analyser_error: $analyserState.analyserError || '',
+                analyser_error_details: $analyserState.analyserErrorDetails || ''
+            });
+            
+            console.log('Restored symbol table with', symbols.length, 'symbols');
+        } else {
+            // FIX: Explicitly clear artifacts if no symbols exist
+            symbol_table = { symbols: [] };
+            show_symbol_table = false;
+            
+            // Clear artifacts from parent component
+            onGenerateSymbolTable({
+                symbol_table: [],
+                analyser_error: '',
+                analyser_error_details: ''
+            });
+            
+            console.log('No symbol table to restore - cleared artifacts');
+        }
+        
+        hasInitialized = true;
+        console.log('Analyser component initialized with:', { 
+            scope_rules: scope_rules.length, 
+            type_rules: type_rules.length,
+            hasSymbolTable: $analyserState.hasSymbolTable,
+            symbolCount: $analyserState.hasSymbolTable ? $analyserState.symbolTable?.length : 0
+        });
     }
 
     // Add event listener for AI-generated analyser configuration
@@ -537,6 +699,12 @@
             window.removeEventListener('ai-analyser-generated', aiAnalyserEventListener);
         }
     });
+
+    $: lastScopeRowComplete = scope_rules.length > 0 && scope_rules[scope_rules.length - 1].Start.trim() !== '' && scope_rules[scope_rules.length - 1].End.trim() !== '';
+
+    $: lastTypeRowComplete = type_rules.length > 0 && type_rules[type_rules.length - 1].ResultData.trim() !== '' && type_rules[type_rules.length - 1].Assignment.trim() !== '' && type_rules[type_rules.length - 1].LHSData.trim() !== '';
+
+    $: overallAllRowsComplete = lastScopeRowComplete && lastTypeRowComplete && Object.values(grammar_rules).every(rule => rule.trim() !== '');
 </script>
 
 <div class="panel-container">
@@ -564,16 +732,47 @@
         <div class="analyser-box">
             <div class="analyser-box-header">
                 <h2 class="heading2">Scope Rules</h2>
-                <button
-                    class="default-toggle-btn"
+
+                <div class="button-group">
+                    <!-- Show example button first (to the left) -->
+                    <button
+                    class="option-btn example-btn"
                     class:selected={show_default_rules}
                     on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
                     type="button"
-                    aria-label={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
-                    title={show_default_rules ? 'Remove default rules' : 'Insert default rules'}
+                    aria-label={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
+                    title={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
                 >
-                    <span class="icon">{show_default_rules ? '🧹' : '🪄'}</span>
+                    {show_default_rules ? 'Restore Input' : 'Show Example'}
                 </button>
+                    
+                    <!-- Clear button second (to the right) -->
+                    <button
+                        class="clear-toggle-btn"
+                        on:click={clearAllInputs}
+                        type="button"
+                        aria-label="Clear all inputs"
+                        title="Clear all inputs"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="m19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c0-1 1-2 2-2v2" />
+                            <line x1="10" y1="11" x2="10" y2="17" />
+                            <line x1="14" y1="11" x2="14" y2="17" />
+                        </svg>
+                    </button>
+                </div>
+
             </div>
             <div class="rules-list">
                 {#each scope_rules as rule, i (rule.id)}
@@ -739,25 +938,41 @@
         </div>
     </div>
     <div class="actions-container">
-        {#if !rules_submitted}
-            <button class="submit-button" on:click={handleSubmit} disabled={!overallAllRowsComplete}>
-                Submit All Rules
+        <div class="button-container">
+            <!-- FIX: Add loading state to Submit Rules button -->
+            <button 
+                class="submit-button" 
+                on:click={handleSubmit} 
+                disabled={!overallAllRowsComplete || isSubmittingRules}
+            >
+                <div class="button-content">
+                    {#if isSubmittingRules}
+                        <div class="loading-spinner"></div>
+                        Submitting...
+                    {:else}
+                        Submit Rules
+                    {/if}
+                </div>
             </button>
-        {:else}
-            <div class="generate-wrapper" transition:slide|local={{ duration: 250 }}>
-                <button 
-                    class="generate-button" 
-                    on:click={handleGenerate} 
-                    disabled={is_loading}
-                >
-                    {#if is_loading}
+            <button 
+                class="submit-button generate-button" 
+                class:disabled={!rules_submitted || isGeneratingTable}
+                disabled={!rules_submitted || isGeneratingTable}
+                on:click={handleGenerate}
+                title={rules_submitted ? 
+                    (isGeneratingTable ? "Generating symbol table..." : "Generate symbol table from submitted rules") : 
+                    "Submit rules first"}
+            >
+                <div class="button-content">
+                    {#if isGeneratingTable}
+                        <div class="loading-spinner"></div>
                         Generating...
                     {:else}
                         Generate Symbol Table
                     {/if}
-                </button>
-            </div>
-        {/if}
+                </div>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -777,10 +992,91 @@
 		height: auto;
 	}
 
-	.header {
-		position: relative;
-		flex-shrink: 0; /* Prevents header from shrinking */
-	}
+    .submit-button,
+    .generate-button {
+        padding: 0.6rem 1.5rem;
+        background: #BED2E6;
+        color: #000000;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+        /* FIX: Add loading cursor style */
+        position: relative;
+        overflow: hidden;
+    }
+
+    .button-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .loading-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .submit-button:hover:not(:disabled),
+    .generate-button:hover:not(:disabled) {
+        background: #a8bdd1;
+        transform: translateY(-2px);
+    }
+
+    /* FIX: Enhanced disabled state to handle loading */
+    .submit-button:disabled,
+    .generate-button:disabled,
+    .generate-button.disabled {
+        background: #d6d8db;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+        pointer-events: none;
+    }
+
+    .submit-button:disabled:hover,
+    .generate-button:disabled:hover,
+    .generate-button.disabled:hover {
+        background: #d6d8db;
+        color: #6c757d;
+        transform: none;
+    }
+
+    .submit-button:disabled {
+        cursor: wait;
+        opacity: 0.8;
+    }
+
+    .generate-button:disabled {
+        cursor: wait;
+        opacity: 0.8;
+    }
+
+    /* FIX: Loading spinner color for disabled buttons */
+    .submit-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+    .generate-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
 
     .instructions-section {
 		margin: 1.5rem 0 2rem 0;
@@ -817,7 +1113,6 @@
         overflow-y: visible;
         padding-right: 0;
         margin-right: 0;
-        padding-bottom: 1rem;
 	}
 
 	/* Rules List (for Scope & Type rules) */
@@ -891,6 +1186,44 @@
 		padding-right: 0.5rem;
 	}
 
+    .option-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 140px;
+		max-width: 140px;
+		justify-content: center;
+		margin-left: 1rem;
+	}
+
+	.example-btn {
+		background: #BED2E6;
+		color: black;
+	}
+
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
+	}
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+	}
+
+
+
 	/* Icon Button Styles (existing) */
 	.icon-button {
 		display: flex;
@@ -946,8 +1279,15 @@
 		gap: 0.75rem;
 		flex-shrink: 0; /* Prevents action container from shrinking */
 	}
-	.add-button-wrapper,
-	.generate-wrapper {
+
+	.button-container {
+		display: flex;
+		justify-content: center;
+		gap: 1rem;
+		margin-top: 1rem;
+	}
+
+	.add-button-wrapper {
 		display: flex;
 		justify-content: center;
 	}
@@ -972,62 +1312,67 @@
 	}
 	.submit-button,
 	.generate-button {
-		width: 100%;
-		padding: 0.7rem 1rem;
-		font-size: 0.9rem;
-		font-weight: 600;
+		padding: 0.6rem 1.5rem;
+		background: #BED2E6;
+		color: #000000;
 		border: none;
 		border-radius: 6px;
+		font-size: 0.9rem;
+		font-weight: 500;
 		cursor: pointer;
-		transition:
-			background-color 0.2s ease,
-			opacity 0.2s ease;
+		transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
 	}
-	.submit-button {
-		background-color: #BED2E6;
-		color: #000000;
+
+	.submit-button:hover:not(:disabled),
+	.generate-button:hover:not(:disabled) {
+		background: #a8bdd1;
+		transform: translateY(-2px);
 	}
-	.submit-button:hover:not(:disabled) {
-		background-color: #a8bdd1;
-        transform: translateY(-2px);
-	}
-	.submit-button:disabled {
-		opacity: 0.5;
+
+	.submit-button:disabled,
+	.generate-button:disabled,
+	.generate-button.disabled {
+		background: #d6d8db;
+		color: #6c757d;
 		cursor: not-allowed;
-	}
-	.generate-button {
-		background-color: #6c757d;
-		color: white;
-	}
-	.generate-button:hover {
-		background-color: #565e64;
+		opacity: 0.6;
+		transform: none;
 	}
 
-	.reset-wrapper {
-		position: absolute;
-		top: 0.5rem;
-		right: 0.5rem;
-		z-index: 10;
+	.submit-button:disabled:hover,
+	.generate-button:disabled:hover,
+	.generate-button.disabled:hover {
+		background: #d6d8db;
+		color: #6c757d;
+		transform: none;
 	}
 
-	.reset-button {
-		background: none;
-		border: none;
-		padding: 0;
-		margin: 0;
-		cursor: pointer;
-		color: #7a8aa3;
-		transition: color 0.2s ease;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 32px;
-		height: 32px;
-	}
+    .button-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
 
-	.reset-button:hover {
-		color: #001a6e;
-	}
+    .clear-toggle-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #ef4444;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.2rem;
+        width: 2.2rem;
+        border-radius: 50%;
+    }
+
+    .clear-toggle-btn:hover,
+    .clear-toggle-btn:focus {
+        background: #fff5f5;
+        border-color: #ef4444;
+    }
 
 	/* --- DARK MODE STYLES --- */
 	:global(html.dark-mode) .analyser-heading,
@@ -1089,14 +1434,51 @@
 		background-color: #001A6E;
 		color: #ffffff;
 	}
-    :global(html.dark-mode) .submit-button:hover:not(:disabled) {
-        background-color: #002a8e;
-    }
-	:global(html.dark-mode) .reset-button {
-		color: #9ca3af;
+
+	:global(html.dark-mode) .submit-button:hover:not(:disabled),
+	:global(html.dark-mode) .generate-button:hover:not(:disabled) {
+		background-color: #002a8e;
+		transform: translateY(-2px);
 	}
-	:global(html.dark-mode) .reset-button:hover {
-		color: #e0e8f0;
+
+	:global(html.dark-mode) .submit-button:disabled,
+	:global(html.dark-mode) .generate-button:disabled,
+	:global(html.dark-mode) .generate-button.disabled {
+		background: #495057;
+		color: #6c757d;
+		cursor: not-allowed;
+		opacity: 0.6;
+		transform: none;
+	}
+
+	:global(html.dark-mode) .submit-button:disabled:hover,
+	:global(html.dark-mode) .generate-button:disabled:hover,
+	:global(html.dark-mode) .generate-button.disabled:hover {
+		background: #495057;
+		color: #6c757d;
+		transform: none;
+	}
+	:global(html.dark-mode) .example-btn {
+        background: #001A6E;
+        color: #ffffff;
+    }
+
+    :global(html.dark-mode) .example-btn:hover {
+        background: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
+    }
+
+    :global(html.dark-mode) .instructions-section {
+		background: #2d3748;
+		border-left-color: #4da9ff;
+	}
+
+	:global(html.dark-mode) .instructions-header {
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .instructions-text {
+		color: #cbd5e0;
 	}
 
 	::-webkit-scrollbar {
@@ -1125,6 +1507,52 @@
 	:global(html.dark-mode) ::-webkit-scrollbar-thumb:hover {
 		background: #616e80;
 	}
+
+    :global(html.dark-mode) .submit-button,
+    :global(html.dark-mode) .generate-button {
+        background-color: #001A6E;
+        color: #ffffff;
+    }
+
+    :global(html.dark-mode) .submit-button:hover:not(:disabled),
+    :global(html.dark-mode) .generate-button:hover:not(:disabled) {
+        background-color: #002a8e;
+        transform: translateY(-2px);
+    }
+
+    :global(html.dark-mode) .submit-button:disabled,
+    :global(html.dark-mode) .generate-button:disabled,
+    :global(html.dark-mode) .generate-button.disabled {
+        background: #495057;
+        color: #6c757d;
+        cursor: wait;
+        opacity: 0.8;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .submit-button:disabled:hover,
+    :global(html.dark-mode) .generate-button:disabled:hover,
+    :global(html.dark-mode) .generate-button.disabled:hover {
+        background: #495057;
+        color: #6c757d;
+        transform: none;
+    }
+
+     :global(html.dark-mode) .submit-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+    :global(html.dark-mode) .generate-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+    :global(html.dark-mode) .submit-button .loading-spinner {
+        border-top-color: #ffffff;
+    }
+
+    :global(html.dark-mode) .generate-button .loading-spinner {
+        border-top-color: #ffffff;
+    }
 
 	.default-toggle-wrapper {
 		position: absolute;
@@ -1158,17 +1586,19 @@
 		background: #f5f8fd;
 		border-color: #7da2e3;
 	}
+
+    
 	.icon {
 		font-size: 1.3rem;
 		line-height: 1;
 		pointer-events: none;
 	}
 
+
 	.analyser-heading {
-		color: #001a6e;
+		color: black;
 		text-align: center;
 		margin-top: 0;
-		font-family: 'Times New Roman';
 		margin-bottom: 0;
 		font-size: 2rem;
 		font-weight: bold;
@@ -1222,5 +1652,34 @@
 	:global(html.dark-mode) .analyser-box,
 	:global(html.dark-mode) .source-display {
 		background: #2d3748;
+	}
+
+    :global(html.dark-mode) .clear-toggle-btn {
+        background: transparent;
+		color: #ef4444;
+		border-color: #4a5568;
+    }
+
+    :global(html.dark-mode) .clear-toggle-btn:hover,
+    :global(html.dark-mode) .clear-toggle-btn:focus {
+        background: rgba(45, 55, 72, 0.5);
+		border-color: #ef4444;
+    }
+
+    :global(html.dark-mode) .default-toggle-btn {
+		background: transparent;
+		color: #cbd5e1;
+		border-color: #4a5568;
+	}
+
+	:global(html.dark-mode) .default-toggle-btn.selected {
+		background: #2d3748;
+		border-color: #63b3ed;
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .default-toggle-btn:hover {
+		background: rgba(45, 55, 72, 0.5);
+		border-color: #63b3ed;
 	}
 </style>

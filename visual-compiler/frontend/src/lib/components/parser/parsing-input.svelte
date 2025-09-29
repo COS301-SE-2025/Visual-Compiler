@@ -4,27 +4,29 @@
     import { get } from 'svelte/store';
     import { lexerState } from '$lib/stores/lexer';
     import { onMount, createEventDispatcher, onDestroy } from 'svelte';
+    import { parserState, updateParserInputs, markParserSubmitted } from '$lib/stores/parser';
+    import { updateParserArtifacts } from '$lib/stores/parser';
 
     export let source_code = '';
 
     const dispatch = createEventDispatcher();
 
-    // --- DATA STRUCTURE for CFG ---
-    interface Translation {
-        id: number;
-        value: string;
-    }
+    let parseTree = null;
+    let hasParseTree = false;
 
+    // FIX: Data structure to use productions consistently
     interface Rule {
         id: number;
         nonTerminal: string;
-        translations: Translation[];
+        productions: string; // Single comma-separated string for multiple productions
     }
 
     // --- STATE MANAGEMENT ---
+    let translation_id_counter = 1;
+    let rule_id_counter = 1;
+
+    // FIX: Start with empty array instead of pre-populated rule
     let grammar_rules: Rule[] = [];
-    let rule_id_counter = 0;
-    let translation_id_counter = 0;
     let variables_string = '';
     let terminals_string = '';
     let show_default_grammar = false;
@@ -32,44 +34,47 @@
     let tokens = null;
     let tokens_unidentified = null;
 
+    // FIX: Add loading states for buttons
+    let isSubmittingGrammar = false;
+    let isGeneratingTree = false;
 
     let user_grammar_rules: Rule[] = [];
     let user_variables_string = '';
     let user_terminals_string = '';
     let user_rule_id_counter = 0;
-    let user_translation_id_counter = 0;
 
     // --- DEFAULT GRAMMAR DATA ---
     const DEFAULT_GRAMMAR = {
         variables: 'PROGRAM, STATEMENT, FUNCTION, ITERATION, DECLARATION, ELEMENT, TYPE, EXPRESSION, FUNCTION_DEFINITION, FUNCTION_BLOCK, RETURN, ITERATION_DEFINITION, ITERATION_BLOCK, PARAMETER, PRINT',
-        terminals: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, DELIMITER, OPEN_BRACKET, CLOSE_BRACKET, OPEN_SCOPE, CLOSE_SCOPE, CONTROL',
+        terminals: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, OPERATOR, SEPARATOR, OPEN_BRACKET, CLOSE_BRACKET, OPEN_SCOPE, CLOSE_SCOPE, CONTROL',
         rules: [
-            { nonTerminal: 'PROGRAM', translations: ['STATEMENT', 'FUNCTION', 'STATEMENT', 'ITERATION'] },
-            { nonTerminal: 'STATEMENT', translations: ['DECLARATION', 'DELIMITER'] },
-            { nonTerminal: 'DECLARATION', translations: ['TYPE', 'IDENTIFIER', 'ASSIGNMENT', 'ELEMENT'] },
-            { nonTerminal: 'DECLARATION', translations: ['IDENTIFIER', 'ASSIGNMENT', 'EXPRESSION'] },
-            { nonTerminal: 'DECLARATION', translations: ['IDENTIFIER', 'ASSIGNMENT', 'IDENTIFIER', 'PARAMETER'] },
-            { nonTerminal: 'TYPE', translations: ['KEYWORD'] },
-            { nonTerminal: 'EXPRESSION', translations: ['ELEMENT', 'OPERATOR', 'ELEMENT'] },
-            { nonTerminal: 'ELEMENT', translations: ['INTEGER'] },
-            { nonTerminal: 'ELEMENT', translations: ['IDENTIFIER'] },
-            { nonTerminal: 'FUNCTION', translations: ['FUNCTION_DEFINITION', 'FUNCTION_BLOCK'] },
-            { nonTerminal: 'FUNCTION_DEFINITION', translations: ['TYPE', 'IDENTIFIER', 'PARAMETER'] },
-            { nonTerminal: 'FUNCTION_BLOCK', translations: ['OPEN_SCOPE', 'STATEMENT', 'RETURN', 'CLOSE_SCOPE'] },
-            { nonTerminal: 'RETURN', translations: ['KEYWORD', 'ELEMENT', 'DELIMITER'] },
-            { nonTerminal: 'ITERATION', translations: ['ITERATION_DEFINITION', 'ITERATION_BLOCK'] },
-            { nonTerminal: 'ITERATION_DEFINITION', translations: ['CONTROL', 'IDENTIFIER', 'CONTROL', 'PARAMETER'] },
-            { nonTerminal: 'ITERATION_BLOCK', translations: ['OPEN_SCOPE', 'STATEMENT', 'PRINT', 'CLOSE_SCOPE'] },
-            { nonTerminal: 'PARAMETER', translations: ['OPEN_BRACKET', 'ELEMENT', 'CLOSE_BRACKET'] },
-            { nonTerminal: 'PARAMETER', translations: ['OPEN_BRACKET', 'TYPE', 'IDENTIFIER', 'CLOSE_BRACKET'] },
-            { nonTerminal: 'PRINT', translations: ['KEYWORD', 'OPEN_BRACKET', 'ELEMENT', 'CLOSE_BRACKET', 'DELIMITER'] }
+            { nonTerminal: 'PROGRAM', productions: 'STATEMENT FUNCTION STATEMENT ITERATION' },
+            { nonTerminal: 'STATEMENT', productions: 'DECLARATION SEPARATOR' },
+            { nonTerminal: 'DECLARATION', productions: 'TYPE IDENTIFIER ASSIGNMENT ELEMENT' },
+            { nonTerminal: 'DECLARATION', productions: 'IDENTIFIER ASSIGNMENT EXPRESSION'},
+            { nonTerminal: 'DECLARATION', productions: 'IDENTIFIER ASSIGNMENT IDENTIFIER PARAMETER' },
+            { nonTerminal: 'TYPE', productions: 'KEYWORD' },
+            { nonTerminal: 'EXPRESSION', productions: 'ELEMENT OPERATOR ELEMENT' },
+            { nonTerminal: 'ELEMENT', productions: 'INTEGER' },
+            { nonTerminal: 'ELEMENT', productions: 'IDENTIFIER' },
+            { nonTerminal: 'FUNCTION', productions: 'FUNCTION_DEFINITION FUNCTION_BLOCK' },
+            { nonTerminal: 'FUNCTION_DEFINITION', productions: 'TYPE IDENTIFIER PARAMETER' },
+            { nonTerminal: 'FUNCTION_BLOCK', productions: 'OPEN_SCOPE STATEMENT RETURN CLOSE_SCOPE' },
+            { nonTerminal: 'RETURN', productions: 'KEYWORD ELEMENT SEPARATOR' },
+            { nonTerminal: 'ITERATION', productions: 'ITERATION_DEFINITION ITERATION_BLOCK' },
+            { nonTerminal: 'ITERATION_DEFINITION', productions: 'CONTROL IDENTIFIER CONTROL PARAMETER' },
+            { nonTerminal: 'ITERATION_BLOCK', productions: 'OPEN_SCOPE STATEMENT PRINT CLOSE_SCOPE' },
+            { nonTerminal: 'PARAMETER', productions: 'OPEN_BRACKET ELEMENT CLOSE_BRACKET' }, 
+            { nonTerminal: 'PARAMETER', productions: 'OPEN_BRACKET TYPE IDENTIFIER CLOSE_BRACKET' },
+            { nonTerminal: 'PRINT', productions: 'KEYWORD OPEN_BRACKET ELEMENT CLOSE_BRACKET SEPARATOR' }
         ]
     };
 
     let aiParserEventListener: (event: CustomEvent) => void;
 
+    // FIX: Remove the automatic addNewRule call in onMount
     onMount(async () => {
-        addNewRule();
+        // DON'T call addNewRule() here - let store restoration handle it
         await fetchTokens();
 
         // Listen for AI-generated parser grammar
@@ -95,31 +100,19 @@
                 
                 // Handle rules
                 if (grammar.rules && Array.isArray(grammar.rules)) {
-                    grammar_rules = grammar.rules.map((rule, index) => {
+                    grammar_rules = grammar.rules.map((rule) => {
                         rule_id_counter++;
                         
-                        // Each rule should have exactly one translation per output array
-                        const translations = [];
+                        // Convert output array to comma-separated string
+                        let productions_string = '';
                         if (Array.isArray(rule.output) && rule.output.length > 0) {
-                            // Join the output array into a single string for the translation
-                            translation_id_counter++;
-                            translations.push({
-                                id: translation_id_counter,
-                                value: rule.output.join(' ')
-                            });
-                        } else {
-                            // Fallback: empty translation
-                            translation_id_counter++;
-                            translations.push({
-                                id: translation_id_counter,
-                                value: ''
-                            });
+                            productions_string = rule.output.join(' ');
                         }
                         
                         return {
                             id: rule_id_counter,
                             nonTerminal: rule.input || '',
-                            translations: translations
+                            productions: productions_string
                         };
                     });
                 }
@@ -133,7 +126,7 @@
                 is_grammar_submitted = false;
                 
                 // Force reactivity update
-                grammar_rules = grammar_rules;
+                grammar_rules = [...grammar_rules];
                 variables_string = variables_string;
                 terminals_string = terminals_string;
                 
@@ -145,11 +138,13 @@
             }
         };
 
-        window.addEventListener('ai-parser-generated', aiParserEventListener);
+        if (typeof window !== 'undefined') {
+            window.addEventListener('ai-parser-generated', aiParserEventListener);
+        }
     });
 
     onDestroy(() => {
-        if (aiParserEventListener) {
+        if (aiParserEventListener && typeof window !== 'undefined') {
             window.removeEventListener('ai-parser-generated', aiParserEventListener);
         }
     });
@@ -160,46 +155,136 @@
         user_variables_string = variables_string;
         user_terminals_string = terminals_string;
         user_rule_id_counter = rule_id_counter;
-        user_translation_id_counter = translation_id_counter;
     }
 
     // handleGrammarChange
+    let hasInitialized = false;
+    let currentProjectName = '';
+
+    // FIX: Simplify project change detection
+    $: if ($projectName !== currentProjectName) {
+        console.log('Parser: Project changed from', currentProjectName, 'to', $projectName);
+        hasInitialized = false;
+        currentProjectName = $projectName;
+    }
+
+    // FIX: Initialize from store when project name is set and store has data
+    $: if ($parserState && $projectName && (!hasInitialized || $projectName !== currentProjectName)) {
+        console.log('Parser component initializing with project:', $projectName, 'and state:', $parserState);
+        
+        // Convert from store format to component format
+        if ($parserState.grammar_rules && $parserState.grammar_rules.length > 0) {
+            // Check if we have meaningful rules (not just empty default)
+            const meaningfulRules = $parserState.grammar_rules.filter(rule => 
+                rule.nonTerminal.trim() !== '' || 
+                (rule.translations && rule.translations.some(t => t.value.trim() !== ''))
+            );
+            
+            if (meaningfulRules.length > 0) {
+                grammar_rules = meaningfulRules.map(rule => ({
+                    id: rule.id,
+                    nonTerminal: rule.nonTerminal,
+                    productions: rule.translations
+                        .filter(t => t.value.trim() !== '')
+                        .map(t => t.value)
+                        .join(', ')
+                }));
+                rule_id_counter = Math.max(...meaningfulRules.map(r => r.id)) + 1;
+            } else {
+                // No meaningful rules, start with empty
+                grammar_rules = [{ id: 1, nonTerminal: '', productions: '' }];
+                rule_id_counter = 1;
+            }
+        } else {
+            grammar_rules = [{ id: 1, nonTerminal: '', productions: '' }];
+            rule_id_counter = 1;
+        }
+        variables_string = $parserState.variables_string || '';
+        terminals_string = $parserState.terminals_string || '';
+        translation_id_counter = $parserState.translation_id_counter || 1;
+        show_default_grammar = $parserState.show_default_grammar || false;
+        is_grammar_submitted = $parserState.is_grammar_submitted || false;
+        
+        // Handle parse tree artifacts
+        if ($parserState.hasParseTree && $parserState.parseTree) {
+            parseTree = $parserState.parseTree;
+            hasParseTree = true;
+            dispatch('treereceived', parseTree);
+        } else {
+            parseTree = null;
+            hasParseTree = false;
+        }
+        
+        hasInitialized = true;
+        console.log('Parser component initialized with:', { 
+            grammar_rules: grammar_rules.length, 
+            hasParseTree,
+            is_grammar_submitted,
+            meaningfulRules: grammar_rules.filter(r => r.nonTerminal.trim() !== '' || r.productions.trim() !== '').length
+        });
+    }
+
+    // FIX: Only update store if there are meaningful changes
     function handleGrammarChange() {
         is_grammar_submitted = false;
         
         if (!show_default_grammar) {
             saveCurrentAsUserInput();
         }
+
+        if (hasInitialized) {
+            // FIX: Filter out completely empty rules before storing
+            const meaningful_rules = grammar_rules.filter(rule => 
+                rule.nonTerminal.trim() !== '' || rule.productions.trim() !== ''
+            );
+            
+            const storeFormatRules = meaningful_rules.map(rule => ({
+                id: rule.id,
+                nonTerminal: rule.nonTerminal,
+                translations: rule.productions.split(',').map((prod, index) => ({
+                    id: index + 1,
+                    value: prod.trim()
+                })).filter(t => t.value !== '')
+            }));
+
+            // Only add empty rule if there are no meaningful rules
+            if (storeFormatRules.length === 0) {
+                storeFormatRules.push({
+                    id: 1,
+                    nonTerminal: '',
+                    translations: [{ id: 1, value: '' }]
+                });
+            }
+
+            updateParserInputs({
+                grammar_rules: storeFormatRules,
+                variables_string,
+                terminals_string,
+                rule_id_counter,
+                translation_id_counter,
+                show_default_grammar,
+                is_grammar_submitted: false
+            });
+        }
     }
 
-    // addNewRule
+    // FIX: Only add new rule if the last rule has content
     function addNewRule() {
-        handleGrammarChange();
-        rule_id_counter++;
-        translation_id_counter++;
-        grammar_rules = [
-            ...grammar_rules,
-            {
-                id: rule_id_counter,
-                nonTerminal: '',
-                translations: [{ id: translation_id_counter, value: '' }]
-            }
-        ];
-    }
+        // Check if we should add a rule
+        const last_rule = grammar_rules[grammar_rules.length - 1];
+        if (last_rule && last_rule.nonTerminal.trim() === '' && last_rule.productions.trim() === '') {
+            // Don't add if the last rule is already empty
+            return;
+        }
 
-    // addTranslation
-    function addTranslation(rule_id: number) {
-        handleGrammarChange();
+        rule_id_counter++; 
         translation_id_counter++;
-        grammar_rules = grammar_rules.map((rule) => {
-            if (rule.id === rule_id) {
-                return {
-                    ...rule,
-                    translations: [...rule.translations, { id: translation_id_counter, value: '' }]
-                };
-            }
-            return rule;
-        });
+        grammar_rules = [...grammar_rules, {
+            id: rule_id_counter,
+            nonTerminal: '',
+            productions: ''
+        }];
+        handleGrammarChange();
     }
 
     // insertDefaultGrammar
@@ -215,24 +300,16 @@
         terminals_string = DEFAULT_GRAMMAR.terminals;
 
         let new_rule_id = 0;
-        let new_translation_id = 0;
 
         grammar_rules = DEFAULT_GRAMMAR.rules.map((r) => {
             new_rule_id++;
             return {
                 id: new_rule_id,
                 nonTerminal: r.nonTerminal,
-                translations: r.translations.map((t) => {
-                    new_translation_id++;
-                    return {
-                        id: new_translation_id,
-                        value: t
-                    };
-                })
+                productions: r.productions
             };
         });
         rule_id_counter = new_rule_id;
-        translation_id_counter = new_translation_id;
     }
 
     // removeDefaultGrammar
@@ -240,17 +317,58 @@
         handleGrammarChange();
         show_default_grammar = false;
         
-        // Restore user input
         grammar_rules = JSON.parse(JSON.stringify(user_grammar_rules));
         variables_string = user_variables_string;
         terminals_string = user_terminals_string;
         rule_id_counter = user_rule_id_counter;
-        translation_id_counter = user_translation_id_counter;
         
-        // If no user data was saved (fresh start), create empty rule
+        // FIX: Only add new rule if grammar_rules is completely empty
         if (grammar_rules.length === 0) {
-            addNewRule();
+            grammar_rules = [{ id: 1, nonTerminal: '', productions: '' }];
+            rule_id_counter = 1;
         }
+    }
+
+    function clearAllInputs() {
+        // Reset counters first
+        rule_id_counter = 1;
+        translation_id_counter = 1;
+        
+        // FIX: Create rule with productions
+        grammar_rules = [{
+            id: 1,
+            nonTerminal: '',
+            productions: ''
+        }];
+        
+        // Reset variables and terminals
+        variables_string = '';
+        terminals_string = '';
+        
+        // Reset states
+        show_default_grammar = false;
+        is_grammar_submitted = false;
+        
+        // Update store if using it
+        if (hasInitialized) {
+            const storeFormatRules = [{
+                id: 1,
+                nonTerminal: '',
+                translations: [{ id: 1, value: '' }]
+            }];
+
+            updateParserInputs({
+                grammar_rules: storeFormatRules,
+                variables_string: '',
+                terminals_string: '',
+                rule_id_counter: 1,
+                translation_id_counter: 1,
+                show_default_grammar: false,
+                is_grammar_submitted: false
+            });
+        }
+        
+        AddToast('All grammar inputs cleared successfully!', 'success');
     }
 
     // handleSubmitGrammar
@@ -268,14 +386,11 @@
             return;
         }
 
-        // FIX: Filter out rules where the non-terminal is empty. This is the main check for a valid rule.
+        // FIX: Filter out rules where the non-terminal is empty
         const cleaned_rules = grammar_rules.filter((rule) => rule.nonTerminal.trim() !== '');
-
-        // Update the UI to visually remove the empty rows, providing immediate feedback.
         grammar_rules = cleaned_rules;
 
         if (cleaned_rules.length === 0) {
-            // If all rules were cleared, show an error and add a new blank rule for convenience.
             AddToast('Empty grammar: Please define at least one production rule to continue', 'error');
             addNewRule();
             return;
@@ -315,16 +430,17 @@
                 return;
             }
 
-            const has_at_least_one_production = rule.translations.some((t) => t.value.trim() !== '');
+            const has_at_least_one_production = rule.productions.trim() !== '';
             if (!has_at_least_one_production) {
                 AddToast(`Empty production: Rule for '${non_terminal}' needs at least one production on the right-hand side`, 'error');
                 return;
             }
 
-            const output_array = rule.translations
-                .flatMap((t) => t.value.trim().split(' '))
-                .filter((v) => v);
-            for (const symbol of output_array) {
+            // Parse productions: split by comma first, then by spaces
+            const production_alternatives = rule.productions.split(',').map(p => p.trim()).filter(p => p);
+            const all_symbols = production_alternatives.flatMap(prod => prod.split(' ').map(s => s.trim()).filter(s => s));
+            
+            for (const symbol of all_symbols) {
                 if (symbol && !defined_symbols.has(symbol)) {
                     AddToast(
                         `Invalid symbol '${symbol}' in rule for '${non_terminal}'. It must be defined as a Variable or Terminal.`,
@@ -336,12 +452,34 @@
         }
 
         const formatted_rules = cleaned_rules
-            .map((rule) => ({
-                input: rule.nonTerminal.trim(),
-                output: rule.translations
-                    .flatMap((t) => t.value.trim().split(' '))
-                    .filter((v) => v)
-            }))
+            .flatMap((rule) => {
+                // Split by comma to get separate production alternatives
+                const productions = rule.productions.split(',').map(p => p.trim()).filter(p => p !== '');
+                
+                // If no productions, create one with empty string (epsilon production)
+                if (productions.length === 0) {
+                    return [{
+                        input: rule.nonTerminal.trim(),
+                        output: [""]
+                    }];
+                }
+                
+                // Create a separate rule for each production alternative
+                return productions.map(production => {
+                    // Handle empty production (epsilon)
+                    if (production.trim() === '') {
+                        return {
+                            input: rule.nonTerminal.trim(),
+                            output: [""]
+                        };
+                    }
+                    
+                    return {
+                        input: rule.nonTerminal.trim(),
+                        output: production.split(' ').map(s => s.trim()).filter(s => s)
+                    };
+                });
+            })
             .filter((rule) => rule.input && rule.output.length > 0);
 
         const final_json_output = {
@@ -352,7 +490,15 @@
             rules: formatted_rules
         };
 
+        console.log('Sending grammar data to backend:', JSON.stringify(final_json_output, null, 2));
+
+        // FIX: Set loading state
+        isSubmittingGrammar = true;
+
         try {
+            // FIX: Add 1-second delay before API call
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             const response = await fetch('http://localhost:8080/api/parsing/grammar', {
                 method: 'POST',
                 headers: { 
@@ -364,16 +510,40 @@
 
             if (!response.ok) {
                 const error_data = await response.json();
-                throw new Error(error_data.error || 'Failed to submit grammar');
+                throw new Error(error_data.error || error_data.details || 'Failed to submit grammar');
             }
 
             const result = await response.json();
             AddToast('Grammar saved successfully! Your parsing rules are ready for syntax analysis', 'success');
+            
+            const submittedRules = grammar_rules.map(rule => ({
+                id: rule.id,
+                nonTerminal: rule.nonTerminal,
+                translations: rule.productions.split(',').map((prod, index) => ({
+                    id: index + 1,
+                    value: prod.trim()
+                })).filter(t => t.value !== '')
+            }));
+
+            updateParserInputs({
+                grammar_rules: submittedRules,
+                variables_string,
+                terminals_string,
+                rule_id_counter,
+                translation_id_counter,
+                show_default_grammar,
+                is_grammar_submitted: true // Mark as submitted
+            });
+            // Mark as submitted in store
+            markParserSubmitted();
             is_grammar_submitted = true;
+            
         } catch (error) {
             console.error('Submit Grammar Error:', error);
             AddToast('Grammar save failed: ' + String(error), 'error');
             is_grammar_submitted = false;
+        } finally {
+            isSubmittingGrammar = false;
         }
     }
 
@@ -420,8 +590,15 @@
             return;
         }
 
+        // FIX: Set loading state
+        isGeneratingTree = true;
+
         try {
+            // FIX: Add 1-second delay before processing
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             // First verify tokens exist
+            console.log('Verifying tokens exist...');
             const tokensResponse = await fetch(`http://localhost:8080/api/lexing/lexer`, {
                 method: 'POST',
                 headers: {
@@ -434,6 +611,7 @@
             });
 
             if (!tokensResponse.ok) {
+                console.log('Tokens not found, trying DFA tokenization...');
                 const dfa_token_response = await fetch(`http://localhost:8080/api/lexing/dfaToTokens`, {
                     method: 'POST',
                     headers: {
@@ -475,6 +653,7 @@
             }
 
             if (data.tree) {
+                updateParserArtifacts(data.tree);
                 AddToast('Parse tree generated successfully! Your syntax analysis is complete', 'success');
                 dispatch('treereceived', data.tree);
             } else {
@@ -488,35 +667,12 @@
                 `Failed to generate syntax tree: ${error.message}. Please ensure tokens and grammar are valid.`,
                 'error'
             );
+        } finally {
+            isGeneratingTree = false;
         }
     }
 
-    // Add this reactive statement to handle project data
-    $: if ($lexerState?.parser_data?.grammar) {
-        const parserData = $lexerState.parser_data.grammar;
-        
-        // Safely handle variables and terminals with null checks
-        variables_string = parserData.variables ? parserData.variables.join(', ') : '';
-        terminals_string = parserData.terminals ? parserData.terminals.join(', ') : '';
-        
-        // Safely handle rules
-        if (parserData.rules && Array.isArray(parserData.rules)) {
-            grammar_rules = parserData.rules.map((rule, index) => {
-                rule_id_counter = index + 1;
-                return {
-                    id: rule_id_counter,
-                    nonTerminal: rule.input || '',
-                    translations: Array.isArray(rule.output) ? rule.output.map((output, tIndex) => ({
-                        id: ++translation_id_counter,
-                        value: output
-                    })) : []
-                };
-            });
-
-            show_default_grammar = false;
-            is_grammar_submitted = true;
-        }
-    }
+    
 </script>
 
 <div class="phase-inspector">
@@ -541,16 +697,47 @@
     <div class="grammar-editor">
         <div class="grammar-header">
             <h3>Context-Free Grammar</h3>
-            <button
-                class="default-toggle-btn"
+
+            <div class="button-group">
+                <!-- Show example button first (to the left) -->
+                <button
+                class="option-btn example-btn"
                 class:selected={show_default_grammar}
                 on:click={show_default_grammar ? removeDefaultGrammar : insertDefaultGrammar}
                 type="button"
-                aria-label={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
-                title={show_default_grammar ? 'Remove default grammar' : 'Insert default grammar'}
+                aria-label={show_default_grammar ? 'Restore your input' : 'Show context-free grammar example'}
+                title={show_default_grammar ? 'Restore your input' : 'Show context-free grammar example'}
             >
-                <span class="icon">{show_default_grammar ? '🧹' : '🪄'}</span>
+                {show_default_grammar ? 'Restore Input' : 'Show Example'}
             </button>
+                
+                <!-- Clear button second (to the right) -->
+                <button
+                    class="clear-toggle-btn"
+                    on:click={clearAllInputs}
+                    type="button"
+                    aria-label="Clear all inputs"
+                    title="Clear all inputs"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="m19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c0-1 1-2 2-2v2" />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                    </svg>
+                </button>
+            </div>
+
         </div>
 
         <div class="top-inputs">
@@ -559,7 +746,7 @@
                 <input
                     id="variables"
                     type="text"
-                    placeholder="S, Y, Z"
+                    placeholder="S, A, B"
                     bind:value={variables_string}
                     on:input={handleGrammarChange}
                 />
@@ -569,63 +756,84 @@
                 <input
                     id="terminals"
                     type="text"
-                    placeholder="a, b, c"
+                    placeholder="x, y, z"
                     bind:value={terminals_string}
                     on:input={handleGrammarChange}
                 />
             </div>
         </div>
 
+        <div class="start-label-container">
+            <span class="start-label">Start</span>
+        </div>
+
         <div class="rules-container">
             {#each grammar_rules as rule, i (rule.id)}
                 <div class="rule-row">
-                    <div class="rule-label">
-                        {#if i === 0}
-                            <span class="start-label">Start</span>
-                        {/if}
-                    </div>
-
                     <div class="rule-inputs">
                         <input
                             type="text"
                             class="non-terminal-input"
-                            placeholder="LHS"
+                            placeholder="VARIABLE"
                             bind:value={rule.nonTerminal}
                             on:input={handleGrammarChange}
                         />
                         <span class="arrow">→</span>
-                        <div class="translations-container">
-                            {#each rule.translations as translation (translation.id)}
-                                <div class="translation-wrapper">
-                                    <input
-                                        type="text"
-                                        class="translation-input"
-                                        placeholder="RHS"
-                                        bind:value={translation.value}
-                                        on:input={handleGrammarChange}
-                                    />
-                                </div>
-                            {/each}
-                            <button
-                                class="add-translation-btn"
-                                title="Add translation"
-                                on:click={() => addTranslation(rule.id)}
-                            >
-                                +
-                            </button>
+                        <div class="productions-container">
+                            <textarea
+                                class="productions-textarea"
+                                placeholder="VARIABLE TERMINAL VARIABLE TERMINAL..."
+                                bind:value={rule.productions}
+                                on:input={handleGrammarChange}
+                                rows="2"
+                            ></textarea>
                         </div>
                     </div>
                 </div>
             {/each}
         </div>
-        <button class="add-rule-btn" on:click={addNewRule}>+ Add New Rule</button>
+        <!-- FIX: Only show Add Rule button when the last rule has content -->
+        {#if grammar_rules.length === 0 || (grammar_rules[grammar_rules.length - 1]?.nonTerminal.trim() !== '' || grammar_rules[grammar_rules.length - 1]?.productions.trim() !== '')}
+            <button class="add-rule-btn" on:click={addNewRule}>+ Add New Rule</button>
+        {/if}
     </div>
 
     <div class="button-container">
-        <button class="submit-button" on:click={handleSubmitGrammar}>Submit Grammar</button>
-        {#if is_grammar_submitted}
-            <button class="submit-button" on:click={generateSyntaxTree}>Generate Syntax Tree</button>
-        {/if}
+        <!-- FIX: Add loading state to Submit Grammar button -->
+        <button 
+            class="submit-button" 
+            on:click={handleSubmitGrammar}
+            disabled={isSubmittingGrammar}
+        >
+            <div class="button-content">
+                {#if isSubmittingGrammar}
+                    <div class="loading-spinner"></div>
+                    Submitting...
+                {:else}
+                    Submit Grammar
+                {/if}
+            </div>
+        </button>
+        
+        <!-- FIX: Add loading state to Generate Syntax Tree button -->
+        <button 
+            class="submit-button generate-button" 
+            class:disabled={!is_grammar_submitted || isGeneratingTree}
+            disabled={!is_grammar_submitted || isGeneratingTree}
+            on:click={generateSyntaxTree}
+            title={is_grammar_submitted ? 
+                (isGeneratingTree ? "Generating parse tree..." : "Generate syntax tree from submitted grammar") : 
+                "Submit grammar first"}
+        >
+            <div class="button-content">
+                {#if isGeneratingTree}
+                    <div class="loading-spinner"></div>
+                    Generating...
+                {:else}
+                    Generate Syntax Tree
+                {/if}
+            </div>
+        </button>
     </div>
 </div>
 
@@ -708,38 +916,52 @@
         color: #001a6e;
         font-family: 'Times New Roman';
     }
-    .default-toggle-btn {
-        background: white;
-        border: 2px solid #e5e7eb;
-        color: #001a6e;
-        font-size: 1.2rem;
-        cursor: pointer;
-        transition:
-            background 0.2s,
-            border-color 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 2.2rem;
-        width: 2.2rem;
-        border-radius: 50%;
+	.option-btn {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.6rem 1rem;
+		background: linear-gradient(135deg, #64748b, #748299);
+		color: white;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.875rem;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		position: relative;
+		overflow: hidden;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+		text-decoration: none;
+		width: 140px;
+		min-width: 140px;
+		justify-content: center;
+		margin-left: 1rem;
+	}
+	.example-btn {
+		background: #BED2E6;
+		color: black;
+	}
+
+	.example-btn:hover {
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
+	}
+
+    :global(html.dark-mode) .example-btn {
+        background: #001A6E;
+        color: #ffffff;
     }
-    .default-toggle-btn.selected {
-        background: #d0e2ff;
-        border-color: #003399;
-        box-shadow: 0 0 0 2px rgba(0, 51, 153, 0.3);
-        font-weight: bold;
-        transform: scale(1.05);
+
+    :global(html.dark-mode) .example-btn:hover {
+        background: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
     }
-    .default-toggle-btn:hover {
-        background: #f5f8fd;
-        border-color: #7da2e3;
-    }
-    .icon {
-        font-size: 1.3rem;
-        line-height: 1;
-        pointer-events: none;
-    }
+
+	.option-btn:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+	}
+
+	
 
     .top-inputs {
         display: flex;
@@ -776,29 +998,32 @@
         flex-direction: column;
         gap: 1rem;
     }
+
+    .start-label-container {
+        margin-bottom: 0.5rem;
+        padding-left: 0.25rem;
+    }
+
     .rule-row {
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
-    .rule-label {
-        width: 60px;
-        flex-shrink: 0;
-        text-align: right;
-        padding-right: 0.75rem;
-    }
+    
     .start-label {
         font-weight: bold;
         color: #001a6e;
         font-family: monospace;
         font-size: 1rem;
     }
+    
     .rule-inputs {
         display: flex;
         align-items: center;
         gap: 0.75rem;
         flex-grow: 1;
         overflow: hidden;
+        width: 100%;
     }
     .non-terminal-input {
         flex: 0 0 120px;
@@ -820,49 +1045,32 @@
         color: #555;
         font-weight: bold;
     }
-    .translations-container {
+    .productions-container {
         display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        align-items: flex-start;
         flex: 1;
-        overflow-x: auto;
-        padding-bottom: 0.5rem;
+        overflow: hidden;
     }
-    .translation-wrapper {
-        position: relative;
-        display: flex;
-    }
-    .translation-input {
+    .productions-textarea {
         padding: 0.6rem;
         border: 1px solid #ddd;
         border-radius: 4px;
         font-family: monospace;
-        min-width: 100px;
+        width: 100%;
+        flex: 1;
+        height: 38px;
+        resize: none;
+        overflow-y: hidden;
+        overflow-x: auto;
+        word-wrap: break-word;
+        white-space: nowrap;
         transition: border-color 0.2s, box-shadow 0.2s;
-        width: 140px;
+        line-height: 1.4;
     }
-    .translation-input:focus {
+    .productions-textarea:focus {
         outline: none;
         border-color: #007bff;
         box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
-    }
-    .add-translation-btn {
-        background: #e0e0e0;
-        color: #333;
-        border: none;
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        cursor: pointer;
-        font-size: 1.2rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background-color 0.2s;
-        flex-shrink: 0;
-    }
-    .add-translation-btn:hover {
-        background-color: #ccc;
     }
 
     .add-rule-btn {
@@ -882,21 +1090,87 @@
         gap: 1rem;
         margin-top: 1rem;
     }
-    .submit-button {
+    .submit-button,
+    .generate-button {
         padding: 0.6rem 1.5rem;
         background: #BED2E6;
-        color: 000000;
+        color: #000000;
         border: none;
         border-radius: 6px;
         font-size: 0.9rem;
         font-weight: 500;
         cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+        margin-top: 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .button-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
     }
 
-    .submit-button:hover {
+    .loading-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .submit-button:hover:not(:disabled),
+    .generate-button:hover:not(:disabled) {
         background: #a8bdd1;
         transform: translateY(-2px);
     }
+
+    .submit-button:disabled,
+    .generate-button:disabled,
+    .generate-button.disabled {
+        background: #d6d8db;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+        pointer-events: none;
+    }
+
+    .submit-button:disabled:hover,
+    .generate-button:disabled:hover,
+    .generate-button.disabled:hover {
+        background: #d6d8db;
+        color: #6c757d;
+        transform: none;
+    }
+        .submit-button:disabled {
+        cursor: wait;
+        opacity: 0.8;
+    }
+
+    .generate-button:disabled {
+        cursor: wait;
+        opacity: 0.8;
+    }
+
+    .submit-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+    .generate-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
 
     /* Dark Mode Styles */
     :global(html.dark-mode) .parser-heading-h1,
@@ -916,14 +1190,14 @@
 
     :global(html.dark-mode) .input-group input,
     :global(html.dark-mode) .non-terminal-input,
-    :global(html.dark-mode) .translation-input {
+    :global(html.dark-mode) .productions-textarea {
         background-color: #2d3748;
         border-color: #4b5563;
         color: #f0f0f0;
     }
     :global(html.dark-mode) .input-group input:focus,
     :global(html.dark-mode) .non-terminal-input:focus,
-    :global(html.dark-mode) .translation-input:focus {
+    :global(html.dark-mode) .productions-textarea:focus {
         border-color: #60a5fa;
         box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4); 
     }
@@ -931,37 +1205,132 @@
     :global(html.dark-mode) .arrow {
         color: #9ca3af;
     }
-    :global(html.dark-mode) .add-translation-btn {
-        background-color: #4b5563;
-        color: #f0f0f0;
-    }
+
     :global(html.dark-mode) .add-rule-btn {
         border-color: #60a5fa;
         color: #60a5fa;
     }
-    :global(html.dark-mode) .submit-button {
+    :global(html.dark-mode) .submit-button,
+    :global(html.dark-mode) .generate-button {
         background-color: #001A6E;
         color: #ffffff;
     }
-    :global(html.dark-mode) .default-toggle-btn {
-        background-color: #2d3748;
-        border-color: #4a5568;
-        color: #d1d5db;
-    }
-    :global(html.dark-mode) .default-toggle-btn.selected {
-        background-color: #001a6e;
-        border-color: #60a5fa;
-        color: #e0e7ff;
-        box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.4);
-        font-weight: bold;
-        transform: scale(1.05);
-    }
-    :global(html.dark-mode) .default-toggle-btn:not(.selected):hover {
-        background-color: #374151;
-        border-color: #6b7280;
+    :global(html.dark-mode) .submit-button:hover:not(:disabled),
+    :global(html.dark-mode) .generate-button:hover:not(:disabled) {
+        background-color: #002a8e;
+        transform: translateY(-2px);
     }
 
     
+    :global(html.dark-mode) .submit-button:disabled,
+    :global(html.dark-mode) .generate-button:disabled,
+    :global(html.dark-mode) .generate-button.disabled {
+        background: #495057;
+        color: #6c757d;
+        cursor: wait;
+        opacity: 0.8;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .submit-button:disabled:hover,
+    :global(html.dark-mode) .generate-button:disabled:hover,
+    :global(html.dark-mode) .generate-button.disabled:hover {
+        background: #495057;
+        color: #6c757d;
+        transform: none;
+    }
+
+        :global(html.dark-mode) .submit-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+    :global(html.dark-mode) .generate-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+    :global(html.dark-mode) .submit-button .loading-spinner {
+        border-top-color: #ffffff;
+    }
+
+    :global(html.dark-mode) .generate-button .loading-spinner {
+        border-top-color: #ffffff;
+    }
+
+    :global(html.dark-mode) .default-toggle-btn {
+		background-color: #2d3748;
+		border-color: #4a5568;
+		color: #d1d5db;
+	}
+	:global(html.dark-mode) .default-toggle-btn.selected {
+		background-color: #001a6e;
+		border-color: #60a5fa;
+		color: #e0e7ff;
+	}
+    :global(html.dark-mode) .default-toggle-btn:not(.selected):hover {
+        background-color: #001a6e;
+        border-color: #60a5fa;
+    }
+
+    :global(html.dark-mode) .instructions-section {
+		background: #2d3748;
+		border-left-color: #4da9ff;
+	}
+
+	:global(html.dark-mode) .instructions-header {
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .instructions-text {
+		color: #cbd5e0;
+	}
+
+    .grammar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .button-group {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .clear-toggle-btn {
+        background: white;
+        border: 2px solid #e5e7eb;
+        color: #ef4444;
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 2.2rem;
+        width: 2.2rem;
+        border-radius: 50%;
+    }
+
+    .clear-toggle-btn:hover,
+    .clear-toggle-btn:focus {
+        background: #fff5f5;
+        border-color: #ef4444;
+    }
+
+    /* Dark mode for clear button */
+    :global(html.dark-mode) .clear-toggle-btn {
+        background: transparent;
+        border-color: #4a5568;
+        color: #ef4444;
+    }
+
+    :global(html.dark-mode) .clear-toggle-btn:hover,
+    :global(html.dark-mode) .clear-toggle-btn:focus {
+        background: rgba(45, 55, 72, 0.5);
+        border-color: #ef4444;
+    }
+
     ::-webkit-scrollbar {
         width: 11px;
         height: 7px;

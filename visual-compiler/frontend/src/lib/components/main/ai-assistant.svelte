@@ -10,6 +10,7 @@
     let activeTab: 'questions' | 'generate' = 'questions';
     let messageInput = '';
     let messages: Array<{id: number, text: string, isUser: boolean, timestamp: Date}> = [];
+    let messagesContainer: HTMLElement; 
     
     // Update the store whenever isOpen changes
     $: aiAssistantOpen.set(isOpen);
@@ -50,9 +51,9 @@
         const project = get(projectName);
         const accessToken = sessionStorage.getItem('access_token') || 
                            sessionStorage.getItem('authToken') || 
-                           localStorage.getItem('access_token') || 
-                           localStorage.getItem('authToken') || 
-                           localStorage.getItem('token');
+                           sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           sessionStorage.getItem('token');
         
         if (!accessToken || !project) {
             throw new Error('Missing authentication or project');
@@ -84,9 +85,9 @@
         const project = get(projectName);
         const accessToken = sessionStorage.getItem('access_token') || 
                            sessionStorage.getItem('authToken') || 
-                           localStorage.getItem('access_token') || 
-                           localStorage.getItem('authToken') || 
-                           localStorage.getItem('token');
+                           sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           sessionStorage.getItem('token');
         
         if (!accessToken || !project) {
             throw new Error('Missing authentication or project');
@@ -122,9 +123,9 @@
         const project = get(projectName);
         const accessToken = sessionStorage.getItem('access_token') || 
                            sessionStorage.getItem('authToken') || 
-                           localStorage.getItem('access_token') || 
-                           localStorage.getItem('authToken') || 
-                           localStorage.getItem('token');
+                           sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           sessionStorage.getItem('token');
         
         if (!accessToken || !project) {
             throw new Error('Missing authentication or project');
@@ -379,9 +380,9 @@
         const project = get(projectName);
         const accessToken = sessionStorage.getItem('access_token') || 
                            sessionStorage.getItem('authToken') || 
-                           localStorage.getItem('access_token') || 
-                           localStorage.getItem('authToken') || 
-                           localStorage.getItem('token');
+                           sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           sessionStorage.getItem('token');
         
         if (!accessToken || !project) {
             AddToast('Unable to auto-submit: Missing authentication or project', 'error');
@@ -433,9 +434,9 @@
         
         const accessToken = sessionStorage.getItem('access_token') || 
                            sessionStorage.getItem('authToken') || 
-                           localStorage.getItem('access_token') || 
-                           localStorage.getItem('authToken') || 
-                           localStorage.getItem('token');
+                           sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           sessionStorage.getItem('token');
         
         if (!accessToken) {
             AddToast('Authentication required: Please log in to ask questions', 'error');
@@ -455,6 +456,13 @@
         // Clear input immediately
         messageInput = '';
         
+        // FIX: Auto-scroll to bottom after adding user message
+        setTimeout(() => {
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }, 10);
+        
         try {
             // Show loading message
             const loadingMessageId = Date.now() + 1;
@@ -464,6 +472,13 @@
                 isUser: false,
                 timestamp: new Date()
             }];
+
+            // FIX: Auto-scroll to bottom after adding loading message
+            setTimeout(() => {
+                if (messagesContainer) {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            }, 10);
 
             // Send question to backend
             const response = await fetch('http://localhost:8080/api/ai/answer', {
@@ -509,6 +524,13 @@
                     isUser: false,
                     timestamp: new Date()
                 }];
+
+                // FIX: Auto-scroll to bottom after adding AI response
+                setTimeout(() => {
+                    if (messagesContainer) {
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    }
+                }, 10);
             } else {
                 throw new Error('No answer received from AI');
             }
@@ -529,18 +551,26 @@
                 timestamp: new Date()
             }];
             
+            // FIX: Auto-scroll to bottom after adding error message
+            setTimeout(() => {
+                if (messagesContainer) {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            }, 10);
+            
             AddToast(`Failed to get AI response: ${error.message}`, 'error');
         }
     }
 
+    // FIX: Add auto-scroll function for generatePhaseInput as well
     async function generatePhaseInput(phase: PhaseType) {
         if (!phase) return;
         
         const accessToken = sessionStorage.getItem('access_token') || 
                            sessionStorage.getItem('authToken') || 
-                           localStorage.getItem('access_token') || 
-                           localStorage.getItem('authToken') || 
-                           localStorage.getItem('token');
+                           sessionStorage.getItem('access_token') || 
+                           sessionStorage.getItem('authToken') || 
+                           sessionStorage.getItem('token');
         
         console.log('=== AI Generation Debug Info ===');
         console.log('Phase:', phase);
@@ -563,6 +593,13 @@
         // Switch to questions tab to show the interaction
         activeTab = 'questions';
 
+        // FIX: Auto-scroll to bottom after adding user message
+        setTimeout(() => {
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+        }, 10);
+
         try {
             // Show loading message
             const loadingMessageId = Date.now() + 1;
@@ -572,6 +609,13 @@
                 isUser: false,
                 timestamp: new Date()
             }];
+
+            // FIX: Auto-scroll to bottom after adding loading message
+            setTimeout(() => {
+                if (messagesContainer) {
+                    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                }
+            }, 10);
 
             // Get artifact based on phase
             let artifact = " ";
@@ -971,17 +1015,31 @@
             <div class="chat-header">
                 <div class="chat-title">
                     <div class="ai-icon">
+                        <!-- FIX: Updated to match the toggle button icon -->
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <!-- Robot Icon matching your image -->
+                            <!-- Robot antenna -->
                             <circle cx="12" cy="2.5" r="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
                             <circle cx="12" cy="2.5" r="0.3" fill="currentColor"/>
                             <line x1="12" y1="4" x2="12" y2="6" stroke="currentColor" stroke-width="1.5"/>
+                            
+                            <!-- Robot head -->
                             <rect x="5" y="6" width="14" height="10" rx="3" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                            
+                            <!-- Robot eyes -->
                             <circle cx="9" cy="10" r="1" fill="currentColor"/>
                             <circle cx="9" cy="10" r="0.3" fill="white"/>
                             <circle cx="15" cy="10" r="1" fill="currentColor"/>
                             <circle cx="15" cy="10" r="0.3" fill="white"/>
+                            
+                            <!-- Robot mouth -->
                             <path d="M10 13 Q12 14.5 14 13" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+                            
+                            <!-- Robot arms/handles -->
+                            <rect x="2" y="11" width="3" height="4" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                            <rect x="19" y="11" width="3" height="4" rx="1.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                            
+                            <!-- Robot body -->
+                            <rect x="6" y="16" width="12" height="6" rx="2" stroke="currentColor" stroke-width="1.5" fill="none"/>
                         </svg>
                     </div>
                     <div>
@@ -1017,8 +1075,8 @@
             <!-- Content Area -->
             <div class="content-area">
                 {#if activeTab === 'questions'}
-                    <!-- Questions Tab Content (Original Chat) -->
-                    <div class="messages-container">
+                    <!-- FIX: Bind the messages container for auto-scroll -->
+                    <div class="messages-container" bind:this={messagesContainer}>
                         {#if messages.length === 0}
                             <div class="welcome-message">
                                 <div class="welcome-icon">
@@ -1726,7 +1784,86 @@
         margin-bottom: 0.1rem;
     }
 
-    /* Removed test buttons CSS - no longer needed */
+    .messages-container::-webkit-scrollbar {
+        width: 11px;
+    }
+    
+    .messages-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .messages-container::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 10px;
+    }
+    
+    .messages-container::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Firefox scrollbar */
+    .messages-container {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
+
+    /* Generate container scrollbar styles */
+    .generate-container::-webkit-scrollbar {
+        width: 11px;
+    }
+    
+    .generate-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+
+    .generate-container::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 10px;
+    }
+    
+    .generate-container::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Firefox scrollbar */
+    .generate-container {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
+
+     :global(html.dark-mode) .messages-container {
+        scrollbar-color: #4a5568 #2d3748;
+    }
+
+    :global(html.dark-mode) .messages-container::-webkit-scrollbar-track {
+        background: #2d3748;
+    }
+
+    :global(html.dark-mode) .messages-container::-webkit-scrollbar-thumb {
+        background-color: #4a5568;
+        border-color: #2d3748;
+    }
+
+    :global(html.dark-mode) .messages-container::-webkit-scrollbar-thumb:hover {
+        background: #616e80;
+    }
+
+    :global(html.dark-mode) .generate-container {
+        scrollbar-color: #4a5568 #2d3748;
+    }
+
+    :global(html.dark-mode) .generate-container::-webkit-scrollbar-track {
+        background: #2d3748;
+    }
+
+    :global(html.dark-mode) .generate-container::-webkit-scrollbar-thumb {
+        background-color: #4a5568;
+        border-color: #2d3748;
+    }
+
+    :global(html.dark-mode) .generate-container::-webkit-scrollbar-thumb:hover {
+        background: #616e80;
+    }
 
 
 

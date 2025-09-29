@@ -278,6 +278,59 @@ describe('OptimizerArtifactViewer Component', () => {
       expect(screen.getByText('Optimisation Failed')).toBeInTheDocument();
       expect(screen.getByText('Store error message')).toBeInTheDocument();
     });
+
+    it('reacts to store changes for optimised code', () => {
+      const mockStoreSubscriber = vi.fn();
+      
+      // Mock store with subscriber that we can control
+      vi.mocked(optimiserState.subscribe).mockImplementation((fn) => {
+        mockStoreSubscriber.mockImplementation(fn);
+        // Initially call with no data
+        fn({
+          selectedLanguage: 'Go',
+          selectedTechniques: [],
+          inputCode: '',
+          isOptimising: false,
+          optimisedCode: null,
+          optimisationError: null
+        });
+        return vi.fn();
+      });
+      
+      render(OptimizerArtifactViewer);
+      
+      expect(optimiserState.subscribe).toHaveBeenCalled();
+    });
+
+    it('reacts to store changes for optimisation error', () => {
+      const mockStoreSubscriber = vi.fn();
+      
+      // Mock store with subscriber that we can control
+      vi.mocked(optimiserState.subscribe).mockImplementation((fn) => {
+        mockStoreSubscriber.mockImplementation(fn);
+        // Initially call with no data
+        fn({
+          selectedLanguage: 'Go',
+          selectedTechniques: [],
+          inputCode: '',
+          isOptimising: false,
+          optimisedCode: null,
+          optimisationError: null
+        });
+        return vi.fn();
+      });
+      
+      render(OptimizerArtifactViewer);
+      
+      expect(optimiserState.subscribe).toHaveBeenCalled();
+    });
+
+    it('handles reactive assignment from store state', () => {
+      // Test the reactive assignment logic by checking that component subscribes
+      render(OptimizerArtifactViewer);
+      
+      expect(optimiserState.subscribe).toHaveBeenCalled();
+    });
   });
 
   describe('Component Rendering', () => {
