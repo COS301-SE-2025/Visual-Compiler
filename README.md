@@ -9,7 +9,7 @@
 <br>
 
 <div align="center">
-    <h3 align="center">Visual Compiler is an educational platform that demonstrates the process of compilation, abstracted from its complex nature.</h3>
+    <h3 align="center">Visual Compiler is an educational platform that demonstrates the four main phases of compilation through integrated simulators, visualisers and tutorials.</h3>
 </div>
 
 <br>
@@ -41,8 +41,8 @@
     <table style="border-width: 1px;">
     <tr>
         <td>Latest Demonstration</td>
-        <td><a href="https://www.canva.com/design/DAGwYsM0uMA/aBfNxmqGDzU5ckg6VD3t6w/view?utm_content=DAGwYsM0uMA&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h71a739a39d">Demo 3 Slides</a></td>
-        <td><a href="https://drive.google.com/file/d/1vjI0IOluIHuDEDIZc4F5Kw_zdzdTP7Q1/view?usp=sharing">Demo 3 Video</a></td>
+        <td><a href="https://www.canva.com/design/DAGz64MgHlY/sxAXQf1v8NuPE2XK3Ul20Q/view?utm_content=DAGz64MgHlY&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h35f455f73b">Demo 4 Slides</a></td>
+        <td><a href="https://drive.google.com/file/d/10CuCgy4wsezJKMnCf2ipH4JdN9SfmhSj/view?usp=sharing">Demo 4 Video</a></td>
     </tr>
     </table>
 </div>
@@ -52,24 +52,32 @@
 <div align="center">
     <table style="border-width: 1px;">
     <tr>
-        <td><a href="https://docs.google.com/document/d/1YySkwjKvmzA8BFvnIsnu1KxFNTHO1EYEotQ1GqLGK7Y/edit?usp=sharing">Software Requirements Specification</a></td>
-        <td>Overview of the system requirements</td>
+        <td>Software Requirements Specification</td>
+        <td><a href="https://drive.google.com/file/d/15EytKXjgnE-WVOHrF8PX7H9vcrV_uNYD/view?usp=sharing">View</a></td>
     </tr>
     <tr>
-        <td><a href="https://docs.google.com/document/d/1-cqSy6rzK-4FLwIRygRXbVL5P1QcKGJljU8ixQVEWP8/edit?usp=sharing">Architectural Specification</a></td>
-        <td>Overview of the system design</td>
+        <td>Architectural Specification</td>
+        <td><a href="https://drive.google.com/file/d/1jm6trFPui5GSlbyyLVMTeh45a5Nb3Jii/view?usp=sharing">View</a></td>
     </tr>
     <tr>
-        <td><a href="https://docs.google.com/document/d/1JN1W5hr2VyBD-_ki6BEMUDh_v6PTM5hWpD2x2tIzAYg/edit?usp=sharing">User Manual</a></td>
-        <td>Guidelines for navigating the web pages</td>
+        <td>User Manual</td>
+        <td><a href="https://drive.google.com/file/d/1GHejUyB5W3aPVLFBvzI-kt5ZTXEl4UZ4/view?usp=sharing">View</a></td>
+    </tr>
+        <tr>
+        <td>Service Contracts</td>
+        <td><a href="https://drive.google.com/file/d/1BSccaudyK0o8p3Ot7cbbFsPzgLQHEEal/view?usp=sharing">View</a></td>
     </tr>
     <tr>
-        <td><a href="https://docs.google.com/document/d/1A-SofOieCKUslr2NPHrRGS8yt4JShl4LHlc-QNRdQeU/edit?usp=sharing">Technical Installation Manual</a></td>
-        <td>Instructions for system configuration</td>
+        <td>Coding Standards</td>
+        <td><a href="https://drive.google.com/file/d/1gMkjx20v3id--8wUWDmlei__TC_nlKhW/view?usp=sharing">View</a></td>
     </tr>
     <tr>
-        <td><a href="https://docs.google.com/document/d/1uddlkfJpo1DAB3ONdb8VOSqM3NrbCV-Hk9RB0lpWYEg/edit?usp=sharing">Coding Standards</a></td>
-        <td>Guidelines for coding, testing and git</td>
+        <td>Technical Installation Manual</td>
+        <td><a href="https://drive.google.com/file/d/12iGSbdAsCiDCffeyjp1tPmiMDNhjZoiU/view?usp=sharing">View</a></td>
+    </tr>
+    <tr>
+        <td>Testing Policy</td>
+        <td><a href="https://drive.google.com/file/d/13AhFizHhbSvmSdfh0Nrr5-TGKcCJ_z-S/view?usp=sharing">View</a></td>
     </tr>
     </table>
 </div>
@@ -212,10 +220,13 @@
         │   │   ├───📁services
         │   │   └───📁unit-tests
         │   └───📁integration-tests
-        ├───📁e2e-tests        
-        └───📁frontend
-            ├───📁src
-            │   ├───📁lib
-            │   └───📁routes
-            └───📁unit-tests
+        ├───📁e2e-tests
+        ├───📁frontend
+        │   ├───📁src
+        │   │   ├───📁lib
+        │   │   └───📁routes
+        │   └───📁unit-tests
+        └───📁quality-tests
+            ├───📁performance-tests
+            └───📁reliability-tests
 ```
