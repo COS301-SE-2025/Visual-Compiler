@@ -423,17 +423,6 @@ describe('login page advanced', () => {
 		Object.defineProperty(window, 'sessionStorage', {
 			value: sessionStorageMock
 		});
-
-		// Mock sessionStorage  
-		const sessionStorageMock = {
-			setItem: vi.fn(),
-			getItem: vi.fn(),
-			removeItem: vi.fn(),
-			clear: vi.fn()
-		};
-		Object.defineProperty(window, 'sessionStorage', {
-			value: sessionStorageMock
-		});
 		
 		render(page_comp);
 		const username = screen.getByLabelText('Username');

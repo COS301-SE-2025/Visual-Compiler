@@ -54,7 +54,7 @@
             {#if symbol_table && symbol_table.length > 0}
 
             <div class="artifact-header">
-                    <h3>Symbols</h3>
+                    <h3>Symbol Table</h3>
                 </div>
                 
                 <table class="symbol-table">
@@ -210,6 +210,13 @@
     }
 
     /* --- Dark Mode Styles --- */
+    :global(html.dark-mode) .artifact-header {
+		border-bottom-color: #4a5568;
+	}
+	:global(html.dark-mode) .artifact-title,
+	:global(html.dark-mode) h3 {
+		color: #ebeef1;
+	}
     :global(html.dark-mode) .artifact-viewer {
         background: #1a2a4a;
     }

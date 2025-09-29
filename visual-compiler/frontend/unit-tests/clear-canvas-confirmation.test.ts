@@ -18,21 +18,21 @@ describe('ClearCanvasConfirmation Component', () => {
 		});
 
 		// Check that the modal is rendered
-		const modal = container.querySelector('.prompt-modal');
+		const modal = container.querySelector('.modal');
 		expect(modal).toBeTruthy();
 
 		// Check heading text specifically
-		const heading = container.querySelector('.prompt-heading');
+		const heading = container.querySelector('h3');
 		expect(heading?.textContent).toBe('Clear Canvas');
 		
-		// Check warning message
-		expect(screen.getByText(/Are you sure you want to clear the canvas/)).toBeTruthy();
+		// Check message (shows empty canvas message when hasNodes=false by default)
+		expect(screen.getByText('The canvas is already empty.')).toBeTruthy();
 		
-		// Check buttons exist by their classes
-		const cancelButton = container.querySelector('.cancel-button');
-		const confirmButton = container.querySelector('.clear-confirm-button');
+		// Check buttons exist by their classes (shows OK when hasNodes=false by default)
+		const cancelButton = container.querySelector('.cancel-btn');
+		const confirmButton = container.querySelector('.confirm-btn');
 		expect(cancelButton?.textContent?.trim()).toBe('Cancel');
-		expect(confirmButton?.textContent?.trim()).toBe('Clear Canvas');
+		expect(confirmButton?.textContent?.trim()).toBe('OK');
 	});
 
 	it('TestDoesNotRenderWhenShowIsFalse_Success: Does not render when show is false', () => {
@@ -50,10 +50,10 @@ describe('ClearCanvasConfirmation Component', () => {
 			props: { show: true }
 		});
 
-		// Find the confirm button by class
-		const confirm_button = container.querySelector('.clear-confirm-button') as HTMLElement;
+		// Find the confirm button by class (shows OK when hasNodes=false by default)
+		const confirm_button = container.querySelector('.confirm-btn') as HTMLElement;
 		expect(confirm_button).toBeTruthy();
-		expect(confirm_button.textContent?.trim()).toBe('Clear Canvas');
+		expect(confirm_button.textContent?.trim()).toBe('OK');
 		
 		// Test that button is clickable
 		await fireEvent.click(confirm_button);
@@ -67,7 +67,7 @@ describe('ClearCanvasConfirmation Component', () => {
 		});
 
 		// Find the cancel button by class
-		const cancel_button = container.querySelector('.cancel-button') as HTMLElement;
+		const cancel_button = container.querySelector('.cancel-btn') as HTMLElement;
 		expect(cancel_button).toBeTruthy();
 		expect(cancel_button.textContent?.trim()).toBe('Cancel');
 		
@@ -91,7 +91,7 @@ describe('ClearCanvasConfirmation Component', () => {
 		});
 
 		// Click on the modal (should not propagate)
-		const modal = container.querySelector('.prompt-modal');
+		const modal = container.querySelector('.modal');
 		await fireEvent.click(modal as Element);
 
 		// Backdrop click should not have been triggered due to stopPropagation
@@ -125,7 +125,7 @@ describe('ClearCanvasConfirmation Component', () => {
 		});
 
 		// Should show modal
-		expect(container.querySelector('.prompt-modal')).toBeTruthy();
+		expect(container.querySelector('.modal')).toBeTruthy();
 
 		// Test separately with show: false 
 		const { container: container2 } = render(ClearCanvasConfirmation, {
@@ -134,7 +134,7 @@ describe('ClearCanvasConfirmation Component', () => {
 
 		// Should hide modal - backdrop should not exist when show is false
 		expect(container2.querySelector('.backdrop')).toBeFalsy();
-		expect(container2.querySelector('.prompt-modal')).toBeFalsy();
+		expect(container2.querySelector('.modal')).toBeFalsy();
 	});
 
 	it('TestWarningMessageContent_Success: Displays complete warning message', () => {
@@ -142,9 +142,8 @@ describe('ClearCanvasConfirmation Component', () => {
 			props: { show: true }
 		});
 
-		// Check complete warning message
-		const expected_message = 'Are you sure you want to clear the canvas? All unsaved progress will be lost. This action cannot be undone.';
-		expect(screen.getByText(expected_message)).toBeTruthy();
+		// Check message for empty canvas (hasNodes=false by default)
+		expect(screen.getByText('The canvas is already empty.')).toBeTruthy();
 	});
 
 	it('TestButtonStyling_Success: Buttons have correct CSS classes', () => {
@@ -153,14 +152,14 @@ describe('ClearCanvasConfirmation Component', () => {
 		});
 
 		// Check cancel button class
-		const cancel_button = container.querySelector('.cancel-button');
+		const cancel_button = container.querySelector('.cancel-btn');
 		expect(cancel_button).toBeTruthy();
 		expect(cancel_button?.textContent?.trim()).toBe('Cancel');
 
-		// Check confirm button class
-		const confirm_button = container.querySelector('.clear-confirm-button');
+		// Check confirm button class (shows OK when hasNodes=false)
+		const confirm_button = container.querySelector('.confirm-btn');
 		expect(confirm_button).toBeTruthy();
-		expect(confirm_button?.textContent?.trim()).toBe('Clear Canvas');
+		expect(confirm_button?.textContent?.trim()).toBe('OK');
 	});
 
 	it('TestModalStructure_Success: Modal has correct structure and classes', () => {
@@ -173,17 +172,13 @@ describe('ClearCanvasConfirmation Component', () => {
 		expect(backdrop).toBeTruthy();
 
 		// Check modal
-		const modal = container.querySelector('.prompt-modal');
+		const modal = container.querySelector('.modal');
 		expect(modal).toBeTruthy();
 
 		// Check heading
-		const heading = container.querySelector('.prompt-heading');
+		const heading = container.querySelector('h3');
 		expect(heading).toBeTruthy();
 		expect(heading?.textContent).toBe('Clear Canvas');
-
-		// Check subheading
-		const subheading = container.querySelector('.prompt-subheading');
-		expect(subheading).toBeTruthy();
 
 		// Check button container
 		const button_container = container.querySelector('.button-container');
@@ -197,7 +192,7 @@ describe('ClearCanvasConfirmation Component', () => {
 			context: new Map([['confirm', mockConfirmHandler]])
 		});
 
-		const confirmButton = container.querySelector('.clear-confirm-button');
+		const confirmButton = container.querySelector('.confirm-btn');
 		expect(confirmButton).toBeTruthy();
 		if (confirmButton) {
 			await fireEvent.click(confirmButton);

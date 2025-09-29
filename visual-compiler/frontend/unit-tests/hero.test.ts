@@ -11,7 +11,8 @@ vi.mock('$app/navigation', () => ({
 describe('hero Component', () => {
 	it('TestInitialRender_Success: Renders the main headline and button', () => {
 		render(Hero);
-		expect(screen.getByText('Demystifying Compilers, One Block at a Time.')).toBeInTheDocument();
+		expect(screen.getByText(/Demystifying Compilers/)).toBeInTheDocument();
+		expect(screen.getByText(/One Block at a Time/)).toBeInTheDocument();
 		expect(screen.getByRole('button', { name: 'Get Started' })).toBeInTheDocument();
 	});
 

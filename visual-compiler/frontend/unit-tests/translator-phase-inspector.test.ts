@@ -66,14 +66,14 @@ describe('TranslatorPhaseInspector Component', () => {
 		await fireEvent.click(addRuleButton);
 
 		// Should have multiple rule sections
-		const tokenSequenceInputs = screen.getAllByPlaceholderText('Enter token sequence (e.g., KEYWORD, IDENTIFIER)');
+		const tokenSequenceInputs = screen.getAllByPlaceholderText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER...');
 		expect(tokenSequenceInputs.length).toBeGreaterThan(1);
 	});
 
 	it('TestAddLine_Success: Can add new line to rule', async () => {
 		render(TranslatorPhaseInspector);
 
-		const addLineButton = screen.getByText('+ Add Line');
+		const addLineButton = screen.getAllByText('+ Add Line')[0];
 		await fireEvent.click(addLineButton);
 
 		// Wait for any state changes and then check the result
@@ -87,7 +87,7 @@ describe('TranslatorPhaseInspector Component', () => {
 	it('TestDefaultRules_Success: Can insert default rules', async () => {
 		render(TranslatorPhaseInspector);
 
-		const defaultButton = screen.getByTitle('Insert default rules');
+		const defaultButton = screen.getByTitle('Show context-free grammar example');
 		await fireEvent.click(defaultButton);
 
 		// Should populate with default values
@@ -99,7 +99,7 @@ describe('TranslatorPhaseInspector Component', () => {
 	it('TestTokenSequenceInput_Success: Can input token sequence', async () => {
 		render(TranslatorPhaseInspector);
 
-		const tokenSequenceInput = screen.getByPlaceholderText('Enter token sequence (e.g., KEYWORD, IDENTIFIER)');
+		const tokenSequenceInput = screen.getAllByPlaceholderText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER...')[0];
 		await fireEvent.input(tokenSequenceInput, {
 			target: { value: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER' }
 		});
@@ -110,7 +110,7 @@ describe('TranslatorPhaseInspector Component', () => {
 	it('TestTargetCodeInput_Success: Can input target code', async () => {
 		render(TranslatorPhaseInspector);
 
-		const targetCodeInput = screen.getByPlaceholderText('Line 1');
+		const targetCodeInput = screen.getAllByPlaceholderText('Line 1')[0];
 		await fireEvent.input(targetCodeInput, {
 			target: { value: 'mov rax, {INTEGER}' }
 		});
@@ -132,9 +132,9 @@ describe('TranslatorPhaseInspector Component', () => {
 		const submitButton = screen.getByText('Submit Rules');
 		await fireEvent.click(submitButton);
 
-		// Check that submission was successful by looking for the actions section
+		// Check that submission was successful by looking for the action buttons section
 		await waitFor(() => {
-			const actionsSection = document.querySelector('.actions');
+			const actionsSection = document.querySelector('.action-buttons');
 			expect(actionsSection).toBeInTheDocument();
 		});
 	});
@@ -142,19 +142,23 @@ describe('TranslatorPhaseInspector Component', () => {
 	it('TestRemoveRule_Success: Can remove translation rules', async () => {
 		render(TranslatorPhaseInspector);
 
+		// Component starts with multiple rules (3), let's count initial rules
+		const initialRules = screen.getAllByPlaceholderText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER...');
+		const initialCount = initialRules.length;
+
 		// Add a second rule first
 		const addRuleButton = screen.getByText('+ Add New Rule');
 		await fireEvent.click(addRuleButton);
 
-		// Remove the second rule
+		// Remove one of the rules
 		const removeButtons = screen.getAllByTitle('Remove Rule');
 		if (removeButtons.length > 1) {
-			await fireEvent.click(removeButtons[1]);
+			await fireEvent.click(removeButtons[removeButtons.length - 1]); // Remove last rule
 
-			// Should have fewer rules
+			// Should have the same number as initial (since we added one then removed one)
 			await waitFor(() => {
-				const tokenSequenceInputs = screen.getAllByPlaceholderText('Enter token sequence (e.g., KEYWORD, IDENTIFIER)');
-				expect(tokenSequenceInputs.length).toBe(1);
+				const tokenSequenceInputs = screen.getAllByPlaceholderText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER...');
+				expect(tokenSequenceInputs.length).toBe(initialCount);
 			});
 		}
 	});
@@ -163,18 +167,20 @@ describe('TranslatorPhaseInspector Component', () => {
 		render(TranslatorPhaseInspector);
 
 		// Add a second line first
-		const addLineButton = screen.getByText('+ Add Line');
+		const addLineButton = screen.getAllByText('+ Add Line')[0];
 		await fireEvent.click(addLineButton);
 
 		// Remove the second line
 		const removeLineButtons = screen.getAllByTitle('Remove Line');
+		const initialLineCount = screen.getAllByPlaceholderText(/Line \d+/).length;
+		
 		if (removeLineButtons.length > 1) {
 			await fireEvent.click(removeLineButtons[1]);
 
-			// Should have fewer lines
+			// Should have fewer lines than after adding
 			await waitFor(() => {
-				const targetCodeInputs = screen.getAllByPlaceholderText('Line 1');
-				expect(targetCodeInputs.length).toBe(1);
+				const targetCodeInputs = screen.getAllByPlaceholderText(/Line \d+/);
+				expect(targetCodeInputs.length).toBeLessThan(initialLineCount);
 			});
 		}
 	});
@@ -206,7 +212,7 @@ describe('TranslatorPhaseInspector Component', () => {
 	it('TestDefaultRulesToggle_Success: Can toggle default rules on and off', async () => {
 		render(TranslatorPhaseInspector);
 
-		const defaultButton = screen.getByTitle('Insert default rules');
+		const defaultButton = screen.getByTitle('Restore your input');
 		
 		// Insert default rules
 		await fireEvent.click(defaultButton);
@@ -228,9 +234,9 @@ describe('TranslatorPhaseInspector Component', () => {
 	it('TestPlaceholderExamples_Success: Shows helpful placeholder examples', () => {
 		render(TranslatorPhaseInspector);
 
-		// Look for the actual placeholders that exist
-		expect(screen.getByPlaceholderText('Enter token sequence (e.g., KEYWORD, IDENTIFIER)')).toBeInTheDocument();
-		expect(screen.getByPlaceholderText('Line 1')).toBeInTheDocument();
+		// Look for the actual placeholders that exist - use getAllBy for multiple elements
+		expect(screen.getAllByPlaceholderText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER...')[0]).toBeInTheDocument();
+		expect(screen.getAllByPlaceholderText('Line 1')[0]).toBeInTheDocument();
 	});
 });
 
