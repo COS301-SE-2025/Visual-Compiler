@@ -98,6 +98,8 @@
         cy.get('.return-button').click();
 
         cy.wait(1000);
+        cy.get('.canvas-container').contains('Parser').click();
+        cy.wait(500);
         cy.get('.canvas-container').contains('Parser').dblclick();
         cy.wait(500);
         cy.get('.phase-inspector').should('contain','PARSING');
@@ -108,8 +110,8 @@
         cy.get('.return-button').click();
 
         //analyser
-        cy.wait(1000);
-        cy.get('.canvas-container').contains('Analyser').dblclick();
+        cy.wait(500);
+        cy.get('.canvas-container').contains('Analyser').click();
         cy.wait(500);
         cy.get('.canvas-container').contains('Analyser').dblclick();
 
@@ -140,4 +142,5 @@
     })
 
 
-});*/
+});
+*/

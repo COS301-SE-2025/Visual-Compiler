@@ -88,6 +88,9 @@ describe('Parser Test', ()=> {
         cy.get('.submit-button').contains('Submit').click();
         cy.get('.generate-button').contains('Generate Tokens').click();
         cy.get('.return-button').click();
+
+        cy.wait(1000);
+        cy.get('.canvas-container').contains('Parser').click();
         cy.wait(1000);
         cy.get('.canvas-container').contains('Parser').dblclick();
         cy.wait(500);
