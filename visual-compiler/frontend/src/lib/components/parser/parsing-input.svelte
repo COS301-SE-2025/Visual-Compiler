@@ -34,6 +34,9 @@
     let tokens = null;
     let tokens_unidentified = null;
 
+    // FIX: Add loading states for buttons
+    let isSubmittingGrammar = false;
+    let isGeneratingTree = false;
 
     let user_grammar_rules: Rule[] = [];
     let user_variables_string = '';
@@ -135,11 +138,13 @@
             }
         };
 
-        window.addEventListener('ai-parser-generated', aiParserEventListener);
+        if (typeof window !== 'undefined') {
+            window.addEventListener('ai-parser-generated', aiParserEventListener);
+        }
     });
 
     onDestroy(() => {
-        if (aiParserEventListener) {
+        if (aiParserEventListener && typeof window !== 'undefined') {
             window.removeEventListener('ai-parser-generated', aiParserEventListener);
         }
     });
@@ -169,19 +174,33 @@
         
         // Convert from store format to component format
         if ($parserState.grammar_rules && $parserState.grammar_rules.length > 0) {
-            grammar_rules = $parserState.grammar_rules.map(rule => ({
-                id: rule.id,
-                nonTerminal: rule.nonTerminal,
-                productions: rule.translations.map(t => t.value).join(', ')
-            }));
+            // Check if we have meaningful rules (not just empty default)
+            const meaningfulRules = $parserState.grammar_rules.filter(rule => 
+                rule.nonTerminal.trim() !== '' || 
+                (rule.translations && rule.translations.some(t => t.value.trim() !== ''))
+            );
+            
+            if (meaningfulRules.length > 0) {
+                grammar_rules = meaningfulRules.map(rule => ({
+                    id: rule.id,
+                    nonTerminal: rule.nonTerminal,
+                    productions: rule.translations
+                        .filter(t => t.value.trim() !== '')
+                        .map(t => t.value)
+                        .join(', ')
+                }));
+                rule_id_counter = Math.max(...meaningfulRules.map(r => r.id)) + 1;
+            } else {
+                // No meaningful rules, start with empty
+                grammar_rules = [{ id: 1, nonTerminal: '', productions: '' }];
+                rule_id_counter = 1;
+            }
         } else {
             grammar_rules = [{ id: 1, nonTerminal: '', productions: '' }];
             rule_id_counter = 1;
         }
-        
         variables_string = $parserState.variables_string || '';
         terminals_string = $parserState.terminals_string || '';
-        rule_id_counter = $parserState.rule_id_counter || 1;
         translation_id_counter = $parserState.translation_id_counter || 1;
         show_default_grammar = $parserState.show_default_grammar || false;
         is_grammar_submitted = $parserState.is_grammar_submitted || false;
@@ -200,9 +219,10 @@
         console.log('Parser component initialized with:', { 
             grammar_rules: grammar_rules.length, 
             hasParseTree,
-            is_grammar_submitted
+            is_grammar_submitted,
+            meaningfulRules: grammar_rules.filter(r => r.nonTerminal.trim() !== '' || r.productions.trim() !== '').length
         });
-    }   
+    }
 
     // FIX: Only update store if there are meaningful changes
     function handleGrammarChange() {
@@ -366,14 +386,11 @@
             return;
         }
 
-        // FIX: Filter out rules where the non-terminal is empty. This is the main check for a valid rule.
+        // FIX: Filter out rules where the non-terminal is empty
         const cleaned_rules = grammar_rules.filter((rule) => rule.nonTerminal.trim() !== '');
-
-        // Update the UI to visually remove the empty rows, providing immediate feedback.
         grammar_rules = cleaned_rules;
 
         if (cleaned_rules.length === 0) {
-            // If all rules were cleared, show an error and add a new blank rule for convenience.
             AddToast('Empty grammar: Please define at least one production rule to continue', 'error');
             addNewRule();
             return;
@@ -475,7 +492,13 @@
 
         console.log('Sending grammar data to backend:', JSON.stringify(final_json_output, null, 2));
 
+        // FIX: Set loading state
+        isSubmittingGrammar = true;
+
         try {
+            // FIX: Add 1-second delay before API call
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             const response = await fetch('http://localhost:8080/api/parsing/grammar', {
                 method: 'POST',
                 headers: { 
@@ -487,12 +510,30 @@
 
             if (!response.ok) {
                 const error_data = await response.json();
-                throw new Error(error_data.error || 'Failed to submit grammar');
+                throw new Error(error_data.error || error_data.details || 'Failed to submit grammar');
             }
 
             const result = await response.json();
             AddToast('Grammar saved successfully! Your parsing rules are ready for syntax analysis', 'success');
             
+            const submittedRules = grammar_rules.map(rule => ({
+                id: rule.id,
+                nonTerminal: rule.nonTerminal,
+                translations: rule.productions.split(',').map((prod, index) => ({
+                    id: index + 1,
+                    value: prod.trim()
+                })).filter(t => t.value !== '')
+            }));
+
+            updateParserInputs({
+                grammar_rules: submittedRules,
+                variables_string,
+                terminals_string,
+                rule_id_counter,
+                translation_id_counter,
+                show_default_grammar,
+                is_grammar_submitted: true // Mark as submitted
+            });
             // Mark as submitted in store
             markParserSubmitted();
             is_grammar_submitted = true;
@@ -501,6 +542,8 @@
             console.error('Submit Grammar Error:', error);
             AddToast('Grammar save failed: ' + String(error), 'error');
             is_grammar_submitted = false;
+        } finally {
+            isSubmittingGrammar = false;
         }
     }
 
@@ -547,8 +590,15 @@
             return;
         }
 
+        // FIX: Set loading state
+        isGeneratingTree = true;
+
         try {
+            // FIX: Add 1-second delay before processing
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
             // First verify tokens exist
+            console.log('Verifying tokens exist...');
             const tokensResponse = await fetch(`http://localhost:8080/api/lexing/lexer`, {
                 method: 'POST',
                 headers: {
@@ -561,6 +611,7 @@
             });
 
             if (!tokensResponse.ok) {
+                console.log('Tokens not found, trying DFA tokenization...');
                 const dfa_token_response = await fetch(`http://localhost:8080/api/lexing/dfaToTokens`, {
                     method: 'POST',
                     headers: {
@@ -616,28 +667,12 @@
                 `Failed to generate syntax tree: ${error.message}. Please ensure tokens and grammar are valid.`,
                 'error'
             );
+        } finally {
+            isGeneratingTree = false;
         }
     }
 
-    // FIX: Add this reactive statement to handle project data
-    $: if ($lexerState?.parser_data?.grammar && hasInitialized) {
-        const parserData = $lexerState.parser_data.grammar;
-        
-        variables_string = parserData.variables ? parserData.variables.join(', ') : '';
-        terminals_string = parserData.terminals ? parserData.terminals.join(', ') : '';
-        
-        if (parserData.rules && Array.isArray(parserData.rules)) {
-            grammar_rules = parserData.rules.map((rule, index) => ({
-                id: index + 1,
-                nonTerminal: rule.input || '',
-                productions: Array.isArray(rule.output) ? rule.output.join(' ') : ''
-            }));
-            
-            rule_id_counter = parserData.rules.length;
-            show_default_grammar = false;
-            is_grammar_submitted = true;
-        }
-    }
+    
 </script>
 
 <div class="phase-inspector">
@@ -664,18 +699,7 @@
             <h3>Context-Free Grammar</h3>
 
             <div class="button-group">
-                <!-- Clear button first (to the left) -->
-                <button
-                    class="clear-toggle-btn"
-                    on:click={clearAllInputs}
-                    type="button"
-                    aria-label="Clear all inputs"
-                    title="Clear all inputs"
-                >
-                    <span class="icon">🗑️</span>
-                </button>
-                
-                <!-- Default button second (to the right) -->
+                <!-- Show example button first (to the left) -->
                 <button
                 class="option-btn example-btn"
                 class:selected={show_default_grammar}
@@ -686,6 +710,32 @@
             >
                 {show_default_grammar ? 'Restore Input' : 'Show Example'}
             </button>
+                
+                <!-- Clear button second (to the right) -->
+                <button
+                    class="clear-toggle-btn"
+                    on:click={clearAllInputs}
+                    type="button"
+                    aria-label="Clear all inputs"
+                    title="Clear all inputs"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="m19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c0-1 1-2 2-2v2" />
+                        <line x1="10" y1="11" x2="10" y2="17" />
+                        <line x1="14" y1="11" x2="14" y2="17" />
+                    </svg>
+                </button>
             </div>
 
         </div>
@@ -749,15 +799,40 @@
     </div>
 
     <div class="button-container">
-        <button class="submit-button" on:click={handleSubmitGrammar}>Submit Grammar</button>
+        <!-- FIX: Add loading state to Submit Grammar button -->
+        <button 
+            class="submit-button" 
+            on:click={handleSubmitGrammar}
+            disabled={isSubmittingGrammar}
+        >
+            <div class="button-content">
+                {#if isSubmittingGrammar}
+                    <div class="loading-spinner"></div>
+                    Submitting...
+                {:else}
+                    Submit Grammar
+                {/if}
+            </div>
+        </button>
+        
+        <!-- FIX: Add loading state to Generate Syntax Tree button -->
         <button 
             class="submit-button generate-button" 
-            class:disabled={!is_grammar_submitted}
-            disabled={!is_grammar_submitted}
+            class:disabled={!is_grammar_submitted || isGeneratingTree}
+            disabled={!is_grammar_submitted || isGeneratingTree}
             on:click={generateSyntaxTree}
-            title={is_grammar_submitted ? "Generate syntax tree from submitted grammar" : "Submit grammar first"}
+            title={is_grammar_submitted ? 
+                (isGeneratingTree ? "Generating parse tree..." : "Generate syntax tree from submitted grammar") : 
+                "Submit grammar first"}
         >
-            Generate Syntax Tree
+            <div class="button-content">
+                {#if isGeneratingTree}
+                    <div class="loading-spinner"></div>
+                    Generating...
+                {:else}
+                    Generate Syntax Tree
+                {/if}
+            </div>
         </button>
     </div>
 </div>
@@ -851,7 +926,6 @@
 		border: none;
 		border-radius: 8px;
 		font-size: 0.875rem;
-		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.2s ease;
 		position: relative;
@@ -862,13 +936,25 @@
 		min-width: 140px;
 		justify-content: center;
 		margin-left: 1rem;
-	}	.example-btn {
-		background: #1e40af;
+	}
+	.example-btn {
+		background: #BED2E6;
+		color: black;
 	}
 
 	.example-btn:hover {
-		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
 	}
+
+    :global(html.dark-mode) .example-btn {
+        background: #001A6E;
+        color: #ffffff;
+    }
+
+    :global(html.dark-mode) .example-btn:hover {
+        background: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
+    }
 
 	.option-btn:hover {
 		transform: translateY(-2px);
@@ -1016,6 +1102,31 @@
         cursor: pointer;
         transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
         margin-top: 1rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .button-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .loading-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
     }
 
     .submit-button:hover:not(:disabled),
@@ -1032,6 +1143,7 @@
         cursor: not-allowed;
         opacity: 0.6;
         transform: none;
+        pointer-events: none;
     }
 
     .submit-button:disabled:hover,
@@ -1041,6 +1153,24 @@
         color: #6c757d;
         transform: none;
     }
+        .submit-button:disabled {
+        cursor: wait;
+        opacity: 0.8;
+    }
+
+    .generate-button:disabled {
+        cursor: wait;
+        opacity: 0.8;
+    }
+
+    .submit-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+    .generate-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
 
     /* Dark Mode Styles */
     :global(html.dark-mode) .parser-heading-h1,
@@ -1085,6 +1215,46 @@
         background-color: #001A6E;
         color: #ffffff;
     }
+    :global(html.dark-mode) .submit-button:hover:not(:disabled),
+    :global(html.dark-mode) .generate-button:hover:not(:disabled) {
+        background-color: #002a8e;
+        transform: translateY(-2px);
+    }
+
+    
+    :global(html.dark-mode) .submit-button:disabled,
+    :global(html.dark-mode) .generate-button:disabled,
+    :global(html.dark-mode) .generate-button.disabled {
+        background: #495057;
+        color: #6c757d;
+        cursor: wait;
+        opacity: 0.8;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .submit-button:disabled:hover,
+    :global(html.dark-mode) .generate-button:disabled:hover,
+    :global(html.dark-mode) .generate-button.disabled:hover {
+        background: #495057;
+        color: #6c757d;
+        transform: none;
+    }
+
+        :global(html.dark-mode) .submit-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+    :global(html.dark-mode) .generate-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+    :global(html.dark-mode) .submit-button .loading-spinner {
+        border-top-color: #ffffff;
+    }
+
+    :global(html.dark-mode) .generate-button .loading-spinner {
+        border-top-color: #ffffff;
+    }
 
     :global(html.dark-mode) .default-toggle-btn {
 		background-color: #2d3748;
@@ -1100,6 +1270,19 @@
         background-color: #001a6e;
         border-color: #60a5fa;
     }
+
+    :global(html.dark-mode) .instructions-section {
+		background: #2d3748;
+		border-left-color: #4da9ff;
+	}
+
+	:global(html.dark-mode) .instructions-header {
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .instructions-text {
+		color: #cbd5e0;
+	}
 
     .grammar-header {
         display: flex;
@@ -1117,10 +1300,10 @@
     .clear-toggle-btn {
         background: white;
         border: 2px solid #e5e7eb;
-        color: #7da2e3;
+        color: #ef4444;
         font-size: 1.2rem;
         cursor: pointer;
-        transition: background 0.2s, border-color 0.2s;
+        transition: all 0.2s ease;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1129,22 +1312,23 @@
         border-radius: 50%;
     }
 
-    .clear-toggle-btn:hover {
+    .clear-toggle-btn:hover,
+    .clear-toggle-btn:focus {
         background: #fff5f5;
-        border-color: #7da2e3;
+        border-color: #ef4444;
     }
 
     /* Dark mode for clear button */
     :global(html.dark-mode) .clear-toggle-btn {
-        background-color: #2d3748;
+        background: transparent;
         border-color: #4a5568;
-        color: #d1d5db;
+        color: #ef4444;
     }
 
-    :global(html.dark-mode) .clear-toggle-btn:hover {
-        background-color: #001a6e;
-		border-color: #60a5fa;
-
+    :global(html.dark-mode) .clear-toggle-btn:hover,
+    :global(html.dark-mode) .clear-toggle-btn:focus {
+        background: rgba(45, 55, 72, 0.5);
+        border-color: #ef4444;
     }
 
     ::-webkit-scrollbar {

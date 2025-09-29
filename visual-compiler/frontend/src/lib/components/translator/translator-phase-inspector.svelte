@@ -14,6 +14,9 @@
     let translationSuccessful = false;
     let show_default_rules = false;
 
+    let isSubmittingRules = false;
+    let isTranslating = false;
+
     // FIX: Add project change tracking
     let hasInitialized = false;
     let currentProjectName = '';
@@ -232,7 +235,11 @@
 
 		console.log('Submitting translation input:', JSON.stringify(apiPayload, null, 2));
 
+		isSubmittingRules = true;
+
 		try {
+			await new Promise(resolve => setTimeout(resolve, 1000));
+
 			const response = await fetch('http://localhost:8080/api/translating/readRules', {
 				method: 'POST',
 				headers: { 
@@ -249,7 +256,7 @@
 
 			const result = await response.json();
 			AddToast('Translation rules saved successfully! Ready to translate your code', 'success');
-			isSubmitted = true;
+		 isSubmitted = true;
 
 			// Mark as submitted in store
 			markTranslatorSubmitted();
@@ -260,6 +267,8 @@
 		} catch (error: any) {
 			console.error('Rule submission Error:', error);
 			AddToast('Rule submission failed: ' + (error.message || 'Please check your connection and try again'), 'error');
+		} finally {
+			isSubmittingRules = false;
 		}
 	}
 
@@ -284,7 +293,11 @@
 
 		console.log('Requesting final translation from backend...');
 
+        isTranslating = true;
+
 		try {
+			await new Promise(resolve => setTimeout(resolve, 1000));
+
 			const response = await fetch('http://localhost:8080/api/translating/translate', {
 				method: 'POST',
 				headers: { 
@@ -316,6 +329,8 @@
 			// Dispatch a new event for the error
 			dispatch('translationerror', error);
 			AddToast('Translation failed: ' + (error.message || 'Unable to translate code. Please check your rules and try again'), 'error');
+		} finally {
+            isTranslating = false;
 		}
 	}
 
@@ -429,15 +444,6 @@
 
 			<div class="button-group">
 				<button
-					class="clear-toggle-btn"
-					on:click={clearAllInputs}
-					type="button"
-					aria-label="Clear all inputs" 
-					title="Clear all inputs"
-				>
-					<span class="icon">🗑️</span>
-				</button>
-				<button
 					class="option-btn example-btn"
 					class:selected={show_default_rules}
 					on:click={show_default_rules ? removeDefaultRules : insertDefaultRules}
@@ -446,7 +452,31 @@
 					title={show_default_rules ? 'Restore your input' : 'Show context-free grammar example'}
 				>
 					{show_default_rules ? 'Restore Input' : 'Show Example'}
-				</button>
+			</button>
+				<button
+					class="clear-toggle-btn"
+					on:click={clearAllInputs}
+					type="button"
+					aria-label="Clear all inputs" 
+					title="Clear all inputs"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<polyline points="3 6 5 6 21 6" />
+						<path d="m19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c0-1 1-2 2-2v2" />
+						<line x1="10" y1="11" x2="10" y2="17" />
+						<line x1="14" y1="11" x2="14" y2="17" />
+					</svg>
+					</button>
 			</div>
 
 		</div>
@@ -522,15 +552,38 @@
 		<div class="button-container">
 			<button class="add-rule-btn" on:click={addRule}>+ Add New Rule</button>
 			<div class="action-buttons">
-				<button class="action-btn submit" on:click={handleSubmit}>Submit Rules</button>
+				<!-- FIX: Add loading state to Submit Rules button -->
 				<button 
 					class="action-btn submit" 
-					class:disabled={!isSubmitted}
-					disabled={!isSubmitted}
+					on:click={handleSubmit}
+					disabled={isSubmittingRules}
+				>
+					<div class="button-content">
+						{#if isSubmittingRules}
+							<div class="loading-spinner"></div>
+							Submitting...
+						{:else}
+							Submit Rules
+						{/if}
+					</div>
+				</button>
+				
+				<!-- FIX: Add loading state to Translate Code button -->
+				<button 
+					class="action-btn submit" 
+					class:disabled={!isSubmitted || isTranslating}
+					disabled={!isSubmitted || isTranslating}
 					on:click={handleTranslate}
 					title={isSubmitted ? "Translate code using submitted rules" : "Submit rules first"}
 				>
-					Translate Code
+					<div class="button-content">
+						{#if isTranslating}
+							<div class="loading-spinner"></div>
+							Translating...
+						{:else}
+							Translate Code
+						{/if}
+					</div>
 				</button>
 			</div>
 		</div>
@@ -556,12 +609,14 @@
 
 	.inspector-container {
 		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-		padding: 1.5rem;
-		font-family: var(--font-sans);
-		background-color: var(--bg-primary);
-		color: var(--text-primary);
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        font-family: var(--font-sans);
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        height: 100%;
+        overflow-y: auto;
 	}
 
 	.header-container {
@@ -633,11 +688,12 @@
 	}
 
 	.example-btn {
-		background: linear-gradient(135deg, #1e40af, #3b82f6);
+		background: #BED2E6;
+		color: black;
 	}
 
 	.example-btn:hover {
-		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
 	}
 
 	.option-btn:hover {
@@ -649,6 +705,7 @@
 		color: #1a2a4a;
 		font-family: 'Times New Roman';
 		font-weight: 500;
+		text-align: center;
 	}
 	.section {
 		display: flex;
@@ -685,7 +742,8 @@
 		font-family: 'Times New Roman';
 		font-size: 1.25rem;
 		font-weight: 600;
-		text-align: center;
+		text-align: left;
+		margin-left: 0.75rem;
 	}
 
 	.section-heading1 {
@@ -765,9 +823,10 @@
 
 	.rule-header {
 		display: flex;
-		justify-content: flex-end;
+		justify-content: center;
 		align-items: center;
 		margin-bottom: 0.5rem;
+		position: relative;
 	}
 
 	.form-group,
@@ -858,6 +917,8 @@
 		align-items: center;
 		justify-content: center;
 		transition: background-color 0.2s, color 0.2s;
+		position: absolute;
+		right: 0;
 	}
 
 	.remove-btn:hover,
@@ -886,6 +947,8 @@
 		font-weight: 500;
 		cursor: pointer;
 		transition: background-color 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+		position: relative;
+        overflow: hidden;
 	}
 
 	.submit:hover:not(:disabled) {
@@ -919,6 +982,37 @@
         align-items: center;
     }
 
+	.button-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+	.loading-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+	.submit:hover:not(:disabled) {
+        background: #a8bdd1;
+        transform: translateY(-2px);
+
+    }
+
 	.option-btn {
 		display: flex;
 		align-items: center;
@@ -929,7 +1023,6 @@
 		border: none;
 		border-radius: 8px;
 		font-size: 0.875rem;
-		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.2s ease;
 		position: relative;
@@ -943,11 +1036,12 @@
 	}
 
 	.example-btn {
-		background: #1e40af;
+		background: #BED2E6;
+				color: black;
 	}
 
 	.example-btn:hover {
-		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
 	}
 
 	.option-btn:hover {
@@ -955,15 +1049,12 @@
 		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 	}
 
-	.option-btn.selected {
-		background: #1e40af;
-	}
 
 
     .clear-toggle-btn {
         background: white;
         border: 2px solid #e5e7eb;
-        color: #7da2e3;
+        color: #ef4444;
         font-size: 1.2rem;
         cursor: pointer;
         transition: background 0.2s, border-color 0.2s;
@@ -977,7 +1068,33 @@
 
     .clear-toggle-btn:hover {
         background: #fff5f5;
-        border-color: #7da2e3;
+        border-color: #ef4444;
+    }
+
+	.submit:disabled,
+    .translate:disabled,
+    .translate.disabled {
+        background: #d6d8db;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+        pointer-events: none;
+    }
+
+    .submit:disabled:hover,
+    .translate:disabled:hover,
+    .translate.disabled:hover {
+        background: #d6d8db;
+        color: #6c757d;
+        transform: none;
+    }
+	.submit:disabled {
+        cursor: wait;
+        opacity: 0.8;
+    }
+	.submit:disabled .loading-spinner {
+        border-top-color: #6c757d;
     }
 
 	/* --- Dark Mode --- */
@@ -1011,8 +1128,14 @@
 		background: transparent;
 	}
 	:global(html.dark-mode) .example-btn {
-		background: linear-gradient(135deg, #1d4ed8, #2563eb);
-	}
+        background: #001A6E;
+        color: #ffffff;
+    }
+
+    :global(html.dark-mode) .example-btn:hover {
+        background: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
+    }
 	:global(html.dark-mode) .submit,
 	:global(html.dark-mode) .translate {
 		background-color: #001A6E;
@@ -1036,12 +1159,12 @@
 	:global(html.dark-mode) .clear-toggle-btn {
         background-color: #2d3748;
         border-color: #4a5568;
-        color: #d1d5db;
+        color: #ef4444;
     }
 
     :global(html.dark-mode) .clear-toggle-btn:hover {
-        background-color: #001a6e;
-		border-color: #60a5fa;
+        background-color: #7f1d1d;
+		border-color: #ef4444;
     }
 
 	:global(html.dark-mode) .submit:disabled:hover,
@@ -1053,12 +1176,56 @@
 	}
 
 	
+    .inspector-container::-webkit-scrollbar {
+        width: 11px;
+    }
+    
+    .inspector-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .inspector-container::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 10px;
+    }
+    
+    .inspector-container::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Firefox scrollbar */
+    .inspector-container {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
+
+    :global(html.dark-mode) .inspector-container {
+        background: #1a2a4a;
+        scrollbar-color: #4a5568 #2d3748;
+    }
+
+    /* Dark mode scrollbar styles */
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-track {
+        background: #2d3748;
+    }
+
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-thumb {
+        background-color: #4a5568;
+        border-color: #2d3748;
+    }
+
+    :global(html.dark-mode) .inspector-container::-webkit-scrollbar-thumb:hover {
+        background: #616e80;
+    }
+
+
+	
 	
 	/* Add section-header style */
 	.section-header {
 		display: flex;
 		align-items: center;
-		justify-content: center;
+		justify-content: space-between;
 		gap: 1rem;
 		margin-bottom: 1rem;
 		position: relative;
@@ -1073,9 +1240,39 @@
 		background-color: #002a8e;
 	}
 
-	:global(html.dark-mode) .submit:disabled {
-		background-color: #2d3748;
-		color: #9ca3af;
-		border-color: #4a5568;
+	 :global(html.dark-mode) .submit:disabled {
+        background-color: #2d3748;
+        color: #9ca3af;
+        border-color: #4a5568;
+        cursor: wait;
+        opacity: 0.8;
+    }
+
+    :global(html.dark-mode) .submit:disabled:hover {
+        background-color: #2d3748;
+        color: #9ca3af;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .submit:disabled .loading-spinner {
+        border-top-color: #9ca3af;
+    }
+
+    :global(html.dark-mode) .submit .loading-spinner {
+        border-top-color: #ffffff;
+    }
+
+	:global(html.dark-mode) .instructions-section {
+		background: #2d3748;
+		border-left-color: #4da9ff;
 	}
+
+	:global(html.dark-mode) .instructions-header {
+		color: #e2e8f0;
+	}
+
+	:global(html.dark-mode) .instructions-text {
+		color: #cbd5e0;
+	}
+
 </style>

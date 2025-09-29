@@ -8,6 +8,7 @@
 	import { projectName } from '$lib/stores/project';
 	import { get } from 'svelte/store'; 
 	import { lexerState, updateLexerInputs, updateAutomataInputs, markLexerSubmitted, updateLexerArtifacts } from '$lib/stores/lexer';
+	import { confirmedSourceCode } from '$lib/stores/source-code';
 
 	export let source_code = '';
 	export let onGenerateTokens: (data: {
@@ -18,9 +19,11 @@
 	let tokens: Token[] = [];
     let show_tokens = false;
     let isSubmitted = false;
+	let hasLocalChanges = false;
 
-    // Make isSubmitted reactive to store changes
-    $: isSubmitted = $lexerState.isSubmitted;
+    // FIX: Add loading states for buttons
+    let isSubmittingRules = false;
+    let isGeneratingTokens = false;
 
 	let inputRows = [{ type: '', regex: '', error: '' }];
 	let userSourceCode = '';
@@ -40,12 +43,14 @@
 
 
 	function addNewRow() {
-    if (showDefault) {
-        editableDefaultRows = [...editableDefaultRows, { type: '', regex: '', error: '' }];
-    } else {
-        userInputRows = [...userInputRows, { type: '', regex: '', error: '' }];
+        if (showDefault) {
+            editableDefaultRows = [...editableDefaultRows, { type: '', regex: '', error: '' }];
+        } else {
+            userInputRows = [...userInputRows, { type: '', regex: '', error: '' }];
+            hasLocalChanges = true; // Mark local changes when adding new row
+            isSubmitted = false; // Reset submission status
+        }
     }
-}
 
 	let hasInitialized = false;
 	let currentProjectName = '';
@@ -84,8 +89,18 @@
             show_tokens = false;
         }
         
-        source_code = $lexerState.sourceCode || '';
-        isSubmitted = $lexerState.isSubmitted || false;
+        source_code = $lexerState.sourceCode || $confirmedSourceCode || '';
+
+        if (!hasLocalChanges) {
+            isSubmitted = $lexerState.isSubmitted || false;
+            
+            // Set up action buttons based on submission state
+            if (isSubmitted && selectedType === 'REGEX') {
+                showRegexActionButtons = true;
+            } else if (isSubmitted && selectedType === 'AUTOMATA') {
+                showGenerateButton = true;
+            }
+        }
         
         hasInitialized = true;
         console.log('Lexer component initialized with:', { 
@@ -105,147 +120,179 @@
 		}
 	}
 
-	async function handleSubmit() {
-		formError = '';
-		let hasErrors = false;
-		let nonEmptyRows = [];
-		const rowsToValidate = showDefault ? editableDefaultRows : userInputRows;
+	// FIX: Enhanced handleSubmit with loading animation
+    async function handleSubmit() {
+        formError = '';
+        let hasErrors = false;
+        let nonEmptyRows = [];
+        const rowsToValidate = showDefault ? editableDefaultRows : userInputRows;
 
-		for (const row of rowsToValidate) {
-			if (!row.type && !row.regex) continue;
-			row.error = '';
-			if (!row.type || !row.regex) {
-				row.error = 'Please fill in both Type and Regular Expression';
-				hasErrors = true;
-			} else if (!validateRegex(row.regex)) {
-				row.error = 'Invalid regular expression pattern';
-				hasErrors = true;
-			}
-			nonEmptyRows.push(row);
-		}
+        for (const row of rowsToValidate) {
+            if (!row.type && !row.regex) continue;
+            row.error = '';
+            if (!row.type || !row.regex) {
+                row.error = 'Please fill in both Type and Regular Expression';
+                hasErrors = true;
+            } else if (!validateRegex(row.regex)) {
+                row.error = 'Invalid regular expression pattern';
+                hasErrors = true;
+            }
+            nonEmptyRows.push(row);
+        }
 
-		if (rowsToValidate.length === 1 && !rowsToValidate[0].type && !rowsToValidate[0].regex) {
-			// Replace custom status with AddToast
-			AddToast('Please fill in both Type and Regular Expression', 'error');
-			return;
-		}
+        if (rowsToValidate.length === 1 && !rowsToValidate[0].type && !rowsToValidate[0].regex) {
+            AddToast('Please fill in both Type and Regular Expression', 'error');
+            return;
+        }
 
-		if (showDefault) {
-			editableDefaultRows = nonEmptyRows;
-		} else {
-			userInputRows = nonEmptyRows;
-		}
+        if (showDefault) {
+            editableDefaultRows = nonEmptyRows;
+        } else {
+            userInputRows = nonEmptyRows;
+        }
 
-		if (hasErrors) {
-			// Replace custom status with AddToast
-			AddToast('Please fix the errors before submitting', 'error');
-			return;
-		}
+        if (hasErrors) {
+            AddToast('Please fix the errors before submitting', 'error');
+            return;
+        }
 
-		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
-		const project = get(projectName);
-		
-		if (!accessToken) {
-			AddToast('Authentication required: Please log in to save lexical rules', 'error');
-			return;
-		}
-		if (!project) {
-			AddToast('No project selected: Please select or create a project first', 'error');
-			return;
-		}
+        const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
+        const project = get(projectName);
+        
+        if (!accessToken) {
+            AddToast('Authentication required: Please log in to save lexical rules', 'error');
+            return;
+        }
+        if (!project) {
+            AddToast('No project selected: Please select or create a project first', 'error');
+            return;
+        }
 
-		if (selectedType === 'REGEX') {
-			const requestData = {
-				project_name: project,
-				pairs: nonEmptyRows.map((row) => ({
-					Type: row.type.toUpperCase(),
-					Regex: row.regex
-				}))
-			};
-			try {
-				const res = await fetch('http://localhost:8080/api/lexing/rules', {
-					method: 'POST',
-					headers: { 
-						'Content-Type': 'application/json',
-						'Authorization': `Bearer ${accessToken}`
-					},
-					body: JSON.stringify(requestData)
-				});
-				if (!res.ok) {
-					const errorText = await res.text();
-					throw new Error(errorText);
-				}
+        // FIX: Set loading state
+        isSubmittingRules = true;
+
+        if (selectedType === 'REGEX') {
+            const requestData = {
+                project_name: project,
+                pairs: nonEmptyRows.map((row) => ({
+                    Type: row.type.toUpperCase(),
+                    Regex: row.regex
+                }))
+            };
+            try {
+                // FIX: Add 1-second delay before API call
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                const res = await fetch('http://localhost:8080/api/lexing/rules', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                if (!res.ok) {
+                    const errorText = await res.text();
+                    throw new Error(errorText);
+                }
+                
+                AddToast('Rules stored successfully!', 'success');
+                showRegexActionButtons = true;
+                
+                isSubmitted = true;
+                hasLocalChanges = false; 
 				
-				AddToast('Rules stored successfully!', 'success');
-				showRegexActionButtons = true;
+                markLexerSubmitted();
 
-				
-				// Mark as submitted in store
-				markLexerSubmitted();
-				
+            } catch (error) {
+                AddToast('Save failed: Unable to store lexical rules. Please check your connection and try again', 'error');
+                // FIX: Don't set isSubmitted on error
+                isSubmitted = false;
+            } finally {
+                // FIX: Reset loading state
+                isSubmittingRules = false;
+            }
+            return;
+        }
 
-			} catch (error) {
-				AddToast('Save failed: Unable to store lexical rules. Please check your connection and try again', 'error');
-			}
-			return;
-		}
+        // For AUTOMATA type
+        try {
+            // FIX: Add 1-second delay before processing
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
-		// For AUTOMATA type
-		AddToast('Ready for tokenization!', 'success');
-		showGenerateButton = true;
-		markLexerSubmitted();
-	}
+            AddToast('Ready for tokenization!', 'success');
+            showGenerateButton = true;
+            isSubmitted = true;
+            hasLocalChanges = false; 
+            markLexerSubmitted();
+        } catch (error) {
+            AddToast('Failed to submit automata rules. Please try again.', 'error');
+			isSubmitted = false;
+        } finally {
+            // FIX: Reset loading state
+            isSubmittingRules = false;
+        }
+    }
 
-	async function generateTokens() {
-		try {
-			const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
-			const project = get(projectName);
-			
-			if (!accessToken) {
-				AddToast('Authentication required: Please log in to generate tokens', 'error');
-				return;
-			}
-			if (!project) {
-				AddToast('No project selected: Please select or create a project first', 'error');
-				return;
-			}
+    // FIX: Enhanced generateTokens with loading animation
+    async function generateTokens() {
+        // FIX: Set loading state
+        isGeneratingTokens = true;
 
-			const requestData = {
-				project_name: project
-			};
+        try {
+            // FIX: Add 1-second delay before API call
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
-			const response = await fetch('http://localhost:8080/api/lexing/lexer', {
-				method: 'POST',
-				headers: { 
-					'Content-Type': 'application/json',
-					'Authorization': `Bearer ${accessToken}`
-				},
-				body: JSON.stringify(requestData)
-			});
+            const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
+            const project = get(projectName);
+            
+            if (!accessToken) {
+                AddToast('Authentication required: Please log in to generate tokens', 'error');
+                return;
+            }
+            if (!project) {
+                AddToast('No project selected: Please select or create a project first', 'error');
+                return;
+            }
 
-			if (!response.ok) {
-				const errorText = await response.text();
-				throw new Error(`Server error (${response.status}): ${errorText}`);
-			}
-			const data = await response.json();
-			if (!Array.isArray(data.tokens)) {
-				throw new Error('Expected tokens array in response');
-			}
+            const requestData = {
+                project_name: project
+            };
 
-			onGenerateTokens({
-				tokens: data.tokens,
-				unexpected_tokens: data.tokens_unidentified
-			});
+            const response = await fetch('http://localhost:8080/api/lexing/lexer', {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
+                },
+                body: JSON.stringify(requestData)
+            });
 
-			showGenerateButton = false;
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Server error (${response.status}): ${errorText}`);
+            }
+            const data = await response.json();
+            if (!Array.isArray(data.tokens)) {
+                throw new Error('Expected tokens array in response');
+            }
+
+            onGenerateTokens({
+                tokens: data.tokens,
+                unexpected_tokens: data.tokens_unidentified
+            });
+
+            showGenerateButton = false;
             
             updateLexerArtifacts(data.tokens, source_code);
             
             AddToast(data.message || 'Tokens generated successfully!', 'success');
-		} catch (error) {
-			console.error('Generate tokens error:', error);
-			AddToast('Tokenization failed: Unable to generate tokens from your lexical rules', 'error');
-		}
+		 } catch (error) {
+            console.error('Generate tokens error:', error);
+            AddToast('Tokenization failed: Unable to generate tokens from your lexical rules', 'error');
+        } finally {
+            isGeneratingTokens = false;
+        }
 	}
 
 	// Helper: Save DFA to backend
@@ -311,26 +358,32 @@
 		}
 	}
 
-	async function handleTokenisation() {
-        const saved = await saveDfaToBackend();
-        if (!saved) return;
-
-        const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
-        const project = get(projectName); 
-
-        if (!accessToken) {
-            AddToast('Authentication required: Please log in to perform tokenization', 'error');
-            return;
-        }
-
-        if (!project) {
-            AddToast('No project selected: Please select or create a project first', 'error');
-            return;
-        }
-
-        const body = { project_name: project };
+	 async function handleTokenisation() {
+        // FIX: Set loading state
+        isGeneratingTokens = true;
 
         try {
+            // FIX: Add 1-second delay before processing
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            const saved = await saveDfaToBackend();
+            if (!saved) return;
+
+            const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
+            const project = get(projectName); 
+
+            if (!accessToken) {
+                AddToast('Authentication required: Please log in to perform tokenization', 'error');
+                return;
+            }
+
+            if (!project) {
+                AddToast('No project selected: Please select or create a project first', 'error');
+                return;
+            }
+			
+            const body = { project_name: project };
+
             const response = await fetch('http://localhost:8080/api/lexing/dfaToTokens', {
                 method: 'POST',
                 headers: { 
@@ -344,7 +397,7 @@
                 throw new Error(errorText);
             }
             const data = await response.json();
-			            
+                        
             onGenerateTokens({
                 tokens: data.tokens,
                 unexpected_tokens: data.tokens_unidentified
@@ -355,41 +408,45 @@
             AddToast('Tokenization complete! Your source code has been successfully tokenized', 'success');
         } catch (error) {
             AddToast('Tokenization failed: ' + error, 'error');
+        } finally {
+            // FIX: Reset loading state
+            isGeneratingTokens = false;
         }
     }
 
 	let previousInputs: typeof userInputRows = [];
 	function handleInputChange() {
-		showGenerateButton = false;
-		showRegexActionButtons = false;
-
-		
-		// Update the store with current inputs
-		updateLexerInputs(userInputRows);
-	}
+        hasLocalChanges = true; // Mark that user made local changes
+        showGenerateButton = false;
+        showRegexActionButtons = false;
+        
+        // FIX: Reset submission status when input changes
+        isSubmitted = false;
+        show_tokens = false;
+        tokens = [];
+        
+        // Update the store with current inputs but don't mark as submitted
+        updateLexerInputs(userInputRows);
+    }
 
 	// Update automata input change handler
 	function handleAutomataInputChange() {
-		updateAutomataInputs({
-			states,
-			startState,
-			acceptedStates,
-			transitions
-		});
-	}
+        hasLocalChanges = true; // Mark that user made local changes
+        
+        // FIX: Reset submission status when automata input changes
+        isSubmitted = false;
+        showGenerateButton = false;
+        show_tokens = false;
+        tokens = [];
+        
+        updateAutomataInputs({
+            states,
+            startState,
+            acceptedStates,
+            transitions
+        });
+    }
 
-	$: {
-		const inputsChanged =
-			userInputRows.length !== previousInputs.length ||
-			userInputRows.some((row, index) => {
-				const prevRow = previousInputs[index];
-				return !prevRow || row.type !== prevRow.type || row.regex !== prevRow.regex;
-			});
-		if (inputsChanged) {
-			handleInputChange();
-			previousInputs = [...userInputRows];
-		}
-	}
 
 	let selectedType: 'AUTOMATA' | 'REGEX' | null = 'REGEX';
 	let showDefault = false;
@@ -576,6 +633,9 @@
 		showRegexOutput = false;
 		automataDisplay = null;
 		currentAutomatonForModal = null;
+
+		isSubmitted = false;
+        showGenerateButton = false;
 
 		if (type === 'REGEX') {
 			// Use stored inputs if they exist
@@ -1348,6 +1408,14 @@
         }
         currentProject = $projectName;
     }
+
+	 $: if ($lexerState?.sourceCode) {
+        source_code = $lexerState.sourceCode;
+
+    }
+	$: if ($confirmedSourceCode) {
+        source_code = $confirmedSourceCode;
+    }
 </script>
 
 <svelte:window on:keydown={handleKeydown} />
@@ -1371,38 +1439,27 @@
 	</div>
 
 	<div class="automaton-btn-row">
-		<button
-			class="automaton-btn {selectedType === 'REGEX' ? 'selected' : ''}"
-			on:click={() => selectType('REGEX')}
-			type="button"
-		>
-			Regular Expression
-		</button>
-		<button
-			class="automaton-btn {selectedType === 'AUTOMATA' ? 'selected' : ''}"
-			on:click={() => {
-				selectType('AUTOMATA');
-				automataDisplay = null;
-			}}
-			type="button"
-		>
-			Automata
-		</button>
+		<div class="tabs-and-example-group">
+			<button
+				class="automaton-btn {selectedType === 'REGEX' ? 'selected' : ''}"
+				on:click={() => selectType('REGEX')}
+				type="button"
+			>
+				Regular Expression
+			</button>
+			<button
+				class="automaton-btn {selectedType === 'AUTOMATA' ? 'selected' : ''}"
+				on:click={() => {
+					selectType('AUTOMATA');
+					automataDisplay = null;
+				}}
+				type="button"
+			>
+				Automata
+			</button>
+		</div>
 
-
-		<div class="button-group">
-			{#if selectedType}
-				<button
-					class="clear-toggle-btn"
-					on:click={clearAllInputs}
-					type="button"
-					aria-label="Clear all inputs"
-					title="Clear all inputs"
-				>
-					<span class="icon">🗑️</span>
-				</button>
-			{/if}
-
+		<div class="clear-button-container">
 			{#if selectedType && !showDefault}
 			<button
 				class="option-btn example-btn"
@@ -1413,24 +1470,48 @@
 			>
 				Show Example
 			</button>
-
-		{/if}
-		{#if selectedType && showDefault}
-			<button
-				class="option-btn example-btn selected"
-				on:click={removeDefault}
-				type="button"
-				aria-label="Restore your input"
-				title="Restore your input"
-			>
-				Restore Input
-			</button>
-		{/if}
+			{/if}
+			{#if selectedType && showDefault}
+				<button
+					class="option-btn example-btn selected"
+					on:click={removeDefault}
+					type="button"
+					aria-label="Restore your input"
+					title="Restore your input"
+				>
+					Restore Input
+				</button>
+			{/if}
+			{#if selectedType}
+				<button
+					class="clear-toggle-btn"
+					on:click={clearAllInputs}
+					type="button"
+					aria-label="Clear all inputs"
+					title="Clear all inputs"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					>
+						<polyline points="3 6 5 6 21 6" />
+						<path d="m19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c0-1 1-2 2-2v2" />
+						<line x1="10" y1="11" x2="10" y2="17" />
+						<line x1="14" y1="11" x2="14" y2="17" />
+					</svg>
+				</button>
+			{/if}
 		</div>
-
 	</div>
 
-	{#if selectedType === 'REGEX'}
+	 {#if selectedType === 'REGEX'}
 		{#if showRegexVisOnly}
 			<!-- Show only NFA or DFA visualization with back button -->
 			{#if showRegexNfaVis && regexNfa}
@@ -1493,7 +1574,12 @@
 									<input
 										type="text"
 										bind:value={row.type}
-										on:input={handleInputChange}
+										    on:input={() => {
+											hasLocalChanges = true;
+											isSubmitted = false;
+											show_tokens = false;
+											tokens = [];
+										}}
 										placeholder="Enter type..."
 										class:error={row.error}
 									/>
@@ -1502,7 +1588,12 @@
 									<input
 										type="text"
 										bind:value={row.regex}
-										on:input={handleInputChange}
+										    on:input={() => {
+											hasLocalChanges = true;
+											isSubmitted = false;
+											show_tokens = false;
+											tokens = [];
+										}}
 										placeholder="Enter regex pattern..."
 										class:error={row.error}
 									/>
@@ -1522,16 +1613,41 @@
 					<div class="form-error">{formError}</div>
 				{/if}
 				<div class="button-stack">
+					<!-- Submit button -->
+					<button 
+						class="submit-button" 
+						on:click={handleSubmit}
+						disabled={isSubmittingRules}
+					>
+						<div class="button-content">
+							{#if isSubmittingRules}
+								<div class="loading-spinner"></div>
+								Submitting...
+							{:else}
+								Submit
+							{/if}
+						</div>
+					</button>
 
-					<button class="submit-button" on:click={handleSubmit}>Submit</button>
+					<!-- FIX: Only show REGEX-specific buttons -->
+					 {#if showRegexActionButtons}
 					<div class="regex-action-buttons">
 						<button 
 							class="generate-button" 
-							class:disabled={!isSubmitted}
-							disabled={!isSubmitted}
+							class:disabled={!isSubmitted || isGeneratingTokens}
+							disabled={!isSubmitted || isGeneratingTokens}
 							on:click={generateTokens}
 							title={isSubmitted ? "Generate tokens from submitted rules" : "Submit regex rules first"}
-						>Generate Tokens</button>
+						>
+							<div class="button-content">
+								{#if isGeneratingTokens}
+									<div class="loading-spinner"></div>
+									Generating...
+								{:else}
+									Generate Tokens
+								{/if}
+							</div>
+						</button>
 						<button
 							class="generate-button"
 							class:disabled={!isSubmitted}
@@ -1547,7 +1663,7 @@
 							title={isSubmitted ? "Convert Regular Expression to a DFA" : "Submit regex rules first"}
 						>DFA</button>
 					</div>
-
+					{/if}
 				</div>
 			</div>
 		{/if}
@@ -1612,7 +1728,11 @@
 						<input 
 							class="automaton-input" 
 							bind:value={states} 
-							on:input={handleAutomataInputChange}
+							on:input={() => {
+							hasLocalChanges = true;
+							isSubmitted = false;
+							showGenerateButton = false;
+						}}
 							placeholder="e.g. q0,q1,q2" 
 						/>
 					</label>
@@ -1621,7 +1741,11 @@
 						<input 
 							class="automaton-input" 
 							bind:value={startState} 
-							on:input={handleAutomataInputChange}
+							on:input={() => {
+								hasLocalChanges = true;
+								isSubmitted = false;
+								showGenerateButton = false;
+							}}
 							placeholder="e.g. q0" 
 						/>
 					</label>
@@ -1630,7 +1754,11 @@
 						<input
 							class="automaton-input"
 							bind:value={acceptedStates}
-							on:input={handleAutomataInputChange}
+							on:input={() => {
+								hasLocalChanges = true;
+								isSubmitted = false;
+								showGenerateButton = false;
+							}}
 							placeholder="e.g. q2->int, q1->string"
 						/>
 					</label>
@@ -1641,28 +1769,47 @@
 						<textarea
 							class="automaton-input automaton-transitions"
 							bind:value={transitions}
-							on:input={handleAutomataInputChange}
+							on:input={() => {
+								hasLocalChanges = true;
+								isSubmitted = false;
+								showGenerateButton = false;
+							}}
 							placeholder="e.g. q0,a->q1&#10;q1,b->q2"
 						></textarea>
 					</label>
 				</div>
+				
+				<!-- FIX: Keep automata buttons ONLY in AUTOMATA section -->
 				<div class="automata-action-row" style="grid-column: span 2;">
 					<button
 						class="action-btn"
 						type="button"
-						on:click={handleShowDfa}>Show Automata</button>
+						on:click={handleShowDfa}
+					>Show Automata</button>
 					<button
 						class="action-btn"
 						type="button"
+						disabled={isGeneratingTokens}
 						on:click={() => {
 							handleTokenisation();
 							automataDisplay = null;
-						}}>Tokenisation</button>
+						}}
+					>
+						<div class="button-content">
+							{#if isGeneratingTokens}
+								<div class="loading-spinner"></div>
+								Tokenising...
+							{:else}
+								Tokenisation
+							{/if}
+						</div>
+					</button>
 					<button
 						class="action-btn"
 						type="button"
 						on:click={handleConvertToRegex}
-						title="Convert to Regular Expression">RE</button>
+						title="Convert to Regular Expression"
+					>RE</button>
 				</div>
 			</div>
 		{/if}
@@ -1769,7 +1916,7 @@
 	}
 
 	.source-code-header {
-		color: #444;
+			color: #444;
 		transition: color 0.3s ease;
 	}
 
@@ -1978,7 +2125,18 @@
 		gap: 0.7rem;
 		margin: 2rem 0 1.5rem 0;
 		align-items: center;
-		justify-content: flex-start;
+		justify-content: space-between;
+	}
+
+	.tabs-and-example-group {
+		display: flex;
+		gap: 0.7rem;
+		align-items: center;
+	}
+
+	.clear-button-container {
+		display: flex;
+		align-items: center;
 	}
 
 	.button-group {
@@ -1990,7 +2148,7 @@
 	.clear-toggle-btn {
         background: white;
         border: 2px solid #e5e7eb;
-        color: #7da2e3;
+        color: #ef4444;
         font-size: 1.2rem;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -2005,7 +2163,7 @@
     .clear-toggle-btn:hover,
     .clear-toggle-btn:focus {
         background: #fff5f5;
-        border-color: #7da2e3;
+        border-color: #ef4444;
     }
 
 	.automaton-btn {
@@ -2042,7 +2200,6 @@
 		border: none;
 		border-radius: 8px;
 		font-size: 0.875rem;
-		font-weight: 600;
 		cursor: pointer;
 		transition: all 0.2s ease;
 		position: relative;
@@ -2052,15 +2209,16 @@
 		width: 140px;
 		max-width: 140px;
 		justify-content: center;
-		margin-left: 1rem;
+		margin-right: 0.5rem;
 	}
 
 	.example-btn {
-		background: #1e40af;
+		background: #BED2E6;
+		color: black;
 	}
 
 	.example-btn:hover {
-		box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
 	}
 
 	.option-btn:hover {
@@ -2068,9 +2226,6 @@
 		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 	}
 
-	.option-btn.selected {
-		background: #1e40af;
-	}
 
 	.icon {
 		font-size: 1.3rem;
@@ -2251,6 +2406,69 @@
         cursor: pointer;
         font-weight: 500;
     }
+	.submit-button,
+    .generate-button,
+    .action-btn {
+        /* ... existing button styles ... */
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* FIX: Add button content wrapper */
+    .button-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    /* FIX: Add loading spinner styles */
+    .loading-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+	.submit-button:disabled,
+    .generate-button:disabled,
+    .action-btn:disabled {
+        background: #d6d8db;
+        color: #6c757d;
+        cursor: wait;
+        opacity: 0.8;
+        transform: none;
+		pointer-events: none;
+    }
+
+    .submit-button:disabled:hover,
+    .generate-button:disabled:hover,
+    .action-btn:disabled:hover {
+        background: #d6d8db;
+        color: #6c757d;
+        transform: none;
+    }
+
+    .submit-button:disabled .loading-spinner,
+    .generate-button:disabled .loading-spinner,
+    .action-btn:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+	 .generate-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
 
 	/* --- Dark Mode Styles --- */
 	:global(html.dark-mode) .phase-inspector {
@@ -2286,6 +2504,26 @@
 	:global(html.dark-mode) .source-display {
 		color: #e2e8f0;
 	}
+
+	:global(html.dark-mode) .generate-button:disabled,
+    :global(html.dark-mode) .generate-button.disabled {
+        background: #495057;
+        color: #6c757d;
+        cursor: not-allowed;
+        opacity: 0.6;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .generate-button:disabled:hover,
+    :global(html.dark-mode) .generate-button.disabled:hover {
+        background: #495057;
+        color: #6c757d;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .generate-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
 
 	:global(html.dark-mode) .block-headers {
 		border-bottom-color: #4a5568;
@@ -2364,28 +2602,28 @@
 	}
 
 	:global(html.dark-mode) .automaton-btn:not(.selected):hover {
-		border-color: #63b3ed;
-		background: rgba(45, 55, 72, 0.5);
+		background: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
 	}
 
 	:global(html.dark-mode) .example-btn {
-		background: linear-gradient(135deg, #1d4ed8, #2563eb);
+		background: #001A6E;
+        color: #ffffff;
 	}
-
-	:global(html.dark-mode) .option-btn.selected {
-		background: linear-gradient(135deg, #059669, #10b981);
-		border-color: #059669;
-	}
+	:global(html.dark-mode) .example-btn:hover {
+        background: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
+    }
 
 	:global(html.dark-mode) .clear-toggle-btn {
         background: transparent;
-		color: #cbd5e1;
+		color: #ef4444;
 		border-color: #4a5568;
     }
 
     :global(html.dark-mode) .clear-toggle-btn:hover {
-        background: rgba(45, 55, 72, 0.5);
-		border-color: #63b3ed;
+        background: #7f1d1d;
+		border-color: #ef4444;
     }
 
 	:global(html.dark-mode) .vis-heading,

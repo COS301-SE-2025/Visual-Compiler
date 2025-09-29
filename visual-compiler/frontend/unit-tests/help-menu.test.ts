@@ -31,9 +31,8 @@ describe('HelpMenu Component', () => {
 		expect(screen.getByText('How do I add a new node to the canvas?')).toBeInTheDocument();
 		expect(screen.getByText('How do I move a node?')).toBeInTheDocument();
 		expect(screen.getByText('How do I connect two nodes?')).toBeInTheDocument();
-		expect(screen.getByText('How do I delete a node?')).toBeInTheDocument();
 		expect(screen.getByText('How do I delete a connection?')).toBeInTheDocument();
-		expect(screen.getByText(/Why can.t I configure a/)).toBeInTheDocument();
+		expect(screen.getByText(/Why can.t I enter a node or phase/)).toBeInTheDocument();
 	});
 
 	it('TestQuestionToggle_Success: Expands and collapses FAQ answers', async () => {
@@ -42,15 +41,15 @@ describe('HelpMenu Component', () => {
 		const firstQuestion = screen.getByText('How do I add a new node to the canvas?');
 		
 		// Initially, answer should not be visible
-		expect(screen.queryByText(/Simply click on one of the blocks/)).not.toBeInTheDocument();
+		expect(screen.queryByText(/Click on a block in the "Blocks" panel/)).not.toBeInTheDocument();
 		
 		// Click to expand
 		await fireEvent.click(firstQuestion);
-		expect(screen.getByText(/Simply click on one of the blocks/)).toBeInTheDocument();
+		expect(screen.getByText(/Click on a block in the "Blocks" panel/)).toBeInTheDocument();
 		
 		// Click again to collapse
 		await fireEvent.click(firstQuestion);
-		expect(screen.queryByText(/Simply click on one of the blocks/)).not.toBeInTheDocument();
+		expect(screen.queryByText(/Click on a block in the "Blocks" panel/)).not.toBeInTheDocument();
 	});
 
 	it('TestArrowIndicator_Success: Shows correct arrow direction for expanded/collapsed state', async () => {
@@ -78,13 +77,13 @@ describe('HelpMenu Component', () => {
 
 		// Expand first question
 		await fireEvent.click(firstQuestion);
-		expect(screen.getByText(/Simply click on one of the blocks/)).toBeInTheDocument();
+		expect(screen.getByText(/Click on a block in the "Blocks" panel/)).toBeInTheDocument();
 		expect(firstQuestion).toHaveTextContent('▲');
 
 		// Expand second question (should close first)
 		await fireEvent.click(secondQuestion);
-		expect(screen.queryByText(/Simply click on one of the blocks/)).not.toBeInTheDocument();
-		expect(screen.getByText(/For the smoothest experience/)).toBeInTheDocument();
+		expect(screen.queryByText(/Click on a block in the "Blocks" panel/)).not.toBeInTheDocument();
+		expect(screen.getByText(/Click a node to select it.*then drag it/)).toBeInTheDocument();
 		expect(firstQuestion).toHaveTextContent('▼');
 		expect(secondQuestion).toHaveTextContent('▲');
 	});
@@ -95,27 +94,23 @@ describe('HelpMenu Component', () => {
 		const questions = [
 			{
 				question: 'How do I add a new node to the canvas?',
-				answerPart: 'Simply click on one of the blocks'
+				answerPart: 'Click on a block in the "Blocks" panel'
 			},
 			{
 				question: 'How do I move a node?',
-				answerPart: 'For the smoothest experience'
+				answerPart: 'Click a node to select it.*then drag it'  
 			},
 			{
 				question: 'How do I connect two nodes?',
-				answerPart: 'Click and hold on an output anchor'
-			},
-			{
-				question: 'How do I delete a node?',
-				answerPart: 'To delete a node, right-click'
+				answerPart: 'Click and hold on an output anchor.*drag to an input anchor'  
 			},
 			{
 				question: 'How do I delete a connection?',
-				answerPart: 'To delete a connection'
+				answerPart: 'Click and drag one of its connection points.*release it onto'  
 			},
 			{
-				question: "Why can't I configure a",
-				answerPart: 'You must first complete the previous phases'
+				question: "Why can't I enter a node or phase?",
+				answerPart: 'previous.*phases'  // This will match text about completing previous phases
 			}
 		];
 
@@ -124,7 +119,7 @@ describe('HelpMenu Component', () => {
 			let searchPattern: string | RegExp;
 			if (question.includes("can't")) {
 				// Use a more flexible pattern for the special case
-				searchPattern = /Why can.t I configure a.*▼/;
+				searchPattern = /Why can.t I enter a node or phase.*▼/;
 			} else {
 				searchPattern = new RegExp(question.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '.*▼');
 			}

@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AnalyserPhaseInspector from '../src/lib/components/analyser/analyser-phase-inspector.svelte';
+import '@testing-library/jest-dom';
 
 // Mock the toast store
 vi.mock('$lib/stores/toast', () => ({
@@ -17,6 +18,53 @@ vi.mock('$lib/stores/project', () => ({
 		set: vi.fn(),
 		update: vi.fn()
 	}
+}));
+
+// Mock analyser store
+vi.mock('$lib/stores/analyser', () => ({
+	analyserState: {
+		subscribe: vi.fn((callback) => {
+			callback({
+				scope_rules: [{ id: 0, Start: '', End: '' }],
+				type_rules: [{ id: 0, ResultData: '', Assignment: '', LHSData: '', Operator: [''], RHSData: '' }],
+				grammar_rules: {
+					VariableRule: '',
+					TypeRule: '',
+					FunctionRule: '',
+					ParameterRule: '',
+					AssignmentRule: '',
+					OperatorRule: '',
+					TermRule: ''
+				},
+				submitted_scope_rules: [],
+				submitted_type_rules: [],
+				submitted_grammar_rules: {
+					VariableRule: '',
+					TypeRule: '',
+					FunctionRule: '',
+					ParameterRule: '',
+					AssignmentRule: '',
+					OperatorRule: '',
+					TermRule: ''
+				},
+				next_scope_id: 1,
+				next_type_id: 1,
+				show_default_rules: false,
+				rules_submitted: false,
+				show_symbol_table: false,
+				hasSymbolTable: false,
+				symbolTable: [],
+				analyserError: null,
+				analyserErrorDetails: null
+			});
+			return { unsubscribe: vi.fn() };
+		}),
+		set: vi.fn(),
+		update: vi.fn()
+	},
+	updateAnalyserInputs: vi.fn(),
+	markAnalyserSubmitted: vi.fn(),
+	updateAnalyserArtifacts: vi.fn()
 }));
 
 // Mock lexer store
@@ -126,7 +174,7 @@ describe('AnalyserPhaseInspector Additional Coverage Tests', () => {
 		}
 
 		// Look for submit button
-		const submitButton = screen.queryByText('Submit All Rules');
+		const submitButton = screen.queryByText('Submit Rules');
 		if (submitButton) {
 			await fireEvent.click(submitButton);
 			
@@ -141,7 +189,7 @@ describe('AnalyserPhaseInspector Additional Coverage Tests', () => {
 		});
 
 		// Find and click the default rules button
-		const defaultButton = screen.queryByLabelText('Insert default rules');
+		const defaultButton = screen.queryByTitle('Show context-free grammar example');
 		if (defaultButton) {
 			await fireEvent.click(defaultButton);
 			
@@ -193,7 +241,7 @@ describe('AnalyserPhaseInspector Additional Coverage Tests', () => {
 		});
 
 		// Try to trigger API call
-		const submitButton = screen.queryByText('Submit All Rules');
+		const submitButton = screen.queryByText('Submit Rules');
 		if (submitButton) {
 			await fireEvent.click(submitButton);
 			
@@ -218,7 +266,7 @@ describe('AnalyserPhaseInspector Additional Coverage Tests', () => {
 		expect(screen.getByText('Linking Grammar Rules')).toBeInTheDocument();
 
 		// Check that the submit button is present
-		const submitButton = screen.queryByText('Submit All Rules');
+		const submitButton = screen.queryByText('Submit Rules');
 		expect(submitButton).toBeInTheDocument();
 	});
 });

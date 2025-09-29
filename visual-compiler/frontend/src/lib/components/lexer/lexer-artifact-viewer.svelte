@@ -118,6 +118,57 @@
 		flex-direction: column;
 		gap: 1rem;
 		height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+        padding: 1.5rem;
+        font-family: var(--font-sans);
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        height: 100%;
+        overflow-y: auto;
+    }
+
+     .artifact-viewer::-webkit-scrollbar {
+        width: 11px;
+    }
+    
+    .artifact-viewer::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    
+    .artifact-viewer::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 10px;
+    }
+    
+    .artifact-viewer::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
+
+    /* Firefox scrollbar */
+    .artifact-viewer {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+    }
+
+    :global(html.dark-mode) .artifact-viewer {
+        background: #1a2a4a;
+        scrollbar-color: #4a5568 #2d3748;
+    }
+
+    /* Dark mode scrollbar styles */
+    :global(html.dark-mode) .artifact-viewer::-webkit-scrollbar-track {
+        background: #2d3748;
+    }
+
+    :global(html.dark-mode) .artifact-viewer::-webkit-scrollbar-thumb {
+        background-color: #4a5568;
+        border-color: #2d3748;
+    }
+
+    :global(html.dark-mode) .artifact-viewer::-webkit-scrollbar-thumb:hover {
+        background: #616e80;
     }
 
     h3 {

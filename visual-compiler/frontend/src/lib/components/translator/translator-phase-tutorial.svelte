@@ -200,7 +200,7 @@ add    rax, 12
 }
 
 h2 {
-    color: var(--heading-color, #001a6e); /* Light mode default */
+    color: white /* Light mode default */
     margin-bottom: 1rem;
     font-size: 1.5rem;
 }
