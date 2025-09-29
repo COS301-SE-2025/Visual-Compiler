@@ -1,4 +1,4 @@
-/*describe('Translator Test', ()=> {
+describe('Translator Test', ()=> {
     beforeEach('Login user',()=>{
         const test_username = "e2e tester";
         const test_password = "testUser13";
@@ -101,7 +101,10 @@
         cy.get('.submit-button').contains('Submit').click();
         cy.get('.generate-button').contains('Generate Tokens').click();
         cy.get('.return-button').click();
+
         cy.wait(1000);
+        cy.get('.canvas-container').contains('Parser').click();
+        cy.wait(500);
         cy.get('.canvas-container').contains('Parser').dblclick();
         cy.wait(500);
         cy.get('.phase-inspector').should('contain','PARSING');
@@ -112,17 +115,21 @@
         cy.get('.return-button').click();
 
         cy.wait(500);
-        cy.get('Analyser').trigger('mouseup', {force: true});
+        cy.get('.canvas-container').contains('Analyser').click();
+        cy.wait(500);
         cy.get('.canvas-container').contains('Analyser').dblclick();
         cy.wait(500);
         cy.get('.analyser-heading').should('contain','ANALYSING');
         cy.get('button').contains('Show Example').click();
-        cy.get('.submit-button').contains('Submit All Rules').click();
+        cy.get('.submit-button').contains('Submit Rules').click();
         cy.get('.generate-button').contains('Generate Symbol Table').click();
         cy.get('.return-button').click();
+
+        cy.wait(500);
+        cy.get('.canvas-container').contains('Translator').click();
+        cy.wait(500);
         cy.get('.canvas-container').contains('Translator').dblclick();
         cy.wait(500);
-
         cy.get('.heading').should('contain','TRANSLATING');
         cy.get('button').contains('Show Example').click();
         cy.get('.action-btn').contains('Submit Rules').click();
@@ -133,4 +140,3 @@
 
 
 });
-*/
