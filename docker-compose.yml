@@ -2,28 +2,20 @@ version: "3.9"
 
 services:
   frontend:
-    build:
-      context: ./visual-compiler/frontend
-      dockerfile: Dockerfile
+    image: vc-frontend:latest
     ports:
-      - "5173:5173"
-    volumes:
-      - ./visual-compiler/frontend:/visual-compiler-frontend
-      - /visual-compiler-frontend/node_modules
-    command: npm run dev -- --host
+      - "3000:3000"
+    mem_limit: 256m
+    cpus: 0.5
 
   backend:
-    build: 
-      context: ./visual-compiler/backend
-      dockerfile: Dockerfile
+    image: vc-backend:latest
     env_file:
       - backend.env
     ports:
       - "8080:8080"
+    mem_limit: 256m
+    cpus: 0.5
     volumes:
-      - ./visual-compiler/backend:/visual-compiler-backend
-    environment:
-      - Mongo_username
-      - Mongo_password
-      - Mongo_URI
-    command: go run main.go
+      - ./visual-compiler/backend/.env:/visual-compiler-backend/backend.env:ro
+    restart: unless-stopped

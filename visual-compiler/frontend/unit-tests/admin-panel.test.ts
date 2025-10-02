@@ -79,7 +79,7 @@ describe('AdminPanel Component', () => {
 		});
 
 		expect(mockFetch).toHaveBeenCalledWith(
-			'http://localhost:8080/api/users/getUsers',
+			'https://www.visual-compiler.co.za/api/users/getUsers',
 			expect.objectContaining({
 				method: 'GET',
 				headers: {
@@ -153,7 +153,7 @@ describe('AdminPanel Component', () => {
 		});
 
 		expect(mockFetch).toHaveBeenCalledWith(
-			'http://localhost:8080/api/users/getUsers',
+			'https://www.visual-compiler.co.za/api/users/getUsers',
 			{
 				method: 'GET',
 				headers: {
@@ -449,7 +449,7 @@ describe('AdminPanel Component', () => {
 		// The success message should be visible in the edit area briefly before it's hidden
 		// due to selectedUserIdx being reset to -1, but let's check the fetch was called correctly
 		expect(mockFetch).toHaveBeenCalledWith(
-			'http://localhost:8080/api/users/delete',
+			'https://www.visual-compiler.co.za/api/users/delete',
 			expect.objectContaining({
 				method: 'DELETE',
 				headers: expect.objectContaining({

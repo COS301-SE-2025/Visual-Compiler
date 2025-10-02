@@ -16,6 +16,12 @@ export default defineConfig(({ mode }) => ({
 		}
 	}),
 	plugins: [sveltekit()],
+	build: {
+		minify: 'esbuild',
+	},
+	esbuild: {
+		drop: ['console', 'debugger']
+	},
 	test: {
 		globals: true,
 		clearMocks: true,
