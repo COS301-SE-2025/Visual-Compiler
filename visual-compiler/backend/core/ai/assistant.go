@@ -102,15 +102,15 @@ Format your response strictly as a JSON array, without any additional text whats
 		prompt = `You are an educational assistant for compiler construction.
 
 Generate a context-free grammar for a parser that will perfectly parse the user's token stream.
-Do not add any epsilon transitions.
+Do not add any epsilon transitions or left recursion.
 
 The grammar should follow this structure: 
 1. "variables": string of comma-separated variable names
 2. "terminals": string of comma-separated terminal names
 3. "start": string for starting variable
 4. "rules": array of objects including
-    4.1. "input": string for LHS of rule
-    4.2. "output": array of strings for variables or terminals for RHS of rule
+    4.1. "input": string of single variable for LHS of rule
+    4.2. "output": string of space-separated variables and terminals for RHS of rule
 
 Format your response strictly as a JSON object, without any additional text whatsoever, for example,
 
@@ -119,9 +119,9 @@ Format your response strictly as a JSON object, without any additional text what
     "terminals": "KEYWORD, IDENTIFIER, SEPARATOR",
     "start": "PROGRAM",
     "rules": [
-        { "input": "PROGRAM", "output": ["STATEMENT", "SEPARATOR"] },
-        { "input": "PROGRAM", "output": ["FUNCTION", "SEPARATOR"] }
-	    { "input": "STATEMENT", "output": ["KEYWORD", IDENTIFIER"] },
+        { "input": "PROGRAM", "output": "STATEMENT SEPARATOR" },
+        { "input": "PROGRAM", "output": "FUNCTION SEPARATOR" }
+	    { "input": "STATEMENT", "output": "KEYWORD IDENTIFIER" },
 	         ]
 }`
 
@@ -168,18 +168,18 @@ Generate a list of translation rules for a translator that will perfectly transl
 Remember to include tokens for punctation and write out full recursions instead of using shorthands.
 
 The translation rules should follow this structure: 
-1. "sequence": string of comma-separated token types
+1. "sequence": string of space-separated token types
 2. "translation": array of strings for target code where token placeholders appear inside braces
 
 Format your response strictly as a JSON array, without any additional text whatsoever, for example,
 
 [
     {
-		"sequence": "KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER, SEPARATOR",
+		"sequence": "KEYWORD IDENTIFIER ASSIGNMENT INTEGER SEPARATOR",
 		"translation": ["add     rax, {INTEGER}", "mov     [{IDENTIFIER}], rax"]
 	},
 	{
-		"sequence": "OPEN_BRACKET, INTEGER, OPERATOR, INTEGER, CLOSE_BRACKET",
+		"sequence": "OPEN_BRACKET INTEGER OPERATOR INTEGER CLOSE_BRACKET",
 		"translation": ["mov     rax, {INTEGER}", "add     rax, {INTEGER}"]
 	}
 ]`

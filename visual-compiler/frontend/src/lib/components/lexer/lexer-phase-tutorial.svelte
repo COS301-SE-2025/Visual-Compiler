@@ -393,18 +393,23 @@
         max-width: 500px;
     }
 
-    .nav-button {
-        padding: 0.5rem 1rem;
-        background: #BED2E6;
-        color: 000000;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        min-width: 100px;
-        font-size: 0.9rem;
-    }
+	.nav-button {
+		padding: 0.5rem 1rem;
+		background: #BED2E6;
+		color: 000000;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		min-width: 100px;
+		font-size: 0.9rem;
+		transition: background-color 0.2s, transform 0.2s;
+	}
 
-    .nav-button:disabled {
+	.nav-button:hover:not(:disabled) {
+		background: #a8bdd1;
+box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+		transform: translateY(-2px);
+	}    .nav-button:disabled {
         background: #cccccc;
         cursor: not-allowed;
     }
@@ -639,12 +644,16 @@
         background: #1a2a4a;
     }
 
-    :global(html.dark-mode) .nav-button {
-        background: #001A6E;
-        color: #ffffff;
-    }
+	:global(html.dark-mode) .nav-button {
+		background: #001A6E;
+		color: #ffffff;
+	}
 
-    :global(html.dark-mode) .nav-button:disabled {
+	:global(html.dark-mode) .nav-button:hover:not(:disabled) {
+		background: #002a8e;
+		box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
+		transform: translateY(-2px);
+	}    :global(html.dark-mode) .nav-button:disabled {
         background: #4b5563;
         color: #9ca3af; 
     }

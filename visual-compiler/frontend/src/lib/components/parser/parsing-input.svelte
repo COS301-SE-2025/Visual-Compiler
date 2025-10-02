@@ -100,15 +100,11 @@
                 
                 // Handle rules
                 if (grammar.rules && Array.isArray(grammar.rules)) {
-                    grammar_rules = grammar.rules.map((rule) => {
+                    grammar_rules = (grammar.rules || []).map((rule) => {
                         rule_id_counter++;
-                        
-                        // Convert output array to comma-separated string
-                        let productions_string = '';
-                        if (Array.isArray(rule.output) && rule.output.length > 0) {
-                            productions_string = rule.output.join(' ');
-                        }
-                        
+
+                        let productions_string = (typeof rule.output === 'string') ? rule.output.trim() : '';
+
                         return {
                             id: rule_id_counter,
                             nonTerminal: rule.input || '',
@@ -943,7 +939,9 @@
 	}
 
 	.example-btn:hover {
-		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
+		background: #a8bdd1;
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+		transform: translateY(-2px);
 	}
 
     :global(html.dark-mode) .example-btn {
@@ -1132,6 +1130,7 @@
     .submit-button:hover:not(:disabled),
     .generate-button:hover:not(:disabled) {
         background: #a8bdd1;
+        box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
         transform: translateY(-2px);
     }
 
@@ -1218,6 +1217,7 @@
     :global(html.dark-mode) .submit-button:hover:not(:disabled),
     :global(html.dark-mode) .generate-button:hover:not(:disabled) {
         background-color: #002a8e;
+        box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
         transform: translateY(-2px);
     }
 

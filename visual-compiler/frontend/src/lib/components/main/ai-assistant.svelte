@@ -192,7 +192,7 @@
             
             // Check if variables and terminals are strings
             if (typeof parsed.variables !== 'string' || typeof parsed.terminals !== 'string' || typeof parsed.start !== 'string') {
-                console.log('Variables/terminals/start not strings');
+                console.log('Variables/Terminals/Start not strings');
                 return { isValid: false };
             }
             
@@ -202,29 +202,28 @@
                 return { isValid: false };
             }
             
-            // Check each rule has input (string) and output (array of strings)
             for (const rule of parsed.rules) {
-                if (!rule.input || !rule.output || 
-                    typeof rule.input !== 'string' || 
-                    !Array.isArray(rule.output)) {
+                if (!rule.input || !rule.output || typeof rule.input !== 'string') {
                     console.log('Invalid rule structure:', rule);
                     return { isValid: false };
                 }
-                
-                // Check that all output items are strings (allow empty strings for epsilon rules)
-                for (const outputItem of rule.output) {
-                    if (typeof outputItem !== 'string') {
-                        console.log('Invalid output item:', outputItem);
-                        return { isValid: false };
-                    }
+
+                // Check if output is string or array
+                if (Array.isArray(rule.output)) {
+                    rule.output = rule.output.join(' ');
+                } else if (typeof rule.output === 'string') {
+                    rule.output = rule.output;
+                } else {
+                    console.log('Rule output invalid type:', typeof rule.output);
+                    return { isValid: false };
                 }
-                
-                // Filter out empty string outputs for epsilon rules
-                rule.output = rule.output.filter(item => item.trim() !== '');
-                
-                // If all outputs were empty, this is an epsilon rule
-                if (rule.output.length === 0) {
-                    rule.output = ['ε']; // Use epsilon symbol
+
+                // Replace commas with spaces
+                rule.output = rule.output.replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
+
+                if (!rule.output) {
+                    console.log('Rule output normalisation failed:', rule);
+                    return { isValid: false };
                 }
             }
             
