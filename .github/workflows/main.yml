@@ -71,37 +71,15 @@ jobs:
           echo "CUSTOM_API=${{secrets.CUSTOM_API}}" >> backend.env
           echo "OPENAI_API_KEY=${{secrets.OPENAI_API_KEY}}" >> backend.env
 
-      - name: Docker Build and Compose for deployment
-        run: docker compose --env-file backend.env up -d --build
-
-      - name: Making sure Backend is running
+      - name: Docker images build
         run: |
-          for i in {1..30}; do
-            if curl -s http://localhost:8080/api/health > /dev/null; then
-              echo "Backend is running"
-              exit 0
-            fi
-            echo "Waiting..."
-            sleep 5
-          done
-          echo "Backend failed"
-          exit 1
-      - name: Making sure Frontend is running
-        run: |
-          for i in {1..30}; do
-            if curl -s http://localhost:3000 > /dev/null; then
-              echo "Frontend is running"
-              exit 0
-            fi
-            echo "Waiting..."
-            sleep 5
-          done
-          echo "Frontend failed"
-          exit 1
+          docker build -t vc-frontend:latest ./visual-compiler/frontend
+          docker build -t vc-backend:latest ./visual-compiler/backend
 
-      - name: Docker Compose Shut down
-        if: always()
-        run: docker compose down
+      - name: Save images as executable files
+        run: |
+          docker save vc-frontend:latest -o frontend.tar
+          docker save vc-backend:latest -o backend.tar
       
       - name: Setting up SSH for EC2 instance
         run: |
@@ -112,7 +90,7 @@ jobs:
 
       - name: Copy image to instance
         run: |
-          rsync -az -e "ssh -i ~/.ssh/id_rsa" ./visual-compiler docker-compose.yml backend.env ${{secrets.EC2_USER}}@${{secrets.EC2_HOST}}:/home/${{secrets.EC2_USER}}/app/
+          rsync -az -e "ssh -i ~/.ssh/id_rsa" frontend.tar backend.tar docker-compose.yml backend.env ${{secrets.EC2_USER}}@${{secrets.EC2_HOST}}:/home/${{secrets.EC2_USER}}/app/
 
       - name: SSH into instance and Compose
         run: |
@@ -128,6 +106,9 @@ jobs:
             echo "CUSTOM_API=${{secrets.CUSTOM_API}}" >> backend.env
             echo "OPENAI_API_KEY=${{secrets.OPENAI_API_KEY}}" >> backend.env
 
+            docker load -i frontend.tar
+            docker load -i backend.tar
+
             docker-compose down || true
-            docker-compose --env-file backend.env up -d --build
+            docker-compose --env-file backend.env up -d
           EOF

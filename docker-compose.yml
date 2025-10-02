@@ -2,18 +2,14 @@ version: "3.9"
 
 services:
   frontend:
-    build:
-      context: ./visual-compiler/frontend
-      dockerfile: Dockerfile
+    image: vc-frontend:latest
     ports:
       - "3000:3000"
     mem_limit: 256m
     cpus: 0.5
 
   backend:
-    build: 
-      context: ./visual-compiler/backend
-      dockerfile: Dockerfile
+    image: vc-backend:latest
     env_file:
       - backend.env
     ports:
@@ -22,13 +18,4 @@ services:
     cpus: 0.5
     volumes:
       - ./visual-compiler/backend/.env:/visual-compiler-backend/backend.env:ro
-    environment:
-      - Mongo_username
-      - Mongo_password
-      - Mongo_URI
-      - AUTH0_DOMAIN
-      - CLIENT_ID
-      - CLIENT_SECRET
-      - CUSTOM_API
-      - OPENAI_API_KEY
     restart: unless-stopped
