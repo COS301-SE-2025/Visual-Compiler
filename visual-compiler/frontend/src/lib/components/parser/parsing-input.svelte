@@ -99,23 +99,17 @@
                 terminals_string = grammar.terminals || '';
                 
                 // Handle rules
-                if (grammar.rules && Array.isArray(grammar.rules)) {
-                    grammar_rules = grammar.rules.map((rule) => {
-                        rule_id_counter++;
-                        
-                        // Convert output array to comma-separated string
-                        let productions_string = '';
-                        if (Array.isArray(rule.output) && rule.output.length > 0) {
-                            productions_string = rule.output.join(' ');
-                        }
-                        
-                        return {
-                            id: rule_id_counter,
-                            nonTerminal: rule.input || '',
-                            productions: productions_string
-                        };
-                    });
-                }
+                grammar_rules = grammar.rules.map((rule) => {
+                    rule_id_counter++;
+
+                    let productions_string = (typeof rule.output === 'string') ? rule.output.trim() : '';
+
+                    return {
+                        id: rule_id_counter,
+                        nonTerminal: rule.input || '',
+                        productions: productions_string
+                    };
+                });
                 
                 // If no rules were generated, add a blank one
                 if (grammar_rules.length === 0) {
