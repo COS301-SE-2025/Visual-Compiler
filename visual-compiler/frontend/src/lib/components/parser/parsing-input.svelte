@@ -99,17 +99,19 @@
                 terminals_string = grammar.terminals || '';
                 
                 // Handle rules
-                grammar_rules = grammar.rules.map((rule) => {
-                    rule_id_counter++;
+                if (grammar.rules && Array.isArray(grammar.rules)) {
+                    grammar_rules = (grammar.rules || []).map((rule) => {
+                        rule_id_counter++;
 
-                    let productions_string = (typeof rule.output === 'string') ? rule.output.trim() : '';
+                        let productions_string = (typeof rule.output === 'string') ? rule.output.trim() : '';
 
-                    return {
-                        id: rule_id_counter,
-                        nonTerminal: rule.input || '',
-                        productions: productions_string
-                    };
-                });
+                        return {
+                            id: rule_id_counter,
+                            nonTerminal: rule.input || '',
+                            productions: productions_string
+                        };
+                    });
+                }
                 
                 // If no rules were generated, add a blank one
                 if (grammar_rules.length === 0) {

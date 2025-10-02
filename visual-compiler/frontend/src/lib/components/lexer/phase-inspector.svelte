@@ -707,8 +707,9 @@
 		{ type: 'SEPARATOR', regex: ';', error: '' },
         { type: 'OPEN_BRACKET', regex: '\\(', error: '' },
         { type: 'CLOSE_BRACKET', regex: '\\)', error: '' },
-        { type: 'OPEN_SCOPE', regex: '\{', error: '' },
-        { type: 'CLOSE_SCOPE', regex: '\}', error: '' }
+        { type: 'OPEN_SCOPE', regex: '\\{', error: '' },
+        { type: 'CLOSE_SCOPE', regex: '\\}', error: '' },
+		{ type: 'STRING', regex: '"[a-zA-Z\\s]+"', error: '' }
 	];
 
 	let editableDefaultRows = DEFAULT_INPUT_ROWS.map((row) => ({ ...row }));
