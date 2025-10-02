@@ -192,7 +192,7 @@
             
             // Check if variables and terminals are strings
             if (typeof parsed.variables !== 'string' || typeof parsed.terminals !== 'string' || typeof parsed.start !== 'string') {
-                console.log('Variables/terminals/start not strings');
+                console.log('Variables/Terminals/Start not strings');
                 return { isValid: false };
             }
             
@@ -206,26 +206,12 @@
             for (const rule of parsed.rules) {
                 if (!rule.input || !rule.output || 
                     typeof rule.input !== 'string' || 
-                    !Array.isArray(rule.output)) {
+                    typeof rule.output !== 'string') {
                     console.log('Invalid rule structure:', rule);
                     return { isValid: false };
                 }
                 
-                // Check that all output items are strings (allow empty strings for epsilon rules)
-                for (const outputItem of rule.output) {
-                    if (typeof outputItem !== 'string') {
-                        console.log('Invalid output item:', outputItem);
-                        return { isValid: false };
-                    }
-                }
-                
-                // Filter out empty string outputs for epsilon rules
-                rule.output = rule.output.filter(item => item.trim() !== '');
-                
-                // If all outputs were empty, this is an epsilon rule
-                if (rule.output.length === 0) {
-                    rule.output = ['ε']; // Use epsilon symbol
-                }
+                rule.output = rule.output.trim();
             }
             
             console.log('Parser validation successful');
