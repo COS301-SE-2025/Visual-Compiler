@@ -667,8 +667,8 @@
 	}
 
 	.option-btn:hover {
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
 		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 	}
 
 	.example-btn {
@@ -677,7 +677,9 @@
 	}
 
 	.example-btn:hover {
+		background: #a8bdd1;
 		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
+		transform: translateY(-2px);
 	}	.separator {
 		display: flex;
 		align-items: center;
@@ -844,15 +846,6 @@
 		color: white !important;
 	}
 
-	.dropdown-option.placeholder {
-		color: #64748b !important;
-		font-style: italic;
-	}
-
-	.dropdown-option.placeholder:hover {
-		background: #f8fafc !important;
-		color: #475569 !important;
-	}
 
 	.dropdown-menu::-webkit-scrollbar {
 		width: 8px;
@@ -897,8 +890,8 @@
 	}
 
 	.confirm-btn:not(:disabled):hover {
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
 		transform: translateY(-2px);
-		box-shadow: 0 6px 20px rgba(4, 26, 71, 0.35);
 	}
 
 
@@ -982,6 +975,18 @@
 	:global(html.dark-mode) .example-btn {
 		background: #BED2E6;
 		color: black;
+	}
+
+	:global(html.dark-mode) .example-btn:hover {
+		background: #a8bdd1;
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
+		transform: translateY(-2px);
+	}
+
+	:global(html.dark-mode) .option-btn:hover {
+		background: #a8bdd1;
+		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
+		transform: translateY(-2px);
 	}
 
 	:global(html.dark-mode) .project-label {
@@ -1070,6 +1075,12 @@
 
 	:global(html.dark-mode) .confirm-btn {
 		background: linear-gradient(135deg, #1e40af, #3b82f6);
+	}
+
+	:global(html.dark-mode) .confirm-btn:not(:disabled):hover {
+		background: #002a8e;
+		box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
+		transform: translateY(-2px);
 	}
 
 	:global(html.dark-mode) .confirm-btn.confirmed {

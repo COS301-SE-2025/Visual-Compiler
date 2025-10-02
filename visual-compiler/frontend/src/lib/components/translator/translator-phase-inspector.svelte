@@ -655,51 +655,12 @@
 		transition: color 0.3s ease;
 	}
 
-
-	.default-toggle-btn {
-		right: 0;
-		background: white;
-		border: 2px solid #e5e7eb;
-		color: #001a6e;
-		font-size: 1.2rem;
-		cursor: pointer;
-		transition: background 0.2s, border-color 0.2s;
-
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		padding: 0.6rem 1rem;
-		background: linear-gradient(135deg, #64748b, #748299);
-		color: white;
-		border: none;
-		border-radius: 8px;
-		font-size: 0.875rem;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s ease;
-		position: relative;
-		overflow: hidden;
-		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
-		text-decoration: none;
-		width: 100%;
-		max-width: 150px;
-		justify-content: center;
-		margin-left: 1rem;
-	}
-
-	.example-btn {
-		background: #BED2E6;
-		color: black;
-	}
-
 	.example-btn:hover {
-		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
-	}
-
-	.option-btn:hover {
+		background: #a8bdd1;
 		transform: translateY(-2px);
 		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 	}
+
 
 	.form-label {
 		color: #1a2a4a;
@@ -753,19 +714,7 @@
 		font-family: 'Times New Roman';
 	}
 
-	.action-btn.translate {
-		background-color: var(--accent-orange);
-		color: white;
-		padding: 0.5rem 1rem;
-		border: none;
-		border-radius: 0.25rem;
-		cursor: pointer;
-		font-size: 0.9rem;
-		font-weight: 600;
-		transition: background-color 0.2s, transform 0.1s;
-		display: block;
-		margin: 0 auto;
-	}
+
 	.heading {
 		color: black;
 		margin-bottom: 0;
@@ -896,12 +845,11 @@
 
 	.action-btn:hover,
 	.submit:hover {
+	    background: #a8bdd1;
 		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 	}
 
-	.submit:hover {
-		background-color: #a8bdd1;
-	}
 
 	.remove-btn,
 	.remove-line-btn {
@@ -954,23 +902,14 @@
 	.submit:hover:not(:disabled) {
 		background: #a8bdd1;
 		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 	}
 
-	.submit:disabled,
-	.translate:disabled,
-	.translate.disabled {
+	.submit:disabled {
 		background: #d6d8db;
 		color: #6c757d;
 		cursor: not-allowed;
 		opacity: 0.6;
-		transform: none;
-	}
-
-	.submit:disabled:hover,
-	.translate:disabled:hover,
-	.translate.disabled:hover {
-		background: #d6d8db;
-		color: #6c757d;
 		transform: none;
 	}
 
@@ -1007,11 +946,6 @@
         }
     }
 
-	.submit:hover:not(:disabled) {
-        background: #a8bdd1;
-        transform: translateY(-2px);
-
-    }
 
 	.option-btn {
 		display: flex;
@@ -1040,11 +974,8 @@
 				color: black;
 	}
 
-	.example-btn:hover {
-		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
-	}
-
 	.option-btn:hover {
+		background: #a8bdd1;
 		transform: translateY(-2px);
 		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 	}
@@ -1071,9 +1002,7 @@
         border-color: #ef4444;
     }
 
-	.submit:disabled,
-    .translate:disabled,
-    .translate.disabled {
+	.submit:disabled {
         background: #d6d8db;
         color: #6c757d;
         cursor: not-allowed;
@@ -1082,13 +1011,6 @@
         pointer-events: none;
     }
 
-    .submit:disabled:hover,
-    .translate:disabled:hover,
-    .translate.disabled:hover {
-        background: #d6d8db;
-        color: #6c757d;
-        transform: none;
-    }
 	.submit:disabled {
         cursor: wait;
         opacity: 0.8;

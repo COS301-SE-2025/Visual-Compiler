@@ -2066,7 +2066,7 @@
 		font-size: 0.9rem;
 		font-weight: 500;
 		cursor: pointer;
-		box-shadow: 0 2px 4px rgba(0, 26, 110, 0.1);
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
 		margin: 0 auto;
 		display: block;
 		transition: background-color 0.2s, color 0.2s, transform 0.2s;
@@ -2074,6 +2074,7 @@
 
 	.submit-button:hover {
 		background: #a8bdd1;
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 		transform: translateY(-2px);
 	}
 
@@ -2087,18 +2088,20 @@
 
 	.generate-button {
 		padding: 0.6rem 1.5rem;
-		background: #a8bdd1;
+		background: #BED2E6;
 		color: 000000;
 		border: none;
 		border-radius: 6px;
 		font-size: 0.9rem;
 		font-weight: 500;
 			cursor: pointer;
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
 		transition: background-color 0.2s ease, transform 0.2s;
 	}
 
 	.generate-button:hover:not(:disabled) {
-		background: #5a6268;
+		background: #a8bdd1;
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 		transform: translateY(-2px);
 	}
 
@@ -2136,13 +2139,6 @@
 		display: flex;
 		align-items: center;
 	}
-
-	.button-group {
-        display: flex;
-        align-items: center;
-		margin-left: 0.5rem;
-    }
-
 	.clear-toggle-btn {
         background: white;
         border: 2px solid #e5e7eb;
@@ -2216,20 +2212,12 @@
 	}
 
 	.example-btn:hover {
-		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
-	}
-
-	.option-btn:hover {
-		transform: translateY(-2px);
+		background: #a8bdd1;
 		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+		transform: translateY(-2px);
 	}
 
 
-	.icon {
-		font-size: 1.3rem;
-		line-height: 1;
-		pointer-events: none;
-	}
 
 	.automaton-section {
 		margin-top: 0;
@@ -2295,14 +2283,14 @@
 		font-size: 0.9375rem;
 		background: #BED2E6;
 		color: #000000;
-		box-shadow: 0 1px 2px 0 rgba(30, 64, 175, 0.05);
+		box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
 	}
 
 	.action-btn:hover,
 	.action-btn:focus {
 		background: #a8bdd1;
-		box-shadow: 0 1px 3px 0 rgba(30, 64, 175, 0.1), 0 1px 2px 0 rgba(30, 64, 175, 0.06);
-		transform: translateY(-1px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+		transform: translateY(-2px);
 	}
 
 	.regex-action-buttons {
@@ -2558,6 +2546,7 @@
 
 	:global(html.dark-mode) .submit-button:hover {
 		background: #002a8e;
+		box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
 	}
 
 	:global(html.dark-mode) .generate-button,
@@ -2569,6 +2558,7 @@
 	:global(html.dark-mode) .generate-button:hover:not(:disabled),
 	:global(html.dark-mode) .action-btn:hover:not(:disabled) {
 		background: #002a8e;
+		box-shadow: 0 4px 12px rgba(0, 26, 110, 0.3);
 	}
 
 	:global(html.dark-mode) .generate-button:disabled,
