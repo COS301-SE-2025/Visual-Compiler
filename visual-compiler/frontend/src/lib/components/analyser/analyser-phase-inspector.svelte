@@ -1215,11 +1215,8 @@
 	}
 
 	.example-btn:hover {
-		box-shadow: 0 4px 12px rgba(190, 210, 230, 0.3);
-	}
-
-	.option-btn:hover {
 		transform: translateY(-2px);
+        background: #a8bdd1;
 		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 	}
 
@@ -1328,6 +1325,7 @@
 	.generate-button:hover:not(:disabled) {
 		background: #a8bdd1;
 		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
 	}
 
 	.submit-button:disabled,

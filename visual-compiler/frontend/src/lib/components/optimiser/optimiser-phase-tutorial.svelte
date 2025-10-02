@@ -202,20 +202,6 @@ process(2)</code></pre>
         margin-bottom: 2rem;
     }
 
-    .opt-block {
-        background: #F3E8FF;
-        border-left: 4px solid #AFA2D7;
-        border-radius: 8px;
-        padding: 1rem 1.2rem;
-        margin: 1rem 0;
-        font-size: 0.97rem;
-        box-shadow: 0 1px 4px rgba(175, 162, 215, 0.04);
-    }
-
-    .opt-block ul {
-        margin: 0.5rem 0 0 1.2rem;
-    }
-
     .opt-benefits {
         background: #F8FAFC;
         border-radius: 8px;
@@ -298,7 +284,13 @@ process(2)</code></pre>
         cursor: pointer;
         min-width: 100px;
         font-size: 0.9rem;
+        transition: background-color 0.2s, transform 0.2s;
     }
+
+    .nav-button:hover:not(:disabled) {
+        box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+        transform: translateY(-2px);
+}
 
     .nav-button:disabled {
         background: #cccccc;

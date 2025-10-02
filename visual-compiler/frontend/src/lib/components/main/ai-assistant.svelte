@@ -202,16 +202,29 @@
                 return { isValid: false };
             }
             
-            // Check each rule has input (string) and output (array of strings)
             for (const rule of parsed.rules) {
-                if (!rule.input || !rule.output || 
-                    typeof rule.input !== 'string' || 
-                    typeof rule.output !== 'string') {
+                if (!rule.input || !rule.output || typeof rule.input !== 'string') {
                     console.log('Invalid rule structure:', rule);
                     return { isValid: false };
                 }
-                
-                rule.output = rule.output.trim();
+
+                // Check if output is string or array
+                if (Array.isArray(rule.output)) {
+                    rule.output = rule.output.join(' ');
+                } else if (typeof rule.output === 'string') {
+                    rule.output = rule.output;
+                } else {
+                    console.log('Rule output invalid type:', typeof rule.output);
+                    return { isValid: false };
+                }
+
+                // Replace commas with spaces
+                rule.output = rule.output.replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
+
+                if (!rule.output) {
+                    console.log('Rule output normalisation failed:', rule);
+                    return { isValid: false };
+                }
             }
             
             console.log('Parser validation successful');

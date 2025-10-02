@@ -314,13 +314,14 @@ func nothing() (int) {
             on:click={handleSubmit}
             disabled={!inputCode.trim() || selectedTechniques.length === 0 || $optimiserState.isOptimising}
         >
-            {#if $optimiserState.isOptimising}
-
-                Optimising...
-            {:else}
-                
-                Optimise Code
-            {/if}
+            <div class="button-content">
+                {#if $optimiserState.isOptimising}
+                    <div class="loading-spinner"></div>
+                    Optimising...
+                {:else}
+                    Optimise Code
+                {/if}
+            </div>
         </button>
     </div>
 </div>
@@ -430,7 +431,7 @@ func nothing() (int) {
     }
 
     .example-btn {
-        background: linear-gradient(135deg, #8451C7, #AFA2D7);
+        background: #AFA2D7;
         box-shadow: 0 2px 8px rgba(132, 81, 199, 0.2);
     }
 
@@ -506,10 +507,36 @@ func nothing() (int) {
         transition: all 0.2s ease;
         box-shadow: 0 2px 4px rgba(175, 162, 215, 0.2);
         min-width: 160px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .button-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .loading-spinner {
+        width: 16px;
+        height: 16px;
+        border: 2px solid transparent;
+        border-top: 2px solid currentColor;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
     }
 
     .submit-button:hover:not(:disabled) {
-        background: linear-gradient(135deg, #AFA2D7, #8451C7);
         transform: translateY(-1px);
         box-shadow: 0 4px 8px rgba(175, 162, 215, 0.3);
     }
@@ -523,6 +550,17 @@ func nothing() (int) {
         cursor: not-allowed;
         transform: none;
         box-shadow: none;
+        opacity: 0.8;
+        pointer-events: none;
+    }
+
+    .submit-button:disabled .loading-spinner {
+        border-top-color: #6c757d;
+    }
+
+    .submit-button:disabled:hover {
+        background: #9CA3AF;
+        transform: none;
     }
 
      .inspector-container::-webkit-scrollbar {
@@ -608,6 +646,23 @@ func nothing() (int) {
     :global(html.dark-mode) .submit-button:disabled {
         background: #4B5563;
         color: #9CA3AF;
+        cursor: wait;
+        opacity: 0.8;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .submit-button:disabled:hover {
+        background: #4B5563;
+        color: #9CA3AF;
+        transform: none;
+    }
+
+    :global(html.dark-mode) .submit-button:disabled .loading-spinner {
+        border-top-color: #9CA3AF;
+    }
+
+    :global(html.dark-mode) .submit-button .loading-spinner {
+        border-top-color: #ffffff;
     }
 
     :global(html.dark-mode) .example-btn {
