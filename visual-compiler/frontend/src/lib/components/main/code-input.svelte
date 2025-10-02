@@ -901,14 +901,7 @@
 		box-shadow: 0 6px 20px rgba(4, 26, 71, 0.35);
 	}
 
-	.confirm-btn.confirmed {
 
-		box-shadow: 0 4px 16px rgba(16, 185, 129, 0.25);
-	}
-
-	.confirm-btn.confirmed:hover {
-		box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
-	}
 
 	.confirm-btn:disabled {
 		background: #e2e8f0;

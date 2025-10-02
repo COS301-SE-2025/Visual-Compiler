@@ -1629,8 +1629,7 @@
 						</div>
 					</button>
 
-					<!-- FIX: Only show REGEX-specific buttons -->
-					 {#if showRegexActionButtons}
+					<!-- FIX: Always show REGEX-specific buttons but disable them until submitted -->
 					<div class="regex-action-buttons">
 						<button 
 							class="generate-button" 
@@ -1663,7 +1662,6 @@
 							title={isSubmitted ? "Convert Regular Expression to a DFA" : "Submit regex rules first"}
 						>DFA</button>
 					</div>
-					{/if}
 				</div>
 			</div>
 		{/if}
