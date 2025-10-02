@@ -66,7 +66,7 @@ describe('TranslatorPhaseInspector Component', () => {
 		await fireEvent.click(addRuleButton);
 
 		// Should have multiple rule sections
-		const tokenSequenceInputs = screen.getAllByPlaceholderText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER...');
+		const tokenSequenceInputs = screen.getAllByPlaceholderText('KEYWORD IDENTIFIER ASSIGNMENT INTEGER...');
 		expect(tokenSequenceInputs.length).toBeGreaterThan(1);
 	});
 
@@ -92,14 +92,14 @@ describe('TranslatorPhaseInspector Component', () => {
 
 		// Should populate with default values
 		await waitFor(() => {
-			expect(screen.getByDisplayValue(/KEYWORD, IDENTIFIER, ASSIGNMENT/)).toBeInTheDocument();
+			expect(screen.getByDisplayValue(/KEYWORD IDENTIFIER ASSIGNMENT/)).toBeInTheDocument();
 		});
 	});
 
 	it('TestTokenSequenceInput_Success: Can input token sequence', async () => {
 		render(TranslatorPhaseInspector);
 
-		const tokenSequenceInput = screen.getAllByPlaceholderText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER...')[0];
+		const tokenSequenceInput = screen.getAllByPlaceholderText('KEYWORD IDENTIFIER ASSIGNMENT INTEGER...')[0];
 		await fireEvent.input(tokenSequenceInput, {
 			target: { value: 'KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER' }
 		});
@@ -143,7 +143,7 @@ describe('TranslatorPhaseInspector Component', () => {
 		render(TranslatorPhaseInspector);
 
 		// Component starts with multiple rules (3), let's count initial rules
-		const initialRules = screen.getAllByPlaceholderText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER...');
+		const initialRules = screen.getAllByPlaceholderText('KEYWORD IDENTIFIER ASSIGNMENT INTEGER...');
 		const initialCount = initialRules.length;
 
 		// Add a second rule first
@@ -157,7 +157,7 @@ describe('TranslatorPhaseInspector Component', () => {
 
 			// Should have the same number as initial (since we added one then removed one)
 			await waitFor(() => {
-				const tokenSequenceInputs = screen.getAllByPlaceholderText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER...');
+				const tokenSequenceInputs = screen.getAllByPlaceholderText('KEYWORD IDENTIFIER ASSIGNMENT INTEGER...');
 				expect(tokenSequenceInputs.length).toBe(initialCount);
 			});
 		}
@@ -235,7 +235,7 @@ describe('TranslatorPhaseInspector Component', () => {
 		render(TranslatorPhaseInspector);
 
 		// Look for the actual placeholders that exist - use getAllBy for multiple elements
-		expect(screen.getAllByPlaceholderText('KEYWORD, IDENTIFIER, ASSIGNMENT, INTEGER...')[0]).toBeInTheDocument();
+		expect(screen.getAllByPlaceholderText('KEYWORD IDENTIFIER ASSIGNMENT INTEGER...')[0]).toBeInTheDocument();
 		expect(screen.getAllByPlaceholderText('Line 1')[0]).toBeInTheDocument();
 	});
 });
