@@ -299,7 +299,7 @@ h3 {
     cursor: pointer;
     min-width: 100px;
     font-size: 0.9rem;
-    transition: background-color 0.2s ease, transform 0.2s ease;
+    transition: background-color 0.2s, transform 0.2s;
 }
 
 .nav-button:hover {
@@ -310,6 +310,12 @@ h3 {
 .nav-button:disabled {
     background: var(--button-disabled-background, #cccccc); /* Light mode default */
     cursor: not-allowed;
+}
+
+.nav-button:hover:not(:disabled) {
+    background: #a8bdd1;
+    box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+    transform: translateY(-2px);
 }
 
 .step-counter {

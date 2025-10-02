@@ -357,10 +357,7 @@ h2 {
     color: #1e293b;
     overflow-x: auto;
 }
-.step-breakdown {
-    margin: 1rem 0 0 1.2rem;
-    font-size: 0.97rem;
-}
+
 .navigation-container {
     position: sticky;
     margin-top: 1rem;
@@ -388,6 +385,13 @@ h2 {
     cursor: pointer;
     min-width: 100px;
     font-size: 0.9rem;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.nav-button:hover:not(:disabled) {
+    background: #a8bdd1;
+    box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+    transform: translateY(-2px);
 }
 .nav-button:disabled {
     background: #cccccc;
@@ -599,19 +603,7 @@ h2 {
     color: #ebeef1; 
 }
 
-:global(html.dark-mode) .token-table .table-header {
-    background: #4a5568;
-    color: #ebeef1;
-}
 
-:global(html.dark-mode) .token-table .header-type,
-:global(html.dark-mode) .token-table .header-tokens,
-:global(html.dark-mode) .token-table .token-type,
-:global(html.dark-mode) .token-table .token-values {
-    border-color: #4a5568; 
-    background: #2d3748; 
-    color: #ebeef1;
-}
 
 :global(html.dark-mode) .cfg-block {
     background: #2d3748;
@@ -619,13 +611,6 @@ h2 {
     color: #ebeef1;
 }
 
-:global(html.dark-mode) .cfg-nt {
-    color: #90cdf4; 
-}
-
-:global(html.dark-mode) .cfg-t {
-    color: #68d391; 
-}
 
 :global(html.dark-mode) .cfg-rules table {
     background: #2d3748;
@@ -655,9 +640,6 @@ h2 {
     color: #ebeef1;
 }
 
-:global(html.dark-mode) .step-breakdown {
-    color: #ebeef1;
-}
 
 :global(html.dark-mode) .navigation-container {
     background: #1a2a4a;
