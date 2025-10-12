@@ -24,7 +24,7 @@
 
 			{#if hasNodes && projectName}
 				<p>This will clear all nodes and connections from the canvas.</p>
-				<p><strong>Note:</strong> Since your canvas has nodes, this will also delete the project "{projectName}" and recreate it fresh to ensure all data is completely cleared from the database.</p>
+				<p><strong>Note:</strong> This will also delete all the data for the project "{projectName}".</p>
 				<p class="warning-text">This action cannot be undone!</p>
 			{:else if hasNodes}
 				<p>This will clear all nodes and connections from the canvas.</p>
