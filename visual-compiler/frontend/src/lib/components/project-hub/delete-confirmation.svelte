@@ -55,13 +55,10 @@
         padding: 2rem;
         width: 100%;
         max-width: 400px;
-        box-shadow: 
-            0 25px 50px -12px rgba(0, 0, 0, 0.25),
-            0 10px 25px -5px rgba(0, 0, 0, 0.1),
-            0 0 0 1px rgba(148, 163, 184, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         text-align: center;
         border: 1px solid rgba(203, 213, 225, 0.5);
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
     }
 
     .prompt-heading {
@@ -101,7 +98,7 @@
         font-weight: 600;
         cursor: pointer;
         border: none;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.2s ease;
         position: relative;
         overflow: hidden;
     }
@@ -118,9 +115,7 @@
         border-color: #94a3b8;
         color: #334155;
         transform: translateY(-2px);
-        box-shadow: 
-            0 4px 12px rgba(0, 0, 0, 0.15),
-            0 2px 4px rgba(71, 85, 105, 0.1);
+        box-shadow: 0 4px 8px rgba(100, 116, 139, 0.2);
     }
 
     .cancel-button:active {
@@ -129,30 +124,24 @@
     }
 
     .delete-confirm-button {
-        background: linear-gradient(145deg, #ef4444 0%, #e11d48 100%);
-        border: 2px solid #b91c1c;
+        background: #ef4444;
+        border: 2px solid #ef4444;
         color: #ffffff;
         font-weight: 700;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        box-shadow: 
-            0 4px 12px rgba(239, 68, 68, 0.3),
-            0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
     }
 
     .delete-confirm-button:hover {
-        background: linear-gradient(145deg, #dc2626 0%, #be185d 100%);
-        border-color: #991b1b;
+        background: #dc2626;
+        border-color: #dc2626;
         transform: translateY(-2px);
-        box-shadow: 
-            0 8px 25px rgba(239, 68, 68, 0.4),
-            0 4px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
     }
 
     .delete-confirm-button:active {
         transform: translateY(-1px);
-        box-shadow: 
-            0 4px 12px rgba(239, 68, 68, 0.3),
-            0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
     }
 
     /* Focus states for accessibility */
@@ -192,9 +181,7 @@
         background: linear-gradient(145deg, #1e293b 0%, #1a202c 100%);
         border: 1px solid #334155;
         color: #f1f5f9;
-        box-shadow:
-            0 25px 50px -12px rgba(0, 0, 0, 0.6),
-            0 0 0 1px rgba(148, 163, 184, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
     :global(html.dark-mode) .prompt-heading {
@@ -227,9 +214,7 @@
         border-color: #94a3b8;
         color: #ffffff;
         transform: translateY(-2px);
-        box-shadow: 
-            0 4px 12px rgba(0, 0, 0, 0.3),
-            0 2px 4px rgba(100, 116, 139, 0.2);
+        box-shadow: 0 4px 8px rgba(100, 116, 139, 0.3);
     }
 
     :global(html.dark-mode) .cancel-button:active {
@@ -238,29 +223,23 @@
     }
 
     :global(html.dark-mode) .delete-confirm-button {
-        background: linear-gradient(145deg, #dc2626 0%, #c53030 100%);
+        background: #ef4444;
         border: 2px solid #ef4444;
         color: #ffffff;
         font-weight: 700;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        box-shadow: 
-            0 4px 12px rgba(220, 38, 38, 0.3),
-            0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
     }
 
     :global(html.dark-mode) .delete-confirm-button:hover {
-        background: linear-gradient(145deg, #b91c1c 0%, #a53e3e 100%);
-        border-color: #f87171;
+        background: #dc2626;
+        border-color: #dc2626;
         transform: translateY(-2px);
-        box-shadow: 
-            0 8px 25px rgba(220, 38, 38, 0.4),
-            0 4px 12px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
     }
 
     :global(html.dark-mode) .delete-confirm-button:active {
         transform: translateY(-1px);
-        box-shadow: 
-            0 4px 12px rgba(220, 38, 38, 0.3),
-            0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
     }
 </style>

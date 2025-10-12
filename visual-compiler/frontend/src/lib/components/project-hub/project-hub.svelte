@@ -548,7 +548,7 @@
     .close-button:hover {
         background: #fee2e2;
         border-color: #fecaca;
-        transform: scale(1.05);
+        transform: scale(1.02);
     }
 
     .close-icon {
@@ -599,26 +599,20 @@
         border-radius: 0.5rem;
         background: linear-gradient(145deg, #001a6e 0%, #001556 100%);
         cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 
-            0 4px 12px rgba(0, 26, 110, 0.2),
-            0 2px 4px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0, 26, 110, 0.1);
     }
 
     .project-button:hover {
         background: linear-gradient(145deg, #002080 0%, #001a6e 100%);
         border-color: #3b82f6;
-        transform: translateY(-2px) scale(1.02);
-        box-shadow: 
-            0 8px 20px rgba(0, 26, 110, 0.3),
-            0 4px 10px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 26, 110, 0.2);
     }
 
     .project-button:active {
-        transform: translateY(-1px) scale(1.01);
-        box-shadow: 
-            0 4px 12px rgba(0, 26, 110, 0.2),
-            0 2px 4px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 26, 110, 0.1);
     }
 
     .plus-icon {
@@ -675,10 +669,8 @@
         background: #ffffff;
         color: #1f2937;
         font-weight: 500;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 
-            inset 0 1px 2px rgba(0, 0, 0, 0.03),
-            0 1px 3px rgba(0, 0, 0, 0.08);
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
 
     .search-input::placeholder {
@@ -693,10 +685,7 @@
         border-color: #6366f1;
         background: #fefefe;
         color: #111827;
-        box-shadow: 
-            0 0 0 3px rgba(99, 102, 241, 0.12),
-            inset 0 1px 2px rgba(0, 0, 0, 0.03),
-            0 4px 10px rgba(99, 102, 241, 0.08);
+        box-shadow: 0 2px 4px rgba(99, 102, 241, 0.1);
     }
 
     .clear-search-btn {
@@ -718,7 +707,7 @@
     .clear-search-btn:hover {
         background: #fee2e2;
         border-color: #fecaca;
-        transform: translateY(-50%) scale(1.1);
+        transform: translateY(-50%) scale(1.05);
     }
 
     .clear-search-btn svg {
@@ -774,10 +763,8 @@
         border-radius: 0.5rem;
         padding: 1rem;
         cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        box-shadow: 
-            0 4px 10px rgba(0, 0, 0, 0.08),
-            0 2px 4px rgba(0, 0, 0, 0.04);
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         overflow: hidden;
     }
 
@@ -799,11 +786,8 @@
     .project-block:hover {
         background: #fefefe;
         border-color: #cbd5e1;
-        transform: translateY(-2px) scale(1.01);
-        box-shadow: 
-            0 8px 20px rgba(0, 0, 0, 0.12),
-            0 4px 10px rgba(99, 102, 241, 0.08),
-            inset 0 1px 0 rgba(148, 163, 184, 0.08);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(4, 26, 71, 0.1);
     }
 
     .project-block:hover::before {
@@ -824,7 +808,7 @@
         justify-content: center;
         color: #9ca3af;
         opacity: 0;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
         backdrop-filter: blur(4px);
     }
 
@@ -838,8 +822,8 @@
         background: #fee2e2;
         border-color: #fecaca;
         color: #ef4444;
-        transform: scale(1.1);
-        box-shadow: 0 4px 10px rgba(239, 68, 68, 0.15);
+        transform: scale(1.05);
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
     }
 
     .project-name {
@@ -991,18 +975,14 @@
         background: linear-gradient(145deg, #4338ca 0%, #3730a3 100%);
         border: 2px solid #6366f1;
         color: #ffffff;
-        box-shadow: 
-            0 4px 12px rgba(67, 56, 202, 0.2),
-            0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(67, 56, 202, 0.1);
     }
 
     :global(html.dark-mode) .project-button:hover {
         background: linear-gradient(145deg, #6366f1 0%, #4f46e5 100%);
         border-color: #8b5cf6;
-        box-shadow: 
-            0 8px 20px rgba(99, 102, 241, 0.25),
-            0 4px 10px rgba(0, 0, 0, 0.15);
-        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 4px 8px rgba(99, 102, 241, 0.2);
+        transform: translateY(-2px);
     }
 
     :global(html.dark-mode) .plus-icon {
@@ -1021,9 +1001,7 @@
         background: #374151;
         border: 2px solid #4b5563;
         color: #f9fafb;
-        box-shadow: 
-            inset 0 1px 2px rgba(0, 0, 0, 0.1),
-            0 1px 3px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
 
     :global(html.dark-mode) .search-input::placeholder {
@@ -1035,10 +1013,7 @@
         background: #4b5563;
         border-color: #6366f1;
         color: #ffffff;
-        box-shadow: 
-            0 0 0 3px rgba(99, 102, 241, 0.15),
-            inset 0 1px 2px rgba(0, 0, 0, 0.1),
-            0 4px 10px rgba(99, 102, 241, 0.1);
+        box-shadow: 0 2px 4px rgba(99, 102, 241, 0.1);
     }
 
     :global(html.dark-mode) .search-icon {
@@ -1053,7 +1028,7 @@
     :global(html.dark-mode) .clear-search-btn:hover {
         background: rgba(239, 68, 68, 0.1);
         border-color: rgba(239, 68, 68, 0.2);
-        transform: translateY(-50%) scale(1.1);
+        transform: translateY(-50%) scale(1.05);
     }
 
     :global(html.dark-mode) .clear-search-btn svg {
@@ -1067,9 +1042,7 @@
     :global(html.dark-mode) .project-block {
         background: #374151;
         border: 2px solid #4b5563;
-        box-shadow: 
-            0 4px 10px rgba(0, 0, 0, 0.2),
-            0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     :global(html.dark-mode) .project-block::before {
@@ -1082,10 +1055,8 @@
     :global(html.dark-mode) .project-block:hover {
         background: #4b5563;
         border-color: #6b7280;
-        box-shadow: 
-            0 8px 20px rgba(0, 0, 0, 0.3),
-            0 4px 10px rgba(99, 102, 241, 0.1);
-        transform: translateY(-2px) scale(1.01);
+        box-shadow: 0 4px 8px rgba(4, 26, 71, 0.15);
+        transform: translateY(-2px);
     }
 
     :global(html.dark-mode) .project-name {
@@ -1119,8 +1090,8 @@
         background: rgba(239, 68, 68, 0.1);
         border-color: rgba(239, 68, 68, 0.4);
         color: #fca5a5;
-        transform: scale(1.1);
-        box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);
+        transform: scale(1.05);
+        box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
     }
 
     :global(html.dark-mode) .no-results {
