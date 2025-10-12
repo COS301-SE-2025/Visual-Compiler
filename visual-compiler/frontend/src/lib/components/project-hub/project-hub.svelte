@@ -605,7 +605,6 @@
 
     .project-button:hover {
         background: linear-gradient(145deg, #002080 0%, #001a6e 100%);
-        border-color: #3b82f6;
         transform: translateY(-2px);
         box-shadow: 0 4px 8px rgba(0, 26, 110, 0.2);
     }
@@ -766,6 +765,7 @@
         transition: all 0.2s ease;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         overflow: hidden;
+        margin-top: 0.4rem;
     }
 
     .project-block::before {
@@ -835,6 +835,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         transition: color 0.2s ease;
+     
     }
 
     .project-block:hover .project-name {
@@ -980,7 +981,6 @@
 
     :global(html.dark-mode) .project-button:hover {
         background: linear-gradient(145deg, #6366f1 0%, #4f46e5 100%);
-        border-color: #8b5cf6;
         box-shadow: 0 4px 8px rgba(99, 102, 241, 0.2);
         transform: translateY(-2px);
     }
