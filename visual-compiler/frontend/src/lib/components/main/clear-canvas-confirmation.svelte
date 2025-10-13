@@ -24,7 +24,7 @@
 
 			{#if hasNodes && projectName}
 				<p>This will clear all nodes and connections from the canvas.</p>
-				<p><strong>Note:</strong> Since your canvas has nodes, this will also delete the project "{projectName}" and recreate it fresh to ensure all data is completely cleared from the database.</p>
+				<p><strong>Note:</strong> This will also delete all the data for the project "{projectName}".</p>
 				<p class="warning-text">This action cannot be undone!</p>
 			{:else if hasNodes}
 				<p>This will clear all nodes and connections from the canvas.</p>
@@ -67,8 +67,9 @@
         padding: 2rem;
         width: 100%;
         max-width: 400px;
-        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         text-align: center;
+        transition: all 0.2s ease;
     }
 
     h3 {
@@ -104,30 +105,44 @@
         font-size: 0.9rem;
         font-weight: 600;
         cursor: pointer;
-        border: none;
-        transition: background-color 0.2s ease;
+        border: 2px solid transparent;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
     }
 
     .cancel-btn {
-        background-color: #e5e7eb;
-        color: #374151;
+        background-color: #f8fafc;
+        border-color: #cbd5e1;
+        color: #475569;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .cancel-btn:hover {
-        background-color: #d1d5db;
+        background-color: #f1f5f9;
+        border-color: #94a3b8;
+        color: #334155;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(100, 116, 139, 0.2);
     }
 
     .confirm-btn {
-        background-color: #dc2626; /* Changed from blue to red */
+        background-color: #dc2626;
+        border-color: #dc2626;
         color: white;
+        box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
     }
 
     .confirm-btn:hover {
-        background-color: #b91c1c; /* Darker red on hover */
+        background-color: #b91c1c;
+        border-color: #b91c1c;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
     }
 
     :global(html.dark-mode) .modal {
-        background: #1f2937; /* Dark gray background instead of white */
+        background: #1f2937;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
     :global(html.dark-mode) h3 {
@@ -139,21 +154,32 @@
     }
 
     :global(html.dark-mode) .cancel-btn {
-        background-color: #4a5568; /* Dark gray button */
-        color: #f9fafb; /* White text */
+        background-color: #475569;
+        border-color: #64748b;
+        color: #f1f5f9;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     :global(html.dark-mode) .cancel-btn:hover {
-        background-color: #2d3748; /* Darker gray on hover */
+        background-color: #64748b;
+        border-color: #94a3b8;
+        color: #ffffff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(100, 116, 139, 0.3);
     }
 
     :global(html.dark-mode) .confirm-btn {
-        background-color: #dc2626; /* Red background for clear action */
-        color: #ffffff; /* White text */
+        background-color: #dc2626;
+        border-color: #dc2626;
+        color: #ffffff;
+        box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
     }
 
     :global(html.dark-mode) .confirm-btn:hover {
-        background-color: #b91c1c; /* Darker red on hover */
+        background-color: #b91c1c;
+        border-color: #b91c1c;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
     }
 
     /* ADD: Dark mode backdrop for better contrast */
