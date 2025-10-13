@@ -1855,7 +1855,8 @@
 		gap: 1rem;
 		z-index: 50;
 		font-size: 0.9rem;
-		max-width: 300px;
+		white-space: nowrap;
+		max-width: max-content;
 	}
 
 	.dismiss-tip-btn {
@@ -1870,6 +1871,7 @@
 		align-items: center;
 		justify-content: center;
 		transition: opacity 0.2s ease;
+		flex-shrink: 0;
 	}
 	.dismiss-tip-btn:hover {
 		opacity: 1;
