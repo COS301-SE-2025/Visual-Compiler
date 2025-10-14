@@ -109,12 +109,12 @@
     <h2 align="center">Half Stack Members</h2>
     <table style="border-width: 1px; width: 100%;">
         <tr>
-            <td style="vertical-align: middle; width: auto; padding: 10px;">
+            <td style="vertical-align: middle; padding: 10px;">
                 <img src="assets/sashen.jpg" width="200" height="auto" style="object-fit: cover;">
             </td>
-            <td style="vertical-align: middle; width: auto; padding: 10px;">
+            <td style="vertical-align: middle; padding: 10px;">
                 <h2><b style="font-size: 18px;">Sashen Inder Gajai</b></h2>
-                <h3><b style="font-size: 16px;">Project Manager and Services Engineer</b></h3>
+                <h4><b style="font-size: 16px;">Project Manager and Services Engineer</b></h4>
                 <br>
                 <a href="https://github.com/sashen-tv">
                     <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
@@ -126,12 +126,12 @@
             </td>
         </tr>
         <tr>
-            <td style="vertical-align: middle; width: auto; padding: 10px;">
+            <td style="vertical-align: middle; padding: 10px;">
                 <img src="assets/austin.jpg" width="200" height="auto" style="object-fit: cover;">
             </td>
-            <td style="vertical-align: middle; width: auto; padding: 10px;">
+            <td style="vertical-align: middle; padding: 10px;">
                 <h2><b style="font-size: 18px;">Shinn-Ru Hung</b></h2>
-                <h3><b style="font-size: 16px;">UI Engineer and Integration Engineer</b></h3>
+                <h4><b style="font-size: 16px;">UI Engineer and Integration Engineer</b></h4>
                 <br>
                 <a href="https://github.com/Au5tin-R">
                     <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
@@ -143,12 +143,12 @@
             </td>
         </tr>
         <tr>
-            <td style="vertical-align: middle; width: auto; padding: 10px;">
+            <td style="vertical-align: middle; padding: 10px;">
                 <img src="assets/tia.jpg" width="200" height="auto" style="object-fit: cover;">
             </td>
-            <td style="vertical-align: middle; width: auto; padding: 10px;">
+            <td style="vertical-align: middle; padding: 10px;">
                 <h2><b style="font-size: 18px;">Tia Harripersad</b></h2>
-                <h3><b style="font-size: 16px;">Services Engineer and Testing Engineer</b></h3>
+                <h4><b style="font-size: 16px;">Services Engineer and Testing Engineer</b></h4>
                 <br>
                 <a href="https://github.com/Tia-H">
                     <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
@@ -160,12 +160,12 @@
             </td>
         </tr>
         <tr>
-            <td style="vertical-align: middle; width: auto; padding: 10px;">
+            <td style="vertical-align: middle; padding: 10px;">
                 <img src="assets/keanu.jpg" width="200" height="auto" style="object-fit: cover;">
             </td>
-            <td style="vertical-align: middle; width: auto; padding: 10px;">
+            <td style="vertical-align: middle; padding: 10px;">
                 <h2><b style="font-size: 18px;">Keanu Ellary</b></h2>
-                <h3><b style="font-size: 16px;">Integration Engineer and DevOps Engineer</b></h3>
+                <h4><b style="font-size: 16px;">Integration Engineer and DevOps Engineer</b></h4>
                 <br>
                 <a href="https://github.com/Keanu-Ellary">
                     <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
@@ -177,12 +177,12 @@
             </td>
         </tr>
         <tr>
-            <td style="vertical-align: middle; width: auto; padding: 10px;">
+            <td style="vertical-align: middle; padding: 10px;">
                 <img src="assets/devan.jpg" width="200" height="auto" style="object-fit: cover;">
             </td>
-            <td style="vertical-align: middle; width: auto; padding: 10px;">
+            <td style="vertical-align: middle; padding: 10px;">
                 <h2><b style="font-size: 18px;">Devan de Wet</b></h2>
-                <h3><b style="font-size: 16px;">UI Engineer and Data Engineer</b></h3>
+                <h4><b style="font-size: 16px;">UI Engineer and Data Engineer</b></h4>
                 <br>
                 <a href="https://github.com/DevanDewet">
                     <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
