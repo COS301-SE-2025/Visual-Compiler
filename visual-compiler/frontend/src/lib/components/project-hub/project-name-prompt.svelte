@@ -97,13 +97,10 @@
         padding: 2rem;
         width: 100%;
         max-width: 400px;
-        box-shadow: 
-            0 25px 50px -12px rgba(0, 0, 0, 0.25),
-            0 10px 25px -5px rgba(0, 0, 0, 0.1),
-            0 0 0 1px rgba(148, 163, 184, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         text-align: center;
         border: 1px solid rgba(203, 213, 225, 0.5);
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
     }
 
     .prompt-heading {
@@ -134,13 +131,11 @@
         border-radius: 0.5rem;
         font-size: 1rem;
         box-sizing: border-box;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.2s ease;
         font-weight: 500;
         background: linear-gradient(145deg, #ffffff 0%, #fefefe 100%);
         color: #1f2937;
-        box-shadow: 
-            inset 0 1px 2px rgba(0, 0, 0, 0.05),
-            0 1px 3px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
     }
 
     .project-name-input::placeholder {
@@ -155,10 +150,7 @@
         border-color: #3b82f6;
         background: linear-gradient(145deg, #fefefe 0%, #ffffff 100%);
         color: #111827;
-        box-shadow: 
-            0 0 0 4px rgba(59, 130, 246, 0.15),
-            inset 0 1px 2px rgba(0, 0, 0, 0.05),
-            0 4px 12px rgba(59, 130, 246, 0.1);
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
         transform: translateY(-1px);
     }
 
@@ -176,7 +168,7 @@
         font-weight: 600;
         cursor: pointer;
         border: none;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        transition: all 0.2s ease;
         position: relative;
         overflow: hidden;
     }
@@ -193,9 +185,7 @@
         border-color: #94a3b8;
         color: #334155;
         transform: translateY(-2px);
-        box-shadow: 
-            0 4px 12px rgba(0, 0, 0, 0.15),
-            0 2px 4px rgba(71, 85, 105, 0.1);
+        box-shadow: 0 4px 8px rgba(100, 116, 139, 0.2);
     }
 
     .cancel-button:active {
@@ -204,34 +194,28 @@
     }
 
     .create-button {
-        background: linear-gradient(145deg, #3b82f6 0%, #2563eb 100%);
-        border: 2px solid #1d4ed8;
+        background: #041a47;
+        border: 2px solid #041a47;
         color: #ffffff;
         font-weight: 700;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        box-shadow: 
-            0 4px 12px rgba(59, 130, 246, 0.3),
-            0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
     }
 
     .create-button:hover:not(:disabled) {
-        background: linear-gradient(145deg, #2563eb 0%, #1e40af 100%);
-        border-color: #1e40af;
+        background: #052759;
+        border-color: #052759;
         transform: translateY(-2px);
-        box-shadow: 
-            0 8px 25px rgba(59, 130, 246, 0.4),
-            0 4px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
     }
 
     .create-button:active:not(:disabled) {
         transform: translateY(-1px);
-        box-shadow: 
-            0 4px 12px rgba(59, 130, 246, 0.3),
-            0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
     }
 
     .create-button:disabled {
-        background: linear-gradient(145deg, #d1d5db 0%, #c4c4c4 100%);
+        background: #d1d5db;
         border-color: #9ca3af;
         color: #6b7280;
         cursor: not-allowed;
@@ -282,9 +266,7 @@
         background: linear-gradient(145deg, #1e293b 0%, #1a202c 100%);
         border: 1px solid #334155;
         color: #f1f5f9;
-        box-shadow:
-            0 25px 50px -12px rgba(0, 0, 0, 0.6),
-            0 0 0 1px rgba(148, 163, 184, 0.1);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
     :global(html.dark-mode) .prompt-heading {
@@ -303,9 +285,7 @@
         border: 2px solid #4b5563;
         color: #f9fafb;
         font-weight: 600;
-        box-shadow: 
-            inset 0 1px 2px rgba(0, 0, 0, 0.1),
-            0 1px 3px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     }
 
     :global(html.dark-mode) .project-name-input::placeholder {
@@ -318,10 +298,7 @@
         background: linear-gradient(145deg, #4b5563 0%, #374151 100%);
         border-color: #3b82f6;
         color: #ffffff;
-        box-shadow: 
-            0 0 0 4px rgba(59, 130, 246, 0.15),
-            inset 0 1px 2px rgba(0, 0, 0, 0.1),
-            0 4px 12px rgba(59, 130, 246, 0.1);
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
         outline: none;
         transform: translateY(-1px);
     }
@@ -339,33 +316,27 @@
         border-color: #94a3b8;
         color: #ffffff;
         transform: translateY(-2px);
-        box-shadow: 
-            0 4px 12px rgba(0, 0, 0, 0.3),
-            0 2px 4px rgba(100, 116, 139, 0.2);
+        box-shadow: 0 4px 8px rgba(100, 116, 139, 0.3);
     }
 
     :global(html.dark-mode) .create-button {
-        background: linear-gradient(145deg, #1e40af 0%, #1a365d 100%);
-        border: 2px solid #3b82f6;
+        background: #041a47;
+        border: 2px solid #041a47;
         color: #ffffff;
         font-weight: 700;
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        box-shadow: 
-            0 4px 12px rgba(30, 64, 175, 0.3),
-            0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
     }
 
     :global(html.dark-mode) .create-button:hover:not(:disabled) {
-        background: linear-gradient(145deg, #2563eb 0%, #2b77e7 100%);
-        border-color: #60a5fa;
+        background: #052759;
+        border-color: #052759;
         transform: translateY(-2px);
-        box-shadow: 
-            0 8px 25px rgba(37, 99, 235, 0.4),
-            0 4px 12px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
     }
 
     :global(html.dark-mode) .create-button:disabled {
-        background: linear-gradient(145deg, #6b7280 0%, #5a6173 100%);
+        background: #6b7280;
         border-color: #6b7280;
         color: #9ca3af;
         cursor: not-allowed;
@@ -381,9 +352,7 @@
 
     :global(html.dark-mode) .create-button:active:not(:disabled) {
         transform: translateY(-1px);
-        box-shadow: 
-            0 4px 12px rgba(30, 64, 175, 0.3),
-            0 2px 4px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
     }
 
     /* Focus states for accessibility */
