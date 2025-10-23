@@ -43,7 +43,7 @@
 		if (!userId) return;
 
 		try {
-			const response = await fetch(`http://localhost:8080/api/users/getProjects?users_id=${userId}`, {
+			const response = await fetch(`https://www.visual-compiler.co.za/api/users/getProjects?users_id=${userId}`, {
 				method: 'GET',
 				headers: {
 					'accept': 'application/json'
@@ -210,7 +210,7 @@
         console.log('Using access token:', accessToken.substring(0, 20) + '...'); // Debug log
 
         try {
-            const res = await fetch('http://localhost:8080/api/lexing/code', {
+            const res = await fetch('https://www.visual-compiler.co.za/api/lexing/code', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -274,7 +274,7 @@
 
 		try {
 			const response = await fetch(
-				`http://localhost:8080/api/users/getProject?project_name=${encodeURIComponent(selectedProject.name)}&users_id=${userId}`, 
+				`https://www.visual-compiler.co.za/api/users/getProject?project_name=${encodeURIComponent(selectedProject.name)}&users_id=${userId}`, 
 				{
 					method: 'GET',
 					headers: {

@@ -121,7 +121,7 @@ describe('ProjectHub Component', () => {
 
 		await waitFor(() => {
 			expect(mockFetch).toHaveBeenCalledWith(
-				expect.stringContaining('http://localhost:8080/api/users/getProjects'),
+				expect.stringContaining('https://www.visual-compiler.co.za/api/users/getProjects'),
 				expect.objectContaining({
 					method: 'GET',
 					headers: expect.objectContaining({
@@ -183,7 +183,7 @@ describe('ProjectHub Component', () => {
 		// Should call the project selection API
 		await waitFor(() => {
 			expect(mockFetch).toHaveBeenCalledWith(
-				expect.stringContaining('http://localhost:8080/api/users/getProject'),
+				expect.stringContaining('https://www.visual-compiler.co.za/api/users/getProject'),
 				expect.objectContaining({
 					method: 'GET'
 				})
@@ -372,7 +372,7 @@ describe('ProjectHub Component', () => {
 		
 		await waitFor(() => {
 			expect(mockFetch).toHaveBeenCalledWith(
-				'http://localhost:8080/api/users/getProjects?users_id=123',
+				'https://www.visual-compiler.co.za/api/users/getProjects?users_id=123',
 				{
 					method: 'GET',
 					headers: { 'accept': 'application/json' }

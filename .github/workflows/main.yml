@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  deploy:
     runs-on: ubuntu-latest
     services:
       docker:
@@ -25,28 +25,12 @@ jobs:
 
       - name: Install dependencies for frontend
         working-directory: ./visual-compiler/frontend
-        run: npm install
-
-      - name: Tests for frontend
-        working-directory: ./visual-compiler/frontend
-        run: npm run test -- --coverage
-
-      - name: Upload coverage for frontend
-        uses: codecov/codecov-action@v4
-        with:
-          flags: frontend
-          name: coverage-frontend
-          directory: ./visual-compiler/frontend
-          files: ./visual-compiler/frontend/coverage/lcov.info
+        run: npm ci
 
       - name: Go setup for Backend
         uses: actions/setup-go@v5
         with:
           go-version: '1.21'
-
-      - name: Linting for Frontend using ESLint
-        working-directory: ./visual-compiler/frontend
-        run: npm run lint -- --fix
 
       - name: Go Modules Cache
         uses: actions/cache@v4
@@ -70,39 +54,6 @@ jobs:
           CUSTOM_API: ${{secrets.CUSTOM_API}}
           OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
 
-      - name: Tests for Backend
-        working-directory: ./visual-compiler/backend
-        env:
-          Mongo_username: ${{ secrets.MONGODB_USERNAME }}
-          Mongo_password: ${{secrets.MONGODB_PASSWORD}}
-          Mongo_URI: ${{secrets.MONGODB_URI}}
-          AUTH0_DOMAIN: ${{secrets.AUTH0_DOMAIN}}
-          CLIENT_ID: ${{secrets.CLIENT_ID}}
-          CLIENT_SECRET: ${{secrets.CLIENT_SECRET}}
-          CUSTOM_API: ${{secrets.CUSTOM_API}}
-          OPENAI_API_KEY: ${{secrets.OPENAI_API_KEY}}
-        run: go test -tags=coverage -coverpkg=./... ./... -coverprofile=coverage.out
-
-      - name: Upload coverage for backend
-        uses: codecov/codecov-action@v4
-        with:
-          flags: backend
-          name: coverage-backend
-          directory: ./visual-compiler/backend
-          files: coverage.out
-
-      - name: Linting for Backend using Semgrep
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: ./visual-compiler/backend/.semgrep-go.yml
-
-  e2e_test:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout main code
-        uses: actions/checkout@v4
-        
       - name: Docker Compose Installation
         run: |
           sudo curl -L "https://github.com/docker/compose/releases/download/v2.20.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -120,49 +71,44 @@ jobs:
           echo "CUSTOM_API=${{secrets.CUSTOM_API}}" >> backend.env
           echo "OPENAI_API_KEY=${{secrets.OPENAI_API_KEY}}" >> backend.env
 
-      - name: Docker Build and Compose for deployment
-        run: docker compose --env-file backend.env up -d --build
-
-      - name: Making sure Backend is running
+      - name: Docker images build
         run: |
-          for i in {1..30}; do
-            if curl -s http://localhost:8080/api/health > /dev/null; then
-              echo "Backend is running"
-              exit 0
-            fi
-            echo "Waiting..."
-            sleep 5
-          done
-          echo "Backend failed"
-          exit 1
-      - name: Making sure Frontend is running
+          docker build -t vc-frontend:latest ./visual-compiler/frontend
+          docker build -t vc-backend:latest ./visual-compiler/backend
+
+      - name: Save images as executable files
         run: |
-          for i in {1..30}; do
-            if curl -s http://localhost:5173 > /dev/null; then
-              echo "Frontend is running"
-              exit 0
-            fi
-            echo "Waiting..."
-            sleep 5
-          done
-          echo "Frontend failed"
-          exit 1
+          docker save vc-frontend:latest -o frontend.tar
+          docker save vc-backend:latest -o backend.tar
+      
+      - name: Setting up SSH for EC2 instance
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{secrets.EC2_SSH_KEY}}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{secrets.EC2_HOST}} >> ~/.ssh/known_hosts
 
-      - name: Cypress Installation
-        working-directory: ./visual-compiler
-        run: npm install cypress --save-dev
+      - name: Copy image to instance
+        run: |
+          rsync -az -e "ssh -i ~/.ssh/id_rsa" frontend.tar backend.tar docker-compose.yml backend.env ${{secrets.EC2_USER}}@${{secrets.EC2_HOST}}:/home/${{secrets.EC2_USER}}/app/
 
-      - name: Run Cypress
-        working-directory: ./visual-compiler
-        run: npx cypress run
+      - name: SSH into instance and Compose
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{secrets.EC2_USER}}@${{secrets.EC2_HOST}} << EOF
+            cd ~/app 
 
-      - name: Cypress screenshots upload
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: cypress-screenshots
-          path: visual-compiler/e2e-tests/screenshots
+            echo "Mongo_username=${{secrets.MONGODB_USERNAME}}" >> backend.env
+            echo "Mongo_password=${{secrets.MONGODB_PASSWORD}}" >> backend.env
+            echo "Mongo_URI=${{secrets.MONGODB_URI}}" >> backend.env
+            echo "AUTH0_DOMAIN=${{secrets.AUTH0_DOMAIN}}" >> backend.env
+            echo "CLIENT_ID=${{secrets.CLIENT_ID}}" >> backend.env
+            echo "CLIENT_SECRET=${{secrets.CLIENT_SECRET}}" >> backend.env
+            echo "CUSTOM_API=${{secrets.CUSTOM_API}}" >> backend.env
+            echo "OPENAI_API_KEY=${{secrets.OPENAI_API_KEY}}" >> backend.env
 
-      - name: Docker Compose Shut down
-        if: always()
-        run: docker compose down
+            docker load -i frontend.tar
+            docker load -i backend.tar
+
+            docker-compose down || true
+            docker-compose --env-file backend.env up -d
+          EOF

@@ -5,6 +5,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -26,6 +27,9 @@ import (
 // @host localhost:8080
 // @BasePath /api
 func main() {
+	log.SetOutput(io.Discard)
+	gin.SetMode(gin.ReleaseMode)
+
 	db.ConnectClient()
 
 	// Set up Gin engine
@@ -33,7 +37,7 @@ func main() {
 
 	// Attach CORS middleware
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "https://visual-compiler.co.za"},
+		AllowOrigins:     []string{"http://localhost:5173", "http://127.0.0.1:5173", "https://visual-compiler.co.za", "http://localhost:3000", "http://127.0.0.1:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},

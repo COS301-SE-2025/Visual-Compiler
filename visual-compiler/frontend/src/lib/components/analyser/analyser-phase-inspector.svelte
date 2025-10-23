@@ -405,7 +405,8 @@
                 project_name: project
             };
 
-            const response = await fetch('http://localhost:8080/api/analysing/analyse', {
+
+            const response = await fetch('https://www.visual-compiler.co.za/api/analysing/analyse', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

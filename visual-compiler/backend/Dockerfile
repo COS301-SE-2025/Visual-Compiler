@@ -1,13 +1,14 @@
-FROM golang:1.24.3
+FROM alpine:latest
 
 WORKDIR /visual-compiler-backend
 
-COPY go.mod go.sum ./
+COPY backend .
 
-RUN go mod download
+RUN chmod +x ./backend
 
-COPY . .
+ENV GOGC=50
+ENV GOMAXPROCS=1
 
 EXPOSE 8080
 
-CMD [ "go", "run" , "main.go" ]
+CMD [ "./backend" ]

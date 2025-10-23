@@ -495,7 +495,7 @@
             // FIX: Add 1-second delay before API call
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            const response = await fetch('http://localhost:8080/api/parsing/grammar', {
+            const response = await fetch('https://www.visual-compiler.co.za/api/parsing/grammar', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -551,7 +551,7 @@
         if (!accessToken || !project) return null;
 
         try {
-            const response = await fetch('http://localhost:8080/api/lexing/lexer', {
+            const response = await fetch('https://www.visual-compiler.co.za/api/lexing/lexer', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -595,7 +595,7 @@
 
             // First verify tokens exist
             console.log('Verifying tokens exist...');
-            const tokensResponse = await fetch(`http://localhost:8080/api/lexing/lexer`, {
+            const tokensResponse = await fetch(`https://www.visual-compiler.co.za/api/lexing/lexer`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -608,7 +608,7 @@
 
             if (!tokensResponse.ok) {
                 console.log('Tokens not found, trying DFA tokenization...');
-                const dfa_token_response = await fetch(`http://localhost:8080/api/lexing/dfaToTokens`, {
+                const dfa_token_response = await fetch(`https://www.visual-compiler.co.za/api/lexing/dfaToTokens`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -627,7 +627,7 @@
             }
 
             // Now try to generate syntax tree
-            const response = await fetch('http://localhost:8080/api/parsing/tree', {
+            const response = await fetch('https://www.visual-compiler.co.za/api/parsing/tree', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

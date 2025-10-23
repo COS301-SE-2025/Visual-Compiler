@@ -33,7 +33,7 @@ func main() {
     const DEFAULT_TECHNIQUES = ['Constant Folding', 'Dead Code Elimination', 'Loop Unrolling'];
     const DEFAULT_INPUT_CODE = `package main
 
-import "fmt"
+imp` + `ort "fmt"
 
 func main() {
     for blue := 1; blue < 5; blue++ {
@@ -159,7 +159,7 @@ func nothing() (int) {
                 return;
             }
 
-            const storeResponse = await fetch('http://localhost:8080/api/optimising/source_code', {
+            const storeResponse = await fetch('https://www.visual-compiler.co.za/api/optimising/source_code', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -183,7 +183,7 @@ func nothing() (int) {
                 loop_unrolling: selectedTechniques.includes('Loop Unrolling')
             };
 
-            const optimiseResponse = await fetch('http://localhost:8080/api/optimising/optimise', {
+            const optimiseResponse = await fetch('https://www.visual-compiler.co.za/api/optimising/optimise', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
