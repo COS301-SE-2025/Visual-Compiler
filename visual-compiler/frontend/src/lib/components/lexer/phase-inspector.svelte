@@ -156,20 +156,17 @@
             return;
         }
 
-        const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
-        const project = get(projectName);
-        
-        if (!accessToken) {
-            AddToast('Authentication required: Please log in to save lexical rules', 'error');
-            return;
-        }
-        if (!project) {
-            AddToast('No project selected: Please select or create a project first', 'error');
-            return;
-        }
-
-        // FIX: Set loading state
-        isSubmittingRules = true;
+		const accessToken = sessionStorage.getItem('access_token') || sessionStorage.getItem('authToken');
+		const project = get(projectName);
+		
+		if (!accessToken) {
+			AddToast('Authentication required: Please log in to save lexical rules', 'error');
+			return;
+		}
+		if (!project) {
+			AddToast('No project selected: Please select or create a project first', 'error');
+			return;
+		}
 
         if (selectedType === 'REGEX') {
             const requestData = {
@@ -183,7 +180,7 @@
                 // FIX: Add 1-second delay before API call
                 await new Promise(resolve => setTimeout(resolve, 1000));
 
-                const res = await fetch('http://localhost:8080/api/lexing/rules', {
+                const res = await fetch('https://www.visual-compiler.co.za/api/lexing/rules', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -259,7 +256,7 @@
                 project_name: project
             };
 
-            const response = await fetch('http://localhost:8080/api/lexing/lexer', {
+            const response = await fetch('https://www.visual-compiler.co.za/api/lexing/lexer', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -338,7 +335,7 @@
 		console.log('DFA sent to backend:', JSON.stringify(dfa, null, 2));
 
 		try {
-			const response = await fetch('http://localhost:8080/api/lexing/dfa', {
+			const response = await fetch('https://www.visual-compiler.co.za/api/lexing/dfa', {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
@@ -384,7 +381,7 @@
 			
             const body = { project_name: project };
 
-            const response = await fetch('http://localhost:8080/api/lexing/dfaToTokens', {
+            const response = await fetch('https://www.visual-compiler.co.za/api/lexing/dfaToTokens', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -571,7 +568,7 @@
 
 		try {
 			// Convert DFA to Regex
-			const dfaToRegexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
+			const dfaToRegexRes = await fetch('https://www.visual-compiler.co.za/api/lexing/dfaToRegex', {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
@@ -586,7 +583,7 @@
 			}
 
 			// Convert Regex to NFA
-			const regexToNfaRes = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
+			const regexToNfaRes = await fetch('https://www.visual-compiler.co.za/api/lexing/regexToNFA', {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
@@ -757,7 +754,7 @@
 
         try {
             // Convert DFA to Regex
-            const regexRes = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
+            const regexRes = await fetch('https://www.visual-compiler.co.za/api/lexing/dfaToRegex', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -772,7 +769,7 @@
             }
 
 			// Convert Regex to DFA
-            const dfaRes = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
+            const dfaRes = await fetch('https://www.visual-compiler.co.za/api/lexing/regexToDFA', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -824,7 +821,7 @@
         }
 
         try {
-            const response = await fetch('http://localhost:8080/api/lexing/dfaToRegex', {
+            const response = await fetch('https://www.visual-compiler.co.za/api/lexing/dfaToRegex', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -881,7 +878,7 @@
 			return;
 		}
 		try {
-			const response = await fetch('http://localhost:8080/api/lexing/regexToNFA', {
+			const response = await fetch('https://www.visual-compiler.co.za/api/lexing/regexToNFA', {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
@@ -925,7 +922,7 @@
 			return;
 		}
 		try {
-			const response = await fetch('http://localhost:8080/api/lexing/regexToDFA', {
+			const response = await fetch('https://www.visual-compiler.co.za/api/lexing/regexToDFA', {
 				method: 'POST',
 				headers: { 
 					'Content-Type': 'application/json',
@@ -1251,7 +1248,7 @@
 
 	    try {
 	        const response = await fetch(
-	            `http://localhost:8080/api/users/getProject?project_name=${project}&users_id=${userId}`,
+	            `https://www.visual-compiler.co.za/api/users/getProject?project_name=${project}&users_id=${userId}`,
 	            {
 	                method: 'GET',
 	                headers: { 'accept': 'application/json' }
