@@ -31,10 +31,10 @@ https://github.com/user-attachments/assets/95c02893-c38c-4feb-880d-74d15c9b00ff
 <h2 align="center">Technology Stack</h2>
 
 <div align="center">
-    <img src="https://img.shields.io/badge/Svelte-F73C00?style=for-the-badge"> &nbsp;&nbsp;&nbsp;
-    <img src="https://img.shields.io/badge/Go-00ADD8?style=for-the-badge"> &nbsp;&nbsp;&nbsp;
-    <img src="https://img.shields.io/badge/MongoDB-55AD47?style=for-the-badge"> &nbsp;&nbsp;&nbsp;
-    <img src="https://img.shields.io/badge/Docker-1D63ED?style=for-the-badge"> &nbsp;&nbsp;&nbsp;
+    <img src="https://img.shields.io/badge/Svelte-F73C00?style=for-the-badge"> &nbsp; &nbsp;
+    <img src="https://img.shields.io/badge/Go-00ADD8?style=for-the-badge"> &nbsp; &nbsp;
+    <img src="https://img.shields.io/badge/MongoDB-55AD47?style=for-the-badge"> &nbsp; &nbsp;
+    <img src="https://img.shields.io/badge/Docker-1D63ED?style=for-the-badge"> &nbsp; &nbsp;
     <img src="https://img.shields.io/badge/Amazon-FF9C08?style=for-the-badge">
 </div>
 
@@ -48,8 +48,8 @@ https://github.com/user-attachments/assets/95c02893-c38c-4feb-880d-74d15c9b00ff
         <td colspan="3" align="center">Project Overview</td>
     </tr>
     <tr>
-        <td><a href="https://www.canva.com/design/DAGz64MgHlY/sxAXQf1v8NuPE2XK3Ul20Q/view?utm_content=DAGz64MgHlY&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h35f455f73b">Demo 4 Slides</a></td>
-        <td><a href="https://drive.google.com/file/d/10CuCgy4wsezJKMnCf2ipH4JdN9SfmhSj/view?usp=sharing">Demo 4 Video</a></td>
+        <td><a href="https://www.canva.com/design/DAG0TUejQTA/dkVG0YuIKhBz1koNTetKDQ/view?utm_content=DAG0TUejQTA&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h93c6f03b19">Summary Slides</a></td>
+        <td><a href="https://drive.google.com/file/d/1lpgyp4nhr3fDWXDXao4cu6XAA1p3XMv-/view?usp=sharing">Final Demo Video</a></td>
     </tr>
     </table>
 </div>
@@ -60,34 +60,42 @@ https://github.com/user-attachments/assets/95c02893-c38c-4feb-880d-74d15c9b00ff
     <table style="border-width: 1px;">
     <tr>
         <td>Software Requirements Specification</td>
-        <td><a href="https://drive.google.com/file/d/15EytKXjgnE-WVOHrF8PX7H9vcrV_uNYD/view?usp=sharing">View</a></td>
+        <td><a href="https://drive.google.com/file/d/15Vml--WSQhiXnQtle_gVEdn0ssDGsnkv/view?usp=sharing">View</a></td>
     </tr>
     <tr>
         <td>Architectural Specification</td>
-        <td><a href="https://drive.google.com/file/d/1jm6trFPui5GSlbyyLVMTeh45a5Nb3Jii/view?usp=sharing">View</a></td>
+        <td><a href="https://drive.google.com/file/d/1N3hnDJfo22068KaZn57CvrWNeX3CuSz7/view?usp=sharing">View</a></td>
     </tr>
     <tr>
         <td>User Manual</td>
-        <td><a href="https://drive.google.com/file/d/1GHejUyB5W3aPVLFBvzI-kt5ZTXEl4UZ4/view?usp=sharing">View</a></td>
+        <td><a href="https://drive.google.com/file/d/1Bzv8KtFPUwzMZl5sdhZ9txYP8nc11Jr6/view?usp=sharing">View</a></td>
     </tr>
         <tr>
         <td>Service Contracts</td>
-        <td><a href="https://drive.google.com/file/d/1BSccaudyK0o8p3Ot7cbbFsPzgLQHEEal/view?usp=sharing">View</a></td>
+        <td><a href="https://drive.google.com/file/d/1d7kg6kGtBYzYcIok_R_MHtN4xua4vgI4/view?usp=sharing">View</a></td>
     </tr>
     <tr>
         <td>Coding Standards</td>
-        <td><a href="https://drive.google.com/file/d/1gMkjx20v3id--8wUWDmlei__TC_nlKhW/view?usp=sharing">View</a></td>
+        <td><a href="https://drive.google.com/file/d/1VfhcbDe1tdZCfMRJZmnsjP5HZRpvXHOg/view?usp=sharing">View</a></td>
     </tr>
     <tr>
         <td>Technical Installation Manual</td>
-        <td><a href="https://drive.google.com/file/d/12iGSbdAsCiDCffeyjp1tPmiMDNhjZoiU/view?usp=sharing">View</a></td>
+        <td><a href="https://drive.google.com/file/d/1Nd3bphxU7zOIMV7LaWD5MqFXYhzS7Kzd/view?usp=sharing">View</a></td>
     </tr>
     <tr>
         <td>Testing Policy</td>
-        <td><a href="https://drive.google.com/file/d/13AhFizHhbSvmSdfh0Nrr5-TGKcCJ_z-S/view?usp=sharing">View</a></td>
+        <td><a href="https://drive.google.com/file/d/1D3nUB4Yo_TxqysQ-EAmAVigApZrAccgO/view?usp=sharing">View</a></td>
     </tr>
     <tr>
-        <td>Documentation Archive</td>
+        <td>Contributing Guidelines</td>
+        <td><a href="https://drive.google.com/file/d/1ESewd30P_XbqWnbKR6EvHWhv8vziVSzo/view?usp=sharing">View</a></td>
+    </tr>
+    <tr>
+        <td>Research References</td>
+        <td><a href="https://drive.google.com/file/d/11O9V8hQCMIp-ejpCX0W-Rm08i85KOF7Z/view?usp=sharing">View</a></td>
+    </tr>
+    <tr>
+        <td>Documentation History</td>
         <td><a href="https://drive.google.com/drive/folders/1Bwf4zI9UTJtxRjaBUjaK8TTudrES6LF0?usp=sharing">View</a></td>
     </tr>
     </table>
@@ -120,11 +128,10 @@ https://github.com/user-attachments/assets/95c02893-c38c-4feb-880d-74d15c9b00ff
             <td style="vertical-align: middle; padding: 10px;">
                 <h2><b style="font-size: 18px;">Sashen Inder Gajai</b></h2>
                 <h4><b style="font-size: 16px;">Project Manager and Services Engineer</b></h4>
-                <br>
                 <a href="https://github.com/sashen-tv">
-                    <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
+                    <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;
                 <a href="https://www.linkedin.com/in/sashen-inder-gajai/">
-                    <img src="https://img.shields.io/badge/LinkedIn-007AB5?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
+                    <img src="https://img.shields.io/badge/LinkedIn-007AB5?style=for-the-badge"></a> &nbsp;
                 <a href="sashengajai.sg@gmail.com">
                     <img src="https://img.shields.io/badge/GMail-EB483B?style=for-the-badge"></a>
                 <br>
@@ -137,11 +144,10 @@ https://github.com/user-attachments/assets/95c02893-c38c-4feb-880d-74d15c9b00ff
             <td style="vertical-align: middle; padding: 10px;">
                 <h2><b style="font-size: 18px;">Shinn-Ru Hung</b></h2>
                 <h4><b style="font-size: 16px;">UI Engineer and Integration Engineer</b></h4>
-                <br>
                 <a href="https://github.com/Au5tin-R">
-                    <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
+                    <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;
                 <a href="https://www.linkedin.com/in/shinn-ru-hung-au5tin-r/">
-                    <img src="https://img.shields.io/badge/LinkedIn-007AB5?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
+                    <img src="https://img.shields.io/badge/LinkedIn-007AB5?style=for-the-badge"></a> &nbsp;
                 <a href="srhung1231@gmail.com">
                     <img src="https://img.shields.io/badge/GMail-EB483B?style=for-the-badge"></a>
                 <br>
@@ -154,11 +160,10 @@ https://github.com/user-attachments/assets/95c02893-c38c-4feb-880d-74d15c9b00ff
             <td style="vertical-align: middle; padding: 10px;">
                 <h2><b style="font-size: 18px;">Tia Harripersad</b></h2>
                 <h4><b style="font-size: 16px;">Services Engineer and Testing Engineer</b></h4>
-                <br>
                 <a href="https://github.com/Tia-H">
-                    <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
+                    <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;
                 <a href="https://www.linkedin.com/in/tia-harripersad-316143356/">
-                    <img src="https://img.shields.io/badge/LinkedIn-007AB5?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
+                    <img src="https://img.shields.io/badge/LinkedIn-007AB5?style=for-the-badge"></a> &nbsp;
                 <a href="tiaharripersad@gmail.com">
                     <img src="https://img.shields.io/badge/GMail-EB483B?style=for-the-badge"></a>
                 <br>
@@ -171,11 +176,10 @@ https://github.com/user-attachments/assets/95c02893-c38c-4feb-880d-74d15c9b00ff
             <td style="vertical-align: middle; padding: 10px;">
                 <h2><b style="font-size: 18px;">Keanu Ellary</b></h2>
                 <h4><b style="font-size: 16px;">Integration Engineer and DevOps Engineer</b></h4>
-                <br>
                 <a href="https://github.com/Keanu-Ellary">
-                    <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
+                    <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;
                 <a href="https://www.linkedin.com/in/keanu-ellary-187281355/">
-                    <img src="https://img.shields.io/badge/LinkedIn-007AB5?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
+                    <img src="https://img.shields.io/badge/LinkedIn-007AB5?style=for-the-badge"></a> &nbsp;
                 <a href="ellarykeanu@gmail.com">
                     <img src="https://img.shields.io/badge/GMail-EB483B?style=for-the-badge"></a>
                 <br>
@@ -188,11 +192,10 @@ https://github.com/user-attachments/assets/95c02893-c38c-4feb-880d-74d15c9b00ff
             <td style="vertical-align: middle; padding: 10px;">
                 <h2><b style="font-size: 18px;">Devan de Wet</b></h2>
                 <h4><b style="font-size: 16px;">UI Engineer and Data Engineer</b></h4>
-                <br>
                 <a href="https://github.com/DevanDewet">
-                    <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
+                    <img src="https://img.shields.io/badge/GitHub-010409?style=for-the-badge"></a> &nbsp;
                 <a href="https://www.linkedin.com/in/devan-klaassen-750681360/">
-                    <img src="https://img.shields.io/badge/LinkedIn-007AB5?style=for-the-badge"></a> &nbsp;&nbsp;&nbsp;
+                    <img src="https://img.shields.io/badge/LinkedIn-007AB5?style=for-the-badge"></a> &nbsp;
                 <a href="devandewet@gmail.com">
                     <img src="https://img.shields.io/badge/GMail-EB483B?style=for-the-badge"></a>
                 <br>
