@@ -102,7 +102,7 @@ Format your response strictly as a JSON array, without any additional text whats
 		prompt = `You are an educational assistant for compiler construction.
 
 Generate a context-free grammar for a parser that will perfectly parse the user's token stream.
-Do not add any epsilon transitions or left recursion.
+Do not add any empty or epsilon transitions or left recursion.
 
 The grammar should follow this structure: 
 1. "variables": string of comma-separated variable names
