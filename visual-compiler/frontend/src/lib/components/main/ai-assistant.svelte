@@ -203,7 +203,7 @@
             }
             
             for (const rule of parsed.rules) {
-                if (!rule.input || !rule.output || typeof rule.input !== 'string') {
+                if (!rule.input || typeof rule.input !== 'string') {
                     console.log('Invalid rule structure:', rule);
                     return { isValid: false };
                 }
