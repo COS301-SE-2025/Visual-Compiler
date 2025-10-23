@@ -120,8 +120,7 @@ Format your response strictly as a JSON object, without any additional text what
     "start": "PROGRAM",
     "rules": [
         { "input": "PROGRAM", "output": "STATEMENT SEPARATOR" },
-        { "input": "PROGRAM", "output": "FUNCTION SEPARATOR" }
-	    { "input": "STATEMENT", "output": "KEYWORD IDENTIFIER" },
+	    { "input": "STATEMENT", "output": "KEYWORD IDENTIFIER" }
 	         ]
 }`
 
